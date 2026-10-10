@@ -17,6 +17,7 @@ import { R2ArtifactStore } from "./artifact-store.ts";
 import { verifyBundle } from "../bundle/bundle.ts";
 import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
+import { threadsFor } from "../ai/threads.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -148,26 +149,22 @@ app.get("/api/ledger", async (c) => {
   return c.json({ ledger });
 });
 
-// Multi-seat war-room threads. Grounded from each finding's real numbers, plus ONE
-// model-written critic caveat per thread when a chat key secret is configured; the
-// secret is injected explicitly as LlmCred (the edge does not rely on process.env).
-// A missing or failing model silently leaves the grounded turns. Same JSON shape as
-// the Node server's /api/discussion.
+// Multi-seat war-room threads. The LIST is grounded and instant -- composed from each
+// finding's real numbers by the pure threadsFor builder, with NO model call, exactly like
+// the Node server's /api/discussion. Running the live cross-examination here (one model
+// call, or a two-round debate, per finding) would make boot latency scale with the number
+// of findings and stall the frontend's live connection; the model debate lives only on the
+// on-demand /api/discussion/:id below, which the UI calls for the single thread it shows.
+app.get("/api/discussion", async (c) => {
+  const findings: Finding[] = await rigStub(c.env).listFindingsPublic();
+  return c.json({ ...aiDescriptor(c.env), threads: threadsFor(findings) });
+});
+
+// Credentials for the live debate, injected explicitly from c.env (the edge cannot read
+// secrets via process.env under nodejs_compat v1). Used only by the on-demand /:id thread.
 function llmCred(env: Env): LlmCred[] {
   return llmProviders(env);
 }
-
-app.get("/api/discussion", async (c) => {
-  const findings: Finding[] = await rigStub(c.env).listFindingsPublic();
-  const cred = llmCred(c.env);
-  const threads = await Promise.all(findings.map(async (f) => ({
-    findingId: f.id,
-    targetId: f.targetId,
-    verdict: f.verdict,
-    turns: await buildDiscussion(f, cred),
-  })));
-  return c.json({ ...aiDescriptor(c.env), threads });
-});
 
 app.get("/api/discussion/:id", async (c) => {
   const id = safeName(c.req.param("id") ?? "");

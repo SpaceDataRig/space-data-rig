@@ -113,7 +113,7 @@ export async function buildDiscussion(f: Finding, creds?: LlmCred | LlmCred[]): 
       }),
     );
     for (const y of rebuttals) {
-      if (y.text) extra.push({ seat: "mission-critic", ts: f.createdAt, tone: "speak", text: `[Cross-exam · ${y.lens.role}] ${y.text as string}`, model: y.p.name });
+      if (y.text) extra.push({ seat: "mission-critic", ts: f.createdAt, tone: "speak", text: `[Cross-exam - ${y.lens.role}] ${y.text as string}`, model: y.p.name });
     }
   }
 

@@ -278,8 +278,14 @@ async function loadAll() {
     if (s.ai) setMode(s.ai.mode, s.ai.provider);
     MissionRoom.setAgents(s.seats);
     const d = await fetchJSON("/api/discussion");
-    if (d.threads && d.threads.length) renderThread(d.threads[0].turns);
-    else transcriptEl.innerHTML = `<p class="empty">The deliberation log fills up the moment you launch a run.</p>`;
+    if (d.threads && d.threads.length) {
+      renderThread(d.threads[0].turns);
+      // Seed grounded instantly, then swap in the live two-model cross-examination for the
+      // thread actually on screen -- without blocking boot or the connection indicator.
+      enrichThread(d.threads[0].findingId);
+    } else {
+      transcriptEl.innerHTML = `<p class="empty">The deliberation log fills up the moment you launch a run.</p>`;
+    }
     chairSays("The round table is seated. Five specialists plus the chair, awaiting a target.");
     await loadLedger();
   } catch (e) {
@@ -289,6 +295,17 @@ async function loadAll() {
 }
 
 async function loadLedger() { try { const r = await fetchJSON("/api/ledger"); renderLedger(r.ledger); } catch { /* best effort */ } }
+
+// Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
+// and re-render the transcript with it. Best-effort: if the model is slow or absent, the
+// grounded seed already shown simply stays. Never throws into the boot path.
+async function enrichThread(findingId) {
+  if (!findingId) return;
+  try {
+    const t = await fetchJSON(`/api/discussion/${encodeURIComponent(findingId)}`);
+    if (t && Array.isArray(t.turns) && t.turns.length) renderThread(t.turns);
+  } catch { /* keep the grounded seed */ }
+}
 
 function setRunningUI(running, msg) {
   runSubmitEl.disabled = running;
@@ -449,4 +466,7 @@ if (roomOk) {
 } else {
   $("#room-fallback").hidden = false;
 }
-loadAll().then(openSSE);
+// Open the live link immediately (independent of the data loads below) so the connection
+// indicator reflects the WebSocket/SSE state within ~0.5s instead of waiting on /api/discussion.
+openSSE();
+loadAll();

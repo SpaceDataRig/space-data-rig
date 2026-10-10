@@ -21,6 +21,7 @@ import { RigStore, type BundleRecord } from "../core/store.ts";
 import type { ArchivePlanet, Finding, LightCurve, Task } from "../core/types.ts";
 import { fetchConfirmedPlanets, type ArchiveFetchResult } from "../data/exoplanetArchive.ts";
 import { generateSyntheticTransit, type InjectedTruth } from "../data/synthetic.ts";
+import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -244,7 +245,7 @@ export class Orchestrator {
       periodDays: planet.pl_orbper!,
       planetRadiusEarth: planet.pl_rade!,
       stellarRadiusRsun: planet.st_rad!,
-      stellarMassMsun: planet.st_rad!, // rough main-sequence mass-radius relation
+      stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad!), // catalog mass; empirical M-R only as fallback
       impactParam: 0.2 + (index % 3) * 0.15,
       noisePpm: 180,
       cadenceSec: 120,

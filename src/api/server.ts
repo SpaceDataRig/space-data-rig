@@ -117,7 +117,11 @@ function serveStatic(c: Context, rel: string): Response | Promise<Response> {
 // ---- app -------------------------------------------------------------------
 
 const app = new Hono();
-app.use("/api/*", cors());
+// Same-origin only: the dashboard is served by this very process, so no other browser
+// origin needs (or should get) credentialed access to the state-mutating endpoints --
+// a wildcard CORS here makes a local mainnet anchor click from any malicious page easy.
+const LOCAL_ORIGINS = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]);
+app.use("/api/*", cors({ origin: (origin) => (origin && LOCAL_ORIGINS.has(origin) ? origin : undefined) }));
 
 // Liveness / readiness probe (used by docker-compose + rig.yaml services.wait_for).
 app.get("/health", (c) =>
@@ -317,11 +321,24 @@ app.post("/api/anchor/:id", async (c) => {
 
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const dryRun = Boolean(body.dryRun);
-  const rpc = typeof body.rpc === "string" ? body.rpc : undefined;
-  const keypairPath = typeof body.keypair === "string" ? resolve(body.keypair) : undefined;
+  // RPC endpoint and fee-payer keypair come from SERVER-SIDE configuration only
+  // (.env / defaults). Request bodies must never select endpoints (SSRF) or keypair
+  // paths (arbitrary file read).
+
+  // Idempotency guard (mirrors the edge DO): the same bundle hash anchors at most once;
+  // repeat calls return the existing receipt instead of paying mainnet fees again.
+  const prior = readLedger(LEDGER_PATH).find((e) => e.findingId === f.id);
+  if (!dryRun && prior?.status === "anchored" && prior.signature && prior.bundleHash === f.bundleHash) {
+    if (f.solanaTx !== prior.signature) {
+      store.updateFinding(f.id, { solanaTx: prior.signature });
+      store.updateBundle(f.id, { solanaTx: prior.signature });
+      store.save(STATE_PATH);
+    }
+    return c.json({ ok: true, memo: prior.memo, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl, alreadyAnchored: true });
+  }
 
   store.emitEvent("reporter", "info", `Anchoring ${f.id} on Solana mainnet${dryRun ? " (dry-run)" : ""}...`);
-  const res = await anchorBundleHash(f.id, f.bundleHash, { rpcUrl: rpc, keypairPath, dryRun });
+  const res = await anchorBundleHash(f.id, f.bundleHash, { dryRun });
 
   if (!dryRun) {
     const entry: LedgerEntry = {

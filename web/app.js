@@ -16,9 +16,9 @@ import { connectLive } from "/live.js";
 const $ = (sel, el = document) => el.querySelector(sel);
 
 const BADGE = {
-  accepted: { label: "CONFIRMED", tone: "good", word: "confirmed" },
+  accepted: { label: "RECOVERED", tone: "good", word: "recovered" },
   "needs-more-data": { label: "WATCHLIST", tone: "warn", word: "watchlist" },
-  rejected: { label: "REJECTED", tone: "bad", word: "rejected" },
+  rejected: { label: "NOT RECOVERED", tone: "bad", word: "not recovered" },
 };
 const colorOf = (s) => (SEAT_META[s] && SEAT_META[s].color) || "#3ae0ff";
 const glyphOf = (s) => (SEAT_META[s] && SEAT_META[s].glyph) || "AI";
@@ -149,7 +149,7 @@ function cardHtml(f) {
   const explainer = f.narration?.explainer || "";
   const score = f.score != null ? `<span class="score">${f.score}/100</span>` : "";
   const chain = f.solanaTx
-    ? `<span><b>tx</b> <a class="txlink" href="${explorerUrl(f.solanaTx)}" target="_blank" rel="noopener">${shortTx(f.solanaTx)}</a></span>`
+    ? `<span><b>tx</b> <a class="txlink" href="${esc(explorerUrl(f.solanaTx))}" target="_blank" rel="noopener">${esc(shortTx(f.solanaTx))}</a></span>`
     : `<span><b>on-chain</b> not anchored</span>`;
   return `<div class="card tone-${badge.tone}" data-id="${esc(f.id)}">
     <div class="card-top"><span class="card-target">${esc(f.targetId)}</span><span class="card-side">${score}<span class="badge ${badge.tone}">${badge.label}</span></span></div>
@@ -410,16 +410,19 @@ boardEl.addEventListener("click", async (e) => {
   }
 
   if (action === "anchor") {
+    // Mainnet anchoring spends real SOL from the project wallet; make it a deliberate act.
+    // (Repeat anchors of the same bundle hash are idempotent and free, handled server-side.)
+    if (!window.confirm("Anchor writes a real Solana MAINNET memo transaction and spends project SOL. Continue?")) return;
     btn.disabled = true; status.className = "verify-out"; status.textContent = "anchoring on mainnet...";
     try {
       const r = await fetch(`/api/anchor/${encodeURIComponent(id)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       const res = await r.json();
       if (res.ok && res.signature) {
         status.className = "verify-out ok";
-        status.innerHTML = `anchored <a class="txlink" href="${explorerUrl(res.signature)}" target="_blank" rel="noopener">${shortTx(res.signature)}</a>`;
-        btn.textContent = "Re-anchor";
+        status.innerHTML = `${res.alreadyAnchored ? "already anchored (receipt) " : "anchored "}<a class="txlink" href="${esc(explorerUrl(res.signature))}" target="_blank" rel="noopener">${esc(shortTx(res.signature))}</a>`;
+        if (!res.alreadyAnchored) btn.textContent = "Re-anchor";
         const chain = card.querySelector(".prov")?.children[1];
-        if (chain) chain.innerHTML = `<b>tx</b> <a class="txlink" href="${explorerUrl(res.signature)}" target="_blank" rel="noopener">${shortTx(res.signature)}</a>`;
+        if (chain) chain.innerHTML = `<b>tx</b> <a class="txlink" href="${esc(explorerUrl(res.signature))}" target="_blank" rel="noopener">${esc(shortTx(res.signature))}</a>`;
         await loadLedger();
         fetchJSON("/api/state").then((s) => renderStats(s.stats)).catch(() => {});
       } else {

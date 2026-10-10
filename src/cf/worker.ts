@@ -52,8 +52,10 @@ function findingView(f: Finding) {
   return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6) };
 }
 
-// Honest descriptor of the discussion engine, built from env bindings only -- the
-// Worker must not import ai/llm.ts because that module reads process.env.
+// Honest descriptor of the discussion engine, built from env bindings only.
+// ai/llm.ts IS bundled (via the /api/discussion path), but the Worker never relies on
+// its process.env fallback -- nodejs_compat v1 cannot see secrets there -- so
+// credentials are always injected explicitly through LlmCred from c.env.
 function aiDescriptor(env: Env): { mode: string; provider: string } {
   const configured = Boolean(env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY);
   if (!configured) return { mode: "grounded", provider: "grounded (data-driven)" };
@@ -193,9 +195,11 @@ app.get("/api/bundles/:id/artifact/:name", async (c) => {
 // runId and returns immediately -- progress streams to the browser over the DO WebSocket.
 app.post("/api/run", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-  const targets = clampInt(body.targets, 1, 50, 4);
+  // Public endpoint: keep the clamps tight. Every target is a durable workflow branch and
+  // every confidence trial is a full BLS sweep inside one step's CPU budget.
+  const targets = clampInt(body.targets, 1, 24, 4);
   const stageDelayMs = clampInt(body.delay ?? body.stageDelayMs, 0, 5000, 300);
-  const confidenceTrials = clampInt(body.confidence ?? body.confidenceTrials, 1, 64, 8);
+  const confidenceTrials = clampInt(body.confidence ?? body.confidenceTrials, 1, 16, 8);
   const maxTmag = clampFloat(body.tmag ?? body.maxTmag, 0, 20, 11);
   const resume = Boolean(body.resume);
   const offline = Boolean(body.offline);
@@ -221,7 +225,15 @@ app.post("/api/run", async (c) => {
   // params. A resume reuses the DO's runId so it reads/writes the SAME R2 state keys, but
   // must NOT reuse the instance id (that would collide with the already-existing prior
   // instance and throw); completed targets are skipped by the workflow via taskStatus.
-  await c.env.RIG_RUN.create({ params: { ...params, runId } });
+  try {
+    await c.env.RIG_RUN.create({ params: { ...params, runId } });
+  } catch (e) {
+    // Never leave the run slot claimed if the instance could not even be created:
+    // release the mutex so the next request is not stuck behind a phantom run (409).
+    const msg = e instanceof Error ? e.message : String(e);
+    await rigStub(c.env).finishRun({ error: `workflow could not be created: ${msg}` }).catch(() => {});
+    return c.json({ error: "failed to start workflow", detail: msg }, 500);
+  }
 
   return c.json({ ok: true, started: true, runId, targets, offline, resume, confidenceTrials });
 });

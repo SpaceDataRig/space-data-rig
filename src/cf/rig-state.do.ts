@@ -276,7 +276,15 @@ export class RigStateDO extends DurableObject<Env> {
    */
   async startRunIfIdle(params: RunParams): Promise<{ ok: boolean; runId: string; code?: number }> {
     const current = this.activeRun;
-    if (current?.running) return { ok: false, runId: current.runId, code: 409 };
+    if (current?.running) {
+      // A slot claimed by a Workflow that died before releasing it would lock every
+      // future run (permanent 409). Treat a claim older than 30 minutes as stale and
+      // allow takeover; live runs of that length are far outside any normal path.
+      const started = Date.parse(current.startedAt);
+      const stale = !Number.isFinite(started) || Date.now() - started > 30 * 60 * 1000;
+      if (!stale) return { ok: false, runId: current.runId, code: 409 };
+      await this.emitEvent("reporter", "warn", `Releasing stale run ${current.runId} (claimed over 30 minutes ago and never finished); starting a new run.`);
+    }
     const runId = params.resume ? this.getMeta("runId") ?? params.runId : params.runId || RigStateDO.makeRunId();
     await this.setMeta("runId", runId);
     this.activeRun = { runId, startedAt: new Date().toISOString(), running: true };
@@ -376,7 +384,12 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async recordFinding(finding: Finding): Promise<Finding> {
-    const stored = this.stripFinding(finding);
+    // Finding ids are deterministic (F-<target>): a re-run must NOT silently un-anchor a
+    // previously sealed finding, even though its ledger tx stays valid on-chain. Merge-
+    // preserve the anchor stamp across INSERT OR REPLACE instead of clobbering it.
+    const prev = this.row<{ data: string }>(`SELECT data FROM findings WHERE id = ?`, finding.id);
+    const prevTx = prev ? ((JSON.parse(prev.data) as Finding).solanaTx ?? undefined) : undefined;
+    const stored = this.stripFinding({ ...finding, solanaTx: finding.solanaTx ?? prevTx });
     this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO findings (id, created_at, data) VALUES (?, ?, ?)`, stored.id, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();
     await this.broadcastState();
@@ -394,10 +407,14 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async recordBundle(bundle: BundleRecord): Promise<BundleRecord> {
-    this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO bundles (finding_id, created_at, data) VALUES (?, ?, ?)`, bundle.findingId, bundle.createdAt, JSON.stringify(bundle));
+    // Same anchor-stamp preservation as recordFinding (deterministic finding ids).
+    const prev = this.row<{ data: string }>(`SELECT data FROM bundles WHERE finding_id = ?`, bundle.findingId);
+    const prevTx = prev ? ((JSON.parse(prev.data) as BundleRecord).solanaTx ?? undefined) : undefined;
+    const stored = { ...bundle, solanaTx: bundle.solanaTx ?? prevTx };
+    this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO bundles (finding_id, created_at, data) VALUES (?, ?, ?)`, stored.findingId, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();
     await this.broadcastState();
-    return bundle;
+    return stored;
   }
 
   async updateBundle(findingId: string, patch: Partial<BundleRecord>): Promise<BundleRecord | undefined> {
@@ -446,7 +463,7 @@ export class RigStateDO extends DurableObject<Env> {
   async anchorFinding(
     findingId: string,
     opts?: { dryRun?: boolean },
-  ): Promise<{ ok: boolean; memo?: string; signature?: string; slot?: number; error?: string; httpStatus: number; dryRun?: boolean }> {
+  ): Promise<{ ok: boolean; memo?: string; signature?: string; slot?: number; error?: string; httpStatus: number; dryRun?: boolean; alreadyAnchored?: boolean }> {
     const f = this.getFinding(findingId);
     if (!f) return { ok: false, httpStatus: 404, error: "finding not found" };
     if (!f.bundleHash) return { ok: false, httpStatus: 400, error: "finding has no bundle hash yet (run the reporter first)" };
@@ -455,6 +472,22 @@ export class RigStateDO extends DurableObject<Env> {
     if (opts?.dryRun) return { ok: true, memo, dryRun: true, httpStatus: 200 };
     if (!this.env.SOLANA_KEYPAIR)
       return { ok: false, memo, httpStatus: 400, error: "no SOLANA_KEYPAIR secret configured on the Worker (set it with: wrangler secret put SOLANA_KEYPAIR)" };
+
+    // Idempotency guard: the same bundle hash is anchored at most once -- repeat calls
+    // (double clicks, retries, scripts) must never spend mainnet fees again. Return the
+    // existing receipt and re-stamp the finding/bundle card in case an older re-run
+    // cleared the solanaTx field before merge-preservation existed.
+    const prior = this.row<{ data: string }>(`SELECT data FROM ledger WHERE finding_id = ?`, findingId);
+    if (prior) {
+      const e = JSON.parse(prior.data) as LedgerEntry;
+      if (e.status === "anchored" && e.signature && e.bundleHash === f.bundleHash) {
+        if (f.solanaTx !== e.signature) {
+          await this.updateFinding(findingId, { solanaTx: e.signature });
+          await this.updateBundle(findingId, { solanaTx: e.signature });
+        }
+        return { ok: true, memo, signature: e.signature, slot: e.slot, httpStatus: 200, alreadyAnchored: true };
+      }
+    }
 
     const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
     await this.emitEvent("reporter", "info", `Anchoring ${findingId} on Solana mainnet...`);

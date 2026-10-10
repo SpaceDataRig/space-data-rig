@@ -6,7 +6,7 @@
 // shared core stays binding-free.
 
 import { mkdir, readFile, writeFile, access } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, sep } from "node:path";
 import type { ArtifactStore } from "../core/ports.ts";
 
 const decoder = new TextDecoder();
@@ -15,7 +15,14 @@ export class FsArtifactStore implements ArtifactStore {
   constructor(private readonly root: string) {}
 
   private abs(key: string): string {
-    return resolve(this.root, ...key.split("/"));
+    const root = resolve(this.root);
+    const p = resolve(root, ...key.split("/"));
+    // Defense in depth: callers already sanitize names (safeName + allowlist), but a
+    // key with traversal segments must never resolve outside the store root.
+    if (p !== root && !p.startsWith(root + sep)) {
+      throw new Error(`artifact key escapes store root: ${key}`);
+    }
+    return p;
   }
 
   async put(key: string, body: string | Uint8Array): Promise<void> {

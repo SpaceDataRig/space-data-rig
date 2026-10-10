@@ -21,6 +21,15 @@ export function aOverRsFromKepler(periodDays: number, stellarMassMsun: number, s
   return aAu / rsAu;
 }
 
+/**
+ * Empirical main-sequence mass-radius relation used ONLY when the catalog has no
+ * measured stellar mass: R/Rsun = (M/Msun)^0.89  =>  M = R^(1/0.89). This is an
+ * approximation for dwarfs; never treat it as a substitute for catalog st_mass.
+ */
+export function mainSequenceMassFromRadius(stellarRadiusRsun: number): number {
+  return Math.pow(stellarRadiusRsun, 1 / 0.89);
+}
+
 /** inclination (radians) from impact parameter b and a/Rs. */
 export function inclinationFromImpact(impactParam: number, aOverRs: number): number {
   const cosI = Math.min(1, Math.max(-1, impactParam / aOverRs));

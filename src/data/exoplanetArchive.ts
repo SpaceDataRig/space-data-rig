@@ -15,14 +15,14 @@ const UA =
 
 /** Well-known bright transiting planets (real catalog values) for offline fallback. */
 const FALLBACK_CATALOG: ArchivePlanet[] = [
-  { pl_name: "pi Men c", hostname: "pi Men", pl_orbper: 6.2679, pl_trandep: 1058, pl_trandur: 2.62, pl_rade: 2.04, st_rad: 0.96, sy_tmag: 5.65, discoverymethod: "Transit" },
-  { pl_name: "HD 189733 b", hostname: "HD 189733", pl_orbper: 2.21857, pl_trandep: 2830, pl_trandur: 2.82, pl_rade: 12.64, st_rad: 0.79, sy_tmag: 7.44, discoverymethod: "Transit" },
-  { pl_name: "WASP-121 b", hostname: "WASP-121", pl_orbper: 1.27492, pl_trandep: 9140, pl_trandur: 2.48, pl_rade: 19.2, st_rad: 1.46, sy_tmag: 10.29, discoverymethod: "Transit" },
-  { pl_name: "HAT-P-11 b", hostname: "HAT-P-11", pl_orbper: 4.8878, pl_trandep: 388, pl_trandur: 1.72, pl_rade: 4.36, st_rad: 0.68, sy_tmag: 8.99, discoverymethod: "Transit" },
-  { pl_name: "GJ 1214 b", hostname: "GJ 1214", pl_orbper: 1.5804, pl_trandep: 1450, pl_trandur: 0.95, pl_rade: 2.74, st_rad: 0.22, sy_tmag: 9.75, discoverymethod: "Transit" },
-  { pl_name: "KELT-9 b", hostname: "KELT-9", pl_orbper: 1.4811, pl_trandep: 7000, pl_trandur: 3.32, pl_rade: 21.0, st_rad: 2.37, sy_tmag: 7.56, discoverymethod: "Transit" },
-  { pl_name: "TOI-700 d", hostname: "TOI-700", pl_orbper: 37.42, pl_trandep: 760, pl_trandur: 1.7, pl_rade: 1.07, st_rad: 0.42, sy_tmag: 11.8, discoverymethod: "Transit" },
-  { pl_name: "L 168-9 b", hostname: "L 168-9", pl_orbper: 1.4017, pl_trandep: 3900, pl_trandur: 1.2, pl_rade: 1.39, st_rad: 0.45, sy_tmag: 10.0, discoverymethod: "Transit" },
+  { pl_name: "pi Men c", hostname: "pi Men", pl_orbper: 6.2679, pl_trandep: 1058, pl_trandur: 2.62, pl_rade: 2.04, st_rad: 0.96, st_mass: 0.99, sy_tmag: 5.65, discoverymethod: "Transit" },
+  { pl_name: "HD 189733 b", hostname: "HD 189733", pl_orbper: 2.21857, pl_trandep: 2830, pl_trandur: 2.82, pl_rade: 12.64, st_rad: 0.79, st_mass: 0.8, sy_tmag: 7.44, discoverymethod: "Transit" },
+  { pl_name: "WASP-121 b", hostname: "WASP-121", pl_orbper: 1.27492, pl_trandep: 9140, pl_trandur: 2.48, pl_rade: 19.2, st_rad: 1.46, st_mass: 1.35, sy_tmag: 10.29, discoverymethod: "Transit" },
+  { pl_name: "HAT-P-11 b", hostname: "HAT-P-11", pl_orbper: 4.8878, pl_trandep: 388, pl_trandur: 1.72, pl_rade: 4.36, st_rad: 0.68, st_mass: 0.82, sy_tmag: 8.99, discoverymethod: "Transit" },
+  { pl_name: "GJ 1214 b", hostname: "GJ 1214", pl_orbper: 1.5804, pl_trandep: 1450, pl_trandur: 0.95, pl_rade: 2.74, st_rad: 0.22, st_mass: 0.15, sy_tmag: 9.75, discoverymethod: "Transit" },
+  { pl_name: "KELT-9 b", hostname: "KELT-9", pl_orbper: 1.4811, pl_trandep: 7000, pl_trandur: 3.32, pl_rade: 21.0, st_rad: 2.37, st_mass: 2.36, sy_tmag: 7.56, discoverymethod: "Transit" },
+  { pl_name: "TOI-700 d", hostname: "TOI-700", pl_orbper: 37.42, pl_trandep: 760, pl_trandur: 1.7, pl_rade: 1.07, st_rad: 0.42, st_mass: 0.2, sy_tmag: 11.8, discoverymethod: "Transit" },
+  { pl_name: "L 168-9 b", hostname: "L 168-9", pl_orbper: 1.4017, pl_trandep: 3900, pl_trandur: 1.2, pl_rade: 1.39, st_rad: 0.45, st_mass: 0.4, sy_tmag: 10.0, discoverymethod: "Transit" },
 ];
 
 export interface ArchiveQueryOptions {
@@ -61,7 +61,7 @@ export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promis
   const maxTmag = o.maxTmag ?? 11;
   const limit = o.limit ?? 50;
   const cols =
-    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_rade,st_rad,ra,dec,sy_tmag,discoverymethod";
+    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_rade,st_rad,st_mass,ra,dec,sy_tmag,discoverymethod";
   // NOTE: NASA's Cloudflare WAF 403s queries with spaces around comparison
   // operators or `is not null`; keep the WHERE compact and filter nulls in JS.
   let where = `discoverymethod='Transit' and sy_tmag<${maxTmag}`;

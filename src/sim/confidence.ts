@@ -17,6 +17,7 @@
 import { preprocess, madSigma } from "../detect/detrend.ts";
 import { bls } from "../detect/bls.ts";
 import { resolvePeriodAlias } from "./aliasResolver.ts";
+import { mainSequenceMassFromRadius } from "./transitModel.ts";
 import { generateSyntheticTransit } from "../data/synthetic.ts";
 import type { LightCurve } from "../core/types.ts";
 
@@ -114,7 +115,7 @@ export function recoveryTrial(p: SignalParams, o: ConfidenceOptions, i: number):
   const cadenceSec = p.cadenceSec ?? 120;
   const baselineDays = p.baselineDays ?? 27;
   const stellarRadiusRsun = p.stellarRadiusRsun ?? 1.0;
-  const stellarMassMsun = p.stellarMassMsun ?? stellarRadiusRsun;
+  const stellarMassMsun = p.stellarMassMsun ?? mainSequenceMassFromRadius(stellarRadiusRsun);
   const impactParam = p.impactParam ?? 0.3;
   const noisePpm = p.noisePpm ?? 200;
   // Search window: bracket the true period so recovery is about the signal,

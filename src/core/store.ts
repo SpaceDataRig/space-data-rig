@@ -135,9 +135,12 @@ export class RigStore {
   // ---- findings ------------------------------------------------------------
 
   addFinding(f: Finding): Finding {
-    this.findings.set(f.id, f);
+    // Re-running a target must not drop its on-chain anchor stamp (ids are deterministic).
+    const prev = this.findings.get(f.id);
+    const next = f.solanaTx == null && prev?.solanaTx != null ? { ...f, solanaTx: prev.solanaTx } : f;
+    this.findings.set(next.id, next);
     this.touch();
-    return f;
+    return next;
   }
 
   updateFinding(id: string, patch: Partial<Finding>): Finding | undefined {
@@ -160,9 +163,12 @@ export class RigStore {
   // ---- bundles -------------------------------------------------------------
 
   addBundle(b: BundleRecord): BundleRecord {
-    this.bundles.set(b.findingId, b);
+    // Same anchor-stamp preservation as addFinding.
+    const prev = this.bundles.get(b.findingId);
+    const next = b.solanaTx == null && prev?.solanaTx != null ? { ...b, solanaTx: prev.solanaTx } : b;
+    this.bundles.set(next.findingId, next);
     this.touch();
-    return b;
+    return next;
   }
 
   updateBundle(findingId: string, patch: Partial<BundleRecord>): BundleRecord | undefined {

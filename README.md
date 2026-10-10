@@ -1,15 +1,26 @@
 # Space Data Rig
 
-An OpenRig-style, five-seat AI team that does **real, reproducible astronomy**: it pulls
-public NASA/MAST exoplanet data, hunts for planetary transits with a deterministic
-Box-Least-Squares (BLS) search, proves each signal with injection-recovery simulation,
-has a critic seat cross-match it against the known-planet catalog, and packages every
-accepted result into a **hash-sealed reproducible bundle** that is anchored on **Solana
-mainnet** as tamper-evident provenance.
+An OpenRig-style, five-seat AI team that runs a **fully reproducible transit-detection
+loop**: it pulls real confirmed-planet parameters from the NASA Exoplanet Archive, builds
+a seeded synthetic light curve per target, hunts the injected transit with a deterministic
+Box-Least-Squares (BLS) search, quantifies recovery confidence with injection-recovery
+simulation, has a critic seat cross-match candidates against the catalog, and packages
+every verdict into a **hash-sealed reproducible bundle** anchored on **Solana mainnet**
+as tamper-evident provenance.
 
-Everything is streamed live to a **trader-friendly web dashboard**, so anyone can watch
-the agents work, read a plain-English explanation of each discovery, inspect the actual
-plots, verify a bundle hash, and see it land on-chain.
+**What this is, plainly -- and what it is not.** This is a science-grade *closed-loop
+self-test*: the pipeline proves it can recover a known signal from noise it seeded
+itself. It is **not** discovering new planets. Light curves are synthetic stand-ins for
+MAST TESS photometry (labeled `seeded stand-in` in every bundle and on every card), and
+the critic cross-matches against the same catalog the injected parameters came from,
+so a "recovery at the true period" is by construction, not evidence of a find. What *is*
+real: the live NASA TAP catalog query, the detrending/BLS math, the injection-recovery
+statistics, the bundle hashing, and the on-chain anchoring -- all of it auditable
+end to end. Wiring in actual MAST light curves is the next milestone.
+
+Everything is streamed live to a **web dashboard**, so anyone can watch the agents work,
+read a plain-English explanation of each verdict, inspect the plots, verify a bundle
+hash, and see it land on-chain.
 
 This repository is the **science engine + provenance layer**. The token is launched
 separately on pump.fun; there is deliberately **no custom token contract or Solana
@@ -23,9 +34,10 @@ the standard SPL Memo program provides.
 Most "AI agent on-chain" demos are theater: agents chat, a token exists, and nothing
 verifiable happens. Space Data Rig is built to be the opposite:
 
-- **It does real work.** The detection pipeline recovers known planets (HD 189733 b,
-  WASP-121 b, HAT-P-11 b, pi Men c, the HR 858 system, ...) from real catalog parameters
-  at their true periods.
+- **It does real work, on synthetic data.** The detection pipeline is genuine BLS +
+  detrending + alias resolution math; the data it runs on is a seeded light curve built
+  from real catalog parameters. Recovering HD 189733 b at its true period therefore
+  validates the *machinery*, and does not constitute a planet detection.
 - **It is honest about uncertainty.** Every signal is replayed through fresh simulated
   noise; the fraction of times the pipeline recovers it is reported as a *recovery
   confidence*, and a critic seat can reject or watchlist a weak signal.

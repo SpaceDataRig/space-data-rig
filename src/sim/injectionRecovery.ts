@@ -8,6 +8,7 @@ import { preprocess } from "../detect/detrend.ts";
 import { bls } from "../detect/bls.ts";
 import { resolvePeriodAlias } from "./aliasResolver.ts";
 import { generateSyntheticTransit, rng, type InjectedTruth } from "../data/synthetic.ts";
+import { mainSequenceMassFromRadius } from "./transitModel.ts";
 
 export interface TrialResult {
   seed: number;
@@ -86,7 +87,7 @@ export function runInjectionRecovery(o: BenchmarkOptions = {}): { trials: TrialR
       depthFrac: depthPpm * 1e-6,
       impactParam,
       stellarRadiusRsun,
-      stellarMassMsun: stellarRadiusRsun, // rough main-sequence M-R
+      stellarMassMsun: mainSequenceMassFromRadius(stellarRadiusRsun), // empirical main-sequence M-R
       noisePpm,
       cadenceSec: o.cadenceSec ?? 120,
       baselineDays: o.baselineDays ?? 27,

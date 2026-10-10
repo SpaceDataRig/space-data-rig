@@ -56,9 +56,10 @@ binding = "RIG_ARTIFACTS"
 bucket_name = "space-data-rig-artifacts"
 
 # ---- Workflow: durable, CPU-budgeted pipeline run --------------------------
-# Each seat is its own step (sim-runner trials are further map-sharded) so no
-# single invocation exceeds the 30s Worker CPU limit while a multi-target run
-# streams progress to the DO.
+# Each seat is its own durable step. The sim-runner's injection-recovery trials run
+# as a bounded loop inside ONE step (this wrangler version has no step.map), so the
+# Worker clamps confidence trials to keep a step within the CPU budget while the
+# multi-target run streams progress to the DO.
 [[workflows]]
 binding = "RIG_RUN"
 class_name = "RigRunWorkflow"

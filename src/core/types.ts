@@ -106,6 +106,7 @@ export interface ArchivePlanet {
   pl_trandep?: number; // transit depth in ppm
   pl_trandur?: number; // transit duration in hours
   st_rad?: number; // stellar radius in solar radii
+  st_mass?: number; // stellar mass in solar masses (pscomppars column)
   ra?: number;
   dec?: number;
   sy_tmag?: number; // TESS magnitude

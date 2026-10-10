@@ -17,13 +17,12 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@solana/web3.js": "^3.0.2",
-    "hono": "^4.6.14",
-    "three": "^0.169.0"
+    "hono": "^4.6.14"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261010.1",

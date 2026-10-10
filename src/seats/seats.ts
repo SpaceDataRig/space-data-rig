@@ -16,6 +16,7 @@ import {
   type SignalParams,
 } from "../sim/confidence.ts";
 import { reviewCandidate, type ReviewResult } from "../critic/review.ts";
+import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { narrateFinding } from "../reporter/narrate.ts";
 import { foldedPlotSVG, periodogramSVG, timeSeriesPlotSVG } from "../detect/svgPlot.ts";
 import {
@@ -88,7 +89,7 @@ export function simPlan({ lc, detection, planet, index, confidenceTrials }: Simu
     periodDays: c.periodDays,
     depthFrac: Math.max(1e-6, c.depthFrac),
     stellarRadiusRsun: planet.st_rad ?? 1,
-    stellarMassMsun: planet.st_rad ?? 1,
+    stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad ?? 1), // catalog mass; empirical M-R only as fallback
     noisePpm,
     cadenceSec: lc.cadenceSec ?? 120,
     baselineDays: 27,

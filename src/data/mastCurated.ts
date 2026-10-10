@@ -1,13 +1,19 @@
 // Curated registry of REAL MAST TESS light-curve products, keyed by host star.
 //
-// Why curated instead of fully automated: as of 2026-10 the MAST SPOC/GL
-// light-curve *discovery* APIs (MastClassic, TCG, CAOM Products via invoke)
-// are retired or return empty for anonymous callers, while direct product
-// download via `Download/file?uri=mast:TESS/product/<file>` is open and stable.
+// Why curated instead of fully automated (verified by direct probing 2026-10-10):
+//   - The MAST `invoke` CAOM discovery services reachable anonymously
+//     (Mast.Caom.Cone / Mast.Caom.Filtered) return HTTP 200 with an EMPTY body
+//     (`{}`) without a token, so they cannot enumerate products for us here.
+//   - The CAOM TAP host (data.archive.stsci.edu) and the TESScut AWS service
+//     were not reachable from the pipeline's network at all.
+//   - Direct anonymous download via `Download/file?uri=mast:TESS/product/<file>`
+//     is open and stable, and serves real FITS bytes.
 // A curated host -> product-URI map therefore gives the pipeline real
 // photometry today, and every entry is an easy "good first issue" contribution
-// (verify one URI, add one line). The synthetic stand-in remains the default
-// whenever a target is not in this list or a download fails.
+// (verify one URI, add one line). See ./mastDiscover.ts for the best-effort
+// auto-discovery path (used when a MAST token makes the portal respond). The
+// synthetic stand-in remains the default whenever a target is not in this list
+// or a download fails.
 
 import type { ArchivePlanet } from "../core/types.ts";
 import type { InjectedTruth } from "./synthetic.ts";

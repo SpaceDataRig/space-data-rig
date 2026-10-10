@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { fitsToLightCurve } from "../src/data/mast.ts";
 import { curatedMastFor, truthFromCatalog } from "../src/data/mastCurated.ts";
+import { discoverMastProducts } from "../src/data/mastDiscover.ts";
 import { detectTransit } from "../src/detect/pipeline.ts";
 
 const CACHE = "out/probe-lc.fits"; // TIC 25155310 (WASP-126), GL sector 0004, 2-min cadence
@@ -56,4 +57,45 @@ test("truthFromCatalog derives sane open-loop parameters", () => {
   assert.ok(t.aOverRs > 3 && t.aOverRs < 10, `a/Rs=${t.aOverRs}`);
   assert.ok(Math.abs(t.planetRadiusRatio - (21 * 0.0091577 / 1.61)) < 1e-9);
   assert.equal(t.stellarMassMsun, 1.25);
+});
+
+// ---- discovery client (pure logic, mocked fetch, no network) ----
+
+test("discoverMastProducts rejects bad coordinates", async () => {
+  await assert.rejects(() => discoverMastProducts(NaN, 0), /bad coordinates/);
+});
+
+test("discoverMastProducts returns [] on the anonymous-empty CAOM body", async () => {
+  const orig = globalThis.fetch;
+  // Verified real behavior: HTTP 200 with body "{}" for anonymous callers.
+  globalThis.fetch = (async () => new Response("{}", { status: 200 })) as never;
+  try {
+    assert.deepEqual(await discoverMastProducts(96.7977, -3.76), []);
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("discoverMastProducts resolves Cone->Products and keeps only light curves", async () => {
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (_url: string, init?: { body?: URLSearchParams }) => {
+    const req = JSON.parse(String(init?.body?.get("request")));
+    if (req.service === "Mast.Caom.Cone") {
+      return new Response(JSON.stringify({ status: 200, data: [{ obs_id: "s0004", mission_name: "TESS", data_uri: "mast:TESS/observation/x" }] }), { status: 200 });
+    }
+    if (req.service === "Mast.Caom.Products") {
+      return new Response(JSON.stringify({ status: 200, data: [
+        { data_uri: "mast:TESS/product/a_lc.fits", description: "SPOC light curve" },
+        { data_uri: "mast:TESS/product/a_unc.fits", description: "unrelated" },
+      ] }), { status: 200 });
+    }
+    return new Response("{}", { status: 200 });
+  }) as never;
+  try {
+    const found = await discoverMastProducts(96.7977, -3.76);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].dataUri, "mast:TESS/product/a_lc.fits");
+  } finally {
+    globalThis.fetch = orig;
+  }
 });

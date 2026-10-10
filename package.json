@@ -9,6 +9,7 @@
     "p0:archive": "tsx scripts/p0-archive.ts",
     "p0:detect": "tsx scripts/p0-detect.ts",
     "p0:mast": "tsx scripts/p0-mast.ts",
+    "p3:discover": "tsx scripts/p3-discover.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
     "api": "tsx src/api/server.ts",
     "start": "tsx src/api/server.ts",

@@ -24,6 +24,7 @@ import { generateSyntheticTransit, type InjectedTruth } from "../data/synthetic.
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
 import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
+import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -56,6 +57,14 @@ export interface OrchestratorOptions {
   resume?: boolean;
   /** inject a catalog (tests / offline); otherwise fetched live. */
   catalog?: ArchiveFetchResult;
+  /**
+   * Attempt anonymous MAST CAOM discovery for targets that are not in the
+   * curated registry, before falling back to the synthetic stand-in. Off by
+   * default: verified 2026-10-10 that the CAOM query services return empty for
+   * anonymous callers, so this only pays off when MAST_DISCOVER (or a token)
+   * is supplied on a network where the portal responds.
+   */
+  discoverMast?: boolean;
   /** run label for logging. */
   runId?: string;
 }
@@ -98,6 +107,7 @@ export interface RunSummary {
 export class Orchestrator {
   readonly store: RigStore;
   private opts: Required<Pick<OrchestratorOptions, "maxTargets" | "maxTmag" | "minPeriodDays" | "maxPeriodDays" | "confidenceTrials" | "stageDelayMs" | "outDir" | "snapshotPath" | "resume">>;
+  private discoverMast: boolean;
   private catalogOverride?: ArchiveFetchResult;
   private codeVersion: string;
   private artifacts: FsArtifactStore;
@@ -117,6 +127,7 @@ export class Orchestrator {
       resume: options.resume ?? false,
     };
     this.catalogOverride = options.catalog;
+    this.discoverMast = options.discoverMast ?? (typeof process !== "undefined" && process.env?.MAST_DISCOVER === "1");
     this.codeVersion = readCodeVersion(resolve(REPO_ROOT, "package.json"));
     this.artifacts = new FsArtifactStore(this.opts.outDir);
   }
@@ -261,9 +272,26 @@ export class Orchestrator {
         truth = built.truth;
       }
     } else {
-      const built = this.buildStandIn(planet, index, cat.source);
-      lc = built.lc;
-      truth = built.truth;
+      // Not curated: optionally let MAST discovery find a real product by
+      // coordinate before falling back to the stand-in. Anonymous CAOM queries
+      // return empty (verified), so this is a no-op unless a token/network
+      // makes the portal respond -- the stand-in keeps the run deterministic.
+      let discovered: LightCurve | null = null;
+      if (this.discoverMast && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)) {
+        this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- asking MAST to discover one at (${planet.ra!.toFixed(3)}, ${planet.dec!.toFixed(3)}) ...`);
+        discovered = await discoverAndFetchLightCurve(planet.ra!, planet.dec!, name);
+      }
+      if (discovered) {
+        lc = discovered;
+        truth = truthFromCatalog(planet);
+        lc.source = `${lc.source}; ${cat.source ? `catalog source=${cat.source}` : ""}`.trim();
+        this.store.emitEvent("data-fetch", "result", `Discovered real MAST photometry for ${name} via anonymous CAOM query.`);
+      } else {
+        if (this.discoverMast) this.store.emitEvent("data-fetch", "warn", `MAST discovery returned nothing for ${name} (anonymous CAOM queries are empty without a token) -- using the synthetic stand-in.`);
+        const built = this.buildStandIn(planet, index, cat.source);
+        lc = built.lc;
+        truth = built.truth;
+      }
     }
     lc.dataHash = await computeDataHash(lc);
 

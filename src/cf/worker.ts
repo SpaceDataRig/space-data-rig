@@ -19,6 +19,7 @@ import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
+import { explorerUrl } from "../solana/anchor-core.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -292,6 +293,51 @@ app.post("/api/anchor/:id", async (c) => {
   const dryRun = Boolean(body.dryRun);
   const res = await rigStub(c.env).anchorFinding(id, { dryRun });
   return c.json(res, res.httpStatus as 200 | 400 | 404 | 500);
+});
+
+// Anchor the sealed DELIBERATION receipt on Solana mainnet with a SEPARATE memo schema
+// (sdr:delib:1|<id>|<hash>). This never touches the science bundle ledger. Idempotent per
+// (finding, deliberationHash): a prior successful tx is replayed without spending fees
+// again. dryRun previews the memo without touching the chain or the keypair.
+app.post("/api/anchor/:id/deliberation", async (c) => {
+  const id = safeName(c.req.param("id") ?? "");
+  if (!id) return c.json({ error: "finding not found" }, 404);
+  const store = artifacts(c.env);
+  const deliberationHash = (await store.getText(`deliberations/${id}/HASH.txt`))?.trim() ?? "";
+  if (!deliberationHash)
+    return c.json({ error: "no sealed deliberation for this finding (open the thread to seal it first)" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const dryRun = Boolean(body.dryRun);
+
+  // Idempotency guard: reuse a prior successful anchor of the SAME hash (no repeat spend).
+  if (!dryRun) {
+    const priorText = await store.getText(`deliberations/${id}/anchor.json`);
+    if (priorText) {
+      try {
+        const prior = JSON.parse(priorText) as { signature?: string; deliberationHash?: string; slot?: number; memo?: string };
+        if (prior.signature && prior.deliberationHash === deliberationHash) {
+          return c.json({ ok: true, alreadyAnchored: true, deliberationHash, memo: prior.memo, signature: prior.signature, slot: prior.slot, explorerUrl: explorerUrl(prior.signature), httpStatus: 200 });
+        }
+      } catch { /* corrupt/old record: fall through and re-anchor */ }
+    }
+  }
+
+  const res = await rigStub(c.env).anchorDeliberation(id, deliberationHash, { dryRun });
+  const status = res.httpStatus as 200 | 400 | 404 | 500;
+  if (!dryRun && res.ok && res.signature) {
+    const record = { findingId: id, deliberationHash, memo: res.memo, signature: res.signature, slot: res.slot, explorerUrl: explorerUrl(res.signature), anchoredAt: new Date().toISOString() };
+    await store.put(`deliberations/${id}/anchor.json`, JSON.stringify(record, null, 2), "application/json").catch(() => { /* persistence is best-effort */ });
+    return c.json({ ...res, deliberationHash, explorerUrl: record.explorerUrl }, status);
+  }
+  return c.json({ ...res, deliberationHash }, status);
+});
+
+// Read back any existing on-chain deliberation anchor for one finding (for the UI chip).
+app.get("/api/discussion/:id/anchor", async (c) => {
+  const id = safeName(c.req.param("id") ?? "");
+  const text = id ? await artifacts(c.env).getText(`deliberations/${id}/anchor.json`) : null;
+  if (text == null) return c.json({ anchored: false });
+  return c.json({ anchored: true, ...(JSON.parse(text) as Record<string, unknown>) });
 });
 
 app.notFound((c) => c.json({ error: "not found", path: c.req.path }, 404));

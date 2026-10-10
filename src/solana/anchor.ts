@@ -19,8 +19,11 @@ import { fileURLToPath } from "node:url";
 import { Keypair } from "@solana/web3.js";
 import {
   anchorOnEndpoints,
+  anchorMemoOnEndpoints,
   buildMemo,
+  buildDeliberationMemo,
   DEFAULT_RPC,
+  DELIB_MEMO_PREFIX,
   endpointList,
   explorerUrl,
   keypairFromSecretBytes,
@@ -30,7 +33,7 @@ import {
   type VerifyResult,
 } from "./anchor-core.ts";
 
-export { buildMemo, DEFAULT_RPC, explorerUrl, MEMO_PREFIX, MEMO_PROGRAM_ID };
+export { buildMemo, buildDeliberationMemo, DEFAULT_RPC, DELIB_MEMO_PREFIX, explorerUrl, MEMO_PREFIX, MEMO_PROGRAM_ID };
 
 export interface AnchorOptions {
   rpcUrl?: string;
@@ -156,6 +159,39 @@ export async function anchorBundleHash(
 /** Independently verify an anchor against the chain (no trust in local state). */
 export function verifyAnchor(signature: string, bundleHash: string, rpcUrl?: string): Promise<VerifyResult> {
   return verifyOnEndpoints(rpcCandidates(rpcUrl), signature, bundleHash);
+}
+
+/**
+ * Anchor a sealed DELIBERATION receipt hash on Solana with the SEPARATE sdr:delib:1 memo
+ * schema (never the science bundle memo). Same endpoint walk + keypair as anchorBundleHash;
+ * dryRun previews the memo without touching the network or the keypair.
+ */
+export async function anchorDeliberationHash(
+  findingId: string,
+  deliberationHash: string,
+  opts: AnchorOptions = {},
+): Promise<AnchorResult> {
+  const memo = buildDeliberationMemo(findingId, deliberationHash);
+  if (opts.dryRun) return { ok: true, memo, dryRun: true };
+
+  const endpoints = rpcCandidates(opts.rpcUrl);
+  const keypairPath = opts.keypairPath ?? process.env.SOLANA_KEYPAIR ?? resolve("out", "anchor-keypair.json");
+  let kp: Keypair;
+  try {
+    kp = await getOrCreateKeypair(keypairPath);
+  } catch (e) {
+    return { ok: false, memo, error: `keypair load failed (${keypairPath}): ${e instanceof Error ? e.message : String(e)}` };
+  }
+  const res = await anchorMemoOnEndpoints(endpoints, kp, memo, {
+    airdropSol: opts.airdropSol,
+    commitment: opts.commitment,
+  });
+  return { ...res, dryRun: false };
+}
+
+/** Independently verify a deliberation anchor against the chain (delib memo prefix). */
+export function verifyDeliberationAnchor(signature: string, deliberationHash: string, rpcUrl?: string): Promise<VerifyResult> {
+  return verifyOnEndpoints(rpcCandidates(rpcUrl), signature, deliberationHash, DELIB_MEMO_PREFIX);
 }
 
 // ---- local anchor ledger (fs; mirrors on-chain state for the CLI + server) ---

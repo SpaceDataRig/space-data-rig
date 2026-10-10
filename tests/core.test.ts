@@ -8,7 +8,9 @@ import { canonicalJson, sha256Hex } from "../src/bundle/bundle.ts";
 import {
   DEFAULT_RPC,
   MEMO_PREFIX,
+  DELIB_MEMO_PREFIX,
   buildMemo,
+  buildDeliberationMemo,
   endpointList,
   explorerUrl,
   isDevnetRpc,
@@ -45,6 +47,17 @@ test("buildMemo emits the versioned three-field pipe format", () => {
   const memo = buildMemo("F-HR-858-b", hash);
   assert.equal(memo, `${MEMO_PREFIX}|F-HR-858-b|${hash}`);
   assert.equal(memo.split("|").length, 3);
+});
+
+test("buildDeliberationMemo uses a distinct prefix so it never collides with the science bundle memo", () => {
+  const hash = "a".repeat(64);
+  const memo = buildDeliberationMemo("F-HR-858-b", hash);
+  assert.equal(memo, `${DELIB_MEMO_PREFIX}|F-HR-858-b|${hash}`);
+  assert.equal(memo.split("|").length, 3);
+  // The deliberation memo must be tellable apart from the bundle memo for the same id/hash.
+  assert.notEqual(DELIB_MEMO_PREFIX, MEMO_PREFIX);
+  assert.ok(!memo.startsWith(MEMO_PREFIX + "|"));
+  assert.ok(memo.startsWith(DELIB_MEMO_PREFIX + "|"));
 });
 
 test("explorerUrl targets mainnet", () => {

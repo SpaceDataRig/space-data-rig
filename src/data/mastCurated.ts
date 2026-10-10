@@ -10,10 +10,11 @@
 //     is open and stable, and serves real FITS bytes.
 // A curated host -> product-URI map therefore gives the pipeline real
 // photometry today, and every entry is an easy "good first issue" contribution
-// (verify one URI, add one line). See ./mastDiscover.ts for the best-effort
-// auto-discovery path (used when a MAST token makes the portal respond). The
-// synthetic stand-in remains the default whenever a target is not in this list
-// or a download fails.
+// (verify one URI, add one line, then run `npm run mast:validate` -- it downloads
+// and FITS-checks every entry and fails loudly if any URI stops resolving to real
+// TESS photometry). See ./mastDiscover.ts for the best-effort auto-discovery path
+// (used when a MAST token makes the portal respond). The synthetic stand-in
+// remains the default whenever a target is not in this list or a download fails.
 
 import type { ArchivePlanet } from "../core/types.ts";
 import type { InjectedTruth } from "./synthetic.ts";
@@ -39,6 +40,15 @@ const REGISTRY: Record<string, CuratedMastProduct> = {
 export function curatedMastFor(hostName?: string | null): CuratedMastProduct | null {
   if (!hostName) return null;
   return REGISTRY[hostName.toLowerCase()] ?? null;
+}
+
+/**
+ * Enumerate every curated entry (host -> product). Used by the registry validator
+ * (`npm run mast:validate`) and contribution tooling, so a newly added line is
+ * automatically download- and FITS-checked rather than trusted on sight.
+ */
+export function listCuratedMast(): { host: string; product: CuratedMastProduct }[] {
+  return Object.entries(REGISTRY).map(([host, product]) => ({ host, product }));
 }
 
 /**

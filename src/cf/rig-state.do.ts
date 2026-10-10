@@ -35,7 +35,9 @@ import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
 import {
   anchorOnEndpoints,
+  anchorMemoOnEndpoints,
   buildMemo,
+  buildDeliberationMemo,
   endpointList,
   explorerUrl,
   keypairFromSecretJson,
@@ -524,6 +526,46 @@ export class RigStateDO extends DurableObject<Env> {
       res.ok && res.signature
         ? `Anchored ${findingId} on mainnet: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}).`
         : `Anchor failed for ${findingId}: ${res.error ?? "unknown"} -- the bundle hash is still valid off-chain.`,
+    );
+    return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
+  }
+
+  /**
+   * Anchor a sealed DELIBERATION receipt hash on Solana mainnet using a SEPARATE memo
+   * schema (sdr:delib:1|<id>|<hash>) -- deliberately distinct from the science bundle memo
+   * and never written to the SQLite bundle ledger. Chain I/O runs inside the DO exactly
+   * like anchorFinding (serialised fee-payer, wall-clock bound). The Worker route owns
+   * idempotency + R2 persistence of the resulting tx; this method only builds/sends the
+   * memo (or previews it on dryRun) and returns a plain serializable result.
+   */
+  async anchorDeliberation(
+    findingId: string,
+    deliberationHash: string,
+    opts?: { dryRun?: boolean },
+  ): Promise<{ ok: boolean; memo?: string; signature?: string; slot?: number; error?: string; httpStatus: number; dryRun?: boolean }> {
+    if (!deliberationHash) return { ok: false, httpStatus: 400, error: "no deliberation hash to anchor (seal the receipt first)" };
+    const memo = buildDeliberationMemo(findingId, deliberationHash);
+    if (opts?.dryRun) return { ok: true, memo, dryRun: true, httpStatus: 200 };
+    if (!this.env.SOLANA_KEYPAIR)
+      return { ok: false, memo, httpStatus: 400, error: "no SOLANA_KEYPAIR secret configured on the Worker (set it with: wrangler secret put SOLANA_KEYPAIR)" };
+
+    const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
+    await this.emitEvent("reporter", "info", `Anchoring deliberation for ${findingId} on Solana mainnet...`);
+
+    let res: AnchorCoreResult;
+    try {
+      const kp = await keypairFromSecretJson(this.env.SOLANA_KEYPAIR);
+      res = await anchorMemoOnEndpoints(endpoints, kp, memo, { commitment: "confirmed" });
+    } catch (e) {
+      res = { ok: false, memo, error: e instanceof Error ? e.message : String(e) };
+    }
+
+    await this.emitEvent(
+      "reporter",
+      res.ok ? "result" : "warn",
+      res.ok && res.signature
+        ? `Anchored deliberation for ${findingId}: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}).`
+        : `Deliberation anchor failed for ${findingId}: ${res.error ?? "unknown"} -- the receipt hash is still valid off-chain.`,
     );
     return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
   }

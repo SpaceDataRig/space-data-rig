@@ -31,6 +31,9 @@ export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqX
 /** Public mainnet RPC: the last-resort fallback when no private endpoint answers. */
 export const DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
 export const MEMO_PREFIX = "sdr:1"; // space-data-rig, memo schema v1
+/** Separate memo schema for the (non-reproducible) AI deliberation receipt. Kept distinct
+ *  from the science bundle prefix so an auditor can tell the two on-chain records apart. */
+export const DELIB_MEMO_PREFIX = "sdr:delib:1";
 
 /** Public endpoints tried (in order) after the operator's private RPC(s). */
 export const PUBLIC_FALLBACK_RPCS = ["https://api.mainnet-beta.solana.com"];
@@ -38,6 +41,11 @@ export const PUBLIC_FALLBACK_RPCS = ["https://api.mainnet-beta.solana.com"];
 /** Compact, parseable on-chain provenance record. */
 export function buildMemo(findingId: string, bundleHash: string): string {
   return `${MEMO_PREFIX}|${findingId}|${bundleHash}`;
+}
+
+/** On-chain record for a sealed deliberation receipt (integrity of model commentary). */
+export function buildDeliberationMemo(findingId: string, deliberationHash: string): string {
+  return `${DELIB_MEMO_PREFIX}|${findingId}|${deliberationHash}`;
 }
 
 export function explorerUrl(signature: string): string {
@@ -179,7 +187,21 @@ export async function anchorOnEndpoints(
   bundleHash: string,
   opts: AnchorSendOptions = {},
 ): Promise<AnchorCoreResult> {
-  const memo = buildMemo(findingId, bundleHash);
+  return anchorMemoOnEndpoints(endpoints, kp, buildMemo(findingId, bundleHash), opts);
+}
+
+/**
+ * Anchor an arbitrary pre-built memo string -- the shared chain path for BOTH the science
+ * bundle (`sdr:1|...`) and the deliberation receipt (`sdr:delib:1|...`). Walks the ordered
+ * endpoint list, submitting via the first that funds + sends + confirms; returns the first
+ * success or an aggregate (host-only, redacted) error.
+ */
+export async function anchorMemoOnEndpoints(
+  endpoints: string[],
+  kp: Keypair,
+  memo: string,
+  opts: AnchorSendOptions = {},
+): Promise<AnchorCoreResult> {
   const failures: string[] = [];
   const commitment = opts.commitment ?? "confirmed";
 
@@ -264,6 +286,7 @@ export async function verifyOnEndpoints(
   endpoints: string[],
   signature: string,
   bundleHash: string,
+  prefix: string = MEMO_PREFIX,
 ): Promise<VerifyResult> {
   let lastError = "";
   for (const url of endpoints) {
@@ -281,7 +304,7 @@ export async function verifyOnEndpoints(
         if (!dataB58) continue;
         try {
           const decoded = base58ToText(dataB58);
-          if (decoded.startsWith(MEMO_PREFIX)) memoText = decoded;
+          if (decoded.startsWith(prefix)) memoText = decoded;
         } catch {
           /* not base58 memo data; skip */
         }

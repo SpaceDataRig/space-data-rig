@@ -32,6 +32,7 @@ import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import {
   anchorBundleHash,
+  anchorDeliberationHash,
   upsertLedger,
   readLedger,
   explorerUrl,
@@ -401,6 +402,52 @@ app.post("/api/anchor/:id", async (c) => {
   else store.emitEvent("reporter", "warn", `Anchor failed for ${f.id}: ${res.error ?? "unknown"} -- the bundle hash is still valid off-chain.`);
 
   return c.json(res);
+});
+
+// Anchor the sealed DELIBERATION receipt on Solana mainnet with a SEPARATE memo schema
+// (sdr:delib:1|<id>|<hash>). Never touches the science bundle ledger. Idempotent per
+// (finding, deliberationHash): replays a prior tx without spending mainnet fees again.
+// dryRun previews the memo without touching the chain or the keypair.
+app.post("/api/anchor/:id/deliberation", async (c) => {
+  const id = safeName(c.req.param("id"));
+  const deliberationHash = id ? (await artifacts.getText(`deliberations/${id}/HASH.txt`))?.trim() ?? "" : "";
+  if (!id || !deliberationHash)
+    return c.json({ error: "no sealed deliberation for this finding (open the thread to seal it first)" }, 404);
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const dryRun = Boolean(body.dryRun);
+
+  // Idempotency guard (mirrors the edge route): reuse a prior successful anchor of the SAME hash.
+  if (!dryRun) {
+    const priorText = await artifacts.getText(`deliberations/${id}/anchor.json`);
+    if (priorText) {
+      try {
+        const prior = JSON.parse(priorText) as { signature?: string; deliberationHash?: string; slot?: number; memo?: string; explorerUrl?: string };
+        if (prior.signature && prior.deliberationHash === deliberationHash)
+          return c.json({ ok: true, alreadyAnchored: true, deliberationHash, memo: prior.memo, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl ?? explorerUrl(prior.signature) });
+      } catch { /* corrupt/old record: fall through and re-anchor */ }
+    }
+  }
+
+  store.emitEvent("reporter", "info", `Anchoring deliberation for ${id}${dryRun ? " (dry-run)" : ""}...`);
+  const res = await anchorDeliberationHash(id, deliberationHash, { dryRun });
+
+  if (!dryRun && res.ok && res.signature) {
+    const record = { findingId: id, deliberationHash, memo: res.memo, signature: res.signature, slot: res.slot, explorerUrl: explorerUrl(res.signature), anchoredAt: new Date().toISOString() };
+    await artifacts.put(`deliberations/${id}/anchor.json`, JSON.stringify(record, null, 2)).catch(() => { /* persistence is best-effort */ });
+    store.emitEvent("reporter", "result", `Anchored deliberation for ${id}: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}). ${record.explorerUrl}`);
+    return c.json({ ...res, deliberationHash, explorerUrl: record.explorerUrl });
+  }
+  if (dryRun) store.emitEvent("reporter", "info", `Dry-run deliberation memo for ${id}: ${res.memo}`);
+  else if (!res.ok) store.emitEvent("reporter", "warn", `Deliberation anchor failed for ${id}: ${res.error ?? "unknown"} -- the receipt hash is still valid off-chain.`);
+  return c.json({ ...res, deliberationHash });
+});
+
+// Read back any existing on-chain deliberation anchor for one finding (for the UI chip).
+app.get("/api/discussion/:id/anchor", async (c) => {
+  const id = safeName(c.req.param("id"));
+  const text = id ? await artifacts.getText(`deliberations/${id}/anchor.json`) : null;
+  if (text == null) return c.json({ anchored: false });
+  return c.json({ anchored: true, ...(JSON.parse(text) as Record<string, unknown>) });
 });
 
 // ---- static dashboard ------------------------------------------------------

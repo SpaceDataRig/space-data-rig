@@ -114,11 +114,37 @@ function renderDeliberationReceipt(findingId, hash, models) {
     `(<span class="t-model">${esc(hash.slice(0, 16))}&hellip;</span>). This seals the commentary only -- ` +
     `it is not reproducible science, and is separate from the finding's bundle hash.</div>` +
     `<div class="card-actions"><button class="btn tiny ghost" data-verify-delib="${esc(findingId)}">Verify receipt</button>` +
-    `<span class="verify-out" data-delib-status></span></div></div>`;
+    `<button class="btn tiny" data-anchor-delib="${esc(findingId)}">Anchor on-chain</button>` +
+    `<span class="verify-out" data-delib-status></span>` +
+    `<div class="verify-out" data-delib-anchor></div></div></div>`;
   transcriptEl.appendChild(row);
+  loadDelibAnchor(findingId);
+}
+
+// Fetch any existing on-chain deliberation anchor and show it under the receipt chip.
+async function loadDelibAnchor(findingId) {
+  const out = transcriptEl.querySelector(".t-receipt [data-delib-anchor]");
+  if (!out) return;
+  try {
+    const a = await fetchJSON(`/api/discussion/${encodeURIComponent(findingId)}/anchor`);
+    if (a && a.anchored) renderDelibAnchor(out, a);
+  } catch { /* no anchor yet: stay silent */ }
+}
+
+// Render the on-chain deliberation anchor state (separate sdr:delib memo from the bundle).
+function renderDelibAnchor(out, a) {
+  if (!out) return;
+  const url = a.explorerUrl || (a.signature ? `https://explorer.solana.com/tx/${a.signature}?cluster=mainnet` : null);
+  const tx = a.signature ? `${String(a.signature).slice(0, 16)}...` : "";
+  out.className = "verify-out ok";
+  out.innerHTML = url
+    ? `deliberation anchored on mainnet (slot ${esc(String(a.slot ?? "?"))}) - <a href="${esc(url)}" target="_blank" rel="noopener">${esc(tx)}</a>`
+    : `deliberation anchored on mainnet`;
 }
 
 transcriptEl.addEventListener("click", async (e) => {
+  const abtn = e.target.closest?.("[data-anchor-delib]");
+  if (abtn) { await handleAnchorDelib(abtn); return; }
   const btn = e.target.closest?.("[data-verify-delib]");
   if (!btn) return;
   const id = btn.getAttribute("data-verify-delib");
@@ -139,6 +165,30 @@ transcriptEl.addEventListener("click", async (e) => {
     btn.disabled = false;
   }
 });
+
+// Anchor the sealed deliberation receipt on Solana mainnet (separate sdr:delib memo).
+// Spends real SOL, so make it a deliberate act; repeat anchors of the same hash are free.
+async function handleAnchorDelib(btn) {
+  const id = btn.getAttribute("data-anchor-delib");
+  const out = transcriptEl.querySelector(".t-receipt [data-delib-anchor]");
+  if (!window.confirm("Anchor writes a real Solana MAINNET memo of this deliberation receipt and spends project SOL. Repeat anchors of the same receipt are free. Continue?")) return;
+  btn.disabled = true;
+  if (out) { out.className = "verify-out"; out.textContent = "submitting memo to mainnet..."; }
+  try {
+    const r = await fetch(`/api/anchor/${encodeURIComponent(id)}/deliberation`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const res = await r.json();
+    if (res.ok && res.signature) {
+      renderDelibAnchor(out, { anchored: true, signature: res.signature, slot: res.slot, explorerUrl: res.explorerUrl });
+    } else if (out) {
+      out.className = "verify-out bad";
+      out.textContent = `anchor failed: ${res.error || "unknown"}`;
+    }
+  } catch (err) {
+    if (out) { out.className = "verify-out bad"; out.textContent = `anchor error: ${err.message}`; }
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 // make a seat the live speaker in the 3D room + HUD, auto-clear the floor
 function takeFloor(seat, text) {

@@ -77,18 +77,46 @@ export async function buildDiscussion(f: Finding, creds?: LlmCred | LlmCred[]): 
     `Signal: period ${c.periodDays.toFixed(3)} d, depth ${ppm(c.depthFrac)} ppm, SNR ${c.snr.toFixed(1)}, ` +
     `duration ${c.durationHours.toFixed(2)} h, recovery confidence ${f.recoveryConfidence != null ? pct(f.recoveryConfidence) : "unknown"}, ` +
     `cross-match ${f.crossmatch.matchedKnownPlanet ? f.crossmatch.knownPlanetName : "none"}, verdict ${f.verdict}.`;
-  // Ask every model at the same time so total latency is one call, not N; a provider that
-  // returns null (unconfigured/failed) simply contributes no turn, so the thread stays honest.
-  const reviews = await Promise.all(
+  // Round 1 -- ask every model at the same time (latency is one call, not N). A provider
+  // that returns null (unconfigured/failed) contributes no turn, so the thread stays honest.
+  const r1 = await Promise.all(
     providers.map(async (p, i) => {
       const lens = lensForProvider(p, i);
       const text = await completeWithProvider(p, lens.system, `${numbers} ${lens.ask}`, { maxTokens: 120 });
       return { p, lens, text };
     }),
   );
-  const extra: DiscussionTurn[] = reviews
-    .filter((x) => x.text)
-    .map((x) => ({ seat: "mission-critic", ts: f.createdAt, tone: x.lens.tone, text: `[${x.lens.role}] ${x.text as string}`, model: x.p.name }));
+  const opening = r1.filter((x) => x.text);
+  const extra: DiscussionTurn[] = opening.map((x) => ({
+    seat: "mission-critic", ts: f.createdAt, tone: x.lens.tone,
+    text: `[${x.lens.role}] ${x.text as string}`, model: x.p.name,
+  }));
+
+  // Round 2 -- genuine cross-examination, but only when at least two reviewers opened.
+  // Each model is shown the OTHERS' round-1 points and must concede what is right, hold
+  // what is wrong, or add what was missed -- the two AIs actually argue, not monologue.
+  // Same parallel shape; a silent/failing model just skips its rebuttal.
+  if (opening.length >= 2) {
+    const rebuttals = await Promise.all(
+      opening.map(async (self, si) => {
+        const others = opening
+          .map((o, oi) => (oi === si ? null : `${o.p.name}: "${o.text}"`))
+          .filter(Boolean)
+          .join("  ");
+        const sys =
+          `${self.lens.system} You are now in a cross-examination with another reviewer. ` +
+          `Concede the parts of their argument that are correct, defend the parts they got wrong, and add anything they missed. ` +
+          `One short sentence. Never invent a number that was not given.`;
+        const user = `${numbers} Your earlier point: "${self.text}". The other reviewer said -> ${others} Respond to them in one sentence.`;
+        const text = await completeWithProvider(self.p, sys, user, { maxTokens: 90 });
+        return { p: self.p, lens: self.lens, text };
+      }),
+    );
+    for (const y of rebuttals) {
+      if (y.text) extra.push({ seat: "mission-critic", ts: f.createdAt, tone: "speak", text: `[Cross-exam · ${y.lens.role}] ${y.text as string}`, model: y.p.name });
+    }
+  }
+
   turns.splice(turns.length - 1, 0, ...extra);
   return turns;
 }

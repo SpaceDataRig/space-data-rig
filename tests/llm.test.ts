@@ -83,11 +83,11 @@ test("lensForProvider maps DeepSeek to statistical and Grok to red-team regardle
 
 // ---- buildDiscussion multi-model caveat layering (mocked fetch) ----
 
-test("buildDiscussion adds one labeled caveat per configured model", async () => {
+test("buildDiscussion runs a two-round cross-examination when both models answer", async () => {
   const orig = globalThis.fetch;
   globalThis.fetch = (async (_u: string, init?: { body?: string }) => {
     const model = JSON.parse(String(init?.body)).model as string;
-    return new Response(JSON.stringify({ choices: [{ message: { content: `caveat from ${model}` } }] }), { status: 200 });
+    return new Response(JSON.stringify({ choices: [{ message: { content: `note from ${model}` } }] }), { status: 200 });
   }) as never;
   try {
     const creds = [
@@ -96,16 +96,21 @@ test("buildDiscussion adds one labeled caveat per configured model", async () =>
     ];
     const turns = await buildDiscussion(sampleFinding(), creds);
     const caveats = turns.filter((t) => t.model);
-    assert.equal(caveats.length, 2, "expected one turn per model");
-    assert.deepEqual(caveats.map((t) => t.model).sort(), ["deepseek-chat", "grok-4.7"]);
-    // each model got a DIFFERENT lens: distinct role prefix + distinct tone
-    const ds = caveats.find((t) => t.model === "deepseek-chat")!;
-    const grok = caveats.find((t) => t.model === "grok-4.7")!;
+    // Round 1 (one per model) + Round 2 rebuttals (one per model) = 4 labeled turns.
+    assert.equal(caveats.length, 4, "expected 2 opening + 2 rebuttal turns");
+    const openings = caveats.filter((t) => !t.text.startsWith("[Cross-exam"));
+    const rebuttals = caveats.filter((t) => t.text.startsWith("[Cross-exam"));
+    assert.equal(openings.length, 2);
+    assert.equal(rebuttals.length, 2);
+    // distinct lenses in round 1
+    const ds = openings.find((t) => t.model === "deepseek-chat")!;
+    const grok = openings.find((t) => t.model === "grok-4.7")!;
     assert.ok(ds.text.startsWith("[Statistical critic]"), ds.text);
     assert.ok(grok.text.startsWith("[Red-team reviewer]"), grok.text);
     assert.equal(ds.tone, "challenge");
     assert.equal(grok.tone, "hedge");
-    // caveats sit before the final reporter summary
+    // every rebuttal is model-labeled and still sits before the reporter summary
+    assert.deepEqual([...new Set(rebuttals.map((t) => t.model))].sort(), ["deepseek-chat", "grok-4.7"]);
     assert.equal(turns[turns.length - 1].seat, "reporter");
   } finally {
     globalThis.fetch = orig;

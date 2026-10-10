@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/cf/**/*.ts",
+    "src/core/types.ts",
+    "src/core/ports.ts",
+    "src/core/state-types.ts",
+    "src/bundle/**/*.ts",
+    "src/detect/**/*.ts",
+    "src/sim/**/*.ts",
+    "src/critic/**/*.ts",
+    "src/reporter/**/*.ts",
+    "src/data/**/*.ts",
+    "src/seats/**/*.ts",
+    "src/ai/threads.ts",
+    "src/ai/llm.ts",
+    "src/ai/discussion.ts",
+    "src/solana/anchor-core.ts"
+  ]
+}

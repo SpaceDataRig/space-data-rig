@@ -1,0 +1,122 @@
+# Space Data Rig -- OpenRig RigSpec (version 0.2, pod-aware)
+#
+# A reproducible exoplanet-transit science rig. One pod ("science") runs a
+# linear five-seat pipeline over public NASA/MAST data:
+#
+#   data-fetch -> anomaly-scout -> sim-runner -> mission-critic -> reporter
+#
+# The heavy science is deterministic TypeScript (BLS, injection-recovery,
+# transit model) so results are reproducible and hash-verifiable; the seats are
+# agent operators that invoke those tools, handle exceptions, decide follow-ups
+# and narrate. A Docker Compose service block boots the dashboard/API and the
+# simulation worker before any agent launches (OpenRig "Agent-Managed Software").
+#
+# Launch from the repository root (see openrig/README.md):
+#   rig spec validate ./openrig/rig.yaml
+#   rig up ./openrig --cwd .
+
+version: "0.2"
+name: space-data-rig
+summary: >
+  Reproducible exoplanet-transit detection over public NASA/MAST data. Five
+  seats run a deterministic pipeline and anchor each accepted finding as a
+  SHA-256-verified bundle on Solana mainnet.
+
+culture_file: CULTURE.md
+
+docs:
+  - path: README.md
+
+# --- managed services (booted before agents) --------------------------------
+services:
+  kind: compose
+  compose_file: docker-compose.yaml
+  project_name: space-data-rig
+  down_policy: down
+  wait_for:
+    - url: http://127.0.0.1:8787/health
+  surfaces:
+    urls:
+      - name: Dashboard
+        url: http://127.0.0.1:8787
+      - name: Live event stream (SSE)
+        url: http://127.0.0.1:8787/api/events
+    commands:
+      - name: Run pipeline (native)
+        command: "npm run orchestrator -- --targets 6"
+      - name: Anchor bundles on Solana mainnet
+        command: "npm run anchor"
+
+pods:
+  - id: science
+    label: Science Pipeline
+    summary: >
+      Deterministic transit-detection pipeline. Each seat owns one stage and
+      hands a typed artifact to the next.
+    continuity_policy:
+      enabled: true
+      sync_triggers: [pre_compaction, pre_shutdown, milestone]
+      artifacts:
+        session_log: true
+        restore_brief: true
+      restore_protocol:
+        peer_driven: true
+        verify_via_quiz: false
+    members:
+      - id: fetch
+        agent_ref: "local:agents/data-fetch"
+        profile: default
+        runtime: claude-code
+        cwd: ".."
+        label: "Data Fetch"
+        restore_policy: resume_if_possible
+      - id: scout
+        agent_ref: "local:agents/anomaly-scout"
+        profile: default
+        runtime: claude-code
+        cwd: ".."
+        label: "Anomaly Scout"
+        restore_policy: resume_if_possible
+      - id: sim
+        agent_ref: "local:agents/sim-runner"
+        profile: default
+        runtime: codex
+        cwd: ".."
+        label: "Sim Runner"
+        restore_policy: resume_if_possible
+      - id: critic
+        agent_ref: "local:agents/mission-critic"
+        profile: default
+        runtime: codex
+        cwd: ".."
+        label: "Mission Critic"
+        restore_policy: resume_if_possible
+      - id: reporter
+        agent_ref: "local:agents/reporter"
+        profile: default
+        runtime: claude-code
+        cwd: ".."
+        label: "Reporter"
+        restore_policy: resume_if_possible
+    edges:
+      - kind: delegates_to
+        from: fetch
+        to: scout
+      - kind: delegates_to
+        from: scout
+        to: sim
+      - kind: delegates_to
+        from: sim
+        to: critic
+      - kind: delegates_to
+        from: critic
+        to: reporter
+      - kind: can_observe
+        from: reporter
+        to: fetch
+      - kind: can_observe
+        from: critic
+        to: scout
+
+# No cross-pod edges (single-pod rig).
+edges: []

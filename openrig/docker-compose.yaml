@@ -1,0 +1,56 @@
+# Space Data Rig -- Docker Compose (managed by the OpenRig services block).
+#
+#   docker compose -f openrig/docker-compose.yaml up --build
+#
+# Two roles share one image and one output volume:
+#   - api        : dashboard + SSE event stream (http://localhost:8787)
+#   - sim-runner : science worker that runs the detection pipeline and writes
+#                  findings/bundles/snapshot into the shared ./out volume, which
+#                  the API then serves live.
+#
+# Under WSL2 this is the "plug-and-play" path: `rig up ./openrig --cwd .` boots
+# these services first (the RigSpec waits on the API health URL) and then starts
+# the five agent seats.
+
+name: space-data-rig
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: openrig/Dockerfile
+    image: space-data-rig:latest
+    command: ["npm", "run", "api"]
+    environment:
+      PORT: "8787"
+      HOST: "0.0.0.0"
+      SOLANA_RPC: "https://api.mainnet-beta.solana.com"
+    ports:
+      - "8787:8787"
+    volumes:
+      - rig-out:/app/out
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  sim-runner:
+    image: space-data-rig:latest
+    depends_on:
+      api:
+        condition: service_started
+    # One-shot science worker: fetch real targets, detect, simulate, review,
+    # bundle. Re-run with `docker compose -f openrig/docker-compose.yaml run
+    # --rm sim-runner` to process more targets into the shared volume.
+    command: ["npm", "run", "orchestrator", "--", "--targets", "6", "--confidence", "6"]
+    environment:
+      SOLANA_RPC: "https://api.mainnet-beta.solana.com"
+    volumes:
+      - rig-out:/app/out
+    restart: "no"
+
+volumes:
+  rig-out:

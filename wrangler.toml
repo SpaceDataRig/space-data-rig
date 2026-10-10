@@ -1,0 +1,78 @@
+# Space Data Rig :: Cloudflare Workers deployment descriptor.
+#
+# This is the edge target described in the migration blueprint: the whole rig
+# (live NASA fetch -> BLS/injection-recovery -> real-time seat feed -> reproducible
+# bundle -> Solana mainnet anchor) runs on Workers + Durable Objects + R2 + Workflows.
+#
+# Local iteration: `npx wrangler dev` (simulates DO/R2/Workflows locally). The Node
+# CLI (`npm run orchestrator`) stays as the pure-pipeline regression path.
+#
+# Deploy: `npx wrangler deploy` (requires a Cloudflare account; secrets via
+# `wrangler secret put`). Bindings below are wired in src/cf/*.
+
+name = "space-data-rig"
+main = "src/cf/worker.ts"
+compatibility_date = "2025-01-01"
+# node_compat gives web3 + a few libs the globals they expect (Buffer, etc.).
+# Note: node:fs / node:crypto are still unavailable on Workers; the core uses Web
+# Crypto + the R2/DO adapters instead (see src/cf/*).
+compatibility_flags = ["nodejs_compat"]
+
+# ---- custom domain ----------------------------------------------------------
+# The zone spacedatarig.app already lives in this account; the custom-domain route
+# provisions its DNS records automatically on deploy. The workers.dev subdomain
+# stays enabled as a fallback hostname. Add another entry here for www if wanted.
+# NOTE: keep this at the top level -- TOML would swallow it into [assets] below.
+routes = [
+  { pattern = "spacedatarig.app", custom_domain = true },
+]
+# keep the workers.dev subdomain as an operational fallback hostname once an
+# explicit route exists (wrangler disables it by default in that case)
+workers_dev = true
+preview_urls = false
+
+# ---- static assets (frontend) ---------------------------------------------
+# With run_worker_first = false (the default), a request that matches a file under
+# ./web is served straight from the asset pipeline (zero Worker CPU) -- this covers
+# index.html, app.js, styles.css, space.js and the local vendor/three.js bundle.
+# Only unmatched routes (/api/*, /health, the /api/events WebSocket) invoke the
+# Worker, exactly like the explicit static routes in the Node server.
+[assets]
+directory = "./web"
+binding = "ASSETS"
+
+# ---- Durable Object: authoritative rig state + real-time fan-out -----------
+[[durable_objects.bindings]]
+name = "RIG_STATE"
+class_name = "RigStateDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RigStateDO"]
+
+# ---- R2: reproducible bundle artifacts (SVGs, manifest.json, HASH.txt) -----
+[[r2_buckets]]
+binding = "RIG_ARTIFACTS"
+bucket_name = "space-data-rig-artifacts"
+
+# ---- Workflow: durable, CPU-budgeted pipeline run --------------------------
+# Each seat is its own step (sim-runner trials are further map-sharded) so no
+# single invocation exceeds the 30s Worker CPU limit while a multi-target run
+# streams progress to the DO.
+[[workflows]]
+binding = "RIG_RUN"
+class_name = "RigRunWorkflow"
+name = "rig-run"
+
+# ---- plain-text variables (non-secret) -------------------------------------
+[vars]
+CODE_VERSION = "space-data-rig@0.1.0"
+# Public mainnet RPC kept in this tracked file as a safe default + fallback.
+SOLANA_RPC_FALLBACKS = "https://api.mainnet-beta.solana.com"
+DISCUSSION_MODE = "grounded"
+
+# Secrets (set with `wrangler secret put <NAME>`, never committed here):
+#   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);
+#                                    falls back to SOLANA_RPC_FALLBACKS above
+#   OPENAI_API_KEY / DEEPSEEK_API_KEY  (optional live-model discussion)
+#   SOLANA_KEYPAIR                   mainnet fee-payer secret key JSON array (funded)

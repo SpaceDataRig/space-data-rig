@@ -1,0 +1,35 @@
+{
+  "name": "space-data-rig",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Space Data Rig - an OpenRig-style multi-agent pipeline for reproducible exoplanet transit detection on public NASA/MAST data, with Solana provenance anchoring.",
+  "scripts": {
+    "p0:benchmark": "tsx scripts/p0-benchmark.ts",
+    "p0:archive": "tsx scripts/p0-archive.ts",
+    "p0:detect": "tsx scripts/p0-detect.ts",
+    "orchestrator": "tsx src/orchestrator/run.ts",
+    "api": "tsx src/api/server.ts",
+    "start": "tsx src/api/server.ts",
+    "anchor": "tsx scripts/p2-anchor.ts",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
+    "typecheck:all": "npm run typecheck && npm run typecheck:worker",
+    "test": "node --import tsx --test tests/core.test.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@solana/web3.js": "^3.0.2",
+    "hono": "^4.6.14",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261010.1",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.149.0"
+  }
+}

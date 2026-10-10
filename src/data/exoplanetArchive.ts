@@ -1,0 +1,124 @@
+// data-fetch seat: NASA Exoplanet Archive TAP client.
+// Pulls REAL confirmed-planet parameters (period, depth, duration, radius) used to
+// (a) seed realistic injection-recovery trials and (b) serve as the ground-truth
+// catalog mission-critic cross-matches candidates against.
+// Falls back to a small bundled catalog if the network is unavailable, so the
+// pipeline is provable offline (clearly labeled as fallback).
+
+import type { ArchivePlanet } from "../core/types.ts";
+
+const TAP_SYNC = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
+
+// Some WAFs intermittently 403 the default `node` user-agent; send a browser UA.
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
+
+/** Well-known bright transiting planets (real catalog values) for offline fallback. */
+const FALLBACK_CATALOG: ArchivePlanet[] = [
+  { pl_name: "pi Men c", hostname: "pi Men", pl_orbper: 6.2679, pl_trandep: 1058, pl_trandur: 2.62, pl_rade: 2.04, st_rad: 0.96, sy_tmag: 5.65, discoverymethod: "Transit" },
+  { pl_name: "HD 189733 b", hostname: "HD 189733", pl_orbper: 2.21857, pl_trandep: 2830, pl_trandur: 2.82, pl_rade: 12.64, st_rad: 0.79, sy_tmag: 7.44, discoverymethod: "Transit" },
+  { pl_name: "WASP-121 b", hostname: "WASP-121", pl_orbper: 1.27492, pl_trandep: 9140, pl_trandur: 2.48, pl_rade: 19.2, st_rad: 1.46, sy_tmag: 10.29, discoverymethod: "Transit" },
+  { pl_name: "HAT-P-11 b", hostname: "HAT-P-11", pl_orbper: 4.8878, pl_trandep: 388, pl_trandur: 1.72, pl_rade: 4.36, st_rad: 0.68, sy_tmag: 8.99, discoverymethod: "Transit" },
+  { pl_name: "GJ 1214 b", hostname: "GJ 1214", pl_orbper: 1.5804, pl_trandep: 1450, pl_trandur: 0.95, pl_rade: 2.74, st_rad: 0.22, sy_tmag: 9.75, discoverymethod: "Transit" },
+  { pl_name: "KELT-9 b", hostname: "KELT-9", pl_orbper: 1.4811, pl_trandep: 7000, pl_trandur: 3.32, pl_rade: 21.0, st_rad: 2.37, sy_tmag: 7.56, discoverymethod: "Transit" },
+  { pl_name: "TOI-700 d", hostname: "TOI-700", pl_orbper: 37.42, pl_trandep: 760, pl_trandur: 1.7, pl_rade: 1.07, st_rad: 0.42, sy_tmag: 11.8, discoverymethod: "Transit" },
+  { pl_name: "L 168-9 b", hostname: "L 168-9", pl_orbper: 1.4017, pl_trandep: 3900, pl_trandur: 1.2, pl_rade: 1.39, st_rad: 0.45, sy_tmag: 10.0, discoverymethod: "Transit" },
+];
+
+export interface ArchiveQueryOptions {
+  maxTmag?: number; // TESS magnitude brightness cut (smaller = brighter)
+  limit?: number; // max rows (uses ADQL TOP)
+  minPeriodDays?: number;
+  maxPeriodDays?: number;
+  timeoutMs?: number;
+}
+
+export interface ArchiveFetchResult {
+  planets: ArchivePlanet[];
+  source: "nasa-tap" | "fallback";
+  query?: string;
+  error?: string;
+}
+
+/**
+ * Return the bundled offline catalog (real values for well-known bright
+ * transiting planets), filtered to the requested period range. Used as the
+ * network fallback and by the orchestrator's --offline mode.
+ */
+export function getFallbackCatalog(o: ArchiveQueryOptions = {}): ArchiveFetchResult {
+  const limit = o.limit ?? 50;
+  const planets = FALLBACK_CATALOG.filter(
+    (p) =>
+      (o.minPeriodDays == null || (p.pl_orbper ?? 0) >= o.minPeriodDays) &&
+      (o.maxPeriodDays == null || (p.pl_orbper ?? 999) <= o.maxPeriodDays) &&
+      (o.maxTmag == null || (p.sy_tmag ?? 99) < o.maxTmag),
+  ).slice(0, limit);
+  return { planets, source: "fallback" };
+}
+
+/** Fetch confirmed transiting planets from the NASA Exoplanet Archive (pscomppars). */
+export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promise<ArchiveFetchResult> {
+  const maxTmag = o.maxTmag ?? 11;
+  const limit = o.limit ?? 50;
+  const cols =
+    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_rade,st_rad,ra,dec,sy_tmag,discoverymethod";
+  // NOTE: NASA's Cloudflare WAF 403s queries with spaces around comparison
+  // operators or `is not null`; keep the WHERE compact and filter nulls in JS.
+  let where = `discoverymethod='Transit' and sy_tmag<${maxTmag}`;
+  if (o.minPeriodDays != null) where += ` and pl_orbper>=${o.minPeriodDays}`;
+  if (o.maxPeriodDays != null) where += ` and pl_orbper<=${o.maxPeriodDays}`;
+  const query = `select ${cols} from pscomppars where ${where}`;
+  const url = `${TAP_SYNC}?query=${encodeURIComponent(query)}&format=json`;
+
+  let lastErr = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 30000);
+    try {
+      const r = await fetch(url, {
+        signal: controller.signal,
+        headers: { "User-Agent": UA, Accept: "application/json" },
+      });
+      if (!r.ok) throw new Error(`TAP HTTP ${r.status}`);
+      const all = (await r.json()) as ArchivePlanet[];
+      if (!Array.isArray(all) || all.length === 0) throw new Error("empty result");
+      const rows = all.filter((p) => p.pl_orbper != null && p.sy_tmag != null);
+      rows.sort((a, b) => (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99));
+      return { planets: rows.slice(0, limit), source: "nasa-tap", query };
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e);
+      await new Promise((res) => setTimeout(res, 1200 * (attempt + 1))); // backoff
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const fb = getFallbackCatalog(o);
+  return { planets: fb.planets, source: "fallback", query, error: lastErr };
+}
+
+/**
+ * Cross-match a candidate period against known planets (optionally of one host).
+ * Returns the closest known planet within tolerance, or null.
+ */
+export function crossmatchPeriod(
+  candidatePeriodDays: number,
+  catalog: ArchivePlanet[],
+  hostName?: string,
+  tolPct = 2,
+): ArchivePlanet | null {
+  const pool = hostName ? catalog.filter((p) => p.hostname === hostName) : catalog;
+  let best: ArchivePlanet | null = null;
+  let bestErr = Infinity;
+  for (const p of pool) {
+    if (p.pl_orbper == null) continue;
+    // allow harmonic matches (candidate may be P/2 etc.)
+    for (const f of [1, 2, 0.5, 3, 1 / 3]) {
+      const err = Math.abs(candidatePeriodDays * f - p.pl_orbper) / p.pl_orbper;
+      if (err < bestErr) {
+        bestErr = err;
+        best = p;
+      }
+    }
+  }
+  return best != null && bestErr <= tolPct / 100 ? best : null;
+}

@@ -1,0 +1,32 @@
+name: sim-runner
+version: "1.0"
+description: Sim Runner seat -- injection-recovery confidence and ephemeris prediction (containerized compute).
+
+defaults:
+  runtime: codex
+  lifecycle:
+    execution_mode: interactive_resident
+    compaction_strategy: default-compaction
+    restore_policy: resume_if_possible
+
+profiles:
+  default:
+    summary: Standard simulation and completeness operations.
+    uses:
+      skills: []
+      guidance: []
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+resources:
+  guidance:
+    - id: role
+      path: guidance/role.md
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+  actions: []

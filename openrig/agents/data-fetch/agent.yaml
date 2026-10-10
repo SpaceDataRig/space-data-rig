@@ -1,0 +1,32 @@
+name: data-fetch
+version: "1.0"
+description: Data Fetch seat -- pulls public NASA/MAST photometry and stamps a provenance hash.
+
+defaults:
+  runtime: claude-code
+  lifecycle:
+    execution_mode: interactive_resident
+    compaction_strategy: default-compaction
+    restore_policy: resume_if_possible
+
+profiles:
+  default:
+    summary: Standard data-fetch operations over public archives.
+    uses:
+      skills: []
+      guidance: []
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+resources:
+  guidance:
+    - id: role
+      path: guidance/role.md
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+  actions: []

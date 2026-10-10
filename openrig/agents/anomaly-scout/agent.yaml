@@ -1,0 +1,32 @@
+name: anomaly-scout
+version: "1.0"
+description: Anomaly Scout seat -- runs the BLS transit search and the odd-even alias test.
+
+defaults:
+  runtime: claude-code
+  lifecycle:
+    execution_mode: interactive_resident
+    compaction_strategy: default-compaction
+    restore_policy: resume_if_possible
+
+profiles:
+  default:
+    summary: Standard transit-search operations.
+    uses:
+      skills: []
+      guidance: []
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+resources:
+  guidance:
+    - id: role
+      path: guidance/role.md
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+  actions: []

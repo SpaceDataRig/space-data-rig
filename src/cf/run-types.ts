@@ -1,0 +1,23 @@
+// Shared worker parameter shape for a durable pipeline run.
+//
+// This is what the Worker (POST /api/run) serializes into a Workflow instance
+// and what the RigRunWorkflow consumes. It mirrors the knobs of the Node
+// OrchestratorOptions but is deliberately plain-JSON (no functions, no fs paths)
+// so it survives the Workers RPC boundary.
+
+export interface RunParams {
+  /** Stable run label, e.g. "run-20261010-115859". */
+  runId: string;
+  /** Number of target stars to process. */
+  targets: number;
+  /** Injection-recovery trials per candidate (each is its own workflow step). */
+  confidenceTrials: number;
+  /** NASA catalog brightness cut (TESS magnitude). */
+  maxTmag: number;
+  /** Pause between seats so the live feed is watchable (ms). */
+  stageDelayMs: number;
+  /** Use the bundled fallback catalog instead of a live NASA fetch. */
+  offline: boolean;
+  /** Resume from the last persisted snapshot, skipping completed tasks. */
+  resume: boolean;
+}

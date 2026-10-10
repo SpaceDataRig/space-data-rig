@@ -1,0 +1,32 @@
+name: reporter
+version: "1.0"
+description: Reporter seat -- packages the reproducible bundle, hashes it and writes the plain-language summary.
+
+defaults:
+  runtime: claude-code
+  lifecycle:
+    execution_mode: interactive_resident
+    compaction_strategy: default-compaction
+    restore_policy: resume_if_possible
+
+profiles:
+  default:
+    summary: Standard packaging, anchoring and narration operations.
+    uses:
+      skills: []
+      guidance: []
+      subagents: []
+      plugins: []
+      runtime_resources: []
+
+resources:
+  guidance:
+    - id: role
+      path: guidance/role.md
+
+startup:
+  files:
+    - path: guidance/role.md
+      delivery_hint: send_text
+      required: true
+  actions: []

@@ -1,0 +1,18 @@
+# Dependencies and build output
+node_modules/
+out/
+dist/
+
+# Runtime state and local deploy caches (never commit)
+state/
+.wrangler/
+*.wrangler
+.dev.vars
+
+# Local secrets and environment (never commit -- contains the private RPC key)
+.env
+.env.local
+
+# Editor / OS noise
+.DS_Store
+*.log

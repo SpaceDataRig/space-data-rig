@@ -8,6 +8,7 @@
     "p0:benchmark": "tsx scripts/p0-benchmark.ts",
     "p0:archive": "tsx scripts/p0-archive.ts",
     "p0:detect": "tsx scripts/p0-detect.ts",
+    "p0:mast": "tsx scripts/p0-mast.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
     "api": "tsx src/api/server.ts",
     "start": "tsx src/api/server.ts",
@@ -17,7 +18,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/mast.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

@@ -77,13 +77,14 @@ function setMode(mode, provider) {
 }
 
 // ---- deliberation log ------------------------------------------------------
-function addRow({ seat, ts, tone, text }) {
+function addRow({ seat, ts, tone, text, model }) {
   const row = document.createElement("div");
   row.className = `trow ${esc(tone || "speak")}`;
   row.style.setProperty("--sc", colorOf(seat));
+  const who = esc(labelOf(seat)) + (model ? ` <span class="t-model">&middot; ${esc(model)}</span>` : "");
   row.innerHTML =
     `<span class="t-av">${esc(glyphOf(seat))}</span>` +
-    `<div class="t-main"><div class="t-top"><span class="t-seat">${esc(labelOf(seat))}</span>` +
+    `<div class="t-main"><div class="t-top"><span class="t-seat">${who}</span>` +
     `<span class="t-time">${utc(ts)} UTC</span></div><div class="t-text">${esc(text)}</div></div>`;
   transcriptEl.appendChild(row);
   while (transcriptEl.childElementCount > 240) transcriptEl.removeChild(transcriptEl.firstElementChild);
@@ -92,7 +93,7 @@ function addRow({ seat, ts, tone, text }) {
 
 function renderThread(turns) {
   transcriptEl.innerHTML = "";
-  (turns || []).forEach((t) => addRow({ seat: t.seat, ts: t.ts, tone: t.tone, text: t.text }));
+  (turns || []).forEach((t) => addRow({ seat: t.seat, ts: t.ts, tone: t.tone, text: t.text, model: t.model }));
 }
 
 // make a seat the live speaker in the 3D room + HUD, auto-clear the floor

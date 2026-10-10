@@ -34,6 +34,7 @@ import {
   upsertLedger,
   readLedger,
   explorerUrl,
+  loadLocalEnv,
   type LedgerEntry,
 } from "../solana/anchor.ts";
 import type { Finding } from "../core/types.ts";
@@ -53,6 +54,11 @@ const artifacts = new FsArtifactStore(OUT_DIR);
 const PORT = Number(process.env.PORT ?? 8787);
 const HOST = process.env.HOST ?? "0.0.0.0"; // bind all interfaces so Docker health checks reach us
 const codeVersion = readCodeVersion(resolve(REPO_ROOT, "package.json"));
+
+// Hydrate process.env from the repo-root .env before anything reads it (Solana RPC,
+// DEEPSEEK/GROK chat keys), so the local Node runtime behaves like the edge does with
+// its wrangler bindings. Idempotent and never overrides real environment variables.
+loadLocalEnv();
 
 // Honest descriptor of the discussion engine, read once and reused by the API.
 const ai = { mode: discussionMode(), provider: llmProviderLabel() };

@@ -56,13 +56,33 @@ function findingView(f: Finding) {
 // ai/llm.ts IS bundled (via the /api/discussion path), but the Worker never relies on
 // its process.env fallback -- nodejs_compat v1 cannot see secrets there -- so
 // credentials are always injected explicitly through LlmCred from c.env.
+const DS_BASE = "https://api.deepseek.com/v1";
+const GROK_BASE = "https://api.x.ai/v1";
+
+/**
+ * Every configured chat model, primary (DeepSeek/OpenAI) first then Grok, as explicit
+ * creds with per-provider defaults already resolved -- the edge must not fall through to
+ * the DeepSeek defaults when a Grok entry omits base/model. Key-less entries are dropped.
+ */
+function llmProviders(env: Env): LlmCred[] {
+  const out: LlmCred[] = [];
+  const dsKey = env.OPENAI_API_KEY ?? env.DEEPSEEK_API_KEY;
+  if (dsKey) {
+    const model = env.OPENAI_MODEL ?? env.DISCUSSION_MODEL ?? "deepseek-chat";
+    out.push({ key: dsKey, baseUrl: (env.OPENAI_BASE_URL ?? DS_BASE).replace(/\/+$/, ""), model, name: model });
+  }
+  const grokKey = env.GROK_API_KEY ?? env.XAI_API_KEY;
+  if (grokKey) {
+    const model = env.GROK_MODEL ?? "grok-4.7";
+    out.push({ key: grokKey, baseUrl: (env.GROK_BASE_URL ?? GROK_BASE).replace(/\/+$/, ""), model, name: model });
+  }
+  return out;
+}
+
 function aiDescriptor(env: Env): { mode: string; provider: string } {
-  const configured = Boolean(env.OPENAI_API_KEY || env.DEEPSEEK_API_KEY);
-  if (!configured) return { mode: "grounded", provider: "grounded (data-driven)" };
-  // defaults mirror src/ai/llm.ts so the label matches what the model layer calls
-  const model = env.OPENAI_MODEL ?? env.DISCUSSION_MODEL ?? "deepseek-chat";
-  const base = (env.OPENAI_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
-  return { mode: "live-llm", provider: `${model} @ ${base}` };
+  const providers = llmProviders(env);
+  if (providers.length === 0) return { mode: "grounded", provider: "grounded (data-driven)" };
+  return { mode: "live-llm", provider: providers.map((p) => `${p.model} @ ${p.baseUrl}`).join(", ") };
 }
 
 // Run-parameter clamps, mirrored byte-for-byte from the Node server's POST /api/run
@@ -133,12 +153,8 @@ app.get("/api/ledger", async (c) => {
 // secret is injected explicitly as LlmCred (the edge does not rely on process.env).
 // A missing or failing model silently leaves the grounded turns. Same JSON shape as
 // the Node server's /api/discussion.
-function llmCred(env: Env): LlmCred {
-  return {
-    key: env.OPENAI_API_KEY ?? env.DEEPSEEK_API_KEY,
-    baseUrl: env.OPENAI_BASE_URL,
-    model: env.OPENAI_MODEL ?? env.DISCUSSION_MODEL,
-  };
+function llmCred(env: Env): LlmCred[] {
+  return llmProviders(env);
 }
 
 app.get("/api/discussion", async (c) => {

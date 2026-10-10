@@ -30,6 +30,11 @@ export interface Env {
   OPENAI_BASE_URL?: string;
   OPENAI_MODEL?: string;
   DISCUSSION_MODEL?: string;
+  /** second-provider chat key (xAI Grok, OpenAI-compatible); runs alongside the primary. */
+  GROK_API_KEY?: string;
+  XAI_API_KEY?: string;
+  GROK_BASE_URL?: string;
+  GROK_MODEL?: string;
   /** private (first-choice) Solana mainnet RPC URL, e.g. an Alchemy endpoint. */
   SOLANA_RPC?: string;
   /** mainnet fee-payer secret key as a JSON byte array (web3 v2). */

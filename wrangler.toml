@@ -75,5 +75,8 @@ DISCUSSION_MODE = "grounded"
 # Secrets (set with `wrangler secret put <NAME>`, never committed here):
 #   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);
 #                                    falls back to SOLANA_RPC_FALLBACKS above
-#   OPENAI_API_KEY / DEEPSEEK_API_KEY  (optional live-model discussion)
+#   OPENAI_API_KEY / DEEPSEEK_API_KEY  (optional primary live-model discussion)
+#   GROK_API_KEY / XAI_API_KEY         (optional 2nd model, xAI Grok; runs alongside the
+#                                    primary so the discussion shows a caveat per model.
+#                                    base/model come from GROK_BASE_URL / GROK_MODEL vars)
 #   SOLANA_KEYPAIR                   mainnet fee-payer secret key JSON array (funded)

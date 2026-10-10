@@ -70,8 +70,11 @@ export interface LedgerEntry {
 // ---- .env + RPC endpoint resolution (Node: reads process.env) ---------------
 
 let localEnvLoaded = false;
-/** Load the repo-root .env once (dependency-free); never overrides real env vars. */
-function loadLocalEnv(): void {
+/** Load the repo-root .env once (dependency-free); never overrides real env vars.
+ *  Exported so the Node API server and the CLI can hydrate process.env (Solana RPC,
+ *  DEEPSEEK/GROK chat keys) at boot -- the LLM path reads process.env but does not
+ *  itself touch node:fs, so it relies on this being called first on the Node runtime. */
+export function loadLocalEnv(): void {
   if (localEnvLoaded) return;
   localEnvLoaded = true;
   const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");

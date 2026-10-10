@@ -18,6 +18,8 @@ export interface DiscussionTurn {
   ts: string;
   tone: DiscussionTone;
   text: string;
+  /** Which chat model wrote this turn (live-llm caveats only); absent for grounded turns. */
+  model?: string;
 }
 
 export interface DiscussionThread {

@@ -129,6 +129,7 @@ a:hover { text-decoration: underline; }
 .t-av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--sc, var(--accent)); color: #04101c; font: 700 11px var(--mono); box-shadow: 0 0 14px -4px var(--sc, var(--accent)); }
 .t-top { display: flex; align-items: baseline; gap: 10px; }
 .t-seat { font: 700 11px var(--mono); letter-spacing: 0.1em; color: var(--sc, var(--accent)); }
+.t-model { font: 600 10px var(--mono); letter-spacing: 0.02em; color: var(--ink-faint); }
 .t-time { font: 500 10px var(--mono); color: var(--ink-faint); margin-left: auto; }
 .t-text { font-size: 13px; color: #cfe0f7; margin-top: 2px; }
 .trow.verdict .t-text { color: #eafcff; font-weight: 600; }

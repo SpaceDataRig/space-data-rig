@@ -23,6 +23,7 @@ const FALLBACK_CATALOG: ArchivePlanet[] = [
   { pl_name: "KELT-9 b", hostname: "KELT-9", pl_orbper: 1.4811, pl_trandep: 7000, pl_trandur: 3.32, pl_rade: 21.0, st_rad: 2.37, st_mass: 2.36, sy_tmag: 7.56, discoverymethod: "Transit" },
   { pl_name: "TOI-700 d", hostname: "TOI-700", pl_orbper: 37.42, pl_trandep: 760, pl_trandur: 1.7, pl_rade: 1.07, st_rad: 0.42, st_mass: 0.2, sy_tmag: 11.8, discoverymethod: "Transit" },
   { pl_name: "L 168-9 b", hostname: "L 168-9", pl_orbper: 1.4017, pl_trandep: 3900, pl_trandur: 1.2, pl_rade: 1.39, st_rad: 0.45, st_mass: 0.4, sy_tmag: 10.0, discoverymethod: "Transit" },
+  { pl_name: "WASP-126 b", hostname: "WASP-126", pl_orbper: 3.28883, pl_trandep: 7005.7, pl_trandur: 3.43677, pl_tranmid: 2458827.4162, pl_rade: 10.5136, st_rad: 1.27, st_mass: 1.12, sy_tmag: 10.61, discoverymethod: "Transit" },
 ];
 
 export interface ArchiveQueryOptions {
@@ -61,7 +62,7 @@ export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promis
   const maxTmag = o.maxTmag ?? 11;
   const limit = o.limit ?? 50;
   const cols =
-    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_rade,st_rad,st_mass,ra,dec,sy_tmag,discoverymethod";
+    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_tranmid,pl_rade,st_rad,st_mass,ra,dec,sy_tmag,discoverymethod";
   // NOTE: NASA's Cloudflare WAF 403s queries with spaces around comparison
   // operators or `is not null`; keep the WHERE compact and filter nulls in JS.
   let where = `discoverymethod='Transit' and sy_tmag<${maxTmag}`;
@@ -82,7 +83,12 @@ export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promis
       if (!r.ok) throw new Error(`TAP HTTP ${r.status}`);
       const all = (await r.json()) as ArchivePlanet[];
       if (!Array.isArray(all) || all.length === 0) throw new Error("empty result");
-      const rows = all.filter((p) => p.pl_orbper != null && p.sy_tmag != null);
+      const rows = all
+        .filter((p) => p.pl_orbper != null && p.sy_tmag != null)
+        // pscomppars reports pl_trandep in PERCENT of stellar brightness; the bundled
+        // fallback catalog and every downstream consumer use PPM. Normalize once here
+        // so both sources share one unit (0.7% -> 7000ppm).
+        .map((p) => (p.pl_trandep != null ? { ...p, pl_trandep: p.pl_trandep * 1e4 } : p));
       rows.sort((a, b) => (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99));
       return { planets: rows.slice(0, limit), source: "nasa-tap", query };
     } catch (e) {

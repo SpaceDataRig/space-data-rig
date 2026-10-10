@@ -103,8 +103,9 @@ export interface ArchivePlanet {
   pl_bmasse?: number;
   pl_rade?: number; // planet radius in Earth radii
   pl_orbper?: number; // orbital period in days
-  pl_trandep?: number; // transit depth in ppm
+  pl_trandep?: number; // transit depth in ppm (archive percent values are normalized on fetch)
   pl_trandur?: number; // transit duration in hours
+  pl_tranmid?: number; // transit midpoint epoch T0 (BJD TDB)
   st_rad?: number; // stellar radius in solar radii
   st_mass?: number; // stellar mass in solar masses (pscomppars column)
   ra?: number;

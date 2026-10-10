@@ -116,10 +116,12 @@ export interface CritiqueInput {
   hostName?: string;
   confidence?: ConfidenceResult;
   truthPeriodDays?: number;
+  /** what the reference period is: an injection or a catalog value (real photometry). */
+  truthSource?: "injected" | "catalog";
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, confidence, truthPeriodDays }: CritiqueInput): ReviewResult {
+export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource }: CritiqueInput): ReviewResult {
   return reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
@@ -127,6 +129,7 @@ export function critique({ detection, catalog, hostName, confidence, truthPeriod
     hostName,
     confidence,
     truthPeriodDays,
+    truthSource,
     minSnr: 7,
   });
 }

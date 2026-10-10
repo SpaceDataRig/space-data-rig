@@ -26,6 +26,8 @@ export interface ReviewInput {
   hostName?: string;
   /** sim-runner per-signal recovery confidence (0..1). */
   confidence?: ConfidenceResult;
+  /** what the reference period is: an injection or a catalog value (real photometry). */
+  truthSource?: "injected" | "catalog";
   /** known injected period, when running in recovery mode. */
   truthPeriodDays?: number;
   /** minimum SNR to consider (default 7). */
@@ -150,10 +152,11 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   let reason: string;
 
   if (input.truthPeriodDays != null) {
-    // RECOVERY mode: did we get the known planet back?
+    // recovery mode: did we get the known planet back?
+    const refLabel = input.truthSource === "catalog" ? "the catalog transits" : "the injected signal";
     if (periodErrPct != null && periodErrPct < 2 && snrPass) {
       verdict = "accepted";
-      reason = `Recovers the injected signal: period error ${periodErrPct.toFixed(2)}%, SNR ${c.snr.toFixed(0)}` +
+      reason = `Recovers ${refLabel}: period error ${periodErrPct.toFixed(2)}%, SNR ${c.snr.toFixed(0)}` +
         (cm.matchedKnownPlanet ? `, cross-matches ${cm.knownPlanetName}` : "") + `.`;
     } else if (periodErrPct != null && periodErrPct < 5 && !hardFail) {
       verdict = "needs-more-data";

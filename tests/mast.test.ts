@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
 import { fitsToLightCurve } from "../src/data/mast.ts";
+import { curatedMastFor, truthFromCatalog } from "../src/data/mastCurated.ts";
 import { detectTransit } from "../src/detect/pipeline.ts";
 
 const CACHE = "out/probe-lc.fits"; // TIC 25155310 (WASP-126), GL sector 0004, 2-min cadence
@@ -34,4 +35,25 @@ test("BLS finds a strong transit signal in real photometry", { skip: have ? fals
   const nearHarmonic = [1, 2, 3, 0.5].some((h) => Math.abs(ratios / h - 1) < 0.02);
   assert.ok(nearHarmonic, `period ${det.candidate.periodDays.toFixed(3)}d not near ${truth}d or a harmonic (ratio ${ratios.toFixed(3)})`);
   assert.ok(det.candidate.snr > 20, `expected strong real signal, snr=${det.candidate.snr.toFixed(1)}`);
+});
+
+// ---- curated registry (pure logic, no network) ----
+
+test("curatedMastFor resolves host names case-insensitively and misses cleanly", () => {
+  assert.equal(curatedMastFor("WASP-126")?.productUri.includes("tess2018292075959"), true);
+  assert.equal(curatedMastFor("wasp-126")?.label.includes("TIC 25155310"), true);
+  assert.equal(curatedMastFor("HD 99999"), null);
+  assert.equal(curatedMastFor(undefined), null);
+});
+
+test("truthFromCatalog derives sane open-loop parameters", () => {
+  const t = truthFromCatalog({
+    pl_name: "WASP-126 b", hostname: "WASP-126", pl_orbper: 3.28883, pl_trandep: 7005.7, pl_trandur: 3.4368,
+    pl_rade: 21.0, st_rad: 1.61, st_mass: 1.25,
+  } as never);
+  assert.equal(t.periodDays, 3.28883);
+  assert.ok(Math.abs(t.depthFrac * 1e6 - 7005.7) < 0.1);
+  assert.ok(t.aOverRs > 3 && t.aOverRs < 10, `a/Rs=${t.aOverRs}`);
+  assert.ok(Math.abs(t.planetRadiusRatio - (21 * 0.0091577 / 1.61)) < 1e-9);
+  assert.equal(t.stellarMassMsun, 1.25);
 });

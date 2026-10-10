@@ -22,6 +22,8 @@ import type { ArchivePlanet, Finding, LightCurve, Task } from "../core/types.ts"
 import { fetchConfirmedPlanets, type ArchiveFetchResult } from "../data/exoplanetArchive.ts";
 import { generateSyntheticTransit, type InjectedTruth } from "../data/synthetic.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
+import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
+import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -237,9 +239,45 @@ export class Orchestrator {
     this.store.emitEvent("data-fetch", "info", `Building an observable light curve for ${name} (P=${planet.pl_orbper?.toFixed(3)}d, Rp=${planet.pl_rade?.toFixed(2)} R_Earth, R*=${planet.st_rad?.toFixed(2)} R_Sun).`);
     await sleep(this.opts.stageDelayMs);
 
-    // Real-parameter injection as a faithful stand-in for a MAST photometry pull:
-    // identical cadence (TESS 2-min), sector length (27 d) and duty-cycle gaps.
-    // Swapping in a live MAST fetch later only changes this method.
+    // Real MAST photometry first when a curated product exists for this host;
+    // otherwise the real-parameter injection stand-in (identical cadence, sector
+    // length and duty-cycle gaps). lc.source always states which path produced
+    // the data -- never let a stand-in masquerade as an observation.
+    let lc: LightCurve;
+    let truth: InjectedTruth;
+    const curated = curatedMastFor(planet.hostname);
+    if (curated) {
+      try {
+        this.store.emitEvent("data-fetch", "info", `Real MAST photometry is on file for ${name} -- fetching ${curated.label} ...`);
+        const bytes = await fetchMastProductBytes(curated.productUri);
+        lc = fitsToLightCurve(bytes, curated.label);
+        truth = truthFromCatalog(planet);
+        lc.source = `MAST TESS product ${curated.productUri.split("/").pop()} (REAL photometry); ${curated.note ?? ""}; catalog source=${cat.source}`.trim();
+      } catch (e) {
+        const why = e instanceof Error ? e.message : String(e);
+        this.store.emitEvent("data-fetch", "warn", `MAST download for ${name} failed (${why.slice(0, 120)}) -- falling back to the synthetic stand-in.`);
+        const built = this.buildStandIn(planet, index, cat.source);
+        lc = built.lc;
+        truth = built.truth;
+      }
+    } else {
+      const built = this.buildStandIn(planet, index, cat.source);
+      lc = built.lc;
+      truth = built.truth;
+    }
+    lc.dataHash = await computeDataHash(lc);
+
+    ctx.lc = lc;
+    ctx.truth = truth;
+    ctx.dataHash = lc.dataHash;
+    this.store.markSeatProcessed("data-fetch");
+    this.store.emitEvent("data-fetch", "result", `${lc.points.length} photometry points ready for ${name} (data hash ${lc.dataHash!.slice(0, 12)}...).`, { points: lc.points.length, dataHash: lc.dataHash });
+    this.store.setSeatStatus("data-fetch", "idle", `Fetched ${name}`);
+  }
+
+  // ---- SEAT 1 helper: seeded synthetic stand-in (default path) --------------
+  private buildStandIn(planet: ArchivePlanet, index: number, catalogSource: string): { lc: LightCurve; truth: InjectedTruth } {
+    const name = planet.pl_name ?? planet.hostname ?? `TARGET-${index}`;
     const { lc, truth } = generateSyntheticTransit({
       seed: 7000 + index,
       periodDays: planet.pl_orbper!,
@@ -252,15 +290,8 @@ export class Orchestrator {
       baselineDays: 27,
       targetIdLabel: planet.hostname ?? name,
     });
-    lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + index}); catalog source=${cat.source}`;
-    lc.dataHash = await computeDataHash(lc);
-
-    ctx.lc = lc;
-    ctx.truth = truth;
-    ctx.dataHash = lc.dataHash;
-    this.store.markSeatProcessed("data-fetch");
-    this.store.emitEvent("data-fetch", "result", `${lc.points.length} photometry points ready for ${name} (data hash ${lc.dataHash!.slice(0, 12)}...).`, { points: lc.points.length, dataHash: lc.dataHash });
-    this.store.setSeatStatus("data-fetch", "idle", `Fetched ${name}`);
+    lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + index}); catalog source=${catalogSource}`;
+    return { lc, truth };
   }
 
   // ---- SEAT 2: anomaly-scout ----------------------------------------------
@@ -319,13 +350,15 @@ export class Orchestrator {
     this.store.setSeatStatus("mission-critic", "running", `Reviewing ${detection.candidate.targetId}`);
     await sleep(this.opts.stageDelayMs);
 
-    // recovery mode: we injected a known period, so critique grades against it
+    // recovery mode: stand-in paths grade against the injection; real-photometry paths
+    // grade against the published catalog value -- an honest open-loop cross-check.
     const review = critique({
       detection,
       catalog: cat.planets,
       hostName: ctx.planet.hostname,
       confidence,
       truthPeriodDays: ctx.truth?.periodDays,
+      truthSource: (ctx.lc?.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
     });
     ctx.review = review;
 

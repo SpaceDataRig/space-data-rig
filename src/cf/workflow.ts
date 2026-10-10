@@ -346,6 +346,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           hostName: meta.hostName,
           confidence,
           truthPeriodDays: fr.truthPeriodDays,
+          truthSource: (fr.lc.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
         });
         await putJson(store, `${key}/review.json`, { review } satisfies ReviewRecord);
         await stub.markSeatProcessed("mission-critic");

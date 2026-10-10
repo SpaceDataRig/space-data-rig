@@ -18,6 +18,7 @@ import { verifyBundle } from "../bundle/bundle.ts";
 import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
+import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -170,7 +171,37 @@ app.get("/api/discussion/:id", async (c) => {
   const id = safeName(c.req.param("id") ?? "");
   const f: Finding | undefined = id ? await rigStub(c.env).getFinding(id) : undefined;
   if (!f) return c.json({ error: "finding not found" }, 404);
-  return c.json({ findingId: f.id, targetId: f.targetId, verdict: f.verdict, ...aiDescriptor(c.env), turns: await buildDiscussion(f, llmCred(c.env)) });
+  const turns = await buildDiscussion(f, llmCred(c.env));
+  // Seal the model cross-examination as a tamper-evident receipt (its own namespace,
+  // never the science bundle). Skipped entirely when no model actually spoke, so a
+  // grounded thread produces no receipt and the response carries no deliberationHash.
+  let deliberationHash: string | undefined;
+  if (turns.some((t) => t.model)) {
+    const receipt = buildDeliberationReceipt({ findingId: f.id, targetId: f.targetId, bundleHash: f.bundleHash, turns });
+    deliberationHash = await hashDeliberation(receipt);
+    await persistDeliberation(artifacts(c.env), receipt, deliberationHash).catch(() => { /* seal is best-effort */ });
+  }
+  return c.json({ findingId: f.id, targetId: f.targetId, verdict: f.verdict, ...aiDescriptor(c.env), turns, deliberationHash });
+});
+
+// Read back the sealed deliberation receipt for one finding (integrity-only record).
+app.get("/api/discussion/:id/receipt", async (c) => {
+  const id = safeName(c.req.param("id") ?? "");
+  const text = id ? await artifacts(c.env).getText(`deliberations/${id}/receipt.json`) : null;
+  if (text == null) return c.json({ error: "deliberation not found" }, 404);
+  return c.json(JSON.parse(text) as Record<string, unknown>);
+});
+
+// Independent audit: recompute the receipt hash from storage and compare to HASH.txt.
+app.get("/api/discussion/:id/receipt/verify", async (c) => {
+  const id = safeName(c.req.param("id") ?? "");
+  const store = artifacts(c.env);
+  if (!id || !(await store.exists(`deliberations/${id}/receipt.json`))) return c.json({ error: "deliberation not found" }, 404);
+  try {
+    return c.json({ findingId: id, ...(await verifyDeliberation(store, id)) });
+  } catch (e) {
+    return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  }
 });
 
 // Bundle manifest read (R2), verify (R2 + Web Crypto rehash), and SVG streaming.

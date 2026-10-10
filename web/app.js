@@ -96,6 +96,50 @@ function renderThread(turns) {
   (turns || []).forEach((t) => addRow({ seat: t.seat, ts: t.ts, tone: t.tone, text: t.text, model: t.model }));
 }
 
+// Show the tamper-evident deliberation receipt for the thread on screen. This seals the
+// AI commentary only (integrity, not reproducible science) -- deliberately distinct from
+// the bundle hash on each finding card. Rendered after the thread so it sits at the bottom.
+function renderDeliberationReceipt(findingId, hash, models) {
+  const old = transcriptEl.querySelector(".t-receipt");
+  if (old) old.remove();
+  if (!hash) return;
+  const row = document.createElement("div");
+  row.className = "trow verdict t-receipt";
+  row.style.setProperty("--sc", colorOf("reporter"));
+  const who = models && models.length ? `sealed by ${models.map(esc).join(" + ")}` : "sealed";
+  row.innerHTML =
+    `<span class="t-av">${esc(glyphOf("reporter"))}</span>` +
+    `<div class="t-main"><div class="t-top"><span class="t-seat">Deliberation receipt</span></div>` +
+    `<div class="t-text">The AI cross-examination above is ${esc(who)} and hash-sealed for integrity ` +
+    `(<span class="t-model">${esc(hash.slice(0, 16))}&hellip;</span>). This seals the commentary only -- ` +
+    `it is not reproducible science, and is separate from the finding's bundle hash.</div>` +
+    `<div class="card-actions"><button class="btn tiny ghost" data-verify-delib="${esc(findingId)}">Verify receipt</button>` +
+    `<span class="verify-out" data-delib-status></span></div></div>`;
+  transcriptEl.appendChild(row);
+}
+
+transcriptEl.addEventListener("click", async (e) => {
+  const btn = e.target.closest?.("[data-verify-delib]");
+  if (!btn) return;
+  const id = btn.getAttribute("data-verify-delib");
+  const status = btn.parentElement.querySelector("[data-delib-status]");
+  btn.disabled = true;
+  if (status) { status.className = "verify-out"; status.textContent = "recomputing hash..."; }
+  try {
+    const v = await fetchJSON(`/api/discussion/${encodeURIComponent(id)}/receipt/verify`);
+    if (status) {
+      status.className = "verify-out " + (v.ok ? "ok" : "bad");
+      status.textContent = v.ok
+        ? `hash matches (${v.turns} lines, ${v.models.join(" + ")})`
+        : `verify failed: ${v.error || "hash mismatch"}`;
+    }
+  } catch (err) {
+    if (status) { status.className = "verify-out bad"; status.textContent = `verify error: ${err.message}`; }
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 // make a seat the live speaker in the 3D room + HUD, auto-clear the floor
 function takeFloor(seat, text) {
   MissionRoom.say(seat, text);
@@ -304,7 +348,16 @@ async function enrichThread(findingId) {
   try {
     const t = await fetchJSON(`/api/discussion/${encodeURIComponent(findingId)}`);
     if (t && Array.isArray(t.turns) && t.turns.length) renderThread(t.turns);
+    // Seal the debate and surface the integrity receipt (no-op when the thread is grounded).
+    renderDeliberationReceipt(findingId, t.deliberationHash, (t.models || []).length ? t.models : deriveModels(t.turns));
   } catch { /* keep the grounded seed */ }
+}
+
+// The response has no top-level models array; derive the reviewer names from the turns.
+function deriveModels(turns) {
+  const out = [];
+  for (const t of turns || []) if (t.model && !out.includes(t.model)) out.push(t.model);
+  return out;
 }
 
 function setRunningUI(running, msg) {

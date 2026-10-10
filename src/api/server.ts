@@ -29,6 +29,7 @@ import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
+import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import {
   anchorBundleHash,
   upsertLedger,
@@ -166,11 +167,39 @@ app.get("/api/run/status", (c) => c.json({ activeRun }));
 app.get("/api/discussion", (c) => c.json({ ...ai, threads: threadsFor(store.listFindings()) }));
 
 // Single thread, enriched live when a chat key is present (adds a real critic caveat).
+// The model cross-examination is also sealed as a tamper-evident receipt in its own
+// namespace (never the science bundle); grounded threads produce no receipt.
 app.get("/api/discussion/:id", async (c) => {
   const id = safeName(c.req.param("id"));
   const f = id ? store.getFinding(id) : undefined;
   if (!f) return c.json({ error: "finding not found" }, 404);
-  return c.json({ findingId: f.id, targetId: f.targetId, verdict: f.verdict, ...ai, turns: await buildDiscussion(f) });
+  const turns = await buildDiscussion(f);
+  let deliberationHash: string | undefined;
+  if (turns.some((t) => t.model)) {
+    const receipt = buildDeliberationReceipt({ findingId: f.id, targetId: f.targetId, bundleHash: f.bundleHash, turns });
+    deliberationHash = await hashDeliberation(receipt);
+    await persistDeliberation(artifacts, receipt, deliberationHash).catch(() => { /* seal is best-effort */ });
+  }
+  return c.json({ findingId: f.id, targetId: f.targetId, verdict: f.verdict, ...ai, turns, deliberationHash });
+});
+
+// Read back the sealed deliberation receipt for one finding.
+app.get("/api/discussion/:id/receipt", async (c) => {
+  const id = safeName(c.req.param("id"));
+  const text = id ? await artifacts.getText(`deliberations/${id}/receipt.json`) : null;
+  if (text == null) return c.json({ error: "deliberation not found" }, 404);
+  return c.json(JSON.parse(text));
+});
+
+// Independent audit of the deliberation receipt (recompute + compare).
+app.get("/api/discussion/:id/receipt/verify", async (c) => {
+  const id = safeName(c.req.param("id"));
+  if (!id || !(await artifacts.exists(`deliberations/${id}/receipt.json`))) return c.json({ error: "deliberation not found" }, 404);
+  try {
+    return c.json({ findingId: id, ...(await verifyDeliberation(artifacts, id)) });
+  } catch (e) {
+    return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  }
 });
 
 app.get("/api/findings", (c) => c.json({ findings: store.listFindings().map(findingView) }));

@@ -513,19 +513,19 @@ ephemeris NEVER shown), and only afterwards cross-match the period we recovered 
 A direct fundamental match at SNR>=7 is evidence the signal is real in the downlinked pixels, independent
 of the discovery pipeline's own answer.
 
-Measured on 40 candidates that had token-free data (2 skipped, no product):
+Measured on 70 candidates that had token-free data (5 skipped, no product):
 
 ```
-independent blind recovery (fundamental, SNR>=7): 15/40 = 37.5%   (+1 harmonic-only alias, not counted)
-median |recovered period - TOI period| = 0.25%  (max 1.62%)  -- recovered blind, ephemeris withheld
-by period bin:  <2d 3/6   2-4d 5/10   4-7d 4/6   7-13d 3/7   >13d 0/11
+independent blind recovery (fundamental, SNR>=7): 27/70 = 38.6%   (+7 harmonic-only aliases, not counted)
+median |recovered period - TOI period| = 0.22%  (max 1.62%)  -- recovered blind, ephemeris withheld
+by period bin:  <2d 8/14   2-4d 9/16   4-7d 6/12   7-13d 4/11   >13d 0/17
 ```
 
 The period bins are the honest story: within the single-sector confirmable regime (<13 d) we independently
-recover ~52%, and 0/11 beyond it -- a 20-70 d orbit yields too few transits in one ~27-day sector to pin
-down, a physical coverage limit (the same one the real-sky completeness study shows), not a pipeline
+recover 27/53 = 51%, and 0/17 beyond it -- a 20-70 d orbit yields too few transits in one ~27-day sector to
+pin down, a physical coverage limit (the same one the real-sky completeness study shows), not a pipeline
 failure. The recovered PERIOD is the reliable independent measurement (sub-percent); the BLS box DEPTH is
-a crude proxy (median 28% off the reported depth) and is reported as such, not dressed up. SAFETY
+a crude proxy (median 26% off the reported depth) and is reported as such, not dressed up. SAFETY
 BOUNDARY: like p5, this is a research probe off the money path -- every hit is a `CANDIDATE` for human
 follow-up, nothing is anchored, posted, spent on, or claimed as a discovery.
 

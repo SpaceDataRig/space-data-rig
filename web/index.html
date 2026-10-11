@@ -209,6 +209,10 @@
           <li><b>Depth (ppm)</b> - how much the star dims, parts per million.</li>
           <li><b>SNR</b> - signal strength; above ~7 we trust it over noise.</li>
           <li><b>Confidence</b> - % of times the signal survives a fresh-noise replay.</li>
+          <li><b>Significance (FAP)</b> - the odds that plain noise on THIS star alone could fake a dip this
+            strong; a lower number is more believable, and we reject above 0.05.</li>
+          <li><b>Blind verdict</b> - the judge ruled on the evidence without being shown the expected answer;
+            "confirmed" here means the pipeline recovered a known signal, not that it found a new planet.</li>
           <li><b>Bundle hash</b> - fingerprint of the whole analysis; same inputs, same hash.</li>
           <li><b>On-chain</b> - that hash on Solana mainnet, a public timestamped proof.</li>
         </ul>

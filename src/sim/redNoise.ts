@@ -199,3 +199,55 @@ export function estimateRho(flux: number[], opts?: RhoOptions): number {
   const r = lagAutocorr(kept, 1);
   return Number.isFinite(r) ? Math.max(-1, Math.min(1, r)) : NaN;
 }
+
+/**
+ * Autocorrelation function ACF[k] = lagAutocorr(x, k) for k = 0..maxLag (ACF[0] is 1 by
+ * construction). A single lag-1 number (estimateRho) tells us the noise COLOR at one scale; the
+ * whole ACF tells us HOW FAST that correlation dies out, which is what decides whether an AR(1)
+ * model (ACF[k] = rho^k) is a faithful zero-hypothesis for a real light curve's residuals or
+ * understates a longer power-law memory.
+ */
+export function autocorrFunction(x: number[], maxLag: number): number[] {
+  const out: number[] = [];
+  for (let k = 0; k <= maxLag; k++) out.push(lagAutocorr(x, k));
+  return out;
+}
+
+export interface Ar1AcfFit {
+  rho: number; // the AR(1) coefficient = ACF[1] (lag-1 autocorrelation)
+  r2: number; // R^2 of the AR(1) prediction rho^k against the measured ACF over k=1..maxLag
+  meanAbsErr: number; // mean |ACF[k] - rho^k| over those lags
+  excessAtLastLag: number; // ACF[last] - rho^last: > 0 => the series has LONGER memory than AR(1) predicts
+}
+
+/**
+ * Test the AR(1) hypothesis against a measured ACF. AR(1) predicts ACF[k] = rho^k with rho = ACF[1].
+ * We score that prediction with R^2 and the mean absolute error, and report the excess correlation at
+ * the last lag: a POSITIVE excessAtLastLag means the real residuals stay correlated longer than any
+ * AR(1) with the same lag-1 can explain -- i.e. the noise is "redder than AR(1)". Purely a diagnostic
+ * helper; nothing on the deterministic stand-in / bundle path calls it, so bundle hashes are
+ * unaffected. Deterministic for a given acf input.
+ */
+export function fitAr1ToAcf(acf: number[]): Ar1AcfFit {
+  const rho = Number.isFinite(acf[1]) ? acf[1] : 0;
+  const obs: number[] = [];
+  const pred: number[] = [];
+  for (let k = 1; k < acf.length; k++) {
+    if (!Number.isFinite(acf[k])) continue;
+    obs.push(acf[k]);
+    pred.push(Math.pow(rho, k));
+  }
+  if (obs.length === 0) return { rho, r2: NaN, meanAbsErr: NaN, excessAtLastLag: NaN };
+  const meanObs = obs.reduce((a, b) => a + b, 0) / obs.length;
+  let ssRes = 0;
+  let ssTot = 0;
+  let absErr = 0;
+  for (let i = 0; i < obs.length; i++) {
+    ssRes += (obs[i] - pred[i]) * (obs[i] - pred[i]);
+    ssTot += (obs[i] - meanObs) * (obs[i] - meanObs);
+    absErr += Math.abs(obs[i] - pred[i]);
+  }
+  const r2 = ssTot > 1e-12 ? 1 - ssRes / ssTot : NaN;
+  const last = obs.length - 1;
+  return { rho, r2, meanAbsErr: absErr / obs.length, excessAtLastLag: obs[last] - pred[last] };
+}

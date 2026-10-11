@@ -54,7 +54,7 @@ export interface ReviewVetting {
   shiftThresholdArcsec?: number;
   /** calibrated false-alarm probability of the BLS peak (see src/detect/fap.ts). */
   fap?: number;
-  /** FAP above which the peak is deemed not significant against the null (default 0.01). */
+  /** FAP above which the peak is deemed not significant against the null (default 0.05, calibrated on real planets and kept above the ensemble resolution floor 1/(nNull+1)). */
   fapThreshold?: number;
   /**
    * Odd/even transit depth asymmetry, normalized (|odd-even| / mean depth). A true single
@@ -232,7 +232,7 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   if (input.vetting) {
     const v = input.vetting;
     const shiftThr = v.shiftThresholdArcsec ?? 2.0; // calibrated on real confirmed planets (see p2-vet-calibrate)
-    const fapThr = v.fapThreshold ?? 0.01;
+    const fapThr = v.fapThreshold ?? 0.05; // calibrated on REAL planets (see p1-fap-calibrate): must sit ABOVE the empirical-FAP resolution floor 1/(nNull+1), else every candidate -- real planets included -- is floored to a value > threshold and silently killed. With nNull~120 the floor is ~0.008; known SNR>=7 planets all measure at the floor, so 0.05 keeps ~4x margin while still rejecting genuinely insignificant peaks.
     const failReasons: string[] = [];
     let anyVetting = false;
 

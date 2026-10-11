@@ -13,6 +13,7 @@
     "p4:autonomous": "tsx scripts/p4-autonomous.ts",
     "p1:roc": "tsx scripts/p1-roc.ts",
     "p1:rho": "tsx scripts/p1-rho.ts",
+    "p1:fap-calibrate": "tsx scripts/p1-fap-calibrate.ts",
     "p2:vet-calibrate": "tsx scripts/p2-vet-calibrate.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
@@ -24,7 +25,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/rho.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/rho.test.ts tests/calibratedFap.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

@@ -308,6 +308,33 @@ its SNR to an empirical false-alarm rate computed under THAT noise color. We rec
 distribution rather than silently re-tuning the global cut -- the same discipline applied throughout
 (money-path thresholds come from real measurements, and honest limitations are published, not hidden).
 
+#### We then BUILT it: per-candidate calibrated significance, shipped ON
+
+`src/detect/significance.ts` `calibratedFap(lc, snr, period)` does exactly what the measurement
+prescribes: it estimates the target's OWN noise color (rho) and residual scatter, generates
+planet-free nulls matched to them (`makeRedNoiseLightCurve`, depthFrac 0), and reports the empirical
+false-alarm probability of the candidate's BLS SNR. It is deterministic (fixed seeds, pure functions
+of the input flux) -- the same guarantee the pixel vetting relies on for the money path. On real
+photometry (`VET=1`) both the edge (`src/cf/workflow.ts`) and Node (`src/orchestrator/pipeline.ts`)
+feeding it into the critic's `vetting.fap`, so a candidate is rejected when its calibrated FAP exceeds
+the threshold. This is LIVE, not behind a flag.
+
+Calibrating it caught a **latent landmine before it could fire**: the critic's old default FAP
+gate was 0.01, but the smallest FAP a null ensemble can report is its resolution floor
+`1/(nNull+1)` = 0.012 at nNull=80. A gate BELOW the floor would reject EVERY candidate -- real
+planets included, since a 100%-certain signal still measures at the floor. We raised nNull to 120
+(floor 0.008) and set the threshold from real data.
+
+Safety certification (`npm run p1:fap-calibrate`, the mandatory measure-before-you-gate step): on **19
+known planets that clear the production SNR>=7 cut**, every calibrated FAP sits at the floor (0.0083)
+against the 0.05 threshold -- **zero false rejections**. (A couple of test planets like TOI-2128 score
+high FAP only because BLS finds nothing for them at all, SNR<0 -- they are already declined upstream
+and never reach the gate.) The threshold 0.05 keeps ~4x margin over the floor while still rejecting
+genuinely insignificant peaks, and it is stricter and better-founded than the old fixed SNR label
+because it adapts to each host's measured noise color. This is the operating principle the whole
+project runs on: don't assert reliability, MEASURE it; and never wire a rejection gate without first
+proving on known-good data that it doesn't kill real discoveries.
+
 
 ## Quickstart
 

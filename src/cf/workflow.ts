@@ -42,6 +42,7 @@ import { generateSyntheticTransit } from "../data/synthetic.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
 import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
+import { calibratedFap } from "../detect/significance.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
@@ -382,6 +383,22 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         if (env.VET === "1" && isReal) {
           const cand = dr.detection.candidate;
           vetting = {};
+          // Per-candidate calibrated significance: measure THIS target's own noise color (rho) and
+          // scatter, generate planet-free nulls matched to them, and report the empirical false-alarm
+          // probability of the candidate's BLS SNR. Unlike a global SNR cut, this adapts to red-noise
+          // hosts. Threshold (critic fapThreshold 0.05) is calibrated on real planets and sits above the
+          // ensemble resolution floor 1/(nNull+1), so known SNR>=7 planets are never floored into rejection.
+          try {
+            const sig = calibratedFap(fr.lc, cand.snr, cand.periodDays);
+            vetting.fap = sig.fap;
+            await stub.emitEvent(
+              "mission-critic",
+              "info",
+              `Calibrated significance for ${meta.name}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it).`,
+            );
+          } catch {
+            /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
+          }
           // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT
           // fed to the reject path: calibration (scripts/p2-vet-calibrate) shows that on
           // single-sector real data with catalog ephemerides the odd/even asymmetry reaches

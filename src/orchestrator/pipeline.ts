@@ -28,6 +28,7 @@ import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
 import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
+import { calibratedFap } from "../detect/significance.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult, ReviewVetting } from "../critic/review.ts";
@@ -436,6 +437,18 @@ export class Orchestrator {
       const cand = detection.candidate;
       const lc = ctx.lc!;
       vetting = {};
+      // Per-candidate calibrated significance: measure THIS target's own noise color (rho) and
+      // scatter, generate planet-free nulls matched to them, and report the empirical false-alarm
+      // probability of the candidate's BLS SNR. Unlike a global SNR cut this adapts to red-noise
+      // hosts. The critic threshold (0.05) is calibrated on real planets and kept above the ensemble
+      // resolution floor 1/(nNull+1), so known SNR>=7 planets are never floored into rejection.
+      try {
+        const sig = calibratedFap(lc, cand.snr, cand.periodDays);
+        vetting.fap = sig.fap;
+        this.store.emitEvent("mission-critic", "info", `Calibrated significance for ${ctx.planet.pl_name ?? ctx.planet.hostname}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it).`);
+      } catch {
+        /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
+      }
       // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT fed
       // to the reject path: calibration (scripts/p2-vet-calibrate) shows the odd/even
       // asymmetry reaches >100% for CONFIRMED planets on single-sector data with catalog

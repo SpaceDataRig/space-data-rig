@@ -282,6 +282,32 @@ REAL data. The correct next step is to ESTIMATE rho directly from real SPOC PDCS
 one -- is at the level we publish. Until then, the SNR>=7 figure above is quoted as white-noise-
 conditional. This caveat is a feature: the benchmark is now sensitive to its own noise assumption.
 
+#### We then MEASURED the real noise color (`src/sim/redNoise.ts` `estimateRho`, `npm run p1:rho`)
+
+Rather than leave rho as a guess, we measure the residual lag-1 autocorrelation directly from REAL,
+token-free TESS-SPOC PDCSAP light curves: moving-median detrend, MAD outlier rejection, then the
+lag-1 autocorrelation of the residuals. The measurement unit is the STAR, not the planet --
+multi-planet hosts share one light curve and are de-duplicated so a single busy star cannot bias the
+distribution. Over 16 distinct bright hosts:
+
+```
+rho of real PDCSAP residuals:  min=-0.06  median=-0.00  p90=0.63  max=0.63  (mean 0.09)
+```
+
+This resolves the caveat with data and tells a genuine astrophysical story:
+- The **median host is essentially WHITE** (rho ~ 0.0). SPOC's own detrending removes most correlation,
+  so for quiet, old stars the white-noise FAR is a FAIR description and SNR>=7 is defensible.
+- The **tail is strongly red** (rho ~ 0.63) -- and the two worst are exactly the young, magnetically
+  ACTIVE stars in the sample (AU Mic ~24 Myr and HD 63433 ~20-30 Myr), whose real variability the
+  estimator correctly flags. There the white-noise FAR IS optimistic and the red-noise cut (SNR>=~9)
+  applies.
+
+So noise color varies **star-to-star**, and one global SNR threshold is provably imperfect. The
+principled follow-up is **per-candidate**: estimate rho from each target's own light curve and map
+its SNR to an empirical false-alarm rate computed under THAT noise color. We record the measured
+distribution rather than silently re-tuning the global cut -- the same discipline applied throughout
+(money-path thresholds come from real measurements, and honest limitations are published, not hidden).
+
 
 ## Quickstart
 

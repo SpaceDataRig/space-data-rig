@@ -133,3 +133,69 @@ export function makeRedNoiseLightCurve(o: RedNoiseOptions): LightCurve {
     source: `synthetic red-noise (AR1 rho=${rho}, seed=${o.seed ?? 1}, depth=${(depth * 1e6).toFixed(0)}ppm, P=${o.periodDays.toFixed(3)}d, dur=${durationHours.toFixed(2)}h)`,
   };
 }
+
+/** Median of a numeric array (assumes finite entries). */
+function median(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+/**
+ * Detrend by subtracting a moving median over a `window`-point centered box (edge-shrinking).
+ * A median filter rides out the localized transit dips (only a few % of cadences) while tracking
+ * slow systematic trends -- exactly the trend we must remove before measuring residual noise color.
+ */
+export function detrendMovingMedian(values: number[], window: number): number[] {
+  const w = Math.max(3, Math.min(window | 0, values.length));
+  const half = w >> 1;
+  const out = new Array<number>(values.length);
+  for (let i = 0; i < values.length; i++) {
+    const lo = Math.max(0, i - half);
+    const hi = Math.min(values.length, i + half + 1);
+    out[i] = values[i] - median(values.slice(lo, hi));
+  }
+  return out;
+}
+
+/** Lag-`k` autocorrelation of a (mean-zero-ish) series, ignoring non-finite values. */
+export function lagAutocorr(x: number[], k: number): number {
+  const n = x.length;
+  if (n <= k) return NaN;
+  const mean = x.reduce((a, b) => a + b, 0) / n;
+  let num = 0;
+  let den = 0;
+  for (let i = 0; i < n; i++) {
+    const d = x[i] - mean;
+    den += d * d;
+    if (i >= k) num += d * (x[i - k] - mean);
+  }
+  return den > 0 ? num / den : NaN;
+}
+
+export interface RhoOptions {
+  detrendWindow?: number; // moving-median width in cadences (default 15)
+  sigmaClip?: number; // MAD-based outlier rejection threshold (default 5)
+}
+
+/**
+ * Estimate the lag-1 autocorrelation (AR(1) rho) of the RESIDUAL noise of a flux series: detrend
+ * with a moving median, reject MAD outliers, then correlate adjacent residuals. This is the noise
+ * COLOR of real photometry -- the quantity that tells us whether our AR(1) benchmark stress (e.g.
+ * rho=0.5) matches reality or is a pessimism bound. Returns NaN if too few usable points.
+ *
+ * Honest caveat: after clipping, "adjacent" means adjacent-in-the-retained-sequence, not strictly
+ * adjacent in time (rejected cadences leave small holes); for a rough color estimate on mostly
+ * contiguous sector data this is the standard sampled autocorrelation and is deliberately simple.
+ */
+export function estimateRho(flux: number[], opts?: RhoOptions): number {
+  const finite = flux.filter((v) => Number.isFinite(v));
+  if (finite.length < 30) return NaN;
+  const resid = detrendMovingMedian(finite, opts?.detrendWindow ?? 15);
+  const mad = median(resid.map((v) => Math.abs(v))) * 1.4826 || 1;
+  const clip = opts?.sigmaClip ?? 5;
+  const kept = resid.filter((v) => Math.abs(v) <= clip * mad);
+  if (kept.length < 20) return NaN;
+  const r = lagAutocorr(kept, 1);
+  return Number.isFinite(r) ? Math.max(-1, Math.min(1, r)) : NaN;
+}

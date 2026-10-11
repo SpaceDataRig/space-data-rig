@@ -12,6 +12,7 @@
     "p3:discover": "tsx scripts/p3-discover.ts",
     "p4:autonomous": "tsx scripts/p4-autonomous.ts",
     "p1:roc": "tsx scripts/p1-roc.ts",
+    "p2:vet-calibrate": "tsx scripts/p2-vet-calibrate.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
     "api": "tsx src/api/server.ts",

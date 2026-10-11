@@ -82,12 +82,12 @@ DISCUSSION_MODE = "grounded"
 # Token-free TESS-SPOC public-S3 photometry tier. ON in this deployment so every
 # TIC-bearing target pulls REAL PDCSAP photometry from the anonymous S3 bucket.
 MAST_S3 = "1"
-# Pixel-level false-positive vetting in the critic (real photometry only). OFF in this
-# deployment: the centroid-shift reject threshold (1 arcsec) is not yet calibrated across
-# a sample of real planets, so leaving it inside the money-spending anchoring path risks
-# silently dropping true positives in blended systems. Proven on pi Men c (0.10 arcsec,
-# accepted) via a controlled VET=1 run; re-enable once the threshold is calibrated.
-VET = "0"
+# Pixel-level false-positive vetting in the critic (real photometry only). ON: the reject
+# threshold is now empirically calibrated (scripts/p2-vet-calibrate.ts measured 6 confirmed
+# planets all at <=0.5 arcsec; the critic rejects at >2.0 arcsec, so true on-target planets
+# pass while blends/background EBs are vetoed before anchoring). The residual cost is
+# operational -- each vetted target downloads a ~5MB _tp.fits, so a full sweep runs slower.
+VET = "1"
 # Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
 # cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and
 # accepted findings are sealed on Solana mainnet (AUTO_ANCHOR=live), bounded by

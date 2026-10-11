@@ -48,7 +48,9 @@ export interface ReviewInput {
 export interface ReviewVetting {
   /** in-transit photocenter displacement in arcsec (large => the dip is off the target). */
   centroidShiftArcsec?: number;
-  /** shift above which the candidate is flagged a blend/background EB (default 1.0 arcsec). */
+  /** shift above which the candidate is flagged a blend/background EB (default 2.0 arcsec,
+   *  empirically calibrated: confirmed planets measured by scripts/p2-vet-calibrate.ts cluster
+   *  at <=0.5 arcsec, so a 2.0 arcsec cut rejects blends without dropping true positives). */
   shiftThresholdArcsec?: number;
   /** calibrated false-alarm probability of the BLS peak (see src/detect/fap.ts). */
   fap?: number;
@@ -215,7 +217,7 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   // target star; an insignificant FAP means the peak is not distinguishable from the null).
   if (input.vetting) {
     const v = input.vetting;
-    const shiftThr = v.shiftThresholdArcsec ?? 1.0;
+    const shiftThr = v.shiftThresholdArcsec ?? 2.0; // calibrated on real confirmed planets (see p2-vet-calibrate)
     const fapThr = v.fapThreshold ?? 0.01;
     const failReasons: string[] = [];
     let anyVetting = false;

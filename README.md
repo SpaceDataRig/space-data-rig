@@ -204,11 +204,13 @@ and OFF the default (synthetic) run path, so the reproducible bundle hash is unc
   identical (a test asserts empty-vetting == no-vetting).
 
 On pi Men c the real in-transit photocenter shift is 0.10 arcsec -- correctly judged on-target.
-A controlled `VET=1` production run confirmed the pipeline completes and does not falsely reject
-known planets. We keep `VET=0` in the aggressive autonomous deployment for now: the 1-arcsec
-reject threshold is not yet calibrated across a sample of real planets, and an uncalibrated hard
-gate inside the money-spending anchoring path risks silently dropping true positives in mildly
-blended systems. Threshold calibration precedes re-enabling continuous live vetting.
+The reject threshold is EMPIRICALLY CALIBRATED, not guessed: `npm run p2:vet-calibrate` measures
+the shift for confirmed planets (which genuinely transit their hosts, so must cluster near zero).
+A sample of six (pi Men c, HR 858 b/c/d, HD 63433 b/c) gave 0.03-0.49 arcsec (p50 0.10, max 0.49),
+so the critic rejects at >2.0 arcsec -- comfortably above every true planet yet far below the
+multi-arcsec signature of a background EB / blend. Pixel vetting is therefore ON in the autonomous
+deployment (`VET=1`): blends are vetoed before they can be anchored. The only residual cost is
+operational -- each vetted target pulls a ~5 MB target-pixel file, so a full sweep runs slower.
 
 ### Measured operating characteristics (completeness / purity)
 

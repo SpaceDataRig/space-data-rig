@@ -389,6 +389,37 @@ because it adapts to each host's measured noise color. This is the operating pri
 project runs on: don't assert reliability, MEASURE it; and never wire a rejection gate without first
 proving on known-good data that it doesn't kill real discoveries.
 
+### Blind / discovery mode (independent re-detection of UNCONFIRMED candidates)
+
+Everything above re-validates planets we already KNOW. To show the pipeline can stand on its own,
+`src/data/toiArchive.ts` (`npm run p5:blind`) sources **candidate transits that are not yet
+confirmed** -- the NASA Archive `toi` table (TESS Objects of Interest), minus any host that already
+appears in the confirmed catalog -- pulls the same token-free TESS-SPOC photometry, runs
+`detectTransit` **BLIND** (the whole period grid, with the TOI's reported ephemeris deliberately
+WITHHELD from detection), and only afterwards cross-matches the period we recovered against the TOI
+reference. Independent recovery is evidence the signal is real in the downlinked pixels, not a
+restatement of the discovery pipeline's own answer.
+
+A real run (8 brightest unconfirmed candidates, SNR>=7) independently blind-recovered **5 of 8**:
+
+```
+TOI-1773.01  TOI P=0.7365d -> ours 0.7362d  SNR 44.5   CANDIDATE (blind recovery)
+TOI-1025.01  TOI P=9.6838d -> ours 9.7442d  SNR 140.6  CANDIDATE (blind recovery)
+TOI-1978.01  TOI P=6.0810d -> ours 6.0866d  SNR 121.7  CANDIDATE (blind recovery)
+TOI-2011.01  TOI P=11.5778d -> ours 11.390d SNR 15.1   CANDIDATE (blind recovery)
+TOI-1469.02  TOI P=6.7650d -> ours 6.7772d  SNR 11.4   CANDIDATE (blind recovery)
+-- the 3 misses are honest: TOI-1469.01 locked its brighter same-star sibling, and TOI-1487.01 /
+   TOI-2011.02 (23-28 d periods) fall below single-sector completeness, exactly as measured above.
+```
+
+The safety boundary is deliberate and load-bearing: **blind mode is a research probe, not an
+announcement machine.** Nothing it finds is anchored, posted, spent on, or claimed as a discovery --
+a hit is printed as `CANDIDATE (blind recovery, review)` for a human to follow up. Auto-anchoring an
+unconfirmed candidate would put an unverified judgement on the provenance money-path and over-claim,
+which is precisely what this project refuses to do. The rig reports what it can independently
+recover and stops short of calling it a planet. (A `num(null)->0` coercion bug the offline schema
+fixture caught: TAP nulls must map to NaN or candidates with no period silently pass as valid.)
+
 
 ## Quickstart
 

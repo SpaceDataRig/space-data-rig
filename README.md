@@ -554,6 +554,7 @@ long period (>= 13 d, 11 planets):    exact 47.2%  vs box 56.8%   (both degrade)
 median statistical 1-sigma on depth:  6.3% of depth
 catalog depth inside +/-1sigma:       8/28 = 29%  (a calibrated error would be ~68%)
 catalog depth inside +/-2sigma:       13/28 = 46% (calibrated ~95%)
+LD-sensitivity floor on depth:        12.1% (all) / 12.7% short-period  (refit across 4 limb-darkening laws)
 ```
 
 The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
@@ -575,7 +576,15 @@ the ~68% / ~95% a well-calibrated error would give. That undercoverage is the ho
 is dominated by SYSTEMATICS -- the fixed limb-darkening law, an imperfect ephemeris, and stellar activity --
 not photon noise. So we quote the depth as a point estimate with a statistical bar and treat that bar as a
 LOWER bound on the true uncertainty; over-stating precision would be exactly the kind of self-deception the
-rest of this section is built to avoid. SAFETY BOUNDARY: this validates a measurement METHOD on already-confirmed
+rest of this section is built to avoid.
+
+And we found WHERE that floor comes from. Re-fitting the SAME folded curve under four plausible
+limb-darkening laws (uniform / modest / solar / strong) moves the short-period depth by a median **12.7%**
+-- almost exactly the 11.4% we are off the catalog, and double the 6.3% statistical sigma. In other words
+the unknown limb darkening of each star, NOT photon noise, sets the depth-accuracy floor; that is precisely
+why the +/-1sigma bar undercovers. We carry an honest single solar-like law rather than fitting u1,u2 per
+host (which would just trade one uncertainty for a worse degeneracy on one-sector cadences), and report the
+LD spread as the real systematic budget. SAFETY BOUNDARY: this validates a measurement METHOD on already-confirmed
 planets -- nothing is anchored, posted, or claimed as a discovery.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)

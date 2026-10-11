@@ -43,6 +43,17 @@ function arg(name: string, dflt: number): number {
 const want = Math.round(arg("targets", 24));
 const tmag = arg("tmag", 9.5);
 
+// A single assumed quadratic limb-darkening law is a SYSTEMATIC, not a statistical, uncertainty: the
+// true u1,u2 of each host is unknown and TESS band-averaged values vary. Re-fitting the SAME folded
+// curve across a spread of plausible laws quantifies how much of the depth residual is driven by that
+// choice -- the honest floor below which no point estimate can be trusted regardless of photon noise.
+const LD_PRESETS: [string, number, number][] = [
+  ["uniform", 0.0, 0.0],
+  ["modest", 0.2, 0.05],
+  ["solar", 0.4, 0.1],
+  ["strong", 0.6, 0.3],
+];
+
 function median(xs: number[]): number {
   if (!xs.length) return NaN;
   const s = [...xs].sort((a, b) => a - b);
@@ -69,6 +80,7 @@ interface Row {
   impactParam: number;
   nInWindow: number;
   depthSigmaPpm: number; // first-order statistical 1-sigma on the exact-fit depth
+  ldSpreadPct: number; // (max-min)/median fitted depth across the LD presets, in percent
   fitErrPct: number; // signed (exact - catalog)/catalog * 100
   boxErrPct: number; // signed (box - catalog)/catalog * 100
 }
@@ -130,15 +142,25 @@ async function main() {
     const boxPpm = narrow.depth * 1e6;
     const fitErrPct = ((fit.depthFrac - catFrac) / catFrac) * 100;
     const boxErrPct = ((narrow.depth - catFrac) / catFrac) * 100;
+
+    // LD sensitivity: refit the identical folded curve under each limb-darkening law, spread of depth
+    const ldDepths = LD_PRESETS.map(([, u1, u2]) => fitExactTransit(folded, { aOverRs, t0Window: 0.02, u1, u2 }).depthFrac * 1e6).filter((v) => Number.isFinite(v));
+    let ldSpreadPct = NaN;
+    if (ldDepths.length >= 2) {
+      const lo = Math.min(...ldDepths);
+      const hi = Math.max(...ldDepths);
+      ldSpreadPct = ((hi - lo) / median(ldDepths)) * 100;
+    }
+
     rows.push({
       name: p.pl_name ?? `TIC ${p.tic}`, period, catDepthPpm: p.pl_trandep!,
       exactDepthPpm: exactPpm, boxDepthPpm: boxPpm, aOverRs, impactParam: fit.impactParam,
-      nInWindow: fit.nInWindow, depthSigmaPpm: fit.depthSigma * 1e6, fitErrPct, boxErrPct,
+      nInWindow: fit.nInWindow, depthSigmaPpm: fit.depthSigma * 1e6, ldSpreadPct, fitErrPct, boxErrPct,
     });
     console.log(
       `${(p.pl_name ?? `TIC ${p.tic}`).padEnd(16)} P=${period.toFixed(4)}d a/Rs=${aOverRs.toFixed(1)} b=${fit.impactParam.toFixed(2)} nin=${fit.nInWindow}  ` +
       `catalog=${p.pl_trandep!.toFixed(0)}ppm exact=${exactPpm.toFixed(0)}+-${(fit.depthSigma * 1e6).toFixed(0)}(${fitErrPct >= 0 ? "+" : ""}${fitErrPct.toFixed(0)}%) ` +
-      `box=${boxPpm.toFixed(0)}(${boxErrPct >= 0 ? "+" : ""}${boxErrPct.toFixed(0)}%)`,
+      `box=${boxPpm.toFixed(0)}(${boxErrPct >= 0 ? "+" : ""}${boxErrPct.toFixed(0)}%) LDspread=${ldSpreadPct.toFixed(0)}%`,
     );
   }
 
@@ -172,6 +194,14 @@ async function main() {
   const medSigFrac = median(rows.map((r) => (r.depthSigmaPpm / r.catDepthPpm) * 100));
   console.log(`depth 1-sigma coverage: ${cov1}/${rows.length} = ${((cov1 / rows.length) * 100).toFixed(0)}% (calibrated ~68%); 2-sigma: ${cov2}/${rows.length} = ${((cov2 / rows.length) * 100).toFixed(0)}% (calibrated ~95%)`);
   console.log(`median statistical sigma = ${medSigFrac.toFixed(1)}% of depth`);
+  // LD systematic floor: how much the fitted depth moves when only the assumed limb darkening changes.
+  const spreads = rows.map((r) => r.ldSpreadPct).filter((v) => Number.isFinite(v));
+  const shortRows = rows.filter((r) => r.period < 13);
+  const shortSpreads = shortRows.map((r) => r.ldSpreadPct).filter((v) => Number.isFinite(v));
+  console.log(`\nLD-systematic floor (depth spread across uniform/modest/solar/strong limb darkening, same fold):`);
+  console.log(`  all planets: median LD spread = ${median(spreads).toFixed(1)}% of depth`);
+  if (shortSpreads.length >= 2) console.log(`  short-period (<13 d): median LD spread = ${median(shortSpreads).toFixed(1)}%  (vs ${medSigFrac.toFixed(1)}% statistical sigma and ${median(shortRows.map((r) => Math.abs(r.fitErrPct))).toFixed(1)}% actual catalog error)`);
+  console.log(`  => if the LD spread is comparable to the actual error, the unknown limb darkening -- not photon noise -- is the depth accuracy floor, explaining the +/-1sigma undercoverage above.`);
   // split by period: short periods fold many transits per sector (shape well-constrained), long periods
   // see one or two (p-b shape degenerate, blending/activity dominates) -- the same single-sector cliff p7 hit.
   const shortP = rows.filter((r) => r.period < 13);

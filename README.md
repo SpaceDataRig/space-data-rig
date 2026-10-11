@@ -1,22 +1,29 @@
 # Space Data Rig
 
 An OpenRig-style, five-seat AI team that runs a **fully reproducible transit-detection
-loop**: it pulls real confirmed-planet parameters from the NASA Exoplanet Archive, builds
-a seeded synthetic light curve per target, hunts the injected transit with a deterministic
+loop**: it pulls real confirmed-planet parameters from the NASA Exoplanet Archive, resolves
+each target's light curve (real MAST TESS photometry where curated, otherwise a seeded
+synthetic stand-in), hunts the injected transit with a deterministic
 Box-Least-Squares (BLS) search, quantifies recovery confidence with injection-recovery
 simulation, has a critic seat cross-match candidates against the catalog, and packages
 every verdict into a **hash-sealed reproducible bundle** anchored on **Solana mainnet**
 as tamper-evident provenance.
 
 **What this is, plainly -- and what it is not.** This is a science-grade *closed-loop
-self-test*: the pipeline proves it can recover a known signal from noise it seeded
-itself. It is **not** discovering new planets. Light curves are synthetic stand-ins for
-MAST TESS photometry (labeled `seeded stand-in` in every bundle and on every card), and
-the critic cross-matches against the same catalog the injected parameters came from,
-so a "recovery at the true period" is by construction, not evidence of a find. What *is*
-real: the live NASA TAP catalog query, the detrending/BLS math, the injection-recovery
-statistics, the bundle hashing, and the on-chain anchoring -- all of it auditable
-end to end. Wiring in actual MAST light curves is the next milestone.
+self-test*: the pipeline proves it can recover a known signal from noise, and it is **not**
+claiming to discover new planets. The data-fetch seat resolves each target's light curve
+through a fixed three-tier chain -- (1) a curated registry of REAL MAST TESS products
+(anonymous `Download/file`, FITS-parsed), (2) an optional best-effort anonymous CAOM
+discovery pass, then (3) a seeded synthetic stand-in built from real catalog parameters --
+and every bundle and card labels which tier produced its photons (`real TESS photometry` vs
+`seeded stand-in`). Only targets present in the curated registry (each validated by
+`npm run mast:validate`) run on real starlight today; everything else falls back to the
+synthetic stand-in, so a "recovery at the true period" on those is by construction, not
+evidence of a find. The critic is explicit about this too: it reports "recovers the catalog
+transits" only on the real open-loop path and "recovers the injected signal" otherwise. What
+*is* unconditionally real: the live NASA TAP catalog query, the detrending/BLS/alias math,
+the injection-recovery statistics, the bundle hashing, and the on-chain anchoring -- all of
+it auditable end to end.
 
 Everything is streamed live to a **web dashboard**, so anyone can watch the agents work,
 read a plain-English explanation of each verdict, inspect the plots, verify a bundle
@@ -93,6 +100,44 @@ subscribe to the *same* store instance, so a run started anywhere streams everyw
 
 ---
 
+## The AI deliberation layer (two models, on the side)
+
+Beyond the five deterministic seats, an **optional** large-model layer adds a plain-language
+deliberation over each finding. It never touches the science pipeline, the bundle manifest, or
+the bundle hash, and it degrades to a grounded (model-free) transcript when no API key is set.
+
+- **Two reviewers, two lenses.** DeepSeek acts as the *statistical critic*; Grok (xAI) acts as
+  the *adversarial red-team*. `llm.ts` speaks plain OpenAI-compatible Chat Completions, so each
+  provider carries its own base URL + model.
+- **Two-round cross-examination.** In round 1 each model gives its lens critique; when two or
+  more answer, round 2 shows each model the other's opening and asks it to concede, defend, or
+  rebut in one labeled sentence -- so the AIs genuinely argue instead of delivering parallel
+  monologues. A model that fails is dropped individually; both rounds run concurrently.
+- **Sealed + anchored.** The transcript's model turns are sealed as a tamper-evident
+  *deliberation receipt* (`deliberations/<id>/receipt.json` + `HASH.txt`) whose hash anyone can
+  recompute via `/api/discussion/:id/receipt/verify`, and -- on demand -- anchor on Solana
+  mainnet under a separate `sdr:delib:1|<id>|<hash>` memo. That is integrity for AI
+  *commentary*, deliberately kept apart from the reproducible science bundle.
+
+Because model output is non-reproducible, this layer is a dashboard/audit feature only: the
+deterministic run and its bundle hash are computed entirely offline and never depend on a
+model response.
+
+---
+
+## Production deployment (Cloudflare Workers)
+
+One codebase runs on two runtimes: a **Node** server (`npm run api`) and a **Cloudflare
+Workers** edge deployment (`npm run cf:deploy`) live at **https://spacedatarig.app**. On the
+edge a Durable Object (`rig-state.do.ts`) owns the shared state, the anchoring ledger, and the
+WebSocket fan-out; a Workflow (`rig-run`) executes a run; R2 stores bundles and deliberation
+receipts; and the fee-payer keypair lives in the `SOLANA_KEYPAIR` Worker secret. The
+runtime-agnostic core (detection, simulation, critic, reporter, bundle hashing, the Solana memo
+path, and the deliberation seal) is shared verbatim across both, so Node and edge stay at
+parity.
+
+---
+
 ## Quickstart
 
 Requires **Node.js 22 or 24** (ESM, run via `tsx`). No database, no build step.
@@ -155,17 +200,23 @@ Base URL `http://127.0.0.1:8787` (override with `PORT` / `HOST`).
 |--------|------|---------|
 | GET | `/health` | liveness/readiness probe (used by docker-compose + rig.yaml) |
 | GET | `/api/state` | full dashboard payload: stats, seats, findings, bundles, events |
-| GET | `/api/run/status` | current/last run state |
+| GET | `/api/run/status` | current/last run state (Node) |
 | GET | `/api/findings` | all findings (newest first) |
 | GET | `/api/findings/:id` | one finding |
 | GET | `/api/bundles` | bundle records |
 | GET | `/api/bundles/:id/manifest` | the reproducible bundle manifest JSON |
-| GET | `/api/bundles/:id/verify` | recompute the hash + re-hash artifacts on disk |
+| GET | `/api/bundles/:id/verify` | recompute the hash + re-hash artifacts |
 | GET | `/api/bundles/:id/artifact/:name` | serve `folded.svg` / `periodogram.svg` / `timeseries.svg` |
-| GET | `/api/ledger` | local anchoring ledger |
-| GET | `/api/events` | **SSE** live event stream (hello, log, state, ping) |
-| POST | `/api/run` | start a pipeline run on the shared store `{ targets, delay, confidence, tmag, offline, resume }` |
-| POST | `/api/anchor/:id` | anchor one finding's bundle hash on mainnet `{ dryRun, rpc, keypair }` |
+| GET | `/api/ledger` | anchoring ledger (bundle anchors) |
+| GET | `/api/discussion` | grounded deliberation threads for all findings (fast, no LLM) |
+| GET | `/api/discussion/:id` | on-demand two-model cross-examination; seals the receipt and returns `deliberationHash` |
+| GET | `/api/discussion/:id/receipt` | the sealed deliberation receipt JSON |
+| GET | `/api/discussion/:id/receipt/verify` | recompute the receipt hash and compare (tamper check) |
+| GET | `/api/discussion/:id/anchor` | read back any on-chain deliberation anchor |
+| GET | `/api/events` | live event stream (**SSE** on Node; **WebSocket-first** with SSE fallback on the edge) |
+| POST | `/api/run` | start a run `{ targets, delay, confidence, tmag, offline, resume }` (Orchestrator on Node; triggers the `rig-run` Workflow on the edge) |
+| POST | `/api/anchor/:id` | anchor one finding's bundle hash on mainnet `{ dryRun }` (memo `sdr:1\|...`) |
+| POST | `/api/anchor/:id/deliberation` | anchor the sealed deliberation receipt `{ dryRun }` (memo `sdr:delib:1\|...`, idempotent, separate from the bundle ledger) |
 
 `POST /api/run` returns immediately and streams progress over SSE; only one run at a
 time (a second call returns HTTP 409).
@@ -183,7 +234,11 @@ identically across machines and runs.
 
 **Anchoring.** `npm run anchor` writes each accepted bundle hash to Solana **mainnet** in
 an SPL Memo instruction (`MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`) using the compact
-record `sdr:1|<findingId>|<bundleHash>`. No custom program or token is involved.
+record `sdr:1|<findingId>|<bundleHash>`. No custom program or token is involved. The
+non-reproducible AI deliberation is anchored separately, on demand, under its own
+`sdr:delib:1|<findingId>|<deliberationHash>` memo -- a distinct schema so an auditor can never
+confuse AI commentary with the reproducible science bundle, and it never touches the bundle
+ledger or the bundle hash.
 
 **RPC failover.** Endpoints are tried in order: the private RPC in `SOLANA_RPC` (a local,
 untracked `.env`, e.g. an Alchemy mainnet endpoint) first, then `SOLANA_RPC_FALLBACKS`,
@@ -223,23 +278,32 @@ Windows (plus Node 22/24, tmux, and Docker for the services block).
 
 ```
 src/
-  core/         types.ts (domain model), store.ts (RigStore event bus + snapshot/restore)
-  data/         exoplanetArchive.ts (NASA TAP client + fallback), synthetic.ts (light-curve builder)
-  detect/       bls.ts, detrend.ts, aliasResolver logic, pipeline.ts, svgPlot.ts
-  sim/          transitModel.ts, injectionRecovery.ts, confidence.ts (recovery + ephemeris)
+  core/         types.ts (domain model), store.ts (RigStore), ports.ts (IO ports), state-types.ts
+  data/         exoplanetArchive.ts (NASA TAP + fallback), synthetic.ts (stand-in builder),
+                mast.ts + fits.ts (real TESS download + zero-dep FITS reader),
+                mastCurated.ts (curated real-product registry), mastDiscover.ts (best-effort CAOM)
+  detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts
+  sim/          transitModel.ts, injectionRecovery.ts, confidence.ts, aliasResolver.ts
   critic/       review.ts (cross-match + verdict + score)
   reporter/     narrate.ts (plain-English narration)
   bundle/       bundle.ts (canonical JSON + SHA-256 manifest + verify)
+  ai/           llm.ts (multi-provider client), discussion.ts (two-round cross-examination),
+                threads.ts (grounded threads), deliberation.ts (sealable receipt + hash)
+  seats/        seats.ts (seat role wiring)
   orchestrator/ pipeline.ts (the 5-seat Orchestrator), run.ts (CLI driver)
-  solana/       anchor.ts (mainnet SPL Memo anchoring + RPC failover + ledger)
-  api/          server.ts (Hono HTTP API + SSE + static dashboard)
-scripts/        p0-benchmark.ts, p0-archive.ts, p0-detect.ts, p2-anchor.ts
-web/            index.html, styles.css, app.js (the dashboard)
+  solana/       anchor-core.ts (runtime-agnostic memo + chain path), anchor.ts (Node adapter + ledger)
+  node/         artifact-store.ts (fs ArtifactStore), code-version.ts
+  cf/           worker.ts (edge Hono API), rig-state.do.ts (Durable Object), workflow.ts (rig-run
+                Workflow), artifact-store.ts (R2), env.ts, run-types.ts
+  api/          server.ts (Node Hono HTTP API + SSE + static dashboard)
+scripts/        p0-*.ts, p2-anchor.ts, p3-discover.ts, validate-curated.ts (npm run mast:validate)
+web/            index.html, styles.css, app.js, live.js (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 ```
 
-npm scripts: `p0:benchmark`, `p0:archive`, `p0:detect`, `orchestrator`, `api`, `start`,
-`anchor`, `typecheck`.
+npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
+`p0:detect`, `p0:mast`, `p3:discover`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---
 

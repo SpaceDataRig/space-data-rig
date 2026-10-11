@@ -170,6 +170,7 @@ a:hover { text-decoration: underline; }
 }
 .prov-tag.live { color: var(--good); border-color: rgba(46, 204, 164, .5); background: rgba(46, 204, 164, .08); }
 .prov-tag.offline { color: var(--gold); border-color: rgba(240, 185, 11, .5); background: rgba(240, 185, 11, .08); }
+.prov-tag.real { color: var(--accent); border-color: rgba(58, 224, 255, .5); background: rgba(58, 224, 255, .1); }
 .prov-line { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; padding: 7px 0 2px; font-size: .72rem; }
 .prov-link { color: var(--accent); }
 .prov-link:hover { text-decoration: underline; }

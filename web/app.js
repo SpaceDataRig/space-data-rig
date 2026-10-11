@@ -302,7 +302,9 @@ function renderProvBar(sum) {
   provBarEl.innerHTML = live
     ? `<span class="prov-tag live">CATALOG: LIVE NASA</span>` +
       `<span>Target parameters queried this run from the <a href="${NASA_TABLE_URL}" target="_blank" rel="noopener">NASA Exoplanet Archive</a> (TAP <code>pscomppars</code>). ` +
-      `Light curves are seeded, reproducible stand-ins built from those real parameters. Every bundle stamps its source and data hash.</span>`
+      `Light curves are real MAST TESS photometry where a target is in the curated registry, otherwise seeded ` +
+      `reproducible stand-ins built from those real parameters -- each card labels which tier produced its photons. ` +
+      `Every bundle stamps its source and data hash.</span>`
     : `<span class="prov-tag offline">CATALOG: OFFLINE SNAPSHOT</span>` +
       `<span>This run used the bundled copy of real archive values (no network). Light curves are seeded, reproducible stand-ins.</span>`;
 }
@@ -326,8 +328,13 @@ async function fillProvenance() {
     const nasaRow = nasaName
       ? `<a class="prov-link" href="https://exoplanetarchive.ipac.caltech.edu/overview/${encodeURIComponent(nasaName)}" target="_blank" rel="noopener">NASA archive row &rarr;</a>`
       : "";
+    const lcSrc = String(dp.lightCurveSource || "");
+    const isRealLC = /real photometry/i.test(lcSrc);
     const lc = dp.lightCurveHash
-      ? `<span class="hint" title="${esc(dp.lightCurveSource || "")}">lc hash ${esc(shortHash(dp.lightCurveHash))} &middot; seeded stand-in</span>`
+      ? (isRealLC
+        ? `<span class="prov-tag real" title="${esc(lcSrc)}">REAL TESS PHOTOMETRY</span>` +
+          `<span class="hint">lc hash ${esc(shortHash(dp.lightCurveHash))}</span>`
+        : `<span class="hint" title="${esc(lcSrc)}">lc hash ${esc(shortHash(dp.lightCurveHash))} &middot; seeded stand-in</span>`)
       : "";
     slot.innerHTML =
       `<span class="prov-tag ${live ? "live" : "offline"}">${live ? "NASA LIVE TAP" : esc(String(dp.catalogSource || "offline"))}</span>` +

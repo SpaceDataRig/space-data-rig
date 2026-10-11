@@ -74,6 +74,9 @@
             <ul>
               <li><b>Target catalog</b> &mdash; queried LIVE from the NASA Exoplanet Archive (TAP table
                 <code>pscomppars</code>) on every non-offline run; the source is stamped into each bundle manifest.</li>
+              <li><b>Light curves (curated)</b> &mdash; for targets in the curated registry, real MAST TESS 2-min
+                photometry is downloaded anonymously and FITS-parsed; every entry is re-checked by
+                <code>npm run mast:validate</code>.</li>
               <li><b>Analysis</b> &mdash; BLS transit search, odd-even alias checks and injection-recovery confidence
                 are computed here on every run, never asserted.</li>
               <li><b>Proof</b> &mdash; each finding ships a reproducible bundle (plots + manifest); its SHA-256 is
@@ -83,8 +86,9 @@
           <div>
             <h3>What is simulated, on purpose</h3>
             <ul>
-              <li><b>Light curves</b> &mdash; seeded, reproducible stand-ins for MAST TESS 2-min photometry, built from
-                the real catalog parameters (period, radii, depth). Same seed, same curve, on any machine.</li>
+              <li><b>Light curves (fallback)</b> &mdash; for targets not in the curated registry, seeded reproducible
+                stand-ins built from the real catalog parameters (period, radii, depth). Same seed, same curve, on any
+                machine. Each finding card labels which tier produced its photons.</li>
               <li><b>The table</b> &mdash; the six minds are software agents; with a chat key configured the critic
                 adds live model commentary, otherwise every line is grounded in the computed numbers.</li>
               <li><b>Critic mode</b> &mdash; recovery self-test, not a sky survey: the reviewer is given the injected

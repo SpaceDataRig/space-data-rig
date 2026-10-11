@@ -372,6 +372,20 @@ its SNR to an empirical false-alarm rate computed under THAT noise color. We rec
 distribution rather than silently re-tuning the global cut -- the same discipline applied throughout
 (money-path thresholds come from real measurements, and honest limitations are published, not hidden).
 
+#### A lag-1 number is not the whole story: is real residual noise actually AR(1)? (`npm run p8:noise-acf`)
+
+Everything above (and the per-candidate nulls below) ASSUMES a star's residual noise is AR(1), i.e. its
+autocorrelation decays as `ACF[k] = rho^k`. A single lag-1 rho cannot test that assumption -- it says
+nothing about the SHAPE of the decay. `p8:noise-acf` measures the FULL autocorrelation function on real,
+token-free SPOC light curves (detrended + MAD-clipped exactly like `estimateRho`, deduped by star) and
+fits the AR(1) prediction to it. Over 20 distinct hosts: **16 are near-white (median rho -0.011) and 4
+are red** -- and the red ones are again the young active stars (AU Mic rho 0.63 R2 0.91, HD 63433 rho
+0.63 R2 0.86, TOI-4641 rho 0.46 R2 0.76). Crucially, the red hosts' measured ACF decays AT LEAST as fast
+as `rho^k` (median fit R2 0.81, and the excess correlation at higher lags is NEGATIVE, not positive):
+there is no hidden power-law tail. So the AR(1) null model behind `calibratedFap` is faithful-to-
+conservative on real data -- it does not understate the false-alarm tail. A direct, real-data validation
+of the DECAY SHAPE that lag-1 alone could never provide.
+
 #### We then BUILT it: per-candidate calibrated significance, shipped ON
 
 `src/detect/significance.ts` `calibratedFap(lc, snr, period)` does exactly what the measurement
@@ -488,6 +502,32 @@ SNR>=7 peak and one even passed its calibrated FAP, yet ZERO were accepted, beca
 demands a DIRECT catalog match (harmonic 1) and an empty field has no catalog row to match -- so
 accepted-only auto-anchoring can never stake a planet-free star. Purity stays 100% by construction,
 not by tuning.
+
+### Real-sky blind recovery of UNCONFIRMED candidates (`npm run p7:toi-survey`)
+
+`p6:survey` measures the blind critic on synthetic curves; `p7:toi-survey` is its real-sky complement --
+a genuine independent re-detection test, not a verification. It scales the `p5:blind` protocol to tens of
+REAL unconfirmed TESS candidates (the Archive `toi` table minus confirmed hosts): pull the same token-free
+SPOC photometry production uses, run `detectTransit` BLIND (the whole period grid, the candidate's reported
+ephemeris NEVER shown), and only afterwards cross-match the period we recovered against the TOI reference.
+A direct fundamental match at SNR>=7 is evidence the signal is real in the downlinked pixels, independent
+of the discovery pipeline's own answer.
+
+Measured on 40 candidates that had token-free data (2 skipped, no product):
+
+```
+independent blind recovery (fundamental, SNR>=7): 15/40 = 37.5%   (+1 harmonic-only alias, not counted)
+median |recovered period - TOI period| = 0.25%  (max 1.62%)  -- recovered blind, ephemeris withheld
+by period bin:  <2d 3/6   2-4d 5/10   4-7d 4/6   7-13d 3/7   >13d 0/11
+```
+
+The period bins are the honest story: within the single-sector confirmable regime (<13 d) we independently
+recover ~52%, and 0/11 beyond it -- a 20-70 d orbit yields too few transits in one ~27-day sector to pin
+down, a physical coverage limit (the same one the real-sky completeness study shows), not a pipeline
+failure. The recovered PERIOD is the reliable independent measurement (sub-percent); the BLS box DEPTH is
+a crude proxy (median 28% off the reported depth) and is reported as such, not dressed up. SAFETY
+BOUNDARY: like p5, this is a research probe off the money path -- every hit is a `CANDIDATE` for human
+follow-up, nothing is anchored, posted, spent on, or claimed as a discovery.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
@@ -689,7 +729,7 @@ src/
 scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty}.ts,
                 p2-{vet-calibrate,anchor}.ts, p2-bls-astropy.ts + bls_astropy_check.py (astropy
                 cross-check), p3-{discover,gaia-dilution}.ts, p4-autonomous.ts, p5-blind-probe.ts,
-                p6-blind-survey.ts, validate-curated.ts (npm run mast:validate)
+                p6-blind-survey.ts, p7-blind-toi-survey.ts, p8-noise-acf.ts, validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 ```
@@ -697,7 +737,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

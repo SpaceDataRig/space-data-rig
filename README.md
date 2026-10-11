@@ -405,6 +405,18 @@ because it adapts to each host's measured noise color. This is the operating pri
 project runs on: don't assert reliability, MEASURE it; and never wire a rejection gate without first
 proving on known-good data that it doesn't kill real discoveries.
 
+One subtler statistical question we probed rather than assumed: on the FULL-resolution real-photometry
+path the observed SNR is the maximum of the WIDE detection search (0.8-16 d) while the null ensemble is
+searched over a narrow window around the candidate period, and a wide-grid maximum is in principle
+inflated relative to a narrow-grid one (a look-elsewhere effect). `npm run p2:fap-grid` compares the two
+null choices on identical full-resolution red-noise curves. Measured, the two FAPs agree closely and the
+choice flips NO accept/reject decision: planet-free 3/8 vs 3/8 at FAP<=0.05 -- and every one of those
+carries SNR<7, so the production minSnr=7 floor rejects it anyway -- and planets 4/4 vs 4/4. Widening the
+null grid to the detection grid would cost ~9x the edge compute for zero decision benefit, so the narrow
+null stays and the probe ships as a permanent regression check. The load-bearing false-positive
+protection on the money path is not this FAP nuance but the minSnr floor plus the blind critic's
+direct-catalog-match requirement, which is why an empty field can never be staked.
+
 ### Blind / discovery mode (independent re-detection of UNCONFIRMED candidates)
 
 Everything above re-validates planets we already KNOW. To show the pipeline can stand on its own,

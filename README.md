@@ -2,8 +2,9 @@
 
 An OpenRig-style, five-seat AI team that runs a **fully reproducible transit-detection
 loop**: it pulls real confirmed-planet parameters from the NASA Exoplanet Archive, resolves
-each target's light curve (real MAST TESS photometry where curated, otherwise a seeded
-synthetic stand-in), hunts the injected transit with a deterministic
+each target's light curve (real MAST TESS photometry where curated -- or, with the opt-in
+token-free tier, real TESS-SPOC photometry pulled autonomously from a public S3 bucket --
+otherwise a seeded synthetic stand-in), hunts the injected transit with a deterministic
 Box-Least-Squares (BLS) search, quantifies recovery confidence with injection-recovery
 simulation, has a critic seat cross-match candidates against the catalog, and packages
 every verdict into a **hash-sealed reproducible bundle** anchored on **Solana mainnet**
@@ -12,13 +13,19 @@ as tamper-evident provenance.
 **What this is, plainly -- and what it is not.** This is a science-grade *closed-loop
 self-test*: the pipeline proves it can recover a known signal from noise, and it is **not**
 claiming to discover new planets. The data-fetch seat resolves each target's light curve
-through a fixed three-tier chain -- (1) a curated registry of REAL MAST TESS products
-(anonymous `Download/file`, FITS-parsed), (2) an optional best-effort anonymous CAOM
-discovery pass, then (3) a seeded synthetic stand-in built from real catalog parameters --
-and every bundle and card labels which tier produced its photons (`real TESS photometry` vs
-`seeded stand-in`). Only targets present in the curated registry (each validated by
-`npm run mast:validate`) run on real starlight today; everything else falls back to the
-synthetic stand-in, so a "recovery at the true period" on those is by construction, not
+through a fixed priority chain -- (1) a curated registry of REAL MAST TESS products
+(anonymous `Download/file`, FITS-parsed), (2) an opt-in token-free tier that autonomously
+pulls REAL TESS-SPOC PDCSAP photometry from the public AWS `stpubdata` S3 bucket by
+deterministically constructing a TIC-sharded key (no MAST token, no AWS account), (3) an
+optional best-effort anonymous CAOM discovery pass, then (4) a seeded synthetic stand-in
+built from real catalog parameters -- and every bundle and card labels which tier produced
+its photons (`REAL photometry` vs `seeded stand-in`). Tiers (2) and (3) are OFF by default,
+so a stock run is fully deterministic on the stand-in and its bundle hash never changes;
+enabling them (Worker var `MAST_S3=1`, which also narrows autonomous target selection to
+TIC-bearing rows) lets any SPOC-covered target run on real starlight -- verified end to end
+at the Cloudflare edge, where an autonomous pass fetched REAL photometry for live-selected
+planets (e.g. pi Men c, HR 858 b) and the BLS seat independently recovered the catalog
+period. A "recovery at the true period" on the stand-in path is by construction, not
 evidence of a find. The critic is explicit about this too: it reports "recovers the catalog
 transits" only on the real open-loop path and "recovers the injected signal" otherwise. What
 *is* unconditionally real: the live NASA TAP catalog query, the detrending/BLS/alias math,
@@ -92,7 +99,7 @@ subscribe to the *same* store instance, so a run started anywhere streams everyw
 
 | Seat | What it really does |
 |------|---------------------|
-| **data-fetch** | Queries the NASA Exoplanet Archive TAP service for bright transiting systems, builds a physical, observable light curve from real planet/star parameters, and records a SHA-256 provenance hash of the source data. Falls back to a bundled real-value catalog if the network is unavailable. |
+| **data-fetch** | Queries the NASA Exoplanet Archive TAP service for bright transiting systems, resolves each target's light curve through the curated -> token-free TESS-SPOC public-S3 -> (optional) CAOM-discovery -> seeded-synthetic priority chain (the two real tiers are off by default, so a stock run stays deterministic), and records a SHA-256 provenance hash of the source data. Falls back to a bundled real-value catalog if the network is unavailable. |
 | **anomaly-scout** | Detrends the light curve, runs a Box-Least-Squares period search, resolves odd/even epoch aliases, and emits a transit candidate (period, epoch, depth, duration, SNR). |
 | **sim-runner** | Replays the detected signal through N fresh noise realizations (injection-recovery Monte Carlo) to estimate how reliably it is recovered, and predicts the next transit times (a falsifiable ephemeris). |
 | **mission-critic** | Cross-matches the candidate period against the known-planet catalog (including harmonics), applies physical sanity checks, and issues a verdict (`accepted` / `needs-more-data` / `rejected`) plus a 0-100 composite score. |
@@ -135,6 +142,33 @@ receipts; and the fee-payer keypair lives in the `SOLANA_KEYPAIR` Worker secret.
 runtime-agnostic core (detection, simulation, critic, reporter, bundle hashing, the Solana memo
 path, and the deliberation seal) is shared verbatim across both, so Node and edge stay at
 parity.
+
+---
+
+## Autonomous research loop (token-free, opt-in)
+
+The rig can select, fetch and analyze real targets by itself -- with **no MAST token and no
+AWS account**. The whole loop is gated OFF by default, so deploying it changes nothing until an
+operator opts in.
+
+- **Real data, autonomously.** With the Worker var `MAST_S3=1`, target selection keeps only
+  planets that carry a TESS Input Catalog id, and the data-fetch seat constructs a
+  deterministic TIC-sharded key into the public `stpubdata` S3 bucket to pull REAL TESS-SPOC
+  PDCSAP photometry (a public reimplementation of the official `aws s3 ls --no-sign-request`
+  access). If a target is not in the SPOC program the tier 404s and the run falls through to
+  the synthetic stand-in -- it never fabricates data.
+- **On a schedule.** A `[triggers] crons` entry plus a `scheduled` handler in `worker.ts` can
+  launch an autonomous run unattended, but only when `AUTO_RESEARCH=1` (default `0`, so the
+  cron is inert). It reuses the same single-run mutex as the dashboard, skipping a tick if a
+  run is already going.
+- **Budget-gated on-chain sealing.** Autonomous runs may anchor an *accepted* finding, but
+  only through the DO budget gate: `AUTO_ANCHOR` is `off` by default (spend nothing), `dry`
+  previews the memo, and `live` spends real SOL only while a per-UTC-day cap
+  (`AUTO_ANCHOR_DAILY_CAP`, default `0`) leaves room, and never repeats an already-anchored
+  hash. On-chain anchoring therefore stays an explicit, cost-capped operator decision.
+
+Try the chain without a token: `npm run p4:autonomous` (add `-- --targets 12 --tmag 9.5`, or a
+known SPOC star with `-- --tic 1024880 --sector 4`).
 
 ---
 

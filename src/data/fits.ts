@@ -14,7 +14,9 @@ export interface FitsColumn {
   form: string; // TFORM letter (first char)
   offset: number; // byte offset of the column inside a row
   size: number; // bytes per element
-  count: number; // repeat count
+  count: number; // repeat count (elements per row; 1 for a scalar column)
+  /** Parsed TDIM, e.g. '(14,14)' -> [14,14]; undefined for scalar/1-D columns. */
+  dims?: number[];
 }
 
 export interface FitsTable {
@@ -108,7 +110,9 @@ export function readFitsTable(bytes: Uint8Array): FitsTable {
         const repeat = /^\d/.test(form) ? parseInt(form, 10) : 1;
         const letter = form.replace(/^\d+/, "")[0] ?? "E";
         const perElem = letter === "D" || letter === "K" ? 8 : letter === "A" || letter === "B" ? 1 : 4;
-        cols.push({ name: String(header[`TTYPE${i}`] ?? `COL${i}`).trim(), form: letter, offset, size: perElem, count: letter === "A" || letter === "B" ? repeat : 1 });
+        const tdim = String(header[`TDIM${i}`] ?? "");
+        const dims = tdim ? (tdim.match(/\d+/g) ?? []).map(Number) : undefined;
+        cols.push({ name: String(header[`TTYPE${i}`] ?? `COL${i}`).trim(), form: letter, offset, size: perElem, count: repeat, dims });
         offset += perElem * repeat;
       }
       table = { rows: naxis2, columns: cols, dataStart: next, rowWidth: naxis1, header };
@@ -144,4 +148,35 @@ export function readColumn(table: FitsTable, bytes: Uint8Array, name: string): F
     else out[r] = Number.NaN;
   }
   return out;
+}
+
+/**
+ * Read a fixed-length ARRAY column (e.g. a target-pixel FLUX with TFORM '196E'
+ * and TDIM '(14,14)') as a flat Float64Array of shape rows x count, stored in
+ * FITS column-major order within each row (so for a row of `count` elements the
+ * first TDIM axis varies fastest). Scalar columns (count 1) work too. Returns
+ * the flattened values plus the row element count and parsed dims so the caller
+ * can index (row, axis0, axis1, ...). Big-endian, DataView, zero-dependency.
+ */
+export function readArrayColumn(table: FitsTable, bytes: Uint8Array, name: string): { values: Float64Array; count: number; dims?: number[] } {
+  const col = table.columns.find((c) => c.name === name);
+  if (!col) throw new Error(`column not found: ${name}`);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const count = Math.max(1, col.count);
+  const out = new Float64Array(table.rows * count);
+  const letter = col.form[0].toUpperCase();
+  for (let r = 0; r < table.rows; r++) {
+    const rowBase = table.dataStart + r * table.rowWidth + col.offset;
+    for (let e = 0; e < count; e++) {
+      const at = rowBase + e * col.size;
+      let v: number;
+      if (letter === "D") v = view.getFloat64(at);
+      else if (letter === "E") v = view.getFloat32(at);
+      else if (letter === "J" || letter === "I") v = view.getInt32(at);
+      else if (letter === "K") v = view.getFloat64(at);
+      else v = Number.NaN;
+      out[r * count + e] = v;
+    }
+  }
+  return { values: out, count, dims: col.dims };
 }

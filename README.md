@@ -543,37 +543,37 @@ parameter b and a small timing offset. The catalog depth is used ONLY as a post-
 the fit; BLS is run on a narrow grid at the SAME period so the two depth estimators are compared
 apples-to-apples on the same curve.
 
-Measured on 28 confirmed planets:
+Measured on 48 confirmed planets (a replication at ~1.7x the earlier 28; every headline below holds):
 
 ```
-median |fit depth - catalog depth|:   exact-model 14.7%   BLS box 37.0%
-exact fit closer than the box:        22/28 = 79%
-unphysical (<= 0 ppm) depths:         box 3, exact-model 0  (the forward model is bounded >= 0)
-short period (< 13 d, 17 planets):    exact 11.4%  vs box 32.1%
-long period (>= 13 d, 11 planets):    exact 47.2%  vs box 56.8%   (both degrade)
-median statistical 1-sigma on depth:  6.3% of depth
-catalog depth inside +/-1sigma:       8/28 = 29%  (a calibrated error would be ~68%)
-catalog depth inside +/-2sigma:       13/28 = 46% (calibrated ~95%)
-LD-sensitivity floor on depth:        12.1% (all) / 12.7% short-period  (refit across 4 limb-darkening laws)
-independent planet RADIUS vs catalog:  6.5% median (all) / 5.4% short-period  (Rp = p x Rstar; pl_rade withheld)
-combined stat+LD 1-sigma coverage:     39% (up from 29% statistical-only; still < ~68% -> an approximate bar)
+median |fit depth - catalog depth|:   exact-model 13.8%   BLS box 32.7%
+exact fit closer than the box:        40/48 = 83%
+unphysical (<= 0 ppm) depths:         box 4, exact-model 0  (the forward model is bounded >= 0)
+short period (< 13 d, 32 planets):    exact 12.1%  vs box 30.7%
+long period (>= 13 d, 16 planets):    exact 18.4%  vs box 38.1%   (exact still wins; both degrade)
+median statistical 1-sigma on depth:  5.8% of depth
+catalog depth inside +/-1sigma:       16/48 = 33%  (a calibrated error would be ~68%)
+catalog depth inside +/-2sigma:       22/48 = 46% (calibrated ~95%)
+LD-sensitivity floor on depth:        12.1% (all) / 11.9% short-period  (refit across 4 limb-darkening laws)
+independent planet RADIUS vs catalog:  6.5% median (all) / 5.5% short-period  (Rp = p x Rstar; pl_rade withheld)
+combined stat+LD 1-sigma coverage:     42% (statistical-only 33%; still < ~68% -> an approximate bar)
 ```
 
-The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
-~10%, roughly HALVING the box error, and -- unlike a box average that can dilute a short transit into
-nothing -- it never returns an unphysical negative depth (the box did on 3 of 28). The advantage fades on
-long-period (>=13 d) and magnetically active hosts, where one or two transits per sector leave the p-b
-shape degenerate and flares/spots/blends corrupt the fold; there BOTH estimators get bad, and we say so
-rather than hiding it. This is the same single-sector coverage cliff p7 measured and the same active-star
-regime p8 isolated, now showing up in the depth estimator too -- the three studies are consistent. The
-fitted impact parameter b is reported for shape context only: we did not fetch catalog b, so it is NOT
-scored here. Offline, `tests/transitFit.test.ts` (deterministic, no network) confirms the fitter recovers
-an injected depth to grid resolution noiseless, to ~12% under realistic scatter, and that its statistical
-error bar shrinks with the in-transit cadence count.
+The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to about
+12%, LESS than half the BLS box error, and -- unlike a box average that can dilute a short transit into nothing
+-- it never returns an unphysical negative depth (the box did on 4 of 48). The advantage narrows on long-period
+(>=13 d) and magnetically active hosts, where one or two transits per sector weakly constrain the p-b shape and
+flares/spots/blends corrupt the fold: there the exact fit still beats the box (18% vs 38% median) but both
+degrade, and individual outliers reach 40-80% -- the same single-sector coverage cliff p7 measured and the
+active-star regime p8 isolated, now visible in the depth estimator too, reported rather than hidden. The fitted
+impact parameter b is for shape context only: we did not fetch catalog b, so it is NOT scored here. Offline,
+`tests/transitFit.test.ts` (deterministic, no network) confirms the fitter recovers an injected depth to grid
+resolution noiseless, to ~12% under realistic scatter, and that its statistical error bar shrinks with the
+in-transit cadence count.
 
 **The error bars are optimistic, and we say so.** The fit also reports a first-order *statistical* 1-sigma
-(from the point-to-point scatter and the number of in-transit cadences). Its median is only ~6.3% of depth,
-yet the catalog depth lands inside +/-1sigma just 29% of the time and inside +/-2sigma only 46% -- far below
+(from the point-to-point scatter and the number of in-transit cadences). Its median is only ~5.8% of depth,
+yet the catalog depth lands inside +/-1sigma just 33% of the time and inside +/-2sigma only 46% -- far below
 the ~68% / ~95% a well-calibrated error would give. That undercoverage is the honest signal that the residual
 is dominated by SYSTEMATICS -- the fixed limb-darkening law, an imperfect ephemeris, and stellar activity --
 not photon noise. So we quote the depth as a point estimate with a statistical bar and treat that bar as a
@@ -581,8 +581,8 @@ LOWER bound on the true uncertainty; over-stating precision would be exactly the
 rest of this section is built to avoid.
 
 And we found WHERE that floor comes from. Re-fitting the SAME folded curve under four plausible
-limb-darkening laws (uniform / modest / solar / strong) moves the short-period depth by a median **12.7%**
--- almost exactly the 11.4% we are off the catalog, and double the 6.3% statistical sigma. In other words
+limb-darkening laws (uniform / modest / solar / strong) moves the short-period depth by a median **11.9%**
+-- almost exactly the 12.1% we are off the catalog, and double the 5.8% statistical sigma. In other words
 the unknown limb darkening of each star, NOT photon noise, sets the depth-accuracy floor; that is precisely
 why the +/-1sigma bar undercovers. We carry an honest single solar-like law rather than fitting u1,u2 per
 host (which would just trade one uncertainty for a worse degeneracy on one-sector cadences), and report the
@@ -591,14 +591,14 @@ planets -- nothing is anchored, posted, or claimed as a discovery.
 
 **From depth to size.** Multiplying the fitted radius ratio by the catalog STELLAR radius (never the planet's
 catalog radius) gives an INDEPENDENT planet radius. It agrees with the published value to a median **6.5%**
-(5.4% on short-period planets) -- almost exactly HALF the depth error, as it must be, since radius scales as
+(5.5% on short-period planets) -- almost exactly HALF the depth error, as it must be, since radius scales as
 the square root of depth. So the same fit that repaired the crude box depth also yields the planet's physical
 SIZE to a few percent, straight from the shape of the light curve -- a quantity a non-specialist can grasp
 immediately (is it Earth-sized? Neptune-sized? Jupiter-sized?) and a genuine, self-consistent measurement
 chain: pixels -> shape -> depth -> radius.
 
 **Can we make the error bar honest?** Adding the measured LD spread to the statistical sigma in quadrature
-lifts the 1-sigma coverage from 29% to 39% and the 2-sigma from 46% to 54% -- a real improvement, but still
+lifts the 1-sigma coverage from 33% to 42% and the 2-sigma from 46% to 56% -- a real improvement, but still
 short of the ~68% / ~95% a fully calibrated error would reach. That is the honest conclusion: limb darkening
 is the dominant systematic, yet not the only one -- an imperfect ephemeris and residual stellar activity remain
 in the error, so we quote the combined bar as an APPROXIMATE lower bound on the true uncertainty rather than

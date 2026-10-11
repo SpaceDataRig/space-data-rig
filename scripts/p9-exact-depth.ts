@@ -93,7 +93,7 @@ async function main() {
   console.log(`(token-free TESS-SPOC; a/Rs from Kepler + catalog R*/M*; exact-model fit vs BLS box vs catalog depth)`);
   console.log(`sample ${want} planets, tmag<${tmag}. Catalog depth is a POST-HOC reference only -- never shown to the fit.\n`);
 
-  const cat = await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true });
+  const cat = await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true, limit: Math.max(200, want * 6) });
   if (cat.source !== "nasa-tap") {
     console.log(`WARNING: catalog source=${cat.source} (live TAP unavailable) -- using labeled fallback; NOT a real cross-validation.`);
   }

@@ -18,7 +18,8 @@ through a fixed priority chain -- (1) a curated registry of REAL MAST TESS produ
 pulls REAL TESS-SPOC PDCSAP photometry from the public AWS `stpubdata` S3 bucket by
 deterministically constructing a TIC-sharded key (no MAST token, no AWS account), (3) an
 optional best-effort anonymous CAOM discovery pass, then (4) a seeded synthetic stand-in
-built from real catalog parameters -- and every bundle and card labels which tier produced
+built from real catalog parameters (now carrying realistic per-star red, time-correlated noise
+by default rather than idealized white noise) -- and every bundle and card labels which tier produced
 its photons (`REAL photometry` vs `seeded stand-in`). Tiers (2) and (3) are OFF by default,
 so a stock run is fully deterministic on the stand-in and its bundle hash never changes;
 enabling them (Worker var `MAST_S3=1`, which also narrows autonomous target selection to
@@ -178,9 +179,13 @@ known SPOC star with `-- --tic 1024880 --sector 4`).
 
 ## Scientific-rigness upgrades (self-validating, gated)
 
-Beyond the autonomous loop, the analysis core now carries three additive primitives that
-raise it from a demo to defensible science. Each is pure, deterministic, fully unit-tested,
-and OFF the default (synthetic) run path, so the reproducible bundle hash is unchanged:
+Beyond the autonomous loop, the analysis core carries additive primitives that raise it from a
+demo to defensible science. Each is pure, deterministic and fully unit-tested. They began OFF the
+default (synthetic) run path so the reproducible bundle hash stayed frozen; the honesty-critical
+ones (red-noise stand-in, per-candidate calibrated significance, the blind critic, pixel vetting)
+have since been promoted to ON BY DEFAULT -- detailed in the subsections below. That changes the
+stand-in bundle hash to reflect realistic correlated noise, but the hash stays fully deterministic
+and reproducible run to run (same seed => same bytes => same hash):
 
 - **Exact limb-darkened transit model** (`src/sim/exactTransit.ts`). Quadratic limb darkening,
   computed as a deterministic 1-D radial integral of the occulted intensity. With no limb
@@ -196,21 +201,23 @@ and OFF the default (synthetic) run path, so the reproducible bundle hash is unc
   ~0.19. (A naive circular time-shift was rejected -- it preserves the transits and gave a
   false planet a spuriously low FAP; the regression tests caught it.)
 - **Pixel-level false-positive vetting** (`src/data/mastS3Pixels.ts`, wired into the critic via
-  `reviewCandidate(vetting)`). For REAL SPOC photometry and only when the `VET` flag is on,
-  the critic downloads the 14x14 target-pixel cube and measures the in-transit photocenter
-  displacement against the candidate's own ephemeris; a large shift means the dip is not on
-  the target star (a blend / background eclipsing binary) and downgrades the verdict to
-  rejected. With `VET` off the critic receives no vetting and the review is byte-for-byte
-  identical (a test asserts empty-vetting == no-vetting).
+  `reviewCandidate(vetting)`). For REAL SPOC photometry the critic downloads the 14x14 target-pixel
+  cube and measures the in-transit photocenter displacement against the candidate's own ephemeris;
+  a large shift means the dip is not on the target star (a blend / background eclipsing binary) and
+  downgrades the verdict to rejected. This is now ON BY DEFAULT (`VET="0"` opts out): letting a large
+  photocenter shift through by default would stake blends on the money path. The synthetic stand-in
+  path has no pixels, so it is unaffected either way, and with vetting absent the review is
+  byte-for-byte identical (a test asserts empty-vetting == no-vetting).
 
 On pi Men c the real in-transit photocenter shift is 0.10 arcsec -- correctly judged on-target.
 The reject threshold is EMPIRICALLY CALIBRATED, not guessed: `npm run p2:vet-calibrate` measures
 the shift for confirmed planets (which genuinely transit their hosts, so must cluster near zero).
-A sample of six (pi Men c, HR 858 b/c/d, HD 63433 b/c) gave 0.03-0.49 arcsec (p50 0.10, max 0.49),
-so the critic rejects at >2.0 arcsec -- comfortably above every true planet yet far below the
-multi-arcsec signature of a background EB / blend. Pixel vetting is therefore ON in the autonomous
-deployment (`VET=1`): blends are vetoed before they can be anchored. The only residual cost is
-operational -- each vetted target pulls a ~5 MB target-pixel file, so a full sweep runs slower.
+Across 14 confirmed planets the shift maxes out at 0.57 arcsec, so the critic rejects at >2.0
+arcsec -- ~3.5x above every true planet yet far below the multi-arcsec signature of a background
+EB / blend, so the gate only ever REMOVES accepts, never adds them. Pixel vetting is ON BY DEFAULT
+in the code (`VET="0"` opts out) and kept explicitly `VET=1` in the autonomous deployment: blends
+are vetoed before they can be anchored. The only residual cost is operational -- each vetted target
+pulls a ~5 MB target-pixel file, so a full sweep runs slower.
 
 Two more discriminators are implemented (`src/detect/vetting.ts`: odd/even transit-depth
 symmetry and the phase-0.5 secondary-eclipse ratio) and are computed on every real run, but they
@@ -333,8 +340,11 @@ push the red-noise false-alarm rate back to ~0%. We do **NOT** silently raise th
 discriminator un-calibrated: a gate on the money-spending path must be set from a measurement on
 REAL data. The correct next step is to ESTIMATE rho directly from real SPOC PDCSAP residuals
 (light-curve autocorrelation), then choose the cut so the RED-noise false-alarm rate -- not the white
-one -- is at the level we publish. Until then, the SNR>=7 figure above is quoted as white-noise-
-conditional. This caveat is a feature: the benchmark is now sensitive to its own noise assumption.
+one -- is at the level we publish. This caveat is a feature: the benchmark is sensitive to its own
+noise assumption. RESOLVED BELOW: that next step shipped -- `estimateRho` measures the real noise
+color, the synthetic stand-in now injects per-star red noise by default, and every candidate is
+graded against a null of its OWN noise color, so the published operating point is no longer
+white-noise-conditional.
 
 #### We then MEASURED the real noise color (`src/sim/redNoise.ts` `estimateRho`, `npm run p1:rho`)
 
@@ -368,10 +378,16 @@ distribution rather than silently re-tuning the global cut -- the same disciplin
 prescribes: it estimates the target's OWN noise color (rho) and residual scatter, generates
 planet-free nulls matched to them (`makeRedNoiseLightCurve`, depthFrac 0), and reports the empirical
 false-alarm probability of the candidate's BLS SNR. It is deterministic (fixed seeds, pure functions
-of the input flux) -- the same guarantee the pixel vetting relies on for the money path. On real
-photometry (`VET=1`) both the edge (`src/cf/workflow.ts`) and Node (`src/orchestrator/pipeline.ts`)
-feeding it into the critic's `vetting.fap`, so a candidate is rejected when its calibrated FAP exceeds
-the threshold. This is LIVE, not behind a flag.
+of the input flux) -- the same guarantee the pixel vetting relies on for the money path. It is now on
+the DEFAULT path for EVERY candidate, not just real photometry: both the edge (`src/cf/workflow.ts`)
+and Node (`src/orchestrator/pipeline.ts`) feed `vetting.fap` into the critic, so a candidate is
+rejected when its calibrated FAP exceeds the threshold. Real SPOC photometry keeps the certified
+full-resolution null ensemble (nNull 120) byte-for-byte; the synthetic/stand-in default uses a
+bin-averaging cost guard (`maxPoints 2500, nNull 60`) so the ensemble completes deterministically in
+~3s inside one workflow step. A subtlety that guard exposed, and we fixed: box-averaging crushes the
+measured rho (a true 0.5 host reads ~0.05 after 8x binning), which made the null ensemble too WHITE
+and leaked the false-accept rate to ~13%; estimating rho at NATIVE cadence and binning each null the
+same way as the observed curve brought it back to the nominal ~5%. This is LIVE, not behind a flag.
 
 Calibrating it caught a **latent landmine before it could fire**: the critic's old default FAP
 gate was 0.01, but the smallest FAP a null ensemble can report is its resolution floor
@@ -419,6 +435,60 @@ unconfirmed candidate would put an unverified judgement on the provenance money-
 which is precisely what this project refuses to do. The rig reports what it can independently
 recover and stops short of calling it a planet. (A `num(null)->0` coercion bug the offline schema
 fixture caught: TAP nulls must map to NaN or candidates with no period silently pass as valid.)
+
+This blind posture is now the DEFAULT critic, not a special probe mode. `reviewCandidate` decides
+every verdict from evidence alone -- BLS SNR, the calibrated FAP, physical plausibility, transit
+coverage, alias checks, injection-recovery confidence and (on real pixels) the centroid shift -- and
+the known/injected truth period is consulted only AFTERWARDS, as a non-gating post-hoc note that can
+never move the verdict. An `accepted` blind verdict requires ALL of: no hard-fail, no low-confidence
+flag, at least 3 observed transits, a clean alias check, and a DIRECT catalog match (recovered
+harmonic === 1). A harmonic or odd/even alias, a candidate with no catalog row to match, or any alias
+ambiguity is capped at `needs-more-data` rather than accepted. Recovery gating -- scoring a candidate
+by whether it matched the known truth period -- still exists but is now an explicit opt-in
+(`RECOVERY_GATING=1`) reserved for benchmark self-tests, never the production path, so the money-path
+verdict can never be flattered by peeking at the answer key.
+
+### Survey-scale blind operating characteristics (`npm run p6:survey`)
+
+To quote completeness/purity under the FULL blind critic -- not just raw period recovery -- `p6:survey`
+runs a deterministic, fully OFFLINE synthetic survey: it injects known planets into per-star red-noise
+light curves and, in parallel, generates planet-free red-noise curves, then pushes every target through
+the same scout -> simulate -> calibratedFap -> critique path the production seats use
+(`recoveryGating:false`, truth recorded post-hoc only). Injected periods are kept in the confirmable
+regime (>= 3 transits over the baseline). Reproduce with `npm run p6:survey` (default 40 planets +
+40 noise curves, ~3 min). A representative run:
+
+```
+planets (N=40)   accepted 35   needs-more-data 5   rejected 0
+                 raw period recovery 36/40 = 90.0%   blind completeness 35/40 = 87.5%
+noise   (N=40)   accepted 0    needs-more-data 1   rejected 39
+                 4 curves threw a raw SNR>=7 peak, 1 of those cleared FAP<=0.05 -- yet 0 accepted
+                 false-accept rate 0/40 = 0.0%   purity 100.0%
+```
+
+Two honest readings. (1) The 5 planet misses are all DIAGNOSED, not silent: three recovered the
+half-period (harmonic x2) instead of the fundamental, one locked a wrong period with no catalog match,
+and one recovered the TRUE period yet was still capped at `needs-more-data` by the odd-even alias gate
+(x3). That last case is the entire gap between raw recovery (90.0%) and completeness (87.5%) -- the
+honesty gates would rather decline a correct-but-ambiguous period than accept it. (2) On the money
+path the survey proves the load-bearing invariant: four planet-free curves produced a tempting
+SNR>=7 peak and one even passed its calibrated FAP, yet ZERO were accepted, because a blind accept
+demands a DIRECT catalog match (harmonic 1) and an empty field has no catalog row to match -- so
+accepted-only auto-anchoring can never stake a planet-free star. Purity stays 100% by construction,
+not by tuning.
+
+### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
+
+Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
+astropy ships as `astropy.timeseries.BoxLeastSquares`. `p2:bls-astropy` proves they agree rather than
+asserting it. The TS half ALWAYS runs: it builds three fixed-seed light curves (two white-noise, one
+AR(1) rho=0.5 red-noise active star), self-checks that OUR BLS recovers each injected period to within
+one grid step, and writes the curves plus our grid to `out/bls-astropy-fixtures.json`. The Python half
+(`scripts/bls_astropy_check.py`) then runs astropy's BoxLeastSquares on the SAME fixtures and compares
+best period (1% astropy-vs-ours, 2% vs truth -- one grid step) and transit depth (25%). It is dev-only
+and FAILS SAFE: if Python, numpy or astropy is missing it prints an honest SKIP and exits 0, so CI and
+a stock `npm install` are unaffected. On a machine that has astropy, `npm run p2:bls-astropy` runs both
+halves and prints an aligned per-case PASS/FAIL table.
 
 ### Gaia dilution / blend diagnostics (`src/data/gaiaDilution.ts`, `npm run p3:gaia`)
 
@@ -582,11 +652,16 @@ Windows (plus Node 22/24, tmux, and Docker for the services block).
 ```
 src/
   core/         types.ts (domain model), store.ts (RigStore), ports.ts (IO ports), state-types.ts
-  data/         exoplanetArchive.ts (NASA TAP + fallback), synthetic.ts (stand-in builder),
+  data/         exoplanetArchive.ts (NASA TAP + fallback), synthetic.ts (red-noise stand-in builder),
                 mast.ts + fits.ts (real TESS download + zero-dep FITS reader),
-                mastCurated.ts (curated real-product registry), mastDiscover.ts (best-effort CAOM)
-  detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts
-  sim/          transitModel.ts, injectionRecovery.ts, confidence.ts, aliasResolver.ts
+                mastCurated.ts (curated real-product registry), mastDiscover.ts (best-effort CAOM),
+                mastS3.ts + mastS3Pixels.ts (token-free SPOC photometry + target-pixel cube),
+                toiArchive.ts (blind unconfirmed-TOI source), gaiaDilution.ts (blend diagnostic)
+  detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
+                significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary)
+  sim/          transitModel.ts, exactTransit.ts (limb-darkened), injectionRecovery.ts, confidence.ts,
+                aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
+                injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)
   critic/       review.ts (cross-match + verdict + score)
   reporter/     narrate.ts (plain-English narration)
   bundle/       bundle.ts (canonical JSON + SHA-256 manifest + verify)
@@ -599,13 +674,18 @@ src/
   cf/           worker.ts (edge Hono API), rig-state.do.ts (Durable Object), workflow.ts (rig-run
                 Workflow), artifact-store.ts (R2), env.ts, run-types.ts
   api/          server.ts (Node Hono HTTP API + SSE + static dashboard)
-scripts/        p0-*.ts, p2-anchor.ts, p3-discover.ts, validate-curated.ts (npm run mast:validate)
+scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty}.ts,
+                p2-{vet-calibrate,anchor}.ts, p2-bls-astropy.ts + bls_astropy_check.py (astropy
+                cross-check), p3-{discover,gaia-dilution}.ts, p4-autonomous.ts, p5-blind-probe.ts,
+                p6-blind-survey.ts, validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 ```
 
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
-`p0:detect`, `p0:mast`, `p3:discover`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
+`p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

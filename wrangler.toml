@@ -82,11 +82,13 @@ DISCUSSION_MODE = "grounded"
 # Token-free TESS-SPOC public-S3 photometry tier. ON in this deployment so every
 # TIC-bearing target pulls REAL PDCSAP photometry from the anonymous S3 bucket.
 MAST_S3 = "1"
-# Pixel-level false-positive vetting in the critic (real photometry only). ON: the reject
-# threshold is now empirically calibrated (scripts/p2-vet-calibrate.ts measured 6 confirmed
-# planets all at <=0.5 arcsec; the critic rejects at >2.0 arcsec, so true on-target planets
-# pass while blends/background EBs are vetoed before anchoring). The residual cost is
-# operational -- each vetted target downloads a ~5MB _tp.fits, so a full sweep runs slower.
+# Pixel-level false-positive vetting in the critic (real photometry only). Now ON BY DEFAULT in the
+# code (the critic runs it for any REAL-photometry target unless VET="0"); we keep VET="1" here so
+# the intent is explicit. The reject threshold is empirically calibrated (scripts/p2-vet-calibrate.ts
+# measured 14 confirmed planets all at <=0.57 arcsec; the critic rejects at >2.0 arcsec, ~3.5x margin,
+# so true on-target planets pass while blends/background EBs are vetoed before anchoring -- it only
+# ever REMOVES accepts). The residual cost is operational: each vetted target downloads a ~5MB
+# _tp.fits, so a full sweep runs slower. Set VET="0" to opt out.
 VET = "1"
 # Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
 # cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and

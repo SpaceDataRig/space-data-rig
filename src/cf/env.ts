@@ -32,6 +32,13 @@ export interface Env {
    */
   VET?: string;
   /**
+   * "1" opts the critic into RECOVERY gating (benchmark self-test): the verdict is anchored on the
+   * period error vs the known truth. DEFAULT off = BLIND, the honest protocol -- the verdict is
+   * driven only by evidence and the truth period is a post-hoc, non-gating cross-check; a blind
+   * signal with no catalog match is capped at needs-more-data, never auto-accepted as a discovery.
+   */
+  RECOVERY_GATING?: string;
+  /**
    * Autonomous-research knobs. All default OFF so a deploy with the cron trigger
    * present still does nothing until these are set explicitly.
    *   AUTO_RESEARCH        "1" lets the cron schedule start an autonomous run; any

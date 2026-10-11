@@ -38,7 +38,7 @@ import { recoveryTrial, combineTrials, predictEphemeris } from "../sim/confidenc
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ReviewResult } from "../critic/review.ts";
-import { generateSyntheticTransit } from "../data/synthetic.ts";
+import { generateSyntheticTransit, standInRhoForIndex } from "../data/synthetic.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
 import { oddEvenRefined, secondaryEclipse } from "../detect/vetting.ts";
@@ -267,7 +267,11 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
             `Fetched REAL TESS-SPOC photometry for ${meta.name} from the public S3 bucket (token-free).`,
           );
         } else {
-          // Default deterministic path: byte-identical to the historical stand-in.
+          // Default deterministic path: realistic AR(1) CORRELATED (red) noise stand-in (not idealized
+          // white noise -- a white-noise FAR is provably optimistic). The per-target rho cycles the
+          // range measured on real TESS hosts, so the noise-color-aware FAP gate is exercised on every
+          // run. Deterministic given the seed, so the bundle hash stays reproducible (Node/edge parity).
+          const rho = standInRhoForIndex(i);
           const built = generateSyntheticTransit({
             seed: 7000 + i,
             periodDays: planet.pl_orbper!,
@@ -276,13 +280,14 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
             stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad!), // catalog mass; empirical M-R only as fallback
             impactParam: 0.2 + (i % 3) * 0.15,
             noisePpm: 180,
+            rho,
             cadenceSec: 120,
             baselineDays: 27,
             targetIdLabel: planet.hostname ?? meta.name,
           });
           lc = built.lc;
           truthPeriodDays = built.truth.periodDays;
-          lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + i}); catalog source=${catalogSource}`;
+          lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + i}, AR1 rho=${rho.toFixed(2)}); catalog source=${catalogSource}`;
         }
         const dataHash = await computeDataHash(lc);
         lc.dataHash = dataHash;
@@ -374,40 +379,41 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         if (!dr || !fr) throw new Error("missing detection");
         await stub.setSeatStatus("mission-critic", "running", `Reviewing ${dr.detection.candidate.targetId}`);
         await stub.updateTask(meta.taskId, { status: "reviewing" });
-        // False-positive vetting: only for REAL photometry, only when VET=1, best-effort.
-        // It fetches the SPOC target-pixel cube and measures the in-transit photocenter
-        // displacement against the CANDIDATE's own ephemeris. Disabled by default, so the
-        // deterministic run path (and its bundle hash) is byte-for-byte unchanged.
-        let vetting: ReviewVetting | undefined;
         const isReal = (fr.lc.source ?? "").includes("REAL photometry");
-        if (env.VET === "1" && isReal) {
-          const cand = dr.detection.candidate;
-          vetting = {};
-          // Per-candidate calibrated significance: measure THIS target's own noise color (rho) and
-          // scatter, generate planet-free nulls matched to them, and report the empirical false-alarm
-          // probability of the candidate's BLS SNR. Unlike a global SNR cut, this adapts to red-noise
-          // hosts. Threshold (critic fapThreshold 0.05) is calibrated on real planets and sits above the
-          // ensemble resolution floor 1/(nNull+1), so known SNR>=7 planets are never floored into rejection.
-          try {
-            const sig = calibratedFap(fr.lc, cand.snr, cand.periodDays);
-            vetting.fap = sig.fap;
-            await stub.emitEvent(
-              "mission-critic",
-              "info",
-              `Calibrated significance for ${meta.name}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it).`,
-            );
-          } catch {
-            /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
-          }
-          // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT
-          // fed to the reject path. A per-event refit (oddEvenRefined) replaces the naive
-          // fixed-window measure: calibration (scripts/p2-vet-calibrate) shows the fixed window
-          // reports up to 200% asymmetry for CONFIRMED planets (catalog phase error accumulates
-          // across a sector), whereas the refit correctly declines to judge ("n/d") on sparse
-          // single-sector coverage. Even so the refit cannot gate yet: it reaches a confident
-          // verdict on only ~2/14 real planets and one true planet (HR 858 b) still reads 69%,
-          // so any 0.5-0.7 cut would drop a known planet. Only the centroid shift (calibrated
-          // <=0.6" for real planets) is allowed to reject.
+        const cand = dr.detection.candidate;
+        // Noise-color calibrated significance is part of the DEFAULT path (honest-by-default):
+        // EVERY candidate -- synthetic stand-in or real SPOC photometry -- is graded against a null
+        // ensemble matched to its OWN noise color (rho) and scatter, and the empirical false-alarm
+        // probability gates the verdict. The synthetic/stand-in default uses a bin-averaging cost
+        // guard (maxPoints 2500, nNull 60) so the ensemble completes in ~3s deterministically within
+        // one workflow step; real photometry keeps the certified full-resolution ensemble (nNull 120)
+        // byte-for-byte unchanged. Node/edge parity: identical params on both runtimes, so one
+        // bundle hash is reproducible whether produced locally or on the edge.
+        const vetting: ReviewVetting = {};
+        try {
+          const sig = calibratedFap(fr.lc, cand.snr, cand.periodDays, isReal ? undefined : { maxPoints: 2500, nNull: 60 });
+          vetting.fap = sig.fap;
+          await stub.emitEvent(
+            "mission-critic",
+            "info",
+            `Calibrated significance for ${meta.name}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it${sig.downsampled ? `, binned to ${sig.workingPoints} pts` : ""}).`,
+          );
+        } catch {
+          /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
+        }
+        // Pixel + light-curve discriminators need real SPOC photometry and (for the centroid) a ~5MB
+        // target-pixel download. ON BY DEFAULT for the real-photometry path (VET="0" opts out): a large
+        // photocenter shift means the dip is on a background star, so letting it through by default would
+        // stake blends. The shift threshold (2.0 arcsec) is calibrated on 14 confirmed planets (all
+        // <= 0.57 arcsec, ~3.5x margin), so it only ever REMOVES accepts on the money path. Logged as
+        // instrumentation; only the centroid shift may reject. A per-event refit (oddEvenRefined) replaces
+        // the naive fixed-window measure: calibration (scripts/p2-vet-calibrate) shows the fixed window
+        // reports up to 200% asymmetry for CONFIRMED planets (catalog phase error accumulates across a
+        // sector), whereas the refit correctly declines to judge ("n/d") on sparse single-sector coverage.
+        // Even so the refit cannot gate yet: it reaches a confident verdict on only ~2/14 real planets and
+        // one true planet (HR 858 b) still reads 69%, so any 0.5-0.7 cut would drop a known planet.
+        // Only the centroid shift (calibrated <=0.6" for real planets) is allowed to reject.
+        if (env.VET !== "0" && isReal) {
           const oer = oddEvenRefined(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
           const se = secondaryEclipse(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
           await stub.emitEvent(
@@ -444,7 +450,10 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           hostName: meta.hostName,
           confidence,
           truthPeriodDays: fr.truthPeriodDays,
-          truthSource: (fr.lc.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
+          truthSource: isReal ? "catalog" : "injected",
+          // BLIND by default: truth is a post-hoc cross-check only. RECOVERY_GATING=1 (opt-in)
+          // restores the benchmark self-test that anchors the verdict on the known period.
+          recoveryGating: env.RECOVERY_GATING === "1",
           vetting,
         });
         await putJson(store, `${key}/review.json`, { review } satisfies ReviewRecord);

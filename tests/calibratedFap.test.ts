@@ -42,4 +42,26 @@ const grid = { minPeriodDays: 1, maxPeriodDays: 6, oversample: 8, nDurations: 8 
   assert.deepEqual(x, y, "calibratedFap must be deterministic");
 }
 
+// 5. DEFAULT-path cost guard (maxPoints binning) stays honest: a deep injected planet is still
+//    accepted (FAP at the ensemble floor) while a PURE red-noise null -- the exact false alarm the
+//    noise-color gate exists to catch -- is rejected. When the curve is binned, the null ensemble is
+//    built from NATIVE-cadence red noise put through the SAME downsampleBinned as the observed curve
+//    (binning crushes lag-1 autocorrelation, so estimating rho on the binned curve would make the
+//    nulls too white and leak ~13% of false alarms instead of the nominal ~5%). A FAP=0.05 gate
+//    admits a ~5% tail BY CONSTRUCTION, so this asserts on a representative non-tail null.
+{
+  const deep = makeRedNoiseLightCurve({ seed: 31, periodDays: 2.4, depthFrac: 0.03, noisePpm: 300, rho: 0.5, cadenceSec: 300, baselineDays: 20 });
+  const deepDet = bls(preprocess(deep, 0.5), grid);
+  const deepSig = calibratedFap(deep, deepDet.snr, 2.4, { maxPoints: 1500, nNull: 60, seed: 11 });
+  assert.ok(deepSig.downsampled, "the cost guard should bin a 20-day 300s curve");
+  assert.ok(deepSig.rho > 0.2, `native-cadence rho must survive binning, got ${deepSig.rho.toFixed(2)}`);
+  assert.ok(deepSig.fap <= 0.05, `deep planet must clear its OWN binned null ensemble, got ${deepSig.fap}`);
+
+  const nul = makeRedNoiseLightCurve({ seed: 34, periodDays: 2.0, depthFrac: 0, noisePpm: 300, rho: 0.6, cadenceSec: 300, baselineDays: 20 });
+  const nulDet = bls(preprocess(nul, 0.5), grid);
+  const nulSig = calibratedFap(nul, nulDet.snr, 2.0, { maxPoints: 1500, nNull: 60, seed: 11 });
+  assert.ok(nulSig.downsampled, "the cost guard should bin the null curve too");
+  assert.ok(nulSig.fap > 0.05, `a planet-free red-noise peak must NOT look significant, got ${nulSig.fap}`);
+}
+
 console.log("calibratedFap.test.ts OK");

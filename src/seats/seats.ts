@@ -118,12 +118,17 @@ export interface CritiqueInput {
   truthPeriodDays?: number;
   /** what the reference period is: an injection or a catalog value (real photometry). */
   truthSource?: "injected" | "catalog";
-  /** optional false-positive vetting evidence (real photometry only); omitted => identical review. */
+  /**
+   * Opt-in RECOVERY gating (benchmark self-test only). Default false: the verdict is BLIND
+   * (evidence-driven) and truthPeriodDays is a post-hoc, non-gating cross-check.
+   */
+  recoveryGating?: boolean;
+  /** optional false-positive vetting evidence; omitted => identical review. */
   vetting?: ReviewVetting;
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, vetting }: CritiqueInput): ReviewResult {
+export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, recoveryGating, vetting }: CritiqueInput): ReviewResult {
   return reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
@@ -132,6 +137,7 @@ export function critique({ detection, catalog, hostName, confidence, truthPeriod
     confidence,
     truthPeriodDays,
     truthSource,
+    recoveryGating,
     vetting,
     minSnr: 7,
   });

@@ -2,12 +2,25 @@
 //
 // Turns a raw TransitCandidate + sim-runner confidence into a defensible
 // verdict ("accepted" / "needs-more-data" / "rejected") with a written reason
-// and a 0..100 composite score. Two operating modes:
+// and a 0..100 composite score.
 //
-//   - RECOVERY mode: we injected a planet with a known period (benchmark /
-//     P0 demo). Verdict is anchored on the period error vs truth.
-//   - BLIND mode: real MAST data, no truth available. Verdict leans on SNR,
-//     physical sanity of the fit, and the sim-runner recovery confidence.
+// BLIND BY DEFAULT. The verdict is driven ONLY by evidence the pipeline could
+// compute without knowing the answer: BLS SNR, the noise-color calibrated
+// false-alarm probability, physical sanity of the fit, transit coverage, alias
+// cleanliness, the sim-runner re-injection recovery confidence, and (for real
+// photometry) the pixel centroid shift. A known truth period -- when we have one
+// -- is demoted to a POST-HOC informational cross-check: it is recorded for
+// transparency but NEVER gates and NEVER scores. This is the honest protocol: a
+// "recovery" only counts if the evidence would have convinced us without peeking.
+//
+// A significant, physically-consistent signal with NO catalog match is capped at
+// "needs-more-data" -- it is flagged for follow-up, never auto-accepted as a
+// discovery. That both guards the "we do not claim new planets" red line and keeps
+// the money-path auto-anchor (accepted-only) from ever staking a novel candidate.
+//
+// RECOVERY gating (verdict anchored on the period error vs a known truth) is an
+// explicit opt-in (recoveryGating: true) reserved for benchmark self-tests where we
+// deliberately injected a known signal and want to grade the recovery.
 //
 // Keeping this in one place (instead of inline in a script) is what lets the
 // orchestrator, the API and the bundle all report an identical verdict.
@@ -28,8 +41,20 @@ export interface ReviewInput {
   confidence?: ConfidenceResult;
   /** what the reference period is: an injection or a catalog value (real photometry). */
   truthSource?: "injected" | "catalog";
-  /** known injected period, when running in recovery mode. */
+  /**
+   * Known reference period. In the DEFAULT blind mode this is used ONLY as a post-hoc,
+   * non-gating, non-scoring cross-check (recorded in `checks` for transparency). It gates the
+   * verdict only when `recoveryGating` is explicitly true.
+   */
   truthPeriodDays?: number;
+  /**
+   * Opt-in RECOVERY gating for benchmark self-tests only. When true AND `truthPeriodDays` is
+   * supplied, the verdict is anchored on the period error vs truth (did we get the known planet
+   * back?) -- appropriate when we deliberately injected a known signal. DEFAULT false: the verdict
+   * is BLIND, driven only by evidence, and truth is a post-hoc informational cross-check. This is
+   * the honest default: a recovery must stand on evidence, not on already knowing the answer.
+   */
+  recoveryGating?: boolean;
   /** minimum SNR to consider (default 7). */
   minSnr?: number;
   /** number of in-transit points expected for a single transit; for context. */
@@ -164,22 +189,32 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
     checks.push({ name: "recovery-confidence", pass: confPass, detail: `re-injection recovery ${(conf * 100).toFixed(0)}%` });
   }
 
-  // --- period accuracy vs truth (recovery mode only) ---
+  // --- period accuracy vs truth ---
+  // In the DEFAULT blind mode this is a POST-HOC informational cross-check: recorded for
+  // transparency, never gating, never scored. It gates the verdict only when recoveryGating is on.
+  const recoveryGating = input.recoveryGating === true && input.truthPeriodDays != null;
   let periodErrPct: number | null = null;
   if (input.truthPeriodDays != null) {
     periodErrPct = (Math.abs(c.periodDays - input.truthPeriodDays) / input.truthPeriodDays) * 100;
     const pPass = periodErrPct < 2;
-    checks.push({ name: "period-vs-truth", pass: pPass, detail: `period error ${periodErrPct.toFixed(2)}% vs injected` });
+    const refLabel = input.truthSource === "catalog" ? "catalog" : "injected";
+    checks.push(
+      recoveryGating
+        ? { name: "period-vs-truth", pass: pPass, detail: `period error ${periodErrPct.toFixed(2)}% vs injected` }
+        : { name: "period-vs-truth (post-hoc, non-gating)", pass: pPass, detail: `period error ${periodErrPct.toFixed(2)}% vs the ${refLabel} value -- informational only; the verdict is evidence-driven and never peeked at truth` },
+    );
   }
 
   // --- composite score (0..100) ---
+  // Truth contributes ONLY in explicit recovery-gating mode; in the blind default it must not
+  // inflate the score -- the verdict has to stand on evidence alone.
   let score = 0;
   score += Math.min(40, (c.snr / 20) * 40); // SNR contributes up to 40
   if (conf != null) score += conf * 25; // recovery confidence up to 25
   else score += 10; // unknown confidence: neutral-low
   if (cm.matchedKnownPlanet) score += 20; // cross-match up to 20
   if (aliasPass) score += 10; // clean odd-even 10
-  if (periodErrPct != null) score += periodErrPct < 1 ? 5 : periodErrPct < 2 ? 3 : 0;
+  if (recoveryGating && periodErrPct != null) score += periodErrPct < 1 ? 5 : periodErrPct < 2 ? 3 : 0;
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   // --- verdict ---
@@ -187,8 +222,8 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   let verdict: ReviewResult["verdict"];
   let reason: string;
 
-  if (input.truthPeriodDays != null) {
-    // recovery mode: did we get the known planet back?
+  if (recoveryGating) {
+    // RECOVERY self-test mode (opt-in): did we get the KNOWN planet back? Truth gates here.
     const refLabel = input.truthSource === "catalog" ? "the catalog transits" : "the injected signal";
     if (periodErrPct != null && periodErrPct < 2 && snrPass) {
       verdict = "accepted";
@@ -204,22 +239,42 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
         : `Period error ${periodErrPct?.toFixed(2) ?? "?"}% exceeds tolerance; not a reliable recovery.`;
     }
   } else {
-    // BLIND mode: no truth, rely on evidence.
+    // BLIND mode (DEFAULT): the verdict is driven ONLY by evidence; truth is never consulted.
+    // Acceptance is deliberately STRICTER than the old truth-gated recovery (it adds the alias,
+    // confidence, coverage and noise-color FAP gates and requires a DIRECT catalog match), so the
+    // accepted set is a SUBSET of the old one -- on the money path that means fewer or equal
+    // auto-anchors, never more. Everything short of a clean blind recovery is capped at
+    // needs-more-data (flag for follow-up), never rejected outright unless the evidence fails.
     const confLow = conf != null && conf < 0.35;
+    const fewTransits = input.nTransitsObserved != null && input.nTransitsObserved < 3;
+    const directMatch = cm.matchedKnownPlanet && cm.harmonic === 1;
     if (hardFail) {
       verdict = "rejected";
       reason = !snrPass
         ? `SNR ${c.snr.toFixed(1)} below threshold ${minSnr}; signal not significant.`
         : `Fit fails physical sanity (${checks.filter((x) => !x.pass).map((x) => x.name).join(", ")}).`;
-    } else if (confLow || (input.nTransitsObserved != null && input.nTransitsObserved < 3)) {
+    } else if (confLow || fewTransits) {
       verdict = "needs-more-data";
       const why = confLow ? `re-injection recovery only ${((conf ?? 0) * 100).toFixed(0)}%` : `only ${input.nTransitsObserved} transits observed`;
       reason = `Plausible but under-constrained (${why}). Flag for follow-up with more sectors.`;
-    } else {
+    } else if (!aliasPass) {
+      verdict = "needs-more-data";
+      reason = `Significant transit, but the period is an odd-even alias (x${input.aliasMultiple}); the fundamental period is not cleanly resolved. Flag for follow-up.`;
+    } else if (directMatch) {
+      // Evidence-strong AND it independently cross-matches a catalog planet at its fundamental
+      // period -> a genuine blind recovery (no truth period was consulted to reach this verdict).
       verdict = "accepted";
-      reason = cm.matchedKnownPlanet
-        ? `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%), consistent with ${cm.knownPlanetName}.`
-        : `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%); no catalog match -> possible new candidate.`;
+      reason = `Blind recovery: significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) independently cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period on evidence alone, without using any truth period.`;
+    } else if (cm.matchedKnownPlanet) {
+      // Matched ONLY via a harmonic (x2, x3, x1/2 ...): a probable alias of a known planet, not a
+      // clean recovery. Never accepted/anchored -- flagged for follow-up.
+      verdict = "needs-more-data";
+      reason = `Significant transit cross-matches ${cm.knownPlanetName} only at harmonic x${cm.harmonic} -- a probable alias, not a clean blind recovery. Flag for follow-up.`;
+    } else {
+      // Evidence-strong but NO catalog match: the honest ceiling. A novel signal is flagged for
+      // follow-up, NEVER auto-accepted as a discovery (guards the no-claim red line + money path).
+      verdict = "needs-more-data";
+      reason = `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) with no catalog match -- a candidate for follow-up, not a claimed discovery.`;
     }
   }
 

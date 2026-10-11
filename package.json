@@ -17,7 +17,9 @@
     "p1:real-completeness": "tsx scripts/p1-real-completeness.ts",
     "p1:uncertainty": "tsx scripts/p1-uncertainty.ts",
     "p2:vet-calibrate": "tsx scripts/p2-vet-calibrate.ts",
+    "p2:bls-astropy": "tsx scripts/p2-bls-astropy.ts",
     "p5:blind": "tsx scripts/p5-blind-probe.ts",
+    "p6:survey": "tsx scripts/p6-blind-survey.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
@@ -29,7 +31,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/oddEvenRefined.test.ts tests/toiArchive.test.ts tests/gaiaDilution.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/rho.test.ts tests/calibratedFap.test.ts tests/injectInto.test.ts tests/uncertainty.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/oddEvenRefined.test.ts tests/toiArchive.test.ts tests/gaiaDilution.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/rho.test.ts tests/calibratedFap.test.ts tests/syntheticRedNoise.test.ts tests/injectInto.test.ts tests/uncertainty.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

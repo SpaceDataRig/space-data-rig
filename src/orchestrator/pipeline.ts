@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import { RigStore, type BundleRecord } from "../core/store.ts";
 import type { ArchivePlanet, Finding, LightCurve, Task } from "../core/types.ts";
 import { fetchConfirmedPlanets, type ArchiveFetchResult } from "../data/exoplanetArchive.ts";
-import { generateSyntheticTransit, type InjectedTruth } from "../data/synthetic.ts";
+import { generateSyntheticTransit, standInRhoForIndex, type InjectedTruth } from "../data/synthetic.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
 import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
@@ -78,12 +78,25 @@ export interface OrchestratorOptions {
    */
   useMastS3?: boolean;
   /**
-   * Enable pixel-level false-positive vetting (in-transit photocenter displacement) in
-   * the critic for REAL SPOC photometry. Off by default: with it off the run path and its
-   * bundle hash are byte-for-byte unchanged. Mirrors the edge VET flag for cross-runtime
-   * parity (both compute centroid shift only; the heavier surrogate FAP is offline-only).
+   * Pixel-level false-positive vetting (in-transit photocenter displacement) in the critic for REAL
+   * SPOC photometry. ON BY DEFAULT for the real-photometry path: a large shift means the dip is on a
+   * background star (blend / background EB), so letting it through by default would stake blends. The
+   * shift threshold (2.0 arcsec) is empirically calibrated on 14 confirmed planets (scripts/p2-vet-
+   * calibrate: all <= 0.57 arcsec, ~3.5x margin), so it rejects blends without dropping true positives
+   * -- on the money path this only ever REMOVES accepts. Set VET="0" (or vetPixels:false) to opt out;
+   * the synthetic stand-in path never fetches pixels (it has none), so it is unaffected either way.
+   * Mirrors the edge VET flag for cross-runtime parity.
    */
   vetPixels?: boolean;
+  /**
+   * Opt-in RECOVERY gating (benchmark self-test only): anchor the critic verdict on the period
+   * error vs the known truth. DEFAULT false = BLIND, the honest protocol -- the verdict is driven
+   * only by evidence (SNR, noise-color FAP, sanity, coverage, alias, recovery confidence, centroid)
+   * and the truth period is a post-hoc, non-gating cross-check. A blind signal with no catalog
+   * match is capped at needs-more-data, never auto-accepted as a discovery. Mirrors the edge
+   * RECOVERY_GATING flag for cross-runtime parity.
+   */
+  recoveryGating?: boolean;
   /** run label for logging. */
   runId?: string;
 }
@@ -131,6 +144,7 @@ export class Orchestrator {
   private discoverMast: boolean;
   private useMastS3: boolean;
   private vetPixels: boolean;
+  private recoveryGating: boolean;
   private catalogOverride?: ArchiveFetchResult;
   private codeVersion: string;
   private artifacts: FsArtifactStore;
@@ -152,7 +166,8 @@ export class Orchestrator {
     this.catalogOverride = options.catalog;
     this.discoverMast = options.discoverMast ?? (typeof process !== "undefined" && process.env?.MAST_DISCOVER === "1");
     this.useMastS3 = options.useMastS3 ?? (typeof process !== "undefined" && process.env?.MAST_S3 === "1");
-    this.vetPixels = options.vetPixels ?? (typeof process !== "undefined" && process.env?.VET === "1");
+    this.vetPixels = options.vetPixels ?? !(typeof process !== "undefined" && process.env?.VET === "0");
+    this.recoveryGating = options.recoveryGating ?? (typeof process !== "undefined" && process.env?.RECOVERY_GATING === "1");
     this.codeVersion = readCodeVersion(resolve(REPO_ROOT, "package.json"));
     this.artifacts = new FsArtifactStore(this.opts.outDir);
   }
@@ -354,8 +369,14 @@ export class Orchestrator {
   }
 
   // ---- SEAT 1 helper: seeded synthetic stand-in (default path) --------------
+  // The stand-in now carries realistic AR(1) CORRELATED (red) noise, not idealized white noise:
+  // a white-noise false-alarm rate is provably optimistic (SNR>=7 is ~0% FAR white but ~30% FAR at
+  // rho=0.5, measured by npm run p1:roc). The per-target rho cycles the range measured on real TESS
+  // hosts (npm run p1:rho: quiet ~0 to active ~0.63) so the noise-color-aware significance gate is
+  // exercised on every run. Deterministic given the seed, so the bundle hash stays reproducible.
   private buildStandIn(planet: ArchivePlanet, index: number, catalogSource: string): { lc: LightCurve; truth: InjectedTruth } {
     const name = planet.pl_name ?? planet.hostname ?? `TARGET-${index}`;
+    const rho = standInRhoForIndex(index);
     const { lc, truth } = generateSyntheticTransit({
       seed: 7000 + index,
       periodDays: planet.pl_orbper!,
@@ -364,11 +385,12 @@ export class Orchestrator {
       stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad!), // catalog mass; empirical M-R only as fallback
       impactParam: 0.2 + (index % 3) * 0.15,
       noisePpm: 180,
+      rho,
       cadenceSec: 120,
       baselineDays: 27,
       targetIdLabel: planet.hostname ?? name,
     });
-    lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + index}); catalog source=${catalogSource}`;
+    lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + index}, AR1 rho=${rho.toFixed(2)}); catalog source=${catalogSource}`;
     return { lc, truth };
   }
 
@@ -430,37 +452,44 @@ export class Orchestrator {
 
     // recovery mode: stand-in paths grade against the injection; real-photometry paths
     // grade against the published catalog value -- an honest open-loop cross-check.
-    // Pixel vetting (real SPOC photometry only, gated on vetPixels) measures the
-    // in-transit photocenter shift against the candidate's own ephemeris; best-effort.
+    // Noise-color calibrated significance is now part of the DEFAULT path (honest-by-default):
+    // EVERY candidate -- synthetic stand-in or real SPOC photometry -- is graded against a null
+    // ensemble matched to its OWN noise color (rho) and residual scatter, and the empirical
+    // false-alarm probability gates the verdict. A fixed global SNR cut is provably not a fixed
+    // FAR (our own p1:rho measurement: white noise gives ~0% FAR at SNR>=7 but AR(1) rho=0.5 gives
+    // ~30%), so the gate must adapt to the target's noise color. The synthetic/stand-in default
+    // uses a bin-averaging cost guard (maxPoints 2500, nNull 60) so the ensemble completes in ~3s
+    // deterministically on both Node and the edge; real photometry keeps the certified full-
+    // resolution ensemble (nNull 120) byte-for-byte unchanged. The critic threshold (0.05) sits
+    // above the ensemble resolution floor 1/(nNull+1) on both (0.0164 / 0.0083), so known SNR>=7
+    // planets are never floored into rejection.
+    const cand = detection.candidate;
+    const lc = ctx.lc;
+    const isReal = (lc?.source ?? "").includes("REAL photometry");
     let vetting: ReviewVetting | undefined;
-    if (this.vetPixels && (ctx.lc?.source ?? "").includes("REAL photometry")) {
-      const cand = detection.candidate;
-      const lc = ctx.lc!;
+    if (lc) {
       vetting = {};
-      // Per-candidate calibrated significance: measure THIS target's own noise color (rho) and
-      // scatter, generate planet-free nulls matched to them, and report the empirical false-alarm
-      // probability of the candidate's BLS SNR. Unlike a global SNR cut this adapts to red-noise
-      // hosts. The critic threshold (0.05) is calibrated on real planets and kept above the ensemble
-      // resolution floor 1/(nNull+1), so known SNR>=7 planets are never floored into rejection.
       try {
-        const sig = calibratedFap(lc, cand.snr, cand.periodDays);
+        const sig = calibratedFap(lc, cand.snr, cand.periodDays, isReal ? undefined : { maxPoints: 2500, nNull: 60 });
         vetting.fap = sig.fap;
-        this.store.emitEvent("mission-critic", "info", `Calibrated significance for ${ctx.planet.pl_name ?? ctx.planet.hostname}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it).`);
+        this.store.emitEvent("mission-critic", "info", `Calibrated significance for ${ctx.planet.pl_name ?? ctx.planet.hostname}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it${sig.downsampled ? `, binned to ${sig.workingPoints} pts` : ""}).`);
       } catch {
         /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
       }
-      // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT fed
-      // to the reject path. A per-event refit (oddEvenRefined) replaces the naive fixed-window
-      // measure: calibration (scripts/p2-vet-calibrate) shows the fixed window reports up to 200%
-      // asymmetry for CONFIRMED planets (catalog phase error accumulates across a sector), whereas
-      // the refit correctly declines to judge ("n/d") on sparse single-sector coverage. Even so the
-      // refit cannot gate yet: on real planets it only reaches a confident verdict on ~2/14 and one
-      // true planet (HR 858 b) still reads 69%, so any 0.5-0.7 cut would drop a known planet. Only
-      // the centroid shift (calibrated <=0.6" for real planets) is allowed to reject. Node/edge parity.
+    }
+    // Pixel + light-curve discriminators need real SPOC photometry and (for the centroid) a ~5MB
+    // target-pixel download, so they stay gated on vetPixels. They are LOGGED as instrumentation;
+    // only the centroid shift may reject. A per-event refit (oddEvenRefined) replaces the naive
+    // fixed-window measure: calibration (scripts/p2-vet-calibrate) shows the fixed window reports
+    // up to 200% asymmetry for CONFIRMED planets (catalog phase error accumulates across a sector),
+    // whereas the refit correctly declines to judge ("n/d") on sparse single-sector coverage. Even
+    // so the refit cannot gate yet: on real planets it only reaches a confident verdict on ~2/14
+    // and one true planet (HR 858 b) still reads 69%, so any 0.5-0.7 cut would drop a known planet.
+    // Only the centroid shift (calibrated <=0.6" for real planets) is allowed to reject. Node/edge parity.
+    if (this.vetPixels && isReal && lc && vetting) {
       const oer = oddEvenRefined(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
       const se = secondaryEclipse(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
       this.store.emitEvent("mission-critic", "info", `Light-curve diagnostics for ${ctx.planet.pl_name ?? ctx.planet.hostname} (informational, not gating): odd/even depth asymmetry ${oer.determined ? (oer.diffFrac * 100).toFixed(0) + "%" : "n/d"} (per-event refit, ${oer.nEven}/${oer.nOdd} transits), secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`);
-      // Pixel centroid shift (needs a ~5MB target-pixel download; best-effort).
       if (Number.isFinite(ctx.planet.tic)) {
         const sectors = ctx.spocSectors ?? [];
         for (const s of sectors.slice(0, 3)) {
@@ -485,7 +514,10 @@ export class Orchestrator {
       hostName: ctx.planet.hostname,
       confidence,
       truthPeriodDays: ctx.truth?.periodDays,
-      truthSource: (ctx.lc?.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
+      truthSource: isReal ? "catalog" : "injected",
+      // BLIND by default: truth is a post-hoc cross-check only. recoveryGating (opt-in) restores
+      // the benchmark self-test that anchors the verdict on the known period.
+      recoveryGating: this.recoveryGating,
       vetting,
     });
     ctx.review = review;

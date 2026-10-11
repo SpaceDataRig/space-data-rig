@@ -34,6 +34,26 @@ export interface ReviewInput {
   minSnr?: number;
   /** number of in-transit points expected for a single transit; for context. */
   nTransitsObserved?: number;
+  /**
+   * Optional false-positive vetting evidence. Populated ONLY for real photometry when
+   * the caller has computed it (pixel centroid shift, calibrated BLS FAP). When absent
+   * the review is byte-for-byte identical to the un-vetted path, so the deterministic
+   * synthetic/bundle-hash behaviour is untouched. Each sub-field, when present, adds a
+   * named check and can force a rejection; a value left undefined adds nothing.
+   */
+  vetting?: ReviewVetting;
+}
+
+/** Externally-computed vetting metrics handed to the critic (see src/data/mastS3Pixels, src/detect/fap). */
+export interface ReviewVetting {
+  /** in-transit photocenter displacement in arcsec (large => the dip is off the target). */
+  centroidShiftArcsec?: number;
+  /** shift above which the candidate is flagged a blend/background EB (default 1.0 arcsec). */
+  shiftThresholdArcsec?: number;
+  /** calibrated false-alarm probability of the BLS peak (see src/detect/fap.ts). */
+  fap?: number;
+  /** FAP above which the peak is deemed not significant against the null (default 0.01). */
+  fapThreshold?: number;
 }
 
 export interface CrossmatchInfo {
@@ -184,6 +204,51 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
       reason = cm.matchedKnownPlanet
         ? `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%), consistent with ${cm.knownPlanetName}.`
         : `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%); no catalog match -> possible new candidate.`;
+    }
+  }
+
+  // --- false-positive vetting (only when the caller supplies evidence) ---
+  // This block is fully gated on input.vetting: with no vetting the checks array, score,
+  // verdict and reason are exactly as computed above, so the default (synthetic) path and
+  // its bundle hash are unchanged. When present, each available metric adds a named check;
+  // a failed metric is disqualifying (a large photocenter shift means the dip is not on the
+  // target star; an insignificant FAP means the peak is not distinguishable from the null).
+  if (input.vetting) {
+    const v = input.vetting;
+    const shiftThr = v.shiftThresholdArcsec ?? 1.0;
+    const fapThr = v.fapThreshold ?? 0.01;
+    const failReasons: string[] = [];
+    let anyVetting = false;
+
+    if (v.centroidShiftArcsec != null && isFinite(v.centroidShiftArcsec)) {
+      anyVetting = true;
+      const ok = v.centroidShiftArcsec <= shiftThr;
+      checks.push({
+        name: "centroid-shift",
+        pass: ok,
+        detail: `in-transit photocenter shift ${v.centroidShiftArcsec.toFixed(2)} arcsec (need <= ${shiftThr})`,
+      });
+      if (!ok) failReasons.push(`photocenter shift ${v.centroidShiftArcsec.toFixed(2)} arcsec places the light off the target star (blend / background eclipsing binary)`);
+    }
+
+    if (v.fap != null && isFinite(v.fap)) {
+      anyVetting = true;
+      const ok = v.fap <= fapThr;
+      checks.push({
+        name: "fap",
+        pass: ok,
+        detail: `BLS false-alarm probability ${v.fap.toPrecision(2)} (need <= ${fapThr})`,
+      });
+      if (!ok) failReasons.push(`false-alarm probability ${v.fap.toPrecision(2)} is not significant against the phase-scrambled null`);
+    }
+
+    if (failReasons.length > 0) {
+      verdict = "rejected";
+      reason = `False-positive vetting failed: ${failReasons.join("; ")}.`;
+      score = Math.min(score, 20);
+    } else if (anyVetting) {
+      // every supplied vetting metric passed -> reinforce (bounded), never manufacture an accept
+      score = Math.min(100, score + 5);
     }
   }
 

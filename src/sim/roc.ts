@@ -21,6 +21,7 @@
 import { preprocess } from "../detect/detrend.ts";
 import { bls } from "../detect/bls.ts";
 import { generateSyntheticTransit, rng } from "../data/synthetic.ts";
+import { makeRedNoiseLightCurve } from "./redNoise.ts";
 import { mainSequenceMassFromRadius } from "./transitModel.ts";
 
 export interface RocOptions {
@@ -35,6 +36,8 @@ export interface RocOptions {
   cadenceSec?: number;
   baselineDays?: number;
   periodTolPct?: number;
+  /** AR(1) lag-1 autocorrelation for correlated (red) noise; 0 (default) = white, unchanged behaviour. */
+  rho?: number;
 }
 
 export interface RocPoint {
@@ -58,6 +61,8 @@ export interface RocResult {
   points: RocPoint[];
   nInjections: number;
   nNoise: number;
+  /** AR(1) noise color used for the curves (0 = white). */
+  rho: number;
   /** per-injection: did the BLS peak match the truth (threshold-independent), and its SNR. */
   injections: { matched: boolean; snr: number }[];
   /** per-noise-curve peak SNR (threshold-independent). */
@@ -74,6 +79,7 @@ export function runRoc(o: RocOptions = {}): RocResult {
   const depths = o.depthsPpm ?? [300, 500, 1000, 2000, 5000, 10000];
   const noisePpm = o.noisePpm ?? 200;
   const tol = o.periodTolPct ?? 2;
+  const redRho = Math.min(0.95, Math.max(0, o.rho ?? 0));
   const grid = { minPeriodDays: minP * 0.7, maxPeriodDays: maxP * 1.4, oversample: 6, nDurations: 8 };
 
   const injRand = rng(o.seed ?? 20260011);
@@ -85,18 +91,35 @@ export function runRoc(o: RocOptions = {}): RocResult {
     const depthPpm = depths[Math.floor(injRand() * depths.length)];
     const impactParam = injRand() * 0.6;
     const rsun = 0.7 + injRand() * 0.8;
-    const { lc, truth } = generateSyntheticTransit({
-      seed: 50000 + i,
-      periodDays,
-      depthFrac: depthPpm * 1e-6,
-      impactParam,
-      stellarRadiusRsun: rsun,
-      stellarMassMsun: mainSequenceMassFromRadius(rsun),
-      noisePpm,
-      cadenceSec: o.cadenceSec ?? 120,
-      baselineDays: o.baselineDays ?? 27,
-      targetIdLabel: `ROC-INJ-${i}`,
-    });
+    const { lc, truth } = redRho > 0
+      ? {
+          lc: makeRedNoiseLightCurve({
+            seed: 50000 + i,
+            periodDays,
+            depthFrac: depthPpm * 1e-6,
+            impactParam,
+            stellarRadiusRsun: rsun,
+            stellarMassMsun: mainSequenceMassFromRadius(rsun),
+            noisePpm,
+            rho: redRho,
+            cadenceSec: o.cadenceSec ?? 120,
+            baselineDays: o.baselineDays ?? 27,
+            targetIdLabel: `ROC-INJ-${i}`,
+          }),
+          truth: { periodDays },
+        }
+      : generateSyntheticTransit({
+          seed: 50000 + i,
+          periodDays,
+          depthFrac: depthPpm * 1e-6,
+          impactParam,
+          stellarRadiusRsun: rsun,
+          stellarMassMsun: mainSequenceMassFromRadius(rsun),
+          noisePpm,
+          cadenceSec: o.cadenceSec ?? 120,
+          baselineDays: o.baselineDays ?? 27,
+          targetIdLabel: `ROC-INJ-${i}`,
+        });
     let matched = false;
     let snr = 0;
     try {
@@ -115,18 +138,32 @@ export function runRoc(o: RocOptions = {}): RocResult {
   for (let j = 0; j < nNoise; j++) {
     const periodDays = minP + injRand() * (maxP - minP); // period is irrelevant at p=0, just varies the grid
     const rsun = 0.7 + injRand() * 0.8;
-    const { lc } = generateSyntheticTransit({
-      seed: 90000 + j,
-      periodDays,
-      depthFrac: 0, // <- no planet: pure noise + realistic gaps
-      impactParam: 0.3,
-      stellarRadiusRsun: rsun,
-      stellarMassMsun: mainSequenceMassFromRadius(rsun),
-      noisePpm,
-      cadenceSec: o.cadenceSec ?? 120,
-      baselineDays: o.baselineDays ?? 27,
-      targetIdLabel: `ROC-NOISE-${j}`,
-    });
+    const lc = redRho > 0
+      ? makeRedNoiseLightCurve({
+          seed: 90000 + j,
+          periodDays,
+          depthFrac: 0,
+          impactParam: 0.3,
+          stellarRadiusRsun: rsun,
+          stellarMassMsun: mainSequenceMassFromRadius(rsun),
+          noisePpm,
+          rho: redRho,
+          cadenceSec: o.cadenceSec ?? 120,
+          baselineDays: o.baselineDays ?? 27,
+          targetIdLabel: `ROC-NOISE-${j}`,
+        })
+      : generateSyntheticTransit({
+          seed: 90000 + j,
+          periodDays,
+          depthFrac: 0, // <- no planet: pure noise + realistic gaps
+          impactParam: 0.3,
+          stellarRadiusRsun: rsun,
+          stellarMassMsun: mainSequenceMassFromRadius(rsun),
+          noisePpm,
+          cadenceSec: o.cadenceSec ?? 120,
+          baselineDays: o.baselineDays ?? 27,
+          targetIdLabel: `ROC-NOISE-${j}`,
+        }).lc;
     try {
       const clean = preprocess(lc, 0.5);
       noiseSnr.push(bls(clean, grid).snr);
@@ -151,7 +188,7 @@ export function runRoc(o: RocOptions = {}): RocResult {
     };
   });
 
-  return { points, nInjections: nInj, nNoise, injections, noiseSnr };
+  return { points, nInjections: nInj, nNoise, rho: redRho, injections, noiseSnr };
 }
 
 /** Render the ROC as an aligned ASCII table (for the benchmark script / method writeups). */

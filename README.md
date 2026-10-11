@@ -254,6 +254,35 @@ fraction of planet-free curves that reached it (a Laplace-corrected, resolution-
 no per-candidate resampling. This gives each detection a calibrated significance, not just a
 heuristic SNR label.
 
+#### This operating point assumes WHITE noise -- red noise moves it (honest caveat)
+
+The table above uses uncorrelated Gaussian scatter. Real TESS PDCSAP light curves carry
+time-CORRELATED ("red") residual-systematic noise. `src/sim/redNoise.ts` adds a stationary AR(1)
+noise process (lag-1 autocorrelation `rho`) on top of the same real transit geometry, and
+`runRoc({ rho })` runs the whole benchmark under it (`rho=0` reproduces the white table byte-for-byte).
+`npm run p1:roc` now also prints a red-noise comparison. Reproduce with
+`npm run p1:roc -- --inj 80 --noise 80 --baseline 12 --cadence 200 --noise-ppm 300 --rho 0.5`:
+
+```
+threshold   white comp / FAR      red comp / FAR
+SNR>=5      57.5% / 15.0%         55.0% / 46.3%
+SNR>=7      55.0% /  0.0%         55.0% / 30.0%
+SNR>=9      50.0% /  0.0%         52.5% /  0.0%
+max false-alarm SNR:  5.90 (white)  ->  8.91 (red)
+```
+
+The conclusion is uncomfortable but real: **correlated noise attacks PURITY, not completeness**
+(completeness barely drops) -- the white-noise "SNR>=7 => 0% false alarms" claim is OPTIMISTIC.
+Under AR(1) rho=0.5 the same cut lets ~30% of planet-free fields cry wolf, and you need SNR>=9 to
+push the red-noise false-alarm rate back to ~0%. We do **NOT** silently raise the production
+`minSnr` on the strength of a synthetic rho, for the same reason we refused to ship the odd/even
+discriminator un-calibrated: a gate on the money-spending path must be set from a measurement on
+REAL data. The correct next step is to ESTIMATE rho directly from real SPOC PDCSAP residuals
+(light-curve autocorrelation), then choose the cut so the RED-noise false-alarm rate -- not the white
+one -- is at the level we publish. Until then, the SNR>=7 figure above is quoted as white-noise-
+conditional. This caveat is a feature: the benchmark is now sensitive to its own noise assumption.
+
+
 ## Quickstart
 
 Requires **Node.js 22 or 24** (ESM, run via `tsx`). No database, no build step.

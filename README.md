@@ -176,6 +176,40 @@ known SPOC star with `-- --tic 1024880 --sector 4`).
 
 ---
 
+## Scientific-rigness upgrades (self-validating, gated)
+
+Beyond the autonomous loop, the analysis core now carries three additive primitives that
+raise it from a demo to defensible science. Each is pure, deterministic, fully unit-tested,
+and OFF the default (synthetic) run path, so the reproducible bundle hash is unchanged:
+
+- **Exact limb-darkened transit model** (`src/sim/exactTransit.ts`). Quadratic limb darkening,
+  computed as a deterministic 1-D radial integral of the occulted intensity. With no limb
+  darkening it reproduces the analytic circle-circle overlap area to better than 2e-3 across
+  the whole transit chord and gives exactly p^2 at central transit -- validated against an
+  independent closed form, not a reference dataset. The geometric model in `transitModel.ts`
+  still backs the deterministic injection so existing hashes stay stable.
+- **Calibrated false-alarm probability** (`src/detect/fap.ts`). Turns the heuristic BLS SNR
+  into a real significance level via a phase-scrambling null: each point's time is jittered
+  by +-P/3, which destroys a transit's phase coherence while leaving the noise distribution
+  intact; FAP is the fraction of surrogates whose BLS max-power reaches the observed power.
+  An injected planet scores at the surrogate floor (0 exceedances) where pure noise scores
+  ~0.19. (A naive circular time-shift was rejected -- it preserves the transits and gave a
+  false planet a spuriously low FAP; the regression tests caught it.)
+- **Pixel-level false-positive vetting** (`src/data/mastS3Pixels.ts`, wired into the critic via
+  `reviewCandidate(vetting)`). For REAL SPOC photometry and only when the `VET` flag is on,
+  the critic downloads the 14x14 target-pixel cube and measures the in-transit photocenter
+  displacement against the candidate's own ephemeris; a large shift means the dip is not on
+  the target star (a blend / background eclipsing binary) and downgrades the verdict to
+  rejected. With `VET` off the critic receives no vetting and the review is byte-for-byte
+  identical (a test asserts empty-vetting == no-vetting).
+
+On pi Men c the real in-transit photocenter shift is 0.10 arcsec -- correctly judged on-target.
+A controlled `VET=1` production run confirmed the pipeline completes and does not falsely reject
+known planets. We keep `VET=0` in the aggressive autonomous deployment for now: the 1-arcsec
+reject threshold is not yet calibrated across a sample of real planets, and an uncalibrated hard
+gate inside the money-spending anchoring path risks silently dropping true positives in mildly
+blended systems. Threshold calibration precedes re-enabling continuous live vetting.
+
 ## Quickstart
 
 Requires **Node.js 22 or 24** (ESM, run via `tsx`). No database, no build step.

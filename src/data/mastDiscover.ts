@@ -11,12 +11,15 @@
 //   1. Mast.Caom.Cone    { ra, dec, radius }  -> observations overlapping the target
 //   2. Mast.Caom.Products { caom_uri }         -> product files for one observation
 //
-// IMPORTANT / HONEST LIMITATION (verified 2026-10-10 by direct probing):
+// IMPORTANT / HONEST LIMITATION (verified 2026-10-10 by direct probing, and
+//   re-confirmed 2026-10-11 from a clean Cloudflare edge network -- so the empty
+//   result is auth-gating, NOT a local-proxy artifact):
 //   the CAOM Portal query services return HTTP 200 with an *empty* body (`{}`)
 //   for anonymous callers -- `Mast.Caom.Filtered` is the logged-in user's saved
 //   collection, and `Mast.Caom.Cone` also comes back empty without a token.
 //   The dependency-free Download service (`Download/file?uri=mast:...`), by
-//   contrast, serves the FITS bytes anonymously. So on this rig discovery is
+//   contrast, serves the FITS bytes anonymously (confirmed at the edge: a real
+//   1.9 MB TESS product with a `SIMPLE` FITS header). So on this rig discovery is
 //   best-effort: it is tried first, and when it returns nothing (anonymous, or
 //   no overlapping coverage) the pipeline falls back to the curated registry
 //   and then to the synthetic stand-in. With a MAST token supplied via

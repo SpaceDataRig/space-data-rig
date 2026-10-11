@@ -211,6 +211,9 @@ a:hover { text-decoration: underline; }
 .rigor-card h3 { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
 .rigor-card p { margin: 0; color: var(--ink-dim); font-size: .83rem; line-height: 1.6; }
 .rigor-foot { color: var(--ink-faint); font-size: .8rem; line-height: 1.6; margin: 14px 0 0; }
+.verify-figure { margin: 18px 0 0; }
+.verify-figure img { display: block; width: 100%; max-width: 760px; margin: 0 auto; border: 1px solid var(--edge); border-radius: 12px; background: #0b1220; }
+.verify-figure figcaption { color: var(--ink-dim); font-size: .82rem; line-height: 1.6; margin: 10px auto 0; max-width: 760px; }
 .card { position: relative; background: linear-gradient(180deg, var(--glass), var(--glass-2)); border: 1px solid var(--edge); border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(10px); overflow: hidden; transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease; }
 .card::before { content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: linear-gradient(90deg, var(--tone, #3ae0ff), transparent 70%); }
 .card:hover { transform: translateY(-3px); border-color: var(--edge-hot); box-shadow: 0 26px 50px -30px rgba(0, 0, 0, 0.95), 0 0 26px -12px var(--tone, #3ae0ff); }

@@ -631,6 +631,35 @@ establishes is that the same shape-fitting machinery that repaired the depth on 
 sensible, independent size on REAL worlds it has never been fitted to before -- straight from the pixels, blind.
 SAFETY BOUNDARY: every object is a CANDIDATE; none is confirmed, anchored, or claimed as a discovery here.
 
+### Attacking the long-period cliff: more sectors, but fit them PER SECTOR (`npm run p12:multisector`)
+
+Everything above used ONE ~27-day TESS sector, which is why long-period planets (too few transits in a
+short baseline) are the known weak spot -- the p7 recovery cliff and the p9 long-period degradation both
+come from it. The obvious fix is to stitch every available sector into one long curve and fold it all at
+once. p12 tests that idea directly on 18 confirmed planets with P >= 10 d, comparing three depth
+estimators scored against the catalog value (post-hoc reference only, never shown to a fit):
+
+```
+median depth |err|   single best sector : 39.6%
+median depth |err|   one long fold       : 34.7%   (all sectors stitched, folded at the catalog ephemeris)
+median depth |err|   per-sector median   : 24.9%   (fit each sector alone, combine the depths by median)
+per-sector beats single 13/18, beats long-fold 11/18; 17/18 targets had >=2 SPOC sectors (up to 6)
+```
+
+The result is the opposite of naive intuition, and we report it honestly. Multi-sector SPOC data turns out
+to be WIDELY available and the long fold gathers about twice the in-window points, yet folding 1000-1800
+days at the catalog period is only marginally better than one clean sector and is FRAGILE: a tiny period
+error accumulates phase drift across the long span, individual transits stop landing at the same fold
+phase, and a single-epoch model then smears the dip (worst case here, TOI-2128 b: one sector mis-fit at
+5952%, the long fold at 48%). Fitting each sector on its own sidesteps that drift -- inside one 27-day
+sector the ephemeris is locally coherent -- and taking the median across sectors rejects the occasional
+bad sector, so the ROBUST way to exploit extra sectors is per-sector characterization plus a combine,
+NOT one giant fold. This reframes the long-period limit as a PHASE-COHERENCE problem rather than a
+data-volume problem, and points the next iteration at per-transit-epoch refitting (already prototyped in
+`oddEvenRefined`) long before any of it would touch a gate. SAFETY BOUNDARY: research probe only -- the
+additive `stitchLightCurves` helper in `mastS3.ts`, the production detection path is untouched, nothing
+is gated, and no planet is claimed.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -835,6 +864,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 p6-blind-survey.ts, p7-blind-toi-survey.ts, p8-noise-acf.ts, p9-exact-depth.ts,
                 p10-figure.ts (renders web/transit-example.svg from a real transit),
                 p11-candidate-size.ts (blind-recovered candidates: independent depth + radius),
+                p12-multisector.ts (long-period: single vs long-fold vs per-sector depth estimators),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -843,7 +873,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

@@ -24,7 +24,7 @@
 //   through to the existing stand-in -- the default synthetic hash is unchanged.
 
 import { fitsToLightCurve } from "./mast.ts";
-import type { LightCurve } from "../core/types.ts";
+import type { LightCurve, LightCurvePoint } from "../core/types.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const SPOC_PREFIX = "mast/hlsp/tess-spoc";
@@ -168,4 +168,74 @@ export async function fetchSpocLightCurve(
     return lc;
   }
   return null;
+}
+
+function medianOf(xs: number[]): number {
+  if (!xs.length) return NaN;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+/**
+ * Pure, deterministic merge of several same-target light curves into ONE longer-baseline curve.
+ * Each input is re-normalized to its own median (so per-sector brightness offsets do not inject
+ * steps at the joins), points are sorted by absolute time (BJD_TDB is common across sectors, so
+ * folding over the stitched span stays coherent), and exact-duplicate timestamps are dropped. Used
+ * by the multi-sector study (scripts/p12-multisector.ts) to attack the single-sector long-period
+ * limit. Additive: it does not touch fetchSpocLightCurve, so the production/stand-in path is
+ * unchanged and no bundle hash moves. Returns null if too few points survive.
+ */
+export function stitchLightCurves(lcs: LightCurve[]): LightCurve | null {
+  const valid = lcs.filter((l) => l && Array.isArray(l.points) && l.points.length > 0);
+  if (!valid.length) return null;
+  const all: LightCurvePoint[] = [];
+  for (const l of valid) {
+    const finite = l.points.filter((p) => Number.isFinite(p.flux) && Number.isFinite(p.time));
+    if (finite.length < 20) continue; // skip a sector too sparse to be trustworthy
+    const med = medianOf(finite.map((p) => p.flux));
+    if (!Number.isFinite(med) || med <= 0) continue;
+    for (const p of finite) all.push({ time: p.time, flux: p.flux / med });
+  }
+  if (all.length < 50) return null;
+  all.sort((a, b) => a.time - b.time);
+  const dedup: LightCurvePoint[] = [];
+  let lastT = Number.NEGATIVE_INFINITY;
+  for (const p of all) {
+    if (p.time !== lastT) { dedup.push(p); lastT = p.time; }
+  }
+  const spanDays = dedup.length ? dedup[dedup.length - 1].time - dedup[0].time : 0;
+  return {
+    targetId: valid[0].targetId,
+    mission: valid[0].mission,
+    cadenceSec: valid[0].cadenceSec,
+    points: dedup,
+    source: `stitched ${valid.length} TESS-SPOC sector(s), span ${spanDays.toFixed(1)} d (REAL photometry)`,
+  };
+}
+
+/**
+ * Download every available SPOC sector for a target (up to maxSectors) and stitch them into one
+ * longer-baseline curve. Returns null if none download or too few points survive. Best-effort and
+ * offline-degrading, exactly like fetchSpocLightCurve.
+ */
+export async function fetchSpocStitchedLightCurve(
+  tic: number,
+  sectors: number[],
+  targetId: string,
+  opts: SpocFetchOptions = {},
+  maxSectors = 6,
+): Promise<LightCurve | null> {
+  const lcs: LightCurve[] = [];
+  for (const sector of sectors.slice(0, maxSectors)) {
+    const key = resolveSpocKey(tic, sector, "lc");
+    const bytes = await fetchSpocBytes(key, opts);
+    if (!bytes) continue;
+    try {
+      lcs.push(fitsToLightCurve(bytes, targetId));
+    } catch {
+      /* a sector that fails to parse is skipped */
+    }
+  }
+  return stitchLightCurves(lcs);
 }

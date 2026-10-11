@@ -556,6 +556,7 @@ catalog depth inside +/-1sigma:       8/28 = 29%  (a calibrated error would be ~
 catalog depth inside +/-2sigma:       13/28 = 46% (calibrated ~95%)
 LD-sensitivity floor on depth:        12.1% (all) / 12.7% short-period  (refit across 4 limb-darkening laws)
 independent planet RADIUS vs catalog:  6.5% median (all) / 5.4% short-period  (Rp = p x Rstar; pl_rade withheld)
+combined stat+LD 1-sigma coverage:     39% (up from 29% statistical-only; still < ~68% -> an approximate bar)
 ```
 
 The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
@@ -595,6 +596,14 @@ the square root of depth. So the same fit that repaired the crude box depth also
 SIZE to a few percent, straight from the shape of the light curve -- a quantity a non-specialist can grasp
 immediately (is it Earth-sized? Neptune-sized? Jupiter-sized?) and a genuine, self-consistent measurement
 chain: pixels -> shape -> depth -> radius.
+
+**Can we make the error bar honest?** Adding the measured LD spread to the statistical sigma in quadrature
+lifts the 1-sigma coverage from 29% to 39% and the 2-sigma from 46% to 54% -- a real improvement, but still
+short of the ~68% / ~95% a fully calibrated error would reach. That is the honest conclusion: limb darkening
+is the dominant systematic, yet not the only one -- an imperfect ephemeris and residual stellar activity remain
+in the error, so we quote the combined bar as an APPROXIMATE lower bound on the true uncertainty rather than
+pretend it is exact. A study that stopped at the tight statistical sigma would have overstated our precision
+by roughly a factor of two; reporting the undercoverage is the point.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 

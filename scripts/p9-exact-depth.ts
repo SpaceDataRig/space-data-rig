@@ -224,6 +224,22 @@ async function main() {
     console.log(`  median |radius error| vs catalog: ${medAbsRad.toFixed(1)}% over ${radRows.length} planets` + (radShort.length >= 2 ? `; short-period (<13 d) ${median(radShort.map((r) => Math.abs(r.radiusErrPct))).toFixed(1)}%` : ""));
     console.log(`  (radius goes as sqrt(depth) x Rstar, so its error is roughly HALF the depth error plus the stellar-radius uncertainty -- a size, not just a depth)`);
   }
+  // Calibrate a COMBINED error bar: statistical (depthSigma) in quadrature with the LD systematic (half
+  // the LD spread, as a 1-sigma proxy). If THIS contains the catalog depth near the ~68% / ~95% marks, we
+  // have turned an over-confident point error into an empirically honest uncertainty -- the whole point of
+  // measuring the systematics above rather than just reporting a tight statistical bar.
+  const comb = rows
+    .filter((r) => Number.isFinite(r.ldSpreadPct) && r.depthSigmaPpm > 0)
+    .map((r) => ({ err: Math.abs(r.exactDepthPpm - r.catDepthPpm), sig: Math.sqrt(r.depthSigmaPpm ** 2 + ((r.ldSpreadPct / 100) * r.catDepthPpm / 2) ** 2) }));
+  if (comb.length >= 3) {
+    const c1 = comb.filter((c) => c.err <= c.sig).length;
+    const c2 = comb.filter((c) => c.err <= 2 * c.sig).length;
+    console.log(`\ncalibrated COMBINED error bar (statistical + LD systematic in quadrature):`);
+    console.log(`  1-sigma coverage now ${c1}/${comb.length} = ${((c1 / comb.length) * 100).toFixed(0)}% (statistical-only was 29%); 2-sigma ${c2}/${comb.length} = ${((c2 / comb.length) * 100).toFixed(0)}%`);
+    const cov1pct = (c1 / comb.length) * 100;
+    if (cov1pct >= 55) console.log(`  => the combined bar is WELL-CALIBRATED (near ~68%/~95%): add the LD spread to any quoted depth error, not the statistical sigma alone.`);
+    else console.log(`  => still UNDER-covered (${cov1pct.toFixed(0)}% < ~68%): limb darkening is necessary but not sufficient -- an imperfect ephemeris and stellar activity remain unaccounted, so treat the bar as approximate.`);
+  }
   // split by period: short periods fold many transits per sector (shape well-constrained), long periods
   // see one or two (p-b shape degenerate, blending/activity dominates) -- the same single-sector cliff p7 hit.
   const shortP = rows.filter((r) => r.period < 13);

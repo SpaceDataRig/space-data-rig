@@ -39,6 +39,7 @@ import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ReviewResult } from "../critic/review.ts";
 import { generateSyntheticTransit } from "../data/synthetic.ts";
+import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { persistBundle, type EphemerisRecord } from "../bundle/bundle.ts";
@@ -167,6 +168,10 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           limit: Math.max(40, params.targets * 6),
           minPeriodDays: 1,
           maxPeriodDays: 14,
+          // Autonomous mode: when the S3 photometry tier is on, queue only
+          // targets that carry a TIC so each has a chance at REAL data. When it
+          // is off this is false and the historical query is unchanged.
+          requireTic: env.MAST_S3 === "1",
         };
         const catalog: CatalogRecord = params.offline
           ? (() => {
@@ -237,22 +242,45 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           "info",
           `Building an observable light curve for ${meta.name} (P=${planet.pl_orbper?.toFixed(3)}d, Rp=${planet.pl_rade?.toFixed(2)} R_Earth, R*=${planet.st_rad?.toFixed(2)} R_Sun).`,
         );
-        const { lc, truth } = generateSyntheticTransit({
-          seed: 7000 + i,
-          periodDays: planet.pl_orbper!,
-          planetRadiusEarth: planet.pl_rade!,
-          stellarRadiusRsun: planet.st_rad!,
-          stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad!), // catalog mass; empirical M-R only as fallback
-          impactParam: 0.2 + (i % 3) * 0.15,
-          noisePpm: 180,
-          cadenceSec: 120,
-          baselineDays: 27,
-          targetIdLabel: planet.hostname ?? meta.name,
-        });
-        lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + i}); catalog source=${catalogSource}`;
+        const useS3 = env.MAST_S3 === "1" && Number.isFinite(planet.tic);
+        const sectors =
+          useS3 && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)
+            ? await sectorsForCoord(planet.ra!, planet.dec!)
+            : [];
+        const spoc = sectors.length > 0 ? await fetchSpocLightCurve(planet.tic!, sectors, meta.name) : null;
+        let lc: LightCurve;
+        let truthPeriodDays: number;
+        if (spoc) {
+          // Token-free REAL photometry from the public TESS-SPOC S3 bucket.
+          lc = spoc;
+          lc.source = `${lc.source}; catalog source=${catalogSource}`;
+          truthPeriodDays = planet.pl_orbper!;
+          await stub.emitEvent(
+            "data-fetch",
+            "result",
+            `Fetched REAL TESS-SPOC photometry for ${meta.name} from the public S3 bucket (token-free).`,
+          );
+        } else {
+          // Default deterministic path: byte-identical to the historical stand-in.
+          const built = generateSyntheticTransit({
+            seed: 7000 + i,
+            periodDays: planet.pl_orbper!,
+            planetRadiusEarth: planet.pl_rade!,
+            stellarRadiusRsun: planet.st_rad!,
+            stellarMassMsun: planet.st_mass ?? mainSequenceMassFromRadius(planet.st_rad!), // catalog mass; empirical M-R only as fallback
+            impactParam: 0.2 + (i % 3) * 0.15,
+            noisePpm: 180,
+            cadenceSec: 120,
+            baselineDays: 27,
+            targetIdLabel: planet.hostname ?? meta.name,
+          });
+          lc = built.lc;
+          truthPeriodDays = built.truth.periodDays;
+          lc.source = `synthetic stand-in for MAST TESS 2-min (seed=${7000 + i}); catalog source=${catalogSource}`;
+        }
         const dataHash = await computeDataHash(lc);
         lc.dataHash = dataHash;
-        const rec: FetchRecord = { lc, meta, dataHash, truthPeriodDays: truth.periodDays };
+        const rec: FetchRecord = { lc, meta, dataHash, truthPeriodDays };
         await putJson(store, `${key}/fetch.json`, rec);
         await stub.markSeatProcessed("data-fetch");
         await stub.emitEvent(
@@ -407,6 +435,23 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
       if (!reportR.ok) {
         await this.markFailed(step, env, meta.taskId, meta.name, reportR.error);
         continue;
+      }
+
+      // Autonomous runs may seal an ACCEPTED finding on-chain, but only through
+      // the DO's budget gate: AUTO_ANCHOR defaults to "off" (no-op) and even
+      // "live" spends nothing until AUTO_ANCHOR_DAILY_CAP > 0. Manual dashboard
+      // runs never reach this branch (params.autonomous is false), so anchoring
+      // stays exactly as manual as before for a launched run.
+      if (params.autonomous && reportR.value === "accepted") {
+        await runSafe(step, `anchor-${i}`, async (): Promise<string> => {
+          const res = await stub.autoAnchorBudgeted(meta.findingId);
+          await stub.emitEvent(
+            "reporter",
+            res.performed && res.spentSol ? "result" : "info",
+            `Auto-anchor ${meta.findingId}: mode=${res.mode} spent=${res.spentSol} -- ${res.reason}`,
+          );
+          return `${res.mode}:${res.performed}:${res.spentSol}`;
+        });
       }
 
       // checkpoint the DO state to the R2 snapshot after every completed target

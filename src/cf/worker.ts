@@ -346,4 +346,37 @@ export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
     return app.fetch(request, env, ctx);
   },
+
+  /**
+   * Cron entrypoint for autonomous research. Inert unless the AUTO_RESEARCH
+   * Worker var is exactly "1", so shipping the [triggers] crons block changes
+   * nothing on its own. When enabled it launches a modest autonomous run on the
+   * same DO-serialized slot the dashboard uses (skipping the tick if a run is
+   * already going). On-chain spending is STILL gated separately by AUTO_ANCHOR
+   * inside the workflow, so enabling the schedule never costs SOL by itself.
+   */
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    if (env.AUTO_RESEARCH !== "1") return;
+    const targets = clampInt(env.AUTO_RESEARCH_TARGETS, 1, 8, 3);
+    const maxTmag = clampFloat(env.AUTO_RESEARCH_TMAG, 0, 20, 10);
+    const params: RunParams = {
+      runId: RigStateDO.makeRunId(),
+      targets,
+      confidenceTrials: 8,
+      maxTmag,
+      stageDelayMs: 0,
+      offline: false,
+      resume: false,
+      autonomous: true,
+    };
+    const claimed = await rigStub(env).startRunIfIdle(params);
+    if (!claimed.ok) return; // a run is already in progress -- skip this tick
+    const runId = claimed.runId;
+    try {
+      await env.RIG_RUN.create({ params: { ...params, runId } });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await rigStub(env).finishRun({ error: `autonomous workflow could not be created: ${msg}` }).catch(() => {});
+    }
+  },
 };

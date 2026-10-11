@@ -20,4 +20,10 @@ export interface RunParams {
   offline: boolean;
   /** Resume from the last persisted snapshot, skipping completed tasks. */
   resume: boolean;
+  /**
+   * Autonomous (cron-launched) run: eligible for the budget-gated auto-anchor
+   * after each accepted finding. Absent/false for a dashboard POST /api/run, so
+   * manual runs keep anchoring strictly manual (spend nothing).
+   */
+  autonomous?: boolean;
 }

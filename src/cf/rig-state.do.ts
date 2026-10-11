@@ -570,6 +570,64 @@ export class RigStateDO extends DurableObject<Env> {
     return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
   }
 
+  /**
+   * Budget-gated auto-anchor for autonomous (cron) runs. Deliberately spends
+   * NOTHING unless an operator opts in via Worker vars:
+   *   AUTO_ANCHOR = "off" (default)   -> no-op, returns immediately.
+   *   AUTO_ANCHOR = "dry"             -> previews the bundle memo (dryRun), no fee
+   *                                       payer touched, no SOL spent.
+   *   AUTO_ANCHOR = "live"            -> real mainnet anchor, but ONLY while the
+   *                                       per-UTC-day count stays under
+   *                                       AUTO_ANCHOR_DAILY_CAP (default 0, so even
+   *                                       "live" spends nothing until a cap is set).
+   * Idempotency (a hash already in the ledger is replayed without new spend) is
+   * inherited from anchorFinding, so a re-run never double-pays.
+   */
+  async autoAnchorBudgeted(
+    findingId: string,
+  ): Promise<{ performed: boolean; mode: string; spentSol: boolean; reason: string; memo?: string; signature?: string; remainingDaily?: number }> {
+    const mode = (this.env.AUTO_ANCHOR ?? "off").toLowerCase();
+    if (mode !== "dry" && mode !== "live") {
+      return { performed: false, mode: "off", spentSol: false, reason: "auto-anchor disabled (set AUTO_ANCHOR=dry|live to enable)" };
+    }
+    if (mode === "dry") {
+      const r = await this.anchorFinding(findingId, { dryRun: true });
+      return { performed: r.ok, mode, spentSol: false, reason: r.ok ? "dry-run preview (no fee payer touched)" : (r.error ?? "preview failed"), memo: r.memo };
+    }
+
+    // live mode: enforce the per-day budget BEFORE any spend.
+    const cap = Math.max(0, parseInt(this.env.AUTO_ANCHOR_DAILY_CAP ?? "0", 10) || 0);
+    const day = new Date().toISOString().slice(0, 10);
+    const row = this.row<{ v: string }>(`SELECT v FROM meta WHERE k = 'autoAnchorDay'`);
+    let count = 0;
+    if (row) {
+      try {
+        const rec = JSON.parse(row.v) as { day?: string; count?: number };
+        if (rec.day === day) count = rec.count ?? 0;
+      } catch { /* treat an unreadable counter as 0 for a fresh day */ }
+    }
+    if (count >= cap) {
+      await this.emitEvent("reporter", "warn", `Auto-anchor skipped for ${findingId}: daily live budget ${cap}/day exhausted (AUTO_ANCHOR_DAILY_CAP).`);
+      return { performed: false, mode, spentSol: false, reason: `daily live-anchor budget exhausted (${cap}/day)`, remainingDaily: 0 };
+    }
+
+    const r = await this.anchorFinding(findingId, { dryRun: false });
+    const newSpend = r.ok && !r.alreadyAnchored;
+    if (newSpend) {
+      this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO meta (k, v) VALUES ('autoAnchorDay', ?)`, JSON.stringify({ day, count: count + 1 }));
+      await this.ctx.storage.sync();
+    }
+    return {
+      performed: r.ok,
+      mode,
+      spentSol: newSpend,
+      reason: r.ok ? (r.alreadyAnchored ? "already anchored (idempotent, no new spend)" : "anchored on mainnet within budget") : (r.error ?? "anchor failed"),
+      memo: r.memo,
+      signature: r.signature,
+      remainingDaily: Math.max(0, cap - (count + (newSpend ? 1 : 0))),
+    };
+  }
+
   // Drop the heavy per-fold sample from the persisted finding: it is deterministic
   // (regenerable by detectTransit) and would bloat SQLite rows + WS frames.
   private stripFinding(f: Finding): Finding {

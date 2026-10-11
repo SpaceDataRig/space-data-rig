@@ -110,6 +110,8 @@ export interface ArchivePlanet {
   st_mass?: number; // stellar mass in solar masses (pscomppars column)
   ra?: number;
   dec?: number;
+  /** TESS Input Catalog id; enables the token-free TESS-SPOC S3 photometry tier. */
+  tic?: number;
   sy_tmag?: number; // TESS magnitude
   sy_kmag?: number; // Kepler magnitude
   discoverymethod?: string;

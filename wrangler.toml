@@ -65,12 +65,31 @@ binding = "RIG_RUN"
 class_name = "RigRunWorkflow"
 name = "rig-run"
 
+# ---- cron trigger for autonomous research ----------------------------------
+# The scheduled handler in worker.ts is a no-op unless the AUTO_RESEARCH var is
+# exactly "1"; on-chain spending is gated separately by AUTO_ANCHOR. So shipping
+# this trigger with the defaults below changes nothing observable in production.
+[triggers]
+crons = ["0 */6 * * *"]
+
 # ---- plain-text variables (non-secret) -------------------------------------
 [vars]
 CODE_VERSION = "space-data-rig@0.1.0"
 # Public mainnet RPC kept in this tracked file as a safe default + fallback.
 SOLANA_RPC_FALLBACKS = "https://api.mainnet-beta.solana.com"
 DISCUSSION_MODE = "grounded"
+# Token-free TESS-SPOC public-S3 photometry tier. Off by default so every run
+# reproduces the deterministic synthetic stand-in hash; set to "1" to let targets
+# that carry a TIC pull REAL PDCSAP photometry from the anonymous S3 bucket.
+MAST_S3 = "0"
+# Autonomous-research switches. Every default keeps the rig inert: the cron does
+# not start a run (AUTO_RESEARCH=0) and nothing is ever anchored on-chain
+# (AUTO_ANCHOR=off, daily cap 0). An operator opts in explicitly to change this.
+AUTO_RESEARCH = "0"
+AUTO_RESEARCH_TARGETS = "3"
+AUTO_RESEARCH_TMAG = "10"
+AUTO_ANCHOR = "off"
+AUTO_ANCHOR_DAILY_CAP = "0"
 
 # Secrets (set with `wrangler secret put <NAME>`, never committed here):
 #   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);

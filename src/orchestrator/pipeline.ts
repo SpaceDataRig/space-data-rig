@@ -25,6 +25,7 @@ import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
 import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
 import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
+import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -65,6 +66,14 @@ export interface OrchestratorOptions {
    * is supplied on a network where the portal responds.
    */
   discoverMast?: boolean;
+  /**
+   * Try the token-free TESS-SPOC public S3 bucket (AWS Registry of Open Data)
+   * for targets that carry a TIC, after the curated registry misses and before
+   * the synthetic stand-in. Off by default so the deterministic run (and its
+   * bundle hash) is byte-identical unless MAST_S3=1 or this option is passed.
+   * See ./src/data/mastS3.ts for the verified anonymous-access details.
+   */
+  useMastS3?: boolean;
   /** run label for logging. */
   runId?: string;
 }
@@ -108,6 +117,7 @@ export class Orchestrator {
   readonly store: RigStore;
   private opts: Required<Pick<OrchestratorOptions, "maxTargets" | "maxTmag" | "minPeriodDays" | "maxPeriodDays" | "confidenceTrials" | "stageDelayMs" | "outDir" | "snapshotPath" | "resume">>;
   private discoverMast: boolean;
+  private useMastS3: boolean;
   private catalogOverride?: ArchiveFetchResult;
   private codeVersion: string;
   private artifacts: FsArtifactStore;
@@ -128,6 +138,7 @@ export class Orchestrator {
     };
     this.catalogOverride = options.catalog;
     this.discoverMast = options.discoverMast ?? (typeof process !== "undefined" && process.env?.MAST_DISCOVER === "1");
+    this.useMastS3 = options.useMastS3 ?? (typeof process !== "undefined" && process.env?.MAST_S3 === "1");
     this.codeVersion = readCodeVersion(resolve(REPO_ROOT, "package.json"));
     this.artifacts = new FsArtifactStore(this.opts.outDir);
   }
@@ -161,6 +172,9 @@ export class Orchestrator {
       limit: Math.max(40, this.opts.maxTargets * 6),
       minPeriodDays: this.opts.minPeriodDays,
       maxPeriodDays: this.opts.maxPeriodDays,
+      // Autonomous mode: queue only TIC-bearing targets when the token-free S3
+      // tier is enabled, so each target can pull REAL photometry. Off by default.
+      requireTic: this.useMastS3,
     }));
     this.store.emitEvent(
       "data-fetch",
@@ -272,25 +286,45 @@ export class Orchestrator {
         truth = built.truth;
       }
     } else {
-      // Not curated: optionally let MAST discovery find a real product by
-      // coordinate before falling back to the stand-in. Anonymous CAOM queries
-      // return empty (verified), so this is a no-op unless a token/network
-      // makes the portal respond -- the stand-in keeps the run deterministic.
-      let discovered: LightCurve | null = null;
-      if (this.discoverMast && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)) {
-        this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- asking MAST to discover one at (${planet.ra!.toFixed(3)}, ${planet.dec!.toFixed(3)}) ...`);
-        discovered = await discoverAndFetchLightCurve(planet.ra!, planet.dec!, name);
+      // Not curated. Try the token-free TESS-SPOC public S3 bucket (needs a
+      // TIC), then best-effort MAST discovery, then the stand-in. Both real
+      // tiers are OFF by default, so the deterministic run is unchanged.
+      let real: LightCurve | null = null;
+      if (this.useMastS3 && Number.isFinite(planet.tic)) {
+        const sectors = Number.isFinite(planet.ra) && Number.isFinite(planet.dec)
+          ? await sectorsForCoord(planet.ra!, planet.dec!)
+          : [];
+        if (sectors.length > 0) {
+          this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- trying the token-free TESS-SPOC public S3 bucket (TIC ${planet.tic}, sectors ${sectors.join("/")}) ...`);
+          real = await fetchSpocLightCurve(planet.tic!, sectors, name);
+        }
       }
-      if (discovered) {
-        lc = discovered;
+      if (real) {
+        lc = real;
         truth = truthFromCatalog(planet);
-        lc.source = `${lc.source}; ${cat.source ? `catalog source=${cat.source}` : ""}`.trim();
-        this.store.emitEvent("data-fetch", "result", `Discovered real MAST photometry for ${name} via anonymous CAOM query.`);
+        lc.source = `${lc.source}; catalog source=${cat.source}`;
+        this.store.emitEvent("data-fetch", "result", `Fetched REAL TESS-SPOC photometry for ${name} from the public S3 bucket (token-free).`);
       } else {
-        if (this.discoverMast) this.store.emitEvent("data-fetch", "warn", `MAST discovery returned nothing for ${name} (anonymous CAOM queries are empty without a token) -- using the synthetic stand-in.`);
-        const built = this.buildStandIn(planet, index, cat.source);
-        lc = built.lc;
-        truth = built.truth;
+        // Optionally let MAST discovery find a real product by coordinate
+        // before falling back to the stand-in. Anonymous CAOM queries return
+        // empty (verified), so this is a no-op unless a token/network makes the
+        // portal respond -- the stand-in keeps the run deterministic.
+        let discovered: LightCurve | null = null;
+        if (this.discoverMast && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)) {
+          this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- asking MAST to discover one at (${planet.ra!.toFixed(3)}, ${planet.dec!.toFixed(3)}) ...`);
+          discovered = await discoverAndFetchLightCurve(planet.ra!, planet.dec!, name);
+        }
+        if (discovered) {
+          lc = discovered;
+          truth = truthFromCatalog(planet);
+          lc.source = `${lc.source}; ${cat.source ? `catalog source=${cat.source}` : ""}`.trim();
+          this.store.emitEvent("data-fetch", "result", `Discovered real MAST photometry for ${name} via anonymous CAOM query.`);
+        } else {
+          if (this.discoverMast) this.store.emitEvent("data-fetch", "warn", `MAST discovery returned nothing for ${name} (anonymous CAOM queries are empty without a token) -- using the synthetic stand-in.`);
+          const built = this.buildStandIn(planet, index, cat.source);
+          lc = built.lc;
+          truth = built.truth;
+        }
       }
     }
     lc.dataHash = await computeDataHash(lc);

@@ -23,6 +23,26 @@ export interface Env {
   /** public fallback RPC(s), comma-separated; the private endpoint is a secret. */
   SOLANA_RPC_FALLBACKS?: string;
   DISCUSSION_MODE?: string;
+  /** "1" enables the token-free TESS-SPOC public S3 photometry tier (off by default). */
+  MAST_S3?: string;
+  /**
+   * Autonomous-research knobs. All default OFF so a deploy with the cron trigger
+   * present still does nothing until these are set explicitly.
+   *   AUTO_RESEARCH        "1" lets the cron schedule start an autonomous run; any
+   *                        other value (the default) makes the scheduled handler a
+   *                        no-op.
+   *   AUTO_RESEARCH_TARGETS targets per autonomous run (clamped 1..8, default 3).
+   *   AUTO_RESEARCH_TMAG    brightness cut for autonomous runs (default 10).
+   *   AUTO_ANCHOR           "off" (default) | "dry" (memo preview, no spend) | "live"
+   *                        (real mainnet anchor, only within AUTO_ANCHOR_DAILY_CAP).
+   *   AUTO_ANCHOR_DAILY_CAP max LIVE anchors per UTC day from the fee wallet; 0 (the
+   *                        default) means live mode still spends nothing.
+   */
+  AUTO_RESEARCH?: string;
+  AUTO_RESEARCH_TARGETS?: string;
+  AUTO_RESEARCH_TMAG?: string;
+  AUTO_ANCHOR?: string;
+  AUTO_ANCHOR_DAILY_CAP?: string;
 
   // ---- optional secrets (wrangler secret put) ----
   OPENAI_API_KEY?: string;

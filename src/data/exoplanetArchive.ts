@@ -32,6 +32,14 @@ export interface ArchiveQueryOptions {
   minPeriodDays?: number;
   maxPeriodDays?: number;
   timeoutMs?: number;
+  /**
+   * Restrict the RESULT to rows that carry a TESS Input Catalog id (pscomppars
+   * `tic_id`). Used by autonomous mode so every queued target is eligible for
+   * the token-free TESS-SPOC public-S3 photometry tier. The filter runs
+   * client-side (the WAF rejects an SQL `is not null` clause), so the default
+   * query string and its deterministic ordering stay byte-for-byte unchanged.
+   */
+  requireTic?: boolean;
 }
 
 export interface ArchiveFetchResult {
@@ -57,12 +65,21 @@ export function getFallbackCatalog(o: ArchiveQueryOptions = {}): ArchiveFetchRes
   return { planets, source: "fallback" };
 }
 
+/** Parse a pscomppars `tic_id` string like "TIC 441462736" into a number. */
+function parseTicId(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  const digits = String(value).replace(/[^0-9]/g, "");
+  if (!digits) return undefined;
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 /** Fetch confirmed transiting planets from the NASA Exoplanet Archive (pscomppars). */
 export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promise<ArchiveFetchResult> {
   const maxTmag = o.maxTmag ?? 11;
   const limit = o.limit ?? 50;
   const cols =
-    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_tranmid,pl_rade,st_rad,st_mass,ra,dec,sy_tmag,discoverymethod";
+    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_tranmid,pl_rade,st_rad,st_mass,ra,dec,tic_id,sy_tmag,discoverymethod";
   // NOTE: NASA's Cloudflare WAF 403s queries with spaces around comparison
   // operators or `is not null`; keep the WHERE compact and filter nulls in JS.
   let where = `discoverymethod='Transit' and sy_tmag<${maxTmag}`;
@@ -87,10 +104,21 @@ export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promis
         .filter((p) => p.pl_orbper != null && p.sy_tmag != null)
         // pscomppars reports pl_trandep in PERCENT of stellar brightness; the bundled
         // fallback catalog and every downstream consumer use PPM. Normalize once here
-        // so both sources share one unit (0.7% -> 7000ppm).
-        .map((p) => (p.pl_trandep != null ? { ...p, pl_trandep: p.pl_trandep * 1e4 } : p));
+        // so both sources share one unit (0.7% -> 7000ppm). Also lift the string
+        // `tic_id` ("TIC 441462736") into the numeric `tic` used by the S3 tier.
+        .map((p) => {
+          const row: ArchivePlanet & { tic_id?: string } = { ...p };
+          if (row.pl_trandep != null) row.pl_trandep = row.pl_trandep * 1e4;
+          const tic = parseTicId(row.tic_id);
+          if (tic != null) row.tic = tic;
+          return row;
+        });
       rows.sort((a, b) => (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99));
-      return { planets: rows.slice(0, limit), source: "nasa-tap", query };
+      // Autonomous mode keeps only TIC-bearing rows (client-side: the WAF
+      // rejects an SQL `is not null` clause). Nearly all TESS pscomppars rows
+      // carry a tic_id, so a slightly deeper slice before filtering is enough.
+      const kept = o.requireTic ? rows.filter((p) => Number.isFinite(p.tic)) : rows;
+      return { planets: kept.slice(0, limit), source: "nasa-tap", query };
     } catch (e) {
       lastErr = e instanceof Error ? e.message : String(e);
       await new Promise((res) => setTimeout(res, 1200 * (attempt + 1))); // backoff

@@ -18,7 +18,7 @@
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../src/data/mastS3Pixels.ts";
-import { oddEvenDepth, secondaryEclipse } from "../src/detect/vetting.ts";
+import { oddEvenDepth, oddEvenRefined, secondaryEclipse } from "../src/detect/vetting.ts";
 import type { ArchivePlanet } from "../src/core/types.ts";
 
 function arg(name: string, dflt: number): number {
@@ -48,7 +48,7 @@ async function main() {
   console.log(`queued ${picked.length} TIC planets from ${cat.planets.length} catalog rows`);
   console.log("");
 
-  const shifts: { name: string; tic: number; sector: number; shiftArcsec: number; oddEvenFrac: number; secRatio: number; inN: number; outN: number }[] = [];
+  const shifts: { name: string; tic: number; sector: number; shiftArcsec: number; oddEvenFrac: number; oddEvenRefFrac: number; secRatio: number; inN: number; outN: number }[] = [];
   const skipped: { name: string; why: string }[] = [];
 
   for (const p of picked) {
@@ -70,9 +70,10 @@ async function main() {
         }
         // light-curve-only discriminators on the SAME confirmed ephemeris (must be benign)
         const oe = oddEvenDepth(lc, p.pl_tranmid!, p.pl_orbper!, p.pl_trandur!);
+        const oer = oddEvenRefined(lc, p.pl_tranmid!, p.pl_orbper!, p.pl_trandur!);
         const se = secondaryEclipse(lc, p.pl_tranmid!, p.pl_orbper!, p.pl_trandur!);
-        shifts.push({ name, tic: p.tic!, sector: s, shiftArcsec: cs.shiftArcsec, oddEvenFrac: oe.determined ? oe.diffFrac : NaN, secRatio: se.determined ? se.ratio : NaN, inN: cs.inCount, outN: cs.outCount });
-        console.log(`${name.padEnd(20)} TIC ${p.tic} s${s}: shift ${cs.shiftArcsec.toFixed(2)}", odd/even ${oe.determined ? (oe.diffFrac * 100).toFixed(0) + "%" : "n/d"}, secondary ${se.determined ? se.ratio.toFixed(2) : "n/d"}`);
+        shifts.push({ name, tic: p.tic!, sector: s, shiftArcsec: cs.shiftArcsec, oddEvenFrac: oe.determined ? oe.diffFrac : NaN, oddEvenRefFrac: oer.determined ? oer.diffFrac : NaN, secRatio: se.determined ? se.ratio : NaN, inN: cs.inCount, outN: cs.outCount });
+        console.log(`${name.padEnd(20)} TIC ${p.tic} s${s}: shift ${cs.shiftArcsec.toFixed(2)}", odd/even fixed ${oe.determined ? (oe.diffFrac * 100).toFixed(0) + "%" : "n/d"} refit ${oer.determined ? (oer.diffFrac * 100).toFixed(0) + "%" : "n/d"} (${oer.nEven}/${oer.nOdd} ev), secondary ${se.determined ? se.ratio.toFixed(2) : "n/d"}`);
         done = true;
         break;
       }
@@ -93,7 +94,9 @@ async function main() {
   console.log(`measured ${xs.length} confirmed-planet metrics (all should be benign):`);
   console.log(`  centroid shift arcsec:  min=${xs[0].toFixed(2)}  p50=${q(xs, 0.5).toFixed(2)}  p90=${q(xs, 0.9).toFixed(2)}  max=${xs[xs.length - 1].toFixed(2)}`);
   const oe = shifts.map((s) => s.oddEvenFrac).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
-  if (oe.length) console.log(`  odd/even asymmetry:     max=${oe[oe.length - 1].toFixed(2)}  p90=${q(oe, 0.9).toFixed(2)}  (planet should be near 0)`);
+  if (oe.length) console.log(`  odd/even asymmetry FIXED:  max=${oe[oe.length - 1].toFixed(2)}  p90=${q(oe, 0.9).toFixed(2)}  (planet should be near 0)`);
+  const oer = shifts.map((s) => s.oddEvenRefFrac).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (oer.length) console.log(`  odd/even asymmetry REFIT:  max=${oer[oer.length - 1].toFixed(2)}  p90=${q(oer, 0.9).toFixed(2)}  (per-event refit; determines if odd/even is safe to re-gate)`);
   const sr = shifts.map((s) => s.secRatio).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
   if (sr.length) console.log(`  secondary/primary ratio:  max=${sr[sr.length - 1].toFixed(2)}  p90=${q(sr, 0.9).toFixed(2)}  (planet should be << 1)`);
   // Suggest reject thresholds conservatively above the observed true-planet spread.

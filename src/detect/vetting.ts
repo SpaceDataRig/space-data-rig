@@ -143,3 +143,102 @@ export function secondaryEclipse(lc: LightCurve, t0Bjd: number, periodDays: numb
     determined,
   };
 }
+
+// ---------------------------------------------------------------------------
+// ROBUST (refit) ODD/EVEN.
+//
+// The plain oddEvenDepth above uses FIXED +/-halfDuration windows at the predicted epoch
+// centers (t0 + k*P). On a single TESS sector a small catalog period error accumulates over
+// many orbits, so distant transits drift OUT of their window and odd/even depths spuriously
+// disagree (we measured 100-200% on REAL confirmed planets) -- unusable as a gate. This variant
+// REFINES each transit's center independently: within a search radius around each predicted
+// epoch it locates the deepest local transit, then measures the depth THERE. Because every event
+// is measured at its own actual position, accumulated phase error cancels and a real planet reads
+// symmetric, while a genuine period-halved alias still alternates deep/shallow events and is
+// caught. This is what makes odd/even safe to gate -- but it must still be calibrated on real
+// planets before it is allowed to reject (see scripts/p2-vet-calibrate).
+// ---------------------------------------------------------------------------
+
+export interface RefinedEvent {
+  epoch: number; // integer epoch index
+  centerBjd: number; // refined transit center
+  depthPpt: number; // baseline - in-window mean flux (ppm*1e3)
+  nPts: number;
+}
+
+export interface OddEvenRefinedResult extends OddEvenResult {
+  events: RefinedEvent[];
+  /** max |observed - predicted| residual of the per-event refit (days) -- a phase-drift gauge. */
+  maxResidualDays: number;
+}
+
+/** Locate each transit's true center by local search and measure its depth there. */
+export function findTransitEvents(
+  lc: LightCurve,
+  t0Bjd: number,
+  periodDays: number,
+  durationHours: number,
+  searchFrac = 0.2,
+): { events: RefinedEvent[]; baseline: number } {
+  const halfDur = durationHours / 24 / 2;
+  const pts = lc.points.filter((p) => Number.isFinite(p.time) && Number.isFinite(p.flux));
+  if (pts.length < 8 || periodDays <= 0) return { events: [], baseline: NaN };
+  const baseline = median(pts.map((p) => p.flux));
+  const tFirst = pts[0].time;
+  const tLast = pts[pts.length - 1].time;
+  const radius = Math.min(searchFrac * periodDays, 0.4 * periodDays); // stay clear of the alias half-period
+  const steps = 20;
+  const events: RefinedEvent[] = [];
+  const kMin = Math.ceil((tFirst - t0Bjd) / periodDays) + 1;
+  const kMax = Math.floor((tLast - t0Bjd) / periodDays) - 1;
+  for (let k = kMin; k <= kMax; k++) {
+    const predicted = t0Bjd + k * periodDays;
+    let best = { offset: 0, meanFlux: Infinity, nPts: 0 };
+    for (let s = 0; s <= steps; s++) {
+      const center = predicted - radius + (2 * radius * s) / steps;
+      let sum = 0;
+      let n = 0;
+      for (const p of pts) {
+        if (Math.abs(p.time - center) <= halfDur) {
+          sum += p.flux;
+          n++;
+        }
+      }
+      if (n >= 2 && sum / n < best.meanFlux) best = { offset: center - predicted, meanFlux: sum / n, nPts: n };
+    }
+    if (best.nPts >= 2 && best.meanFlux < Infinity) {
+      events.push({ epoch: k, centerBjd: predicted + best.offset, depthPpt: (baseline - best.meanFlux) * 1000, nPts: best.nPts });
+    }
+  }
+  return { events, baseline };
+}
+
+/** Robust odd/even asymmetry measured at each transit's own refined center. */
+export function oddEvenRefined(lc: LightCurve, t0Bjd: number, periodDays: number, durationHours: number): OddEvenRefinedResult {
+  const { events } = findTransitEvents(lc, t0Bjd, periodDays, durationHours);
+  const even: number[] = [];
+  const odd: number[] = [];
+  let maxResidual = 0;
+  for (const e of events) {
+    const resid = Math.abs(e.centerBjd - (t0Bjd + e.epoch * periodDays));
+    if (resid > maxResidual) maxResidual = resid;
+    if (e.depthPpt <= 0) continue; // not a dip at this epoch -> not an observed transit
+    (e.epoch % 2 === 0 ? even : odd).push(e.depthPpt);
+  }
+  const depthEven = even.length ? median(even) : 0;
+  const depthOdd = odd.length ? median(odd) : 0;
+  const diffPpt = Math.abs(depthOdd - depthEven);
+  const meanDepth = (Math.abs(depthOdd) + Math.abs(depthEven)) / 2;
+  const determined = even.length >= 2 && odd.length >= 2 && meanDepth > 0;
+  return {
+    depthOddPpt: depthOdd,
+    depthEvenPpt: depthEven,
+    diffPpt,
+    diffFrac: determined ? diffPpt / meanDepth : 0,
+    nOdd: odd.length,
+    nEven: even.length,
+    determined,
+    events,
+    maxResidualDays: maxResidual,
+  };
+}

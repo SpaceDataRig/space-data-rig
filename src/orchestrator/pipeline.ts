@@ -27,7 +27,7 @@ import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
 import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
-import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
+import { oddEvenRefined, secondaryEclipse } from "../detect/vetting.ts";
 import { calibratedFap } from "../detect/significance.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
@@ -450,14 +450,16 @@ export class Orchestrator {
         /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
       }
       // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT fed
-      // to the reject path: calibration (scripts/p2-vet-calibrate) shows the odd/even
-      // asymmetry reaches >100% for CONFIRMED planets on single-sector data with catalog
-      // ephemerides (phase error accumulates over a sector), so it cannot gate without
-      // dropping true positives. Only the centroid shift (calibrated <=0.6" for real planets)
-      // is allowed to reject. This keeps Node and edge behaviour identical.
-      const oe = oddEvenDepth(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+      // to the reject path. A per-event refit (oddEvenRefined) replaces the naive fixed-window
+      // measure: calibration (scripts/p2-vet-calibrate) shows the fixed window reports up to 200%
+      // asymmetry for CONFIRMED planets (catalog phase error accumulates across a sector), whereas
+      // the refit correctly declines to judge ("n/d") on sparse single-sector coverage. Even so the
+      // refit cannot gate yet: on real planets it only reaches a confident verdict on ~2/14 and one
+      // true planet (HR 858 b) still reads 69%, so any 0.5-0.7 cut would drop a known planet. Only
+      // the centroid shift (calibrated <=0.6" for real planets) is allowed to reject. Node/edge parity.
+      const oer = oddEvenRefined(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
       const se = secondaryEclipse(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
-      this.store.emitEvent("mission-critic", "info", `Light-curve diagnostics for ${ctx.planet.pl_name ?? ctx.planet.hostname} (informational, not gating): odd/even depth asymmetry ${(oe.diffFrac * 100).toFixed(0)}%${oe.determined ? "" : " (n/d)"}, secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`);
+      this.store.emitEvent("mission-critic", "info", `Light-curve diagnostics for ${ctx.planet.pl_name ?? ctx.planet.hostname} (informational, not gating): odd/even depth asymmetry ${oer.determined ? (oer.diffFrac * 100).toFixed(0) + "%" : "n/d"} (per-event refit, ${oer.nEven}/${oer.nOdd} transits), secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`);
       // Pixel centroid shift (needs a ~5MB target-pixel download; best-effort).
       if (Number.isFinite(ctx.planet.tic)) {
         const sectors = ctx.spocSectors ?? [];

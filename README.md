@@ -223,6 +223,21 @@ pass, which is exactly the trap: a statistic that works on idealized data but no
 single-sector photometry must be calibrated on REAL data before it is allowed to decide anything.
 Only the centroid shift -- which is per-cadence and immune to ephemeris phase error -- gates today.
 
+We then built the robust version we had sketched as future work: `oddEvenRefined` measures each
+transit at its OWN center (a local search around every predicted epoch) instead of folding all
+points into fixed windows, so accumulated phase error cancels. Re-running the calibration
+(`npm run p2:vet-calibrate`) on the same 14 confirmed planets compares the two directly: the fixed
+window still peaks at 200% asymmetry and mis-labels the active-star planets HD 63433 c/d, whereas
+the refit correctly declines to judge ("n/d") on their sparse single-sector coverage. The production
+light-curve diagnostic now reports the honest refit number rather than the inflated one.
+Being disciplined about it, though, the refit is STILL not promoted to a gate: it only reaches a
+confident verdict on 2 of 14 real planets, and one of those -- confirmed planet HR 858 b -- reads
+69% asymmetry, so any 0.5-0.7 rejection cut would drop a known-true planet. A statistic that
+occasionally fails a real planet cannot sit on the money-spending path, so the refit ships as a
+diagnostic (a strictly more truthful one) and the centroid remains the only light-curve-adjacent
+rejection. Multi-sector or TESS-wide ephemerides would give the refit enough well-phased events to
+become gate-worthy; that data is out of scope for a single-sector pull.
+
 ### Measured operating characteristics (completeness / purity)
 
 The detector's operating point is now quantified rather than asserted. `src/sim/roc.ts` runs a

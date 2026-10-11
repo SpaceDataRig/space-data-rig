@@ -41,7 +41,7 @@ import type { ReviewResult } from "../critic/review.ts";
 import { generateSyntheticTransit } from "../data/synthetic.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
-import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
+import { oddEvenRefined, secondaryEclipse } from "../detect/vetting.ts";
 import { calibratedFap } from "../detect/significance.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
@@ -400,17 +400,20 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
             /* best-effort: if significance can't be computed, leave FAP unset (no gating) */
           }
           // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT
-          // fed to the reject path: calibration (scripts/p2-vet-calibrate) shows that on
-          // single-sector real data with catalog ephemerides the odd/even asymmetry reaches
-          // >100% for confirmed planets (phase error over a sector), so it cannot gate without
-          // dropping true positives. Only the centroid shift (calibrated <=0.6" for real
-          // planets) is allowed to reject.
-          const oe = oddEvenDepth(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+          // fed to the reject path. A per-event refit (oddEvenRefined) replaces the naive
+          // fixed-window measure: calibration (scripts/p2-vet-calibrate) shows the fixed window
+          // reports up to 200% asymmetry for CONFIRMED planets (catalog phase error accumulates
+          // across a sector), whereas the refit correctly declines to judge ("n/d") on sparse
+          // single-sector coverage. Even so the refit cannot gate yet: it reaches a confident
+          // verdict on only ~2/14 real planets and one true planet (HR 858 b) still reads 69%,
+          // so any 0.5-0.7 cut would drop a known planet. Only the centroid shift (calibrated
+          // <=0.6" for real planets) is allowed to reject.
+          const oer = oddEvenRefined(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
           const se = secondaryEclipse(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
           await stub.emitEvent(
             "mission-critic",
             "info",
-            `Light-curve diagnostics for ${meta.name} (informational, not gating): odd/even depth asymmetry ${(oe.diffFrac * 100).toFixed(0)}%${oe.determined ? "" : " (n/d)"}, secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`,
+            `Light-curve diagnostics for ${meta.name} (informational, not gating): odd/even depth asymmetry ${oer.determined ? (oer.diffFrac * 100).toFixed(0) + "%" : "n/d"} (per-event refit, ${oer.nEven}/${oer.nOdd} transits), secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`,
           );
           // Pixel centroid shift (needs a ~5MB target-pixel download; best-effort).
           if (Number.isFinite(planet.tic)) {

@@ -149,11 +149,11 @@ parity.
 
 The rig can select, fetch and analyze real targets by itself -- with **no MAST token and no
 AWS account**. The code defaults are OFF (a stock deploy changes nothing until an operator
-opts in). **This live deployment is opted in**: `wrangler.toml` ships `MAST_S3=1`,
-`AUTO_RESEARCH=1` (an autonomous run on the 6-hour cron), and `AUTO_ANCHOR=live` with
-`AUTO_ANCHOR_DAILY_CAP=24`, so accepted findings are sealed on Solana mainnet at a cost
-bounded to 24 memos/day (about 0.00012 SOL/day). Set `AUTO_ANCHOR=off` (or `AUTO_RESEARCH=0`)
-and redeploy to pause spending.
+opts in). **This live deployment is opted in (aggressive tier)**: `wrangler.toml` ships
+`MAST_S3=1`, `AUTO_RESEARCH=1` (an autonomous run on the every-hour cron, 8 targets), and
+`AUTO_ANCHOR=live` with `AUTO_ANCHOR_DAILY_CAP=100`, so accepted findings are sealed on Solana
+mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANCHOR=off` (or
+`AUTO_RESEARCH=0`) and redeploy to pause spending.
 
 - **Real data, autonomously.** With the Worker var `MAST_S3=1`, target selection keeps only
   planets that carry a TESS Input Catalog id, and the data-fetch seat constructs a

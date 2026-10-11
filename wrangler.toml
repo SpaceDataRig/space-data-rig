@@ -71,7 +71,7 @@ name = "rig-run"
 # This deployment opts IN (see [vars] below). To pause autonomous spending without
 # a redeploy of code, set AUTO_ANCHOR = "off" (or AUTO_RESEARCH = "0") and deploy.
 [triggers]
-crons = ["0 */6 * * *"]
+crons = ["0 * * * *"]
 
 # ---- plain-text variables (non-secret) -------------------------------------
 [vars]
@@ -82,16 +82,17 @@ DISCUSSION_MODE = "grounded"
 # Token-free TESS-SPOC public-S3 photometry tier. ON in this deployment so every
 # TIC-bearing target pulls REAL PDCSAP photometry from the anonymous S3 bucket.
 MAST_S3 = "1"
-# Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN: the cron launches an
-# autonomous run every 6 hours (AUTO_RESEARCH=1) and accepted findings are sealed
-# on Solana mainnet (AUTO_ANCHOR=live), bounded by AUTO_ANCHOR_DAILY_CAP so a day
-# can never spend more than that many ~5000-lamport memos. A code default is still
-# inert; an operator flips these to "1"/"live" to enable, exactly as done here.
+# Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
+# cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and
+# accepted findings are sealed on Solana mainnet (AUTO_ANCHOR=live), bounded by
+# AUTO_ANCHOR_DAILY_CAP so a day can never spend more than that many ~5000-lamport
+# memos (100/day ~= 0.0005 SOL/day). A code default is still inert; an operator
+# flips these to "1"/"live" to enable, exactly as done here.
 AUTO_RESEARCH = "1"
-AUTO_RESEARCH_TARGETS = "5"
+AUTO_RESEARCH_TARGETS = "8"
 AUTO_RESEARCH_TMAG = "10"
 AUTO_ANCHOR = "live"
-AUTO_ANCHOR_DAILY_CAP = "24"
+AUTO_ANCHOR_DAILY_CAP = "100"
 
 # Secrets (set with `wrangler secret put <NAME>`, never committed here):
 #   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);

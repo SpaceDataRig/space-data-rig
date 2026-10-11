@@ -18,6 +18,7 @@
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../src/data/mastS3Pixels.ts";
+import { oddEvenDepth, secondaryEclipse } from "../src/detect/vetting.ts";
 import type { ArchivePlanet } from "../src/core/types.ts";
 
 function arg(name: string, dflt: number): number {
@@ -47,7 +48,7 @@ async function main() {
   console.log(`queued ${picked.length} TIC planets from ${cat.planets.length} catalog rows`);
   console.log("");
 
-  const shifts: { name: string; tic: number; sector: number; shiftArcsec: number; inN: number; outN: number }[] = [];
+  const shifts: { name: string; tic: number; sector: number; shiftArcsec: number; oddEvenFrac: number; secRatio: number; inN: number; outN: number }[] = [];
   const skipped: { name: string; why: string }[] = [];
 
   for (const p of picked) {
@@ -67,8 +68,11 @@ async function main() {
           done = true;
           break;
         }
-        shifts.push({ name, tic: p.tic!, sector: s, shiftArcsec: cs.shiftArcsec, inN: cs.inCount, outN: cs.outCount });
-        console.log(`${name.padEnd(20)} TIC ${p.tic} s${s}: shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out)`);
+        // light-curve-only discriminators on the SAME confirmed ephemeris (must be benign)
+        const oe = oddEvenDepth(lc, p.pl_tranmid!, p.pl_orbper!, p.pl_trandur!);
+        const se = secondaryEclipse(lc, p.pl_tranmid!, p.pl_orbper!, p.pl_trandur!);
+        shifts.push({ name, tic: p.tic!, sector: s, shiftArcsec: cs.shiftArcsec, oddEvenFrac: oe.determined ? oe.diffFrac : NaN, secRatio: se.determined ? se.ratio : NaN, inN: cs.inCount, outN: cs.outCount });
+        console.log(`${name.padEnd(20)} TIC ${p.tic} s${s}: shift ${cs.shiftArcsec.toFixed(2)}", odd/even ${oe.determined ? (oe.diffFrac * 100).toFixed(0) + "%" : "n/d"}, secondary ${se.determined ? se.ratio.toFixed(2) : "n/d"}`);
         done = true;
         break;
       }
@@ -85,15 +89,19 @@ async function main() {
   }
 
   const xs = shifts.map((s) => s.shiftArcsec).sort((a, b) => a - b);
-  const q = (f: number) => xs[Math.min(xs.length - 1, Math.floor(f * xs.length))];
-  console.log(`measured ${xs.length} confirmed-planet photocenter shifts (all should be near zero):`);
-  console.log(`  min=${xs[0].toFixed(2)}  p50=${q(0.5).toFixed(2)}  p90=${q(0.9).toFixed(2)}  p99=${q(0.99).toFixed(2)}  max=${xs[xs.length - 1].toFixed(2)} arcsec`);
-  // Suggested reject threshold: comfortably above the true-planet spread so we never drop a
-  // real on-target planet, but far below the multi-arcsec blend signature (off-target by
-  // several pixels = tens of arcsec). Use 3x the observed max as a conservative floor of 1".
-  const suggested = Math.max(1.0, Math.ceil(xs[xs.length - 1] * 3));
-  console.log(`suggested VET centroid-shift reject threshold: ${suggested.toFixed(1)} arcsec`);
-  console.log("  (true planets cluster near 0; background EB / blends shift by several arcsec or more)");
+  const q = (arr: number[], f: number) => arr[Math.min(arr.length - 1, Math.floor(f * arr.length))];
+  console.log(`measured ${xs.length} confirmed-planet metrics (all should be benign):`);
+  console.log(`  centroid shift arcsec:  min=${xs[0].toFixed(2)}  p50=${q(xs, 0.5).toFixed(2)}  p90=${q(xs, 0.9).toFixed(2)}  max=${xs[xs.length - 1].toFixed(2)}`);
+  const oe = shifts.map((s) => s.oddEvenFrac).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (oe.length) console.log(`  odd/even asymmetry:     max=${oe[oe.length - 1].toFixed(2)}  p90=${q(oe, 0.9).toFixed(2)}  (planet should be near 0)`);
+  const sr = shifts.map((s) => s.secRatio).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (sr.length) console.log(`  secondary/primary ratio:  max=${sr[sr.length - 1].toFixed(2)}  p90=${q(sr, 0.9).toFixed(2)}  (planet should be << 1)`);
+  // Suggest reject thresholds conservatively above the observed true-planet spread.
+  const suggestedShift = Math.max(1.0, Math.ceil(xs[xs.length - 1] * 3));
+  const suggestedOddEven = oe.length ? Math.max(0.5, Math.ceil(q(oe, 0.9) * 10) / 10 + 0.2) : 0.5;
+  const suggestedSec = sr.length ? Math.max(0.3, Math.round((q(sr, 0.9) + 0.2) * 10) / 10) : 0.5;
+  console.log(`suggested thresholds -> centroid ${suggestedShift.toFixed(1)}", odd/even asym ${suggestedOddEven.toFixed(2)}, secondary ratio ${suggestedSec.toFixed(2)}`);
+  console.log("  (true planets cluster benign; blends/background EBs fail one or more of these)");
 }
 
 main().catch((e) => {

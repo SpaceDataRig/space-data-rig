@@ -41,6 +41,7 @@ import type { ReviewResult } from "../critic/review.ts";
 import { generateSyntheticTransit } from "../data/synthetic.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
+import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
@@ -378,25 +379,42 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         // deterministic run path (and its bundle hash) is byte-for-byte unchanged.
         let vetting: ReviewVetting | undefined;
         const isReal = (fr.lc.source ?? "").includes("REAL photometry");
-        if (env.VET === "1" && isReal && Number.isFinite(planet.tic)) {
+        if (env.VET === "1" && isReal) {
           const cand = dr.detection.candidate;
-          const sectors = fr.spocSectors ?? [];
-          for (const s of sectors.slice(0, 3)) {
-            try {
-              const cube = await fetchSpocTargetPixels(planet.tic!, s, fr.lc.targetId);
-              if (!cube) continue;
-              const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
-              if (cs.inCount >= 2 && cs.outCount >= 2) {
-                vetting = { centroidShiftArcsec: cs.shiftArcsec };
-                await stub.emitEvent(
-                  "mission-critic",
-                  "info",
-                  `Pixel vetting for ${meta.name}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`,
-                );
+          vetting = {};
+          // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT
+          // fed to the reject path: calibration (scripts/p2-vet-calibrate) shows that on
+          // single-sector real data with catalog ephemerides the odd/even asymmetry reaches
+          // >100% for confirmed planets (phase error over a sector), so it cannot gate without
+          // dropping true positives. Only the centroid shift (calibrated <=0.6" for real
+          // planets) is allowed to reject.
+          const oe = oddEvenDepth(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+          const se = secondaryEclipse(fr.lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+          await stub.emitEvent(
+            "mission-critic",
+            "info",
+            `Light-curve diagnostics for ${meta.name} (informational, not gating): odd/even depth asymmetry ${(oe.diffFrac * 100).toFixed(0)}%${oe.determined ? "" : " (n/d)"}, secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`,
+          );
+          // Pixel centroid shift (needs a ~5MB target-pixel download; best-effort).
+          if (Number.isFinite(planet.tic)) {
+            const sectors = fr.spocSectors ?? [];
+            for (const s of sectors.slice(0, 3)) {
+              try {
+                const cube = await fetchSpocTargetPixels(planet.tic!, s, fr.lc.targetId);
+                if (!cube) continue;
+                const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
+                if (cs.inCount >= 2 && cs.outCount >= 2) {
+                  vetting.centroidShiftArcsec = cs.shiftArcsec;
+                  await stub.emitEvent(
+                    "mission-critic",
+                    "info",
+                    `Pixel vetting for ${meta.name}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`,
+                  );
+                }
+                break; // first usable cube decides; sector search stops here
+              } catch {
+                /* best-effort: a failed tp fetch simply leaves the centroid unset */
               }
-              break; // first usable cube decides; sector search stops here
-            } catch {
-              /* best-effort: a failed tp fetch simply leaves vetting undefined */
             }
           }
         }

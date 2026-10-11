@@ -56,6 +56,20 @@ export interface ReviewVetting {
   fap?: number;
   /** FAP above which the peak is deemed not significant against the null (default 0.01). */
   fapThreshold?: number;
+  /**
+   * Odd/even transit depth asymmetry, normalized (|odd-even| / mean depth). A true single
+   * planet is symmetric (~0); a half-period alias or blend shows unequal odd/even depths.
+   * NOTE: the pipeline does NOT populate this for gating yet -- calibration showed single-
+   * sector real data reaches >100% for confirmed planets, so it is logged as a diagnostic
+   * only. Rejection is wired here for when a robust multi-transit ephemeris version exists.
+   */
+  oddEvenDiffFrac?: number;
+  /** odd/even asymmetry above which the signal is deemed an alias/blend (default 0.5). */
+  oddEvenDiffThreshold?: number;
+  /** secondary-eclipse depth / primary-eclipse depth. A planet is << 1; an EB approaches 1. */
+  secondaryRatio?: number;
+  /** secondary/primary ratio at or above which the source is deemed an EB (default 0.5). */
+  secondaryRatioThreshold?: number;
 }
 
 export interface CrossmatchInfo {
@@ -242,6 +256,30 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
         detail: `BLS false-alarm probability ${v.fap.toPrecision(2)} (need <= ${fapThr})`,
       });
       if (!ok) failReasons.push(`false-alarm probability ${v.fap.toPrecision(2)} is not significant against the phase-scrambled null`);
+    }
+
+    const oddEvenThr = v.oddEvenDiffThreshold ?? 0.5;
+    if (v.oddEvenDiffFrac != null && isFinite(v.oddEvenDiffFrac)) {
+      anyVetting = true;
+      const ok = v.oddEvenDiffFrac <= oddEvenThr;
+      checks.push({
+        name: "odd-even-depth",
+        pass: ok,
+        detail: `odd/even transit-depth asymmetry ${v.oddEvenDiffFrac.toFixed(2)} (need <= ${oddEvenThr})`,
+      });
+      if (!ok) failReasons.push(`odd/even transit depths differ by ${(v.oddEvenDiffFrac * 100).toFixed(0)}% -- a half-period alias or blend, not a once-per-orbit planet`);
+    }
+
+    const secThr = v.secondaryRatioThreshold ?? 0.5;
+    if (v.secondaryRatio != null && isFinite(v.secondaryRatio)) {
+      anyVetting = true;
+      const ok = v.secondaryRatio < secThr;
+      checks.push({
+        name: "secondary-eclipse",
+        pass: ok,
+        detail: `secondary/primary depth ratio ${v.secondaryRatio.toFixed(2)} (need < ${secThr})`,
+      });
+      if (!ok) failReasons.push(`phase-0.5 secondary is ${v.secondaryRatio.toFixed(2)}x the primary -- an eclipsing binary, not a planet`);
     }
 
     if (failReasons.length > 0) {

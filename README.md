@@ -212,6 +212,17 @@ multi-arcsec signature of a background EB / blend. Pixel vetting is therefore ON
 deployment (`VET=1`): blends are vetoed before they can be anchored. The only residual cost is
 operational -- each vetted target pulls a ~5 MB target-pixel file, so a full sweep runs slower.
 
+Two more discriminators are implemented (`src/detect/vetting.ts`: odd/even transit-depth
+symmetry and the phase-0.5 secondary-eclipse ratio) and are computed on every real run, but they
+are logged as DIAGNOSTICS ONLY and deliberately do NOT gate the verdict. Calibration on the same
+14 confirmed planets showed why: the odd/even asymmetry hits 100-200% for genuine planets, because
+a single TESS sector with a catalog ephemeris accumulates enough phase error that alternate
+transits drift in and out of the fold window. A metric that fails on known-good planets cannot be
+used to reject candidates (it would silently drop true positives). The clean synthetic unit tests
+pass, which is exactly the trap: a statistic that works on idealized data but not on real
+single-sector photometry must be calibrated on REAL data before it is allowed to decide anything.
+Only the centroid shift -- which is per-cadence and immune to ephemeris phase error -- gates today.
+
 ### Measured operating characteristics (completeness / purity)
 
 The detector's operating point is now quantified rather than asserted. `src/sim/roc.ts` runs a

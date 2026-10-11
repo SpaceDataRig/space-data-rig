@@ -27,6 +27,7 @@ import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
 import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
+import { oddEvenDepth, secondaryEclipse } from "../detect/vetting.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { ReviewResult, ReviewVetting } from "../critic/review.ts";
@@ -431,21 +432,35 @@ export class Orchestrator {
     // Pixel vetting (real SPOC photometry only, gated on vetPixels) measures the
     // in-transit photocenter shift against the candidate's own ephemeris; best-effort.
     let vetting: ReviewVetting | undefined;
-    if (this.vetPixels && (ctx.lc?.source ?? "").includes("REAL photometry") && Number.isFinite(ctx.planet.tic)) {
-      const sectors = ctx.spocSectors ?? [];
+    if (this.vetPixels && (ctx.lc?.source ?? "").includes("REAL photometry")) {
       const cand = detection.candidate;
-      for (const s of sectors.slice(0, 3)) {
-        try {
-          const cube = await fetchSpocTargetPixels(ctx.planet.tic!, s, ctx.lc!.targetId);
-          if (!cube) continue;
-          const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
-          if (cs.inCount >= 2 && cs.outCount >= 2) {
-            vetting = { centroidShiftArcsec: cs.shiftArcsec };
-            this.store.emitEvent("mission-critic", "info", `Pixel vetting for ${ctx.planet.pl_name ?? ctx.planet.hostname}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`);
+      const lc = ctx.lc!;
+      vetting = {};
+      // Light-curve discriminators are computed and LOGGED as instrumentation, but NOT fed
+      // to the reject path: calibration (scripts/p2-vet-calibrate) shows the odd/even
+      // asymmetry reaches >100% for CONFIRMED planets on single-sector data with catalog
+      // ephemerides (phase error accumulates over a sector), so it cannot gate without
+      // dropping true positives. Only the centroid shift (calibrated <=0.6" for real planets)
+      // is allowed to reject. This keeps Node and edge behaviour identical.
+      const oe = oddEvenDepth(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+      const se = secondaryEclipse(lc, cand.epochBjd, cand.periodDays, cand.durationHours);
+      this.store.emitEvent("mission-critic", "info", `Light-curve diagnostics for ${ctx.planet.pl_name ?? ctx.planet.hostname} (informational, not gating): odd/even depth asymmetry ${(oe.diffFrac * 100).toFixed(0)}%${oe.determined ? "" : " (n/d)"}, secondary/primary ratio ${se.ratio.toFixed(2)}${se.determined ? "" : " (n/d)"}.`);
+      // Pixel centroid shift (needs a ~5MB target-pixel download; best-effort).
+      if (Number.isFinite(ctx.planet.tic)) {
+        const sectors = ctx.spocSectors ?? [];
+        for (const s of sectors.slice(0, 3)) {
+          try {
+            const cube = await fetchSpocTargetPixels(ctx.planet.tic!, s, lc.targetId);
+            if (!cube) continue;
+            const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
+            if (cs.inCount >= 2 && cs.outCount >= 2) {
+              vetting.centroidShiftArcsec = cs.shiftArcsec;
+              this.store.emitEvent("mission-critic", "info", `Pixel vetting for ${ctx.planet.pl_name ?? ctx.planet.hostname}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`);
+            }
+            break;
+          } catch {
+            /* best-effort: a failed target-pixel fetch simply leaves the centroid unset */
           }
-          break;
-        } catch {
-          /* best-effort: a failed target-pixel fetch simply leaves vetting undefined */
         }
       }
     }

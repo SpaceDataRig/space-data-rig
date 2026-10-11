@@ -64,6 +64,8 @@ export interface ExactFitResult {
   t0OffsetPhase: number; // best-fit transit-center offset in phase cycles
   rms: number; // RMS of (data - model) over the in-window points
   nInWindow: number; // number of folded points used in the fit
+  nTransit: number; // folded points inside the best-fit transit (drive the depth precision)
+  depthSigma: number; // first-order 1-sigma on depthFrac from the point-to-point scatter
   baseline: number; // robust out-of-transit baseline the data were normalized to
   ld: LdQuadratic;
   aOverRs: number;
@@ -135,7 +137,7 @@ export function fitExactTransit(
   if (inWin.length < 4) {
     return {
       radiusRatio: NaN, depthFrac: NaN, impactParam: NaN, t0OffsetPhase: NaN,
-      rms: NaN, nInWindow: inWin.length, baseline, ld, aOverRs,
+      rms: NaN, nInWindow: inWin.length, nTransit: 0, depthSigma: NaN, baseline, ld, aOverRs,
     };
   }
 
@@ -158,7 +160,7 @@ export function fitExactTransit(
   if (!Number.isFinite(best.p)) {
     return {
       radiusRatio: NaN, depthFrac: NaN, impactParam: NaN, t0OffsetPhase: NaN,
-      rms: NaN, nInWindow: inWin.length, baseline, ld, aOverRs,
+      rms: NaN, nInWindow: inWin.length, nTransit: 0, depthSigma: NaN, baseline, ld, aOverRs,
     };
   }
 
@@ -196,6 +198,15 @@ export function fitExactTransit(
   }
   const rms = Math.sqrt(sse / inWin.length);
   const depthFrac = 1 - exactTransitFlux(best.b, best.p, ld, n);
+  // First-order depth precision: the depth is the drop from the out-of-transit baseline to the
+  // transit floor, estimated from ~nTransit in-transit cadences each carrying ~rms scatter, so the
+  // standard error is ~rms * sqrt(2 / nTransit). This is the POINT-estimate (statistical) error only;
+  // it does NOT include systematics (the fixed limb-darkening, an imperfect ephemeris, stellar
+  // variability), which is exactly what the coverage check in scripts/p9-exact-depth.ts probes.
+  const halfDur = Math.asin(Math.min(1, Math.sqrt(Math.max(0, (1 + best.p) ** 2 - best.b ** 2)) / Math.max(1e-6, aOverRs))) / Math.PI;
+  let nTransit = 0;
+  for (const pt of inWin) if (Math.abs(pt.phase - best.dt0) <= halfDur) nTransit++;
+  const depthSigma = nTransit > 0 ? rms * Math.sqrt(2 / nTransit) : NaN;
   return {
     radiusRatio: best.p,
     depthFrac,
@@ -203,6 +214,8 @@ export function fitExactTransit(
     t0OffsetPhase: best.dt0,
     rms,
     nInWindow: inWin.length,
+    nTransit,
+    depthSigma,
     baseline,
     ld,
     aOverRs,

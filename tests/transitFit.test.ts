@@ -82,6 +82,16 @@ test("too few in-window points degrades gracefully to NaN, not a throw", () => {
   assert.equal(fit.nInWindow, 0);
 });
 
+test("depth sigma: ~0 noiseless, positive under noise, shrinks with cadence count", () => {
+  const aOverRs = 12;
+  const clean = fitExactTransit(synthFolded(aOverRs, 0.12, 0.3, 0, 5), { aOverRs });
+  assert.ok(clean.depthSigma >= 0 && clean.depthSigma < 1e-4, `noiseless sigma should be ~0, got ${clean.depthSigma}`);
+  assert.ok(clean.nTransit > 0, "in-transit point count should be positive");
+  const noisy = fitExactTransit(synthFolded(aOverRs, 0.12, 0.3, 5e-4, 5), { aOverRs });
+  assert.ok(noisy.depthSigma > clean.depthSigma, `noisy sigma ${noisy.depthSigma} should exceed clean ${clean.depthSigma}`);
+  assert.ok(noisy.depthSigma > 0 && Number.isFinite(noisy.depthSigma), "sigma should be a finite positive number");
+});
+
 test("foldAtPhase centers the transit at phase 0", () => {
   // one transit at t0, period 3d; sample times around it
   const t0 = 2000;

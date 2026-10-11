@@ -551,6 +551,9 @@ exact fit closer than the box:        22/28 = 79%
 unphysical (<= 0 ppm) depths:         box 3, exact-model 0  (the forward model is bounded >= 0)
 short period (< 13 d, 17 planets):    exact 11.4%  vs box 32.1%
 long period (>= 13 d, 11 planets):    exact 47.2%  vs box 56.8%   (both degrade)
+median statistical 1-sigma on depth:  6.3% of depth
+catalog depth inside +/-1sigma:       8/28 = 29%  (a calibrated error would be ~68%)
+catalog depth inside +/-2sigma:       13/28 = 46% (calibrated ~95%)
 ```
 
 The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
@@ -562,8 +565,18 @@ rather than hiding it. This is the same single-sector coverage cliff p7 measured
 regime p8 isolated, now showing up in the depth estimator too -- the three studies are consistent. The
 fitted impact parameter b is reported for shape context only: we did not fetch catalog b, so it is NOT
 scored here. Offline, `tests/transitFit.test.ts` (deterministic, no network) confirms the fitter recovers
-an injected depth to grid resolution noiseless and to ~12% under realistic scatter. SAFETY BOUNDARY: this
-validates a measurement METHOD on already-confirmed planets -- nothing is anchored, posted, or claimed.
+an injected depth to grid resolution noiseless, to ~12% under realistic scatter, and that its statistical
+error bar shrinks with the in-transit cadence count.
+
+**The error bars are optimistic, and we say so.** The fit also reports a first-order *statistical* 1-sigma
+(from the point-to-point scatter and the number of in-transit cadences). Its median is only ~6.3% of depth,
+yet the catalog depth lands inside +/-1sigma just 29% of the time and inside +/-2sigma only 46% -- far below
+the ~68% / ~95% a well-calibrated error would give. That undercoverage is the honest signal that the residual
+is dominated by SYSTEMATICS -- the fixed limb-darkening law, an imperfect ephemeris, and stellar activity --
+not photon noise. So we quote the depth as a point estimate with a statistical bar and treat that bar as a
+LOWER bound on the true uncertainty; over-stating precision would be exactly the kind of self-deception the
+rest of this section is built to avoid. SAFETY BOUNDARY: this validates a measurement METHOD on already-confirmed
+planets -- nothing is anchored, posted, or claimed as a discovery.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 

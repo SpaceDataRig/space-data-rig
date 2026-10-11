@@ -68,6 +68,7 @@ interface Row {
   aOverRs: number;
   impactParam: number;
   nInWindow: number;
+  depthSigmaPpm: number; // first-order statistical 1-sigma on the exact-fit depth
   fitErrPct: number; // signed (exact - catalog)/catalog * 100
   boxErrPct: number; // signed (box - catalog)/catalog * 100
 }
@@ -132,11 +133,11 @@ async function main() {
     rows.push({
       name: p.pl_name ?? `TIC ${p.tic}`, period, catDepthPpm: p.pl_trandep!,
       exactDepthPpm: exactPpm, boxDepthPpm: boxPpm, aOverRs, impactParam: fit.impactParam,
-      nInWindow: fit.nInWindow, fitErrPct, boxErrPct,
+      nInWindow: fit.nInWindow, depthSigmaPpm: fit.depthSigma * 1e6, fitErrPct, boxErrPct,
     });
     console.log(
       `${(p.pl_name ?? `TIC ${p.tic}`).padEnd(16)} P=${period.toFixed(4)}d a/Rs=${aOverRs.toFixed(1)} b=${fit.impactParam.toFixed(2)} nin=${fit.nInWindow}  ` +
-      `catalog=${p.pl_trandep!.toFixed(0)}ppm exact=${exactPpm.toFixed(0)}(${fitErrPct >= 0 ? "+" : ""}${fitErrPct.toFixed(0)}%) ` +
+      `catalog=${p.pl_trandep!.toFixed(0)}ppm exact=${exactPpm.toFixed(0)}+-${(fit.depthSigma * 1e6).toFixed(0)}(${fitErrPct >= 0 ? "+" : ""}${fitErrPct.toFixed(0)}%) ` +
       `box=${boxPpm.toFixed(0)}(${boxErrPct >= 0 ? "+" : ""}${boxErrPct.toFixed(0)}%)`,
     );
   }
@@ -162,6 +163,15 @@ async function main() {
   const boxUnphysical = rows.filter((r) => r.boxDepthPpm <= 0).length;
   const exactUnphysical = rows.filter((r) => r.exactDepthPpm <= 0).length;
   console.log(`unphysical (<=0 ppm) depths: box ${boxUnphysical}, exact-model ${exactUnphysical} (the forward model is bounded >= 0)`);
+  // empirical coverage: how often does the catalog depth land inside the fit's statistical +/-1sigma
+  // (and +/-2sigma)? A well-calibrated POINT error would contain ~68% at 1sigma; a shortfall means the
+  // statistical sigma UNDERSTATES the true error -- i.e. systematics (limb darkening, ephemeris, stellar
+  // variability) dominate the residual, an honest caveat we publish rather than hide.
+  const cov1 = rows.filter((r) => Math.abs(r.exactDepthPpm - r.catDepthPpm) <= r.depthSigmaPpm).length;
+  const cov2 = rows.filter((r) => Math.abs(r.exactDepthPpm - r.catDepthPpm) <= 2 * r.depthSigmaPpm).length;
+  const medSigFrac = median(rows.map((r) => (r.depthSigmaPpm / r.catDepthPpm) * 100));
+  console.log(`depth 1-sigma coverage: ${cov1}/${rows.length} = ${((cov1 / rows.length) * 100).toFixed(0)}% (calibrated ~68%); 2-sigma: ${cov2}/${rows.length} = ${((cov2 / rows.length) * 100).toFixed(0)}% (calibrated ~95%)`);
+  console.log(`median statistical sigma = ${medSigFrac.toFixed(1)}% of depth`);
   // split by period: short periods fold many transits per sector (shape well-constrained), long periods
   // see one or two (p-b shape degenerate, blending/activity dominates) -- the same single-sector cliff p7 hit.
   const shortP = rows.filter((r) => r.period < 13);

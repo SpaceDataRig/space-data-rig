@@ -605,6 +605,32 @@ in the error, so we quote the combined bar as an APPROXIMATE lower bound on the 
 pretend it is exact. A study that stopped at the tight statistical sigma would have overstated our precision
 by roughly a factor of two; reporting the undercoverage is the point.
 
+### Independent SIZE of blind-recovered, UNCONFIRMED candidates (`npm run p11:candidate-size`)
+
+p7 re-detected the ORBIT of real unconfirmed candidates straight from the pixels, blind; the depth fit above
+shows the exact model measures a planet's SIZE from the SHAPE of one transit. p11 fuses them: for every
+candidate p7 can independently re-detect, we fit the exact model at the period AND EPOCH WE RECOVERED (the
+TOI ephemeris is never shown) and report an independent depth and planet radius, then compare -- only AFTER
+the fact -- to what the TOI discovery pipeline published. Two independent measurements agreeing is a
+CONSISTENCY check, not a confirmation.
+
+Measured on 60 candidates that had token-free data:
+
+```
+blind-recovered (direct match, SNR>=7):  24/60 = 40%   (independently reproduces p7's 38.6%)
+characterized (host radius available):   19
+independent DEPTH  vs TOI:  median |err| = 20%
+independent RADIUS vs TOI:  median |err| = 15%  (6/19 within 10%, 11/19 within 20%)
+```
+
+The candidate agreement (15% in radius) is LOOSER than on confirmed planets (6.5%) -- exactly as it must be,
+because a single short sector, a main-sequence mass approximation for a/Rs (the `toi` table carries no stellar
+mass), and the occasional internally inconsistent or blended TOI row all add error; a few candidates differ by
+45-60%, precisely the outliers a real survey flags for follow-up rather than buries. What the study
+establishes is that the same shape-fitting machinery that repaired the depth on known worlds also produces a
+sensible, independent size on REAL worlds it has never been fitted to before -- straight from the pixels, blind.
+SAFETY BOUNDARY: every object is a CANDIDATE; none is confirmed, anchored, or claimed as a discovery here.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -808,6 +834,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 cross-check), p3-{discover,gaia-dilution}.ts, p4-autonomous.ts, p5-blind-probe.ts,
                 p6-blind-survey.ts, p7-blind-toi-survey.ts, p8-noise-acf.ts, p9-exact-depth.ts,
                 p10-figure.ts (renders web/transit-example.svg from a real transit),
+                p11-candidate-size.ts (blind-recovered candidates: independent depth + radius),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -816,7 +843,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

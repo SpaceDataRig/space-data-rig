@@ -25,6 +25,7 @@
     "p7:toi-survey": "tsx scripts/p7-blind-toi-survey.ts",
     "p9:exact-depth": "tsx scripts/p9-exact-depth.ts",
     "p10:figure": "tsx scripts/p10-figure.ts",
+    "p11:candidate-size": "tsx scripts/p11-candidate-size.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

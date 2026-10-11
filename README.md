@@ -270,6 +270,23 @@ rest, exactly as the noise-color and ROC studies predicted. The core (`injectInt
 offline (deep injection recovered; depthFrac 0 is a point-for-point no-op; deterministic; completeness
 monotone in depth); the script itself needs network and is not in CI.
 
+### Per-detection parameter uncertainty (bootstrap error bars)
+
+A point period with no error bar is not a measurement. `src/detect/uncertainty.ts` `bootstrapUncertainty`
+runs a **circular block bootstrap** on the REAL light curve -- subtract a box model at the fitted
+parameters, resample the residuals in contiguous blocks (preserving each star's own red-noise color, so
+quiet stars get tighter bars than active ones at the same SNR), refit, and take the 16/50/84 percentiles.
+`npm run p1:uncertainty` demonstrates it on real hosts: e.g. WASP-189 b `P=2.7266 +/- 0.004 d` against the
+catalog 2.724 (bracketed), while the active star HD 63433 shows a much wider interval -- honest, noise-driven
+error bars.
+
+We state its limit plainly: the bootstrap conditions on the peak BLS found, so its interval captures
+MEASUREMENT scatter, not ALIAS selection. On pi Men c the detector locked the 3.14 d half-period harmonic
+(here) and the bootstrap reported a tiny error around the ALIAS -- a narrow interval is not proof the
+period is the true one. Alias disambiguation is a separate concern (the significance/odd-even diagnostics,
+the exact-transit shape fit, and multi-sector phase coverage). Shipping an error bar that overstates
+confidence would be worse than no error bar, so we document exactly what it does and does not cover.
+
 Because the noise ensemble IS the surrogate, the false-alarm-rate column is itself an empirical
 false-alarm probability: `empiricalFap(noiseSnr, snr)` maps any single candidate's BLS SNR to the
 fraction of planet-free curves that reached it (a Laplace-corrected, resolution-floored value) with

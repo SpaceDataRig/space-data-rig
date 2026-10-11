@@ -244,9 +244,31 @@ Two things this makes defensible: (1) the `minSnr=7` decision cut is now DATA-JU
 peaks topped out at SNR 5.7, so SNR>=7 threw 0/60 false alarms (the SNR>=5 cut would let 10% of
 empty fields cry wolf); and (2) the ~68% completeness ceiling is the honest physical limit of
 period-vs-baseline coverage (periods up to 12 days on a 15-day baseline) and sub-noise shallow
-injections, not a silent failure. These are synthetic TESS-like benchmark figures, NOT real-sky
-survey completeness -- they characterize the detector, and a real-data completeness study is future
-work (see "Benchmarks" caveats).
+injections, not a silent failure. These are synthetic TESS-like benchmark figures; the real-sky
+complement -- completeness measured by injecting into ACTUAL TESS data -- is below.
+
+### Real-sky completeness (injected into ACTUAL TESS photometry)
+
+A survey's completeness must be quoted on its own data, not only synthetic noise. `src/sim/injectInto.ts`
+`injectTransitInto(lc, {period, depth})` multiplies a physical transit onto a REAL light curve
+(noise color, cadence and data gaps untouched), and `npm run p1:real-completeness` runs the same
+detector on many real TESS-SPOC light curves and records recovery by depth and period. Measured
+(12 real hosts, 3 trials each, SNR>=7):
+
+```
+depth(ppm)   300   500   1000  2000  4000  8000
+recovered    61.8% 72.9% 82.6% 84.7% 84.7% 88.2%
+period        1.5d    3d    5d    8d
+recovered     97.2% 89.8% 84.7% 44.9%
+```
+
+This is the honest, data-grounded operating characteristic: completeness rises monotonically with
+planet size (62% at 300 ppm to 88% at 8000 ppm) and FALLS with orbital period -- an 8-day planet only
+gets ~3 transits in a ~27-day sector, so it is intrinsically harder to catch than a 1.5-day one (97%).
+The ~88% ceiling (not 100%) is real: active red-noise hosts, data gaps and period aliases cost us the
+rest, exactly as the noise-color and ROC studies predicted. The core (`injectInto.ts`) is unit-tested
+offline (deep injection recovered; depthFrac 0 is a point-for-point no-op; deterministic; completeness
+monotone in depth); the script itself needs network and is not in CI.
 
 Because the noise ensemble IS the surrogate, the false-alarm-rate column is itself an empirical
 false-alarm probability: `empiricalFap(noiseSnr, snr)` maps any single candidate's BLS SNR to the

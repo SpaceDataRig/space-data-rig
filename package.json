@@ -11,6 +11,7 @@
     "p0:mast": "tsx scripts/p0-mast.ts",
     "p3:discover": "tsx scripts/p3-discover.ts",
     "p4:autonomous": "tsx scripts/p4-autonomous.ts",
+    "p1:roc": "tsx scripts/p1-roc.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
     "api": "tsx src/api/server.ts",
@@ -21,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/roc.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

@@ -210,6 +210,31 @@ reject threshold is not yet calibrated across a sample of real planets, and an u
 gate inside the money-spending anchoring path risks silently dropping true positives in mildly
 blended systems. Threshold calibration precedes re-enabling continuous live vetting.
 
+### Measured operating characteristics (completeness / purity)
+
+The detector's operating point is now quantified rather than asserted. `src/sim/roc.ts` runs a
+seeded injection-recovery sweep: known planets give COMPLETENESS (period matches truth AND the
+BLS SNR clears the threshold); ZERO-INJECTION pure-noise curves (same sampling, planet radius p=0,
+so no dip anywhere) give the FALSE-ALARM RATE. Reproduce with `npm run p1:roc` (e.g.
+`-- --inj 60 --noise 60 --baseline 15 --cadence 300 --seed 20260011`). A representative run
+(TESS-like 200 ppm noise, 15-day baseline):
+
+```
+threshold(SNR)  completeness  false-alarm-rate  purity  TP/FP
+        5          68.3%          10.0%   87.2%  41/6
+        7          68.3%           0.0%  100.0%  41/0
+        9          66.7%           0.0%  100.0%  40/0
+       11          61.7%           0.0%  100.0%  37/0
+```
+
+Two things this makes defensible: (1) the `minSnr=7` decision cut is now DATA-JUSTIFIED -- noise
+peaks topped out at SNR 5.7, so SNR>=7 threw 0/60 false alarms (the SNR>=5 cut would let 10% of
+empty fields cry wolf); and (2) the ~68% completeness ceiling is the honest physical limit of
+period-vs-baseline coverage (periods up to 12 days on a 15-day baseline) and sub-noise shallow
+injections, not a silent failure. These are synthetic TESS-like benchmark figures, NOT real-sky
+survey completeness -- they characterize the detector, and a real-data completeness study is future
+work (see "Benchmarks" caveats).
+
 ## Quickstart
 
 Requires **Node.js 22 or 24** (ESM, run via `tsx`). No database, no build step.

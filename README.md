@@ -420,6 +420,26 @@ which is precisely what this project refuses to do. The rig reports what it can 
 recover and stops short of calling it a planet. (A `num(null)->0` coercion bug the offline schema
 fixture caught: TAP nulls must map to NaN or candidates with no period silently pass as valid.)
 
+### Gaia dilution / blend diagnostics (`src/data/gaiaDilution.ts`, `npm run p3:gaia`)
+
+The pixel centroid test rejects an off-target source. The complementary, also phase-INDEPENDENT
+question is DILUTION: an unresolved faint companion inside the aperture adds constant light, so the
+observed depth UNDERSTATES the host's true depth (and a diluted eclipsing binary on that companion
+could mimic a shallow planet). `p3:gaia` queries the anonymous Gaia DR3 archive (`gea.esac.esa.int`
+TAP; a read-only probe confirmed the endpoint, the COLUMNAR `{metadata,data}` JSON shape, and that
+`distance` is a reserved ADQL word) and sums neighbour flux (G band as a documented TESS proxy)
+within the aperture. On 10 confirmed-planet hosts the measured dilution factor was **~1.000
+(min 0.999)** and **0/10 had more than 5% contaminating light** -- neighbours were +8 to +15 mag
+fainter, even in the 27-source crowded field of TOI-5789 -- so these planets' depths are
+trustworthy as-is.
+
+Dilution ships as a **correction/diagnostic, not a rejection gate**, for two honest reasons: a real
+planet can legitimately orbit a diluted star (unlike an off-target centroid, low dilution is not
+proof of authenticity), and we decline to bolt a rate-limited third external service onto every
+production run for a quantity that cannot decide a verdict. `gaiaDilution.ts`'s columnar parser and
+aperture sum are unit-tested offline against a captured Gaia JSON fixture (which also caught the
+same `Number(null)===0` coercion pitfall -- null magnitudes/coordinates must become NaN).
+
 
 ## Quickstart
 

@@ -526,9 +526,44 @@ The period bins are the honest story: within the single-sector confirmable regim
 recover 27/53 = 51%, and 0/17 beyond it -- a 20-70 d orbit yields too few transits in one ~27-day sector to
 pin down, a physical coverage limit (the same one the real-sky completeness study shows), not a pipeline
 failure. The recovered PERIOD is the reliable independent measurement (sub-percent); the BLS box DEPTH is
-a crude proxy (median 26% off the reported depth) and is reported as such, not dressed up. SAFETY
+a crude proxy (median 26% off the reported depth) and is reported as such, not dressed up -- we later
+fit the exact transit model to repair precisely that, below. SAFETY
 BOUNDARY: like p5, this is a research probe off the money path -- every hit is a `CANDIDATE` for human
 follow-up, nothing is anchored, posted, spent on, or claimed as a discovery.
+
+### Independent DEPTH, repaired: an exact limb-darkened fit beats the crude box (`npm run p9:exact-depth`)
+
+p7 promised that the crude BLS box depth "needs the exact-transit model fit, a separate step." p9 IS
+that step, and it validates the repair against ground truth on REAL **confirmed** planets. For each one
+that has a token-free SPOC curve and a measured stellar radius, we fold the photometry at the catalog
+ephemeris, fix a/Rs from Kepler (catalog R\*/M\* + period) -- which collapses the problem to a well-posed
+3-parameter fit -- and least-squares fit the exact quadratic limb-darkened occultation model
+(`src/detect/transitFit.ts`, the same physics as `src/sim/exactTransit.ts`) over radius ratio p, impact
+parameter b and a small timing offset. The catalog depth is used ONLY as a post-hoc score, never shown to
+the fit; BLS is run on a narrow grid at the SAME period so the two depth estimators are compared
+apples-to-apples on the same curve.
+
+Measured on 28 confirmed planets:
+
+```
+median |fit depth - catalog depth|:   exact-model 14.7%   BLS box 37.0%
+exact fit closer than the box:        22/28 = 79%
+unphysical (<= 0 ppm) depths:         box 3, exact-model 0  (the forward model is bounded >= 0)
+short period (< 13 d, 17 planets):    exact 11.4%  vs box 32.1%
+long period (>= 13 d, 11 planets):    exact 47.2%  vs box 56.8%   (both degrade)
+```
+
+The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
+~10%, roughly HALVING the box error, and -- unlike a box average that can dilute a short transit into
+nothing -- it never returns an unphysical negative depth (the box did on 3 of 28). The advantage fades on
+long-period (>=13 d) and magnetically active hosts, where one or two transits per sector leave the p-b
+shape degenerate and flares/spots/blends corrupt the fold; there BOTH estimators get bad, and we say so
+rather than hiding it. This is the same single-sector coverage cliff p7 measured and the same active-star
+regime p8 isolated, now showing up in the depth estimator too -- the three studies are consistent. The
+fitted impact parameter b is reported for shape context only: we did not fetch catalog b, so it is NOT
+scored here. Offline, `tests/transitFit.test.ts` (deterministic, no network) confirms the fitter recovers
+an injected depth to grid resolution noiseless and to ~12% under realistic scatter. SAFETY BOUNDARY: this
+validates a measurement METHOD on already-confirmed planets -- nothing is anchored, posted, or claimed.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
@@ -711,7 +746,8 @@ src/
                 mastS3.ts + mastS3Pixels.ts (token-free SPOC photometry + target-pixel cube),
                 toiArchive.ts (blind unconfirmed-TOI source), gaiaDilution.ts (blend diagnostic)
   detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
-                significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary)
+                significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary),
+                transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only)
   sim/          transitModel.ts, exactTransit.ts (limb-darkened), injectionRecovery.ts, confidence.ts,
                 aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
                 injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)
@@ -730,7 +766,8 @@ src/
 scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty}.ts,
                 p2-{vet-calibrate,anchor}.ts, p2-bls-astropy.ts + bls_astropy_check.py (astropy
                 cross-check), p3-{discover,gaia-dilution}.ts, p4-autonomous.ts, p5-blind-probe.ts,
-                p6-blind-survey.ts, p7-blind-toi-survey.ts, p8-noise-acf.ts, validate-curated.ts (npm run mast:validate)
+                p6-blind-survey.ts, p7-blind-toi-survey.ts, p8-noise-acf.ts, p9-exact-depth.ts,
+                validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 ```
@@ -738,7 +775,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

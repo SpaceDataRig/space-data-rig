@@ -148,8 +148,12 @@ parity.
 ## Autonomous research loop (token-free, opt-in)
 
 The rig can select, fetch and analyze real targets by itself -- with **no MAST token and no
-AWS account**. The whole loop is gated OFF by default, so deploying it changes nothing until an
-operator opts in.
+AWS account**. The code defaults are OFF (a stock deploy changes nothing until an operator
+opts in). **This live deployment is opted in**: `wrangler.toml` ships `MAST_S3=1`,
+`AUTO_RESEARCH=1` (an autonomous run on the 6-hour cron), and `AUTO_ANCHOR=live` with
+`AUTO_ANCHOR_DAILY_CAP=24`, so accepted findings are sealed on Solana mainnet at a cost
+bounded to 24 memos/day (about 0.00012 SOL/day). Set `AUTO_ANCHOR=off` (or `AUTO_RESEARCH=0`)
+and redeploy to pause spending.
 
 - **Real data, autonomously.** With the Worker var `MAST_S3=1`, target selection keeps only
   planets that carry a TESS Input Catalog id, and the data-fetch seat constructs a

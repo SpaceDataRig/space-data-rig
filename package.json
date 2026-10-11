@@ -22,6 +22,7 @@
     "p5:blind": "tsx scripts/p5-blind-probe.ts",
     "p6:survey": "tsx scripts/p6-blind-survey.ts",
     "p8:noise-acf": "tsx scripts/p8-noise-acf.ts",
+    "p7:toi-survey": "tsx scripts/p7-blind-toi-survey.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

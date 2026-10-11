@@ -555,6 +555,7 @@ median statistical 1-sigma on depth:  6.3% of depth
 catalog depth inside +/-1sigma:       8/28 = 29%  (a calibrated error would be ~68%)
 catalog depth inside +/-2sigma:       13/28 = 46% (calibrated ~95%)
 LD-sensitivity floor on depth:        12.1% (all) / 12.7% short-period  (refit across 4 limb-darkening laws)
+independent planet RADIUS vs catalog:  6.5% median (all) / 5.4% short-period  (Rp = p x Rstar; pl_rade withheld)
 ```
 
 The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to
@@ -586,6 +587,14 @@ why the +/-1sigma bar undercovers. We carry an honest single solar-like law rath
 host (which would just trade one uncertainty for a worse degeneracy on one-sector cadences), and report the
 LD spread as the real systematic budget. SAFETY BOUNDARY: this validates a measurement METHOD on already-confirmed
 planets -- nothing is anchored, posted, or claimed as a discovery.
+
+**From depth to size.** Multiplying the fitted radius ratio by the catalog STELLAR radius (never the planet's
+catalog radius) gives an INDEPENDENT planet radius. It agrees with the published value to a median **6.5%**
+(5.4% on short-period planets) -- almost exactly HALF the depth error, as it must be, since radius scales as
+the square root of depth. So the same fit that repaired the crude box depth also yields the planet's physical
+SIZE to a few percent, straight from the shape of the light curve -- a quantity a non-specialist can grasp
+immediately (is it Earth-sized? Neptune-sized? Jupiter-sized?) and a genuine, self-consistent measurement
+chain: pixels -> shape -> depth -> radius.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 

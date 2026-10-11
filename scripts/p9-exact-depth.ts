@@ -81,6 +81,9 @@ interface Row {
   nInWindow: number;
   depthSigmaPpm: number; // first-order statistical 1-sigma on the exact-fit depth
   ldSpreadPct: number; // (max-min)/median fitted depth across the LD presets, in percent
+  indepRadiusEarth: number; // independent planet radius = p * Rstar (Earth radii); 0 if uncomputable
+  catRadiusEarth: number; // catalog pl_rade for reference (post-hoc)
+  radiusErrPct: number; // signed (indep - catalog)/catalog * 100
   fitErrPct: number; // signed (exact - catalog)/catalog * 100
   boxErrPct: number; // signed (box - catalog)/catalog * 100
 }
@@ -152,15 +155,25 @@ async function main() {
       ldSpreadPct = ((hi - lo) / median(ldDepths)) * 100;
     }
 
+    // Independent planet RADIUS: Rp = p * Rstar. We use ONLY the fitted p and the catalog STELLAR radius
+    // (never pl_rade, the planet radius we are checking against) -- so this is a size measurement from the
+    // light curve, not a restatement of the catalog. Rsun -> Earth radii is 109.2.
+    const indepRadiusEarth = Number.isFinite(p.st_rad!) ? fit.radiusRatio * p.st_rad! * 109.2 : 0;
+    const catRadiusEarth = Number.isFinite(p.pl_rade!) ? p.pl_rade! : 0;
+    const radiusErrPct = indepRadiusEarth > 0 && catRadiusEarth > 0
+      ? ((indepRadiusEarth - catRadiusEarth) / catRadiusEarth) * 100 : NaN;
+
     rows.push({
       name: p.pl_name ?? `TIC ${p.tic}`, period, catDepthPpm: p.pl_trandep!,
       exactDepthPpm: exactPpm, boxDepthPpm: boxPpm, aOverRs, impactParam: fit.impactParam,
-      nInWindow: fit.nInWindow, depthSigmaPpm: fit.depthSigma * 1e6, ldSpreadPct, fitErrPct, boxErrPct,
+      nInWindow: fit.nInWindow, depthSigmaPpm: fit.depthSigma * 1e6, ldSpreadPct,
+      indepRadiusEarth, catRadiusEarth, radiusErrPct, fitErrPct, boxErrPct,
     });
     console.log(
       `${(p.pl_name ?? `TIC ${p.tic}`).padEnd(16)} P=${period.toFixed(4)}d a/Rs=${aOverRs.toFixed(1)} b=${fit.impactParam.toFixed(2)} nin=${fit.nInWindow}  ` +
       `catalog=${p.pl_trandep!.toFixed(0)}ppm exact=${exactPpm.toFixed(0)}+-${(fit.depthSigma * 1e6).toFixed(0)}(${fitErrPct >= 0 ? "+" : ""}${fitErrPct.toFixed(0)}%) ` +
-      `box=${boxPpm.toFixed(0)}(${boxErrPct >= 0 ? "+" : ""}${boxErrPct.toFixed(0)}%) LDspread=${ldSpreadPct.toFixed(0)}%`,
+      `box=${boxPpm.toFixed(0)}(${boxErrPct >= 0 ? "+" : ""}${boxErrPct.toFixed(0)}%) LDspread=${ldSpreadPct.toFixed(0)}% ` +
+      `R=${indepRadiusEarth.toFixed(2)}Re(cat ${catRadiusEarth.toFixed(2)}${Number.isFinite(radiusErrPct) ? `, ${radiusErrPct >= 0 ? "+" : ""}${radiusErrPct.toFixed(0)}%` : ""})`,
     );
   }
 
@@ -202,6 +215,15 @@ async function main() {
   console.log(`  all planets: median LD spread = ${median(spreads).toFixed(1)}% of depth`);
   if (shortSpreads.length >= 2) console.log(`  short-period (<13 d): median LD spread = ${median(shortSpreads).toFixed(1)}%  (vs ${medSigFrac.toFixed(1)}% statistical sigma and ${median(shortRows.map((r) => Math.abs(r.fitErrPct))).toFixed(1)}% actual catalog error)`);
   console.log(`  => if the LD spread is comparable to the actual error, the unknown limb darkening -- not photon noise -- is the depth accuracy floor, explaining the +/-1sigma undercoverage above.`);
+  // Independent planet radius (Rp = p * Rstar), validated against catalog pl_rade as a post-hoc score.
+  const radRows = rows.filter((r) => Number.isFinite(r.radiusErrPct));
+  if (radRows.length >= 3) {
+    const radShort = radRows.filter((r) => r.period < 13);
+    const medAbsRad = median(radRows.map((r) => Math.abs(r.radiusErrPct)));
+    console.log(`\nindependent PLANET RADIUS (Rp = fitted p * catalog Rstar; pl_rade NEVER shown to the fit):`);
+    console.log(`  median |radius error| vs catalog: ${medAbsRad.toFixed(1)}% over ${radRows.length} planets` + (radShort.length >= 2 ? `; short-period (<13 d) ${median(radShort.map((r) => Math.abs(r.radiusErrPct))).toFixed(1)}%` : ""));
+    console.log(`  (radius goes as sqrt(depth) x Rstar, so its error is roughly HALF the depth error plus the stellar-radius uncertainty -- a size, not just a depth)`);
+  }
   // split by period: short periods fold many transits per sector (shape well-constrained), long periods
   // see one or two (p-b shape degenerate, blending/activity dominates) -- the same single-sector cliff p7 hit.
   const shortP = rows.filter((r) => r.period < 13);

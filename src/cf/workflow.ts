@@ -40,6 +40,8 @@ import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ReviewResult } from "../critic/review.ts";
 import { generateSyntheticTransit } from "../data/synthetic.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
+import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
+import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { persistBundle, type EphemerisRecord } from "../bundle/bundle.ts";
@@ -70,6 +72,8 @@ interface FetchRecord {
   meta: TargetMeta;
   dataHash: string;
   truthPeriodDays: number;
+  /** SPOC sectors used for the real S3 photometry, so the critic can fetch target pixels. */
+  spocSectors?: number[];
 }
 
 /** What anomaly-scout writes: the raw DetectionResult (plain nested data). */
@@ -280,7 +284,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         }
         const dataHash = await computeDataHash(lc);
         lc.dataHash = dataHash;
-        const rec: FetchRecord = { lc, meta, dataHash, truthPeriodDays };
+        const rec: FetchRecord = { lc, meta, dataHash, truthPeriodDays, spocSectors: spoc ? sectors : undefined };
         await putJson(store, `${key}/fetch.json`, rec);
         await stub.markSeatProcessed("data-fetch");
         await stub.emitEvent(
@@ -368,6 +372,34 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         if (!dr || !fr) throw new Error("missing detection");
         await stub.setSeatStatus("mission-critic", "running", `Reviewing ${dr.detection.candidate.targetId}`);
         await stub.updateTask(meta.taskId, { status: "reviewing" });
+        // False-positive vetting: only for REAL photometry, only when VET=1, best-effort.
+        // It fetches the SPOC target-pixel cube and measures the in-transit photocenter
+        // displacement against the CANDIDATE's own ephemeris. Disabled by default, so the
+        // deterministic run path (and its bundle hash) is byte-for-byte unchanged.
+        let vetting: ReviewVetting | undefined;
+        const isReal = (fr.lc.source ?? "").includes("REAL photometry");
+        if (env.VET === "1" && isReal && Number.isFinite(planet.tic)) {
+          const cand = dr.detection.candidate;
+          const sectors = fr.spocSectors ?? [];
+          for (const s of sectors.slice(0, 3)) {
+            try {
+              const cube = await fetchSpocTargetPixels(planet.tic!, s, fr.lc.targetId);
+              if (!cube) continue;
+              const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
+              if (cs.inCount >= 2 && cs.outCount >= 2) {
+                vetting = { centroidShiftArcsec: cs.shiftArcsec };
+                await stub.emitEvent(
+                  "mission-critic",
+                  "info",
+                  `Pixel vetting for ${meta.name}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`,
+                );
+              }
+              break; // first usable cube decides; sector search stops here
+            } catch {
+              /* best-effort: a failed tp fetch simply leaves vetting undefined */
+            }
+          }
+        }
         const review = critique({
           detection: dr.detection,
           catalog: cat?.planets ?? [],
@@ -375,6 +407,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           confidence,
           truthPeriodDays: fr.truthPeriodDays,
           truthSource: (fr.lc.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
+          vetting,
         });
         await putJson(store, `${key}/review.json`, { review } satisfies ReviewRecord);
         await stub.markSeatProcessed("mission-critic");

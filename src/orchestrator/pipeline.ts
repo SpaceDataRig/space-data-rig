@@ -26,9 +26,10 @@ import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
 import { fetchMastProductBytes, fitsToLightCurve } from "../data/mast.ts";
 import { discoverAndFetchLightCurve } from "../data/mastDiscover.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
+import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
-import type { ReviewResult } from "../critic/review.ts";
+import type { ReviewResult, ReviewVetting } from "../critic/review.ts";
 // Science compute lives in the runtime-agnostic seat core (shared with the Cloudflare
 // RigRunWorkflow); the orchestrator keeps only the store + fs + event side effects.
 import { computeDataHash, scout, simulate, critique, report } from "../seats/seats.ts";
@@ -74,6 +75,13 @@ export interface OrchestratorOptions {
    * See ./src/data/mastS3.ts for the verified anonymous-access details.
    */
   useMastS3?: boolean;
+  /**
+   * Enable pixel-level false-positive vetting (in-transit photocenter displacement) in
+   * the critic for REAL SPOC photometry. Off by default: with it off the run path and its
+   * bundle hash are byte-for-byte unchanged. Mirrors the edge VET flag for cross-runtime
+   * parity (both compute centroid shift only; the heavier surrogate FAP is offline-only).
+   */
+  vetPixels?: boolean;
   /** run label for logging. */
   runId?: string;
 }
@@ -92,6 +100,8 @@ interface TargetContext {
   finding?: Finding;
   dataHash?: string;
   bundleHash?: string;
+  /** SPOC sectors used for real S3 photometry, so the critic can fetch target pixels. */
+  spocSectors?: number[];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -118,6 +128,7 @@ export class Orchestrator {
   private opts: Required<Pick<OrchestratorOptions, "maxTargets" | "maxTmag" | "minPeriodDays" | "maxPeriodDays" | "confidenceTrials" | "stageDelayMs" | "outDir" | "snapshotPath" | "resume">>;
   private discoverMast: boolean;
   private useMastS3: boolean;
+  private vetPixels: boolean;
   private catalogOverride?: ArchiveFetchResult;
   private codeVersion: string;
   private artifacts: FsArtifactStore;
@@ -139,6 +150,7 @@ export class Orchestrator {
     this.catalogOverride = options.catalog;
     this.discoverMast = options.discoverMast ?? (typeof process !== "undefined" && process.env?.MAST_DISCOVER === "1");
     this.useMastS3 = options.useMastS3 ?? (typeof process !== "undefined" && process.env?.MAST_S3 === "1");
+    this.vetPixels = options.vetPixels ?? (typeof process !== "undefined" && process.env?.VET === "1");
     this.codeVersion = readCodeVersion(resolve(REPO_ROOT, "package.json"));
     this.artifacts = new FsArtifactStore(this.opts.outDir);
   }
@@ -290,19 +302,21 @@ export class Orchestrator {
       // TIC), then best-effort MAST discovery, then the stand-in. Both real
       // tiers are OFF by default, so the deterministic run is unchanged.
       let real: LightCurve | null = null;
+      let spocSectors: number[] = [];
       if (this.useMastS3 && Number.isFinite(planet.tic)) {
-        const sectors = Number.isFinite(planet.ra) && Number.isFinite(planet.dec)
+        spocSectors = Number.isFinite(planet.ra) && Number.isFinite(planet.dec)
           ? await sectorsForCoord(planet.ra!, planet.dec!)
           : [];
-        if (sectors.length > 0) {
-          this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- trying the token-free TESS-SPOC public S3 bucket (TIC ${planet.tic}, sectors ${sectors.join("/")}) ...`);
-          real = await fetchSpocLightCurve(planet.tic!, sectors, name);
+        if (spocSectors.length > 0) {
+          this.store.emitEvent("data-fetch", "info", `No curated product for ${name} -- trying the token-free TESS-SPOC public S3 bucket (TIC ${planet.tic}, sectors ${spocSectors.join("/")}) ...`);
+          real = await fetchSpocLightCurve(planet.tic!, spocSectors, name);
         }
       }
       if (real) {
         lc = real;
         truth = truthFromCatalog(planet);
         lc.source = `${lc.source}; catalog source=${cat.source}`;
+        ctx.spocSectors = spocSectors;
         this.store.emitEvent("data-fetch", "result", `Fetched REAL TESS-SPOC photometry for ${name} from the public S3 bucket (token-free).`);
       } else {
         // Optionally let MAST discovery find a real product by coordinate
@@ -414,6 +428,27 @@ export class Orchestrator {
 
     // recovery mode: stand-in paths grade against the injection; real-photometry paths
     // grade against the published catalog value -- an honest open-loop cross-check.
+    // Pixel vetting (real SPOC photometry only, gated on vetPixels) measures the
+    // in-transit photocenter shift against the candidate's own ephemeris; best-effort.
+    let vetting: ReviewVetting | undefined;
+    if (this.vetPixels && (ctx.lc?.source ?? "").includes("REAL photometry") && Number.isFinite(ctx.planet.tic)) {
+      const sectors = ctx.spocSectors ?? [];
+      const cand = detection.candidate;
+      for (const s of sectors.slice(0, 3)) {
+        try {
+          const cube = await fetchSpocTargetPixels(ctx.planet.tic!, s, ctx.lc!.targetId);
+          if (!cube) continue;
+          const cs = centroidShift(cube, cand.epochBjd, cand.periodDays, cand.durationHours);
+          if (cs.inCount >= 2 && cs.outCount >= 2) {
+            vetting = { centroidShiftArcsec: cs.shiftArcsec };
+            this.store.emitEvent("mission-critic", "info", `Pixel vetting for ${ctx.planet.pl_name ?? ctx.planet.hostname}: in-transit photocenter shift ${cs.shiftArcsec.toFixed(2)} arcsec (${cs.inCount} in / ${cs.outCount} out cadences).`);
+          }
+          break;
+        } catch {
+          /* best-effort: a failed target-pixel fetch simply leaves vetting undefined */
+        }
+      }
+    }
     const review = critique({
       detection,
       catalog: cat.planets,
@@ -421,6 +456,7 @@ export class Orchestrator {
       confidence,
       truthPeriodDays: ctx.truth?.periodDays,
       truthSource: (ctx.lc?.source ?? "").includes("REAL photometry") ? "catalog" : "injected",
+      vetting,
     });
     ctx.review = review;
 

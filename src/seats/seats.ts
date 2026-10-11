@@ -15,7 +15,7 @@ import {
   type ConfidenceResult,
   type SignalParams,
 } from "../sim/confidence.ts";
-import { reviewCandidate, type ReviewResult } from "../critic/review.ts";
+import { reviewCandidate, type ReviewResult, type ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { narrateFinding } from "../reporter/narrate.ts";
 import { foldedPlotSVG, periodogramSVG, timeSeriesPlotSVG } from "../detect/svgPlot.ts";
@@ -118,10 +118,12 @@ export interface CritiqueInput {
   truthPeriodDays?: number;
   /** what the reference period is: an injection or a catalog value (real photometry). */
   truthSource?: "injected" | "catalog";
+  /** optional false-positive vetting evidence (real photometry only); omitted => identical review. */
+  vetting?: ReviewVetting;
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource }: CritiqueInput): ReviewResult {
+export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, vetting }: CritiqueInput): ReviewResult {
   return reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
@@ -130,6 +132,7 @@ export function critique({ detection, catalog, hostName, confidence, truthPeriod
     confidence,
     truthPeriodDays,
     truthSource,
+    vetting,
     minSnr: 7,
   });
 }

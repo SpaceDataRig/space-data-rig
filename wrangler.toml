@@ -82,6 +82,9 @@ DISCUSSION_MODE = "grounded"
 # Token-free TESS-SPOC public-S3 photometry tier. ON in this deployment so every
 # TIC-bearing target pulls REAL PDCSAP photometry from the anonymous S3 bucket.
 MAST_S3 = "1"
+# Pixel-level false-positive vetting in the critic (real photometry only). OFF by
+# default so the run path and bundle hash are unchanged; set "1" to reject blends.
+VET = "0"
 # Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
 # cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and
 # accepted findings are sealed on Solana mainnet (AUTO_ANCHOR=live), bounded by

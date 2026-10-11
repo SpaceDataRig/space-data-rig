@@ -6,6 +6,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { reviewCandidate, type ReviewInput } from "../src/critic/review.ts";
+import { critique } from "../src/seats/seats.ts";
+import type { DetectionResult } from "../src/detect/pipeline.ts";
 import type { TransitCandidate } from "../src/core/types.ts";
 
 /** A strong, physically-sane blind candidate that the base critic ACCEPTS. */
@@ -82,4 +84,13 @@ test("vetting can reject an otherwise-accepted recovery-mode candidate (override
   };
   const r = reviewCandidate(rec);
   assert.equal(r.verdict, "rejected", "a 30 arcsec shift must reject even a period-perfect match");
+});
+
+test("critique() forwards vetting to the review (the path both the edge and Node use)", () => {
+  const detection = { candidate, aliasMultiple: 1 } as unknown as DetectionResult;
+  const plain = critique({ detection, catalog: [] });
+  assert.equal(plain.verdict, "accepted", "control: the strong blind candidate is accepted");
+  const vetted = critique({ detection, catalog: [], vetting: { centroidShiftArcsec: 12.5 } });
+  assert.equal(vetted.verdict, "rejected", "critique must pass vetting through to a rejection");
+  assert.ok(vetted.checks.some((x) => x.name === "centroid-shift" && x.pass === false));
 });

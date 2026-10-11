@@ -378,13 +378,14 @@ Everything above (and the per-candidate nulls below) ASSUMES a star's residual n
 autocorrelation decays as `ACF[k] = rho^k`. A single lag-1 rho cannot test that assumption -- it says
 nothing about the SHAPE of the decay. `p8:noise-acf` measures the FULL autocorrelation function on real,
 token-free SPOC light curves (detrended + MAD-clipped exactly like `estimateRho`, deduped by star) and
-fits the AR(1) prediction to it. Over 20 distinct hosts: **16 are near-white (median rho -0.011) and 4
+fits the AR(1) prediction to it. Over 36 distinct hosts: **30 are near-white (median rho 0.00) and 6
 are red** -- and the red ones are again the young active stars (AU Mic rho 0.63 R2 0.91, HD 63433 rho
-0.63 R2 0.86, TOI-4641 rho 0.46 R2 0.76). Crucially, the red hosts' measured ACF decays AT LEAST as fast
-as `rho^k` (median fit R2 0.81, and the excess correlation at higher lags is NEGATIVE, not positive):
-there is no hidden power-law tail. So the AR(1) null model behind `calibratedFap` is faithful-to-
-conservative on real data -- it does not understate the false-alarm tail. A direct, real-data validation
-of the DECAY SHAPE that lag-1 alone could never provide.
+0.63 R2 0.86, TOI-4641 rho 0.46 R2 0.76, KELT-9 rho 0.45). Crucially, the red hosts' measured ACF decays
+AT LEAST as fast as `rho^k` through the mid lags (median fit R2 0.61, and the excess correlation is
+negative or negligible -- no growing power-law tail): there is no hidden longer-memory structure that
+AR(1) misses. So the AR(1) null model behind `calibratedFap` is faithful-to-conservative on real data --
+it does not understate the false-alarm tail. A direct, real-data validation of the DECAY SHAPE that
+lag-1 alone could never provide.
 
 #### We then BUILT it: per-candidate calibrated significance, shipped ON
 

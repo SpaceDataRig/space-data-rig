@@ -199,6 +199,16 @@ a:hover { text-decoration: underline; }
 .about-links { margin-top: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
 .about-links a { font-size: .8rem; color: var(--accent); }
 .about-links a:hover { text-decoration: underline; }
+
+/* ---- honesty machinery (plain-English guards) ---- */
+.rigor { padding: 18px 20px 20px; }
+.rigor-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1080px) { .rigor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .rigor-grid { grid-template-columns: 1fr; } }
+.rigor-card { background: rgba(120, 180, 255, 0.04); border: 1px solid var(--edge); border-radius: 12px; padding: 14px 15px; }
+.rigor-card h3 { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+.rigor-card p { margin: 0; color: var(--ink-dim); font-size: .83rem; line-height: 1.6; }
+.rigor-foot { color: var(--ink-faint); font-size: .8rem; line-height: 1.6; margin: 14px 0 0; }
 .card { position: relative; background: linear-gradient(180deg, var(--glass), var(--glass-2)); border: 1px solid var(--edge); border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(10px); overflow: hidden; transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease; }
 .card::before { content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: linear-gradient(90deg, var(--tone, #3ae0ff), transparent 70%); }
 .card:hover { transform: translateY(-3px); border-color: var(--edge-hot); box-shadow: 0 26px 50px -30px rgba(0, 0, 0, 0.95), 0 0 26px -12px var(--tone, #3ae0ff); }

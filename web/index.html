@@ -91,8 +91,10 @@
                 machine. Each finding card labels which tier produced its photons.</li>
               <li><b>The table</b> &mdash; the six minds are software agents; with a chat key configured the critic
                 adds live model commentary, otherwise every line is grounded in the computed numbers.</li>
-              <li><b>Critic mode</b> &mdash; recovery self-test, not a sky survey: the reviewer is given the injected
-                truth period, so a &ldquo;recovered&rdquo; verdict measures pipeline reliability, not a new detection.</li>
+              <li><b>Blind critic</b> &mdash; the reviewer decides from the evidence alone (signal strength, a
+                per-star calibrated significance, transit shape, coverage). The known period is compared only
+                afterwards and never steers the verdict, so a &ldquo;recovered&rdquo; label measures pipeline
+                reliability, not a new detection.</li>
             </ul>
           </div>
           <div>
@@ -110,6 +112,42 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ honesty machinery, in plain English ============ -->
+  <section class="section rigor-section">
+    <div class="glass rigor">
+      <div class="panel-head"><h2>HOW WE MAKE SURE WE ARE NOT FOOLING OURSELVES</h2><span class="hint">four guards, in everyday words</span></div>
+      <div class="rigor-grid">
+        <div class="rigor-card">
+          <h3>Realistic noise</h3>
+          <p>Real starlight is not clean. It drifts slowly, like a shaky hand, not just random jitter. We
+             add that same "stickiness" on purpose, so a signal only counts if it survives messy data
+             rather than textbook-perfect data.</p>
+        </div>
+        <div class="rigor-card">
+          <h3>A fair bar per star</h3>
+          <p>A jittery star and a calm star should not be judged by one ruler. We measure each star's own
+             wiggle and ask: "could plain noise on THIS star have faked this dip?" We only believe a dip
+             when the answer is comfortably no.</p>
+        </div>
+        <div class="rigor-card">
+          <h3>A blind referee</h3>
+          <p>The judge is not told the right answer. It rules on the evidence, and we check against the
+             known answer only afterwards. So a "recovered" result proves the pipeline really works,
+             without ever peeking at the solution.</p>
+        </div>
+        <div class="rigor-card">
+          <h3>Is it this star, really?</h3>
+          <p>A dip can come from a fainter neighbour blended into the same pixel. On real images we check
+             that the dimming is centred on the target star, and we reject the find if the light that
+             faded is somewhere else.</p>
+        </div>
+      </div>
+      <p class="rigor-foot">Every result is sealed into a reproducible bundle and its fingerprint anchored on Solana
+         mainnet, so the numbers on this page cannot be quietly edited after the fact. This is a self-test of the
+         method on real data &mdash; it does not claim to have discovered new planets.</p>
     </div>
   </section>
 

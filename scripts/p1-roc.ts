@@ -11,7 +11,7 @@
 // Usage:
 //   npm run p1:roc                                  (default 150 injections + 150 noise curves)
 //   npm run p1:roc -- --inj 300 --noise 300 --baseline 27 --cadence 120 --seed 5
-import { runRoc, formatRoc } from "../src/sim/roc.ts";
+import { runRoc, formatRoc, empiricalFap } from "../src/sim/roc.ts";
 
 function arg(name: string, dflt: number): number {
   const i = process.argv.indexOf(`--${name}`);
@@ -54,4 +54,6 @@ console.log(
 );
 const matched = r.injections.filter((x) => x.matched);
 console.log(`period-matched injections: ${matched.length}/${nInj} (threshold-independent); their SNR range ${matched.length ? Math.min(...matched.map((m) => m.snr)).toFixed(1) + ".." + Math.max(...matched.map((m) => m.snr)).toFixed(1) : "n/a"}`);
+const fap7 = empiricalFap(r.noiseSnr, 7);
+console.log(`empirical FAP at the production cut SNR>=7 (from the noise ensemble, no per-candidate surrogates): ${fap7.fap.toPrecision(2)} (${fap7.exceedances}/${fap7.n} noise curves reached 7)`);
 console.log(`done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

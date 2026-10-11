@@ -248,6 +248,12 @@ injections, not a silent failure. These are synthetic TESS-like benchmark figure
 survey completeness -- they characterize the detector, and a real-data completeness study is future
 work (see "Benchmarks" caveats).
 
+Because the noise ensemble IS the surrogate, the false-alarm-rate column is itself an empirical
+false-alarm probability: `empiricalFap(noiseSnr, snr)` maps any single candidate's BLS SNR to the
+fraction of planet-free curves that reached it (a Laplace-corrected, resolution-floored value) with
+no per-candidate resampling. This gives each detection a calibrated significance, not just a
+heuristic SNR label.
+
 ## Quickstart
 
 Requires **Node.js 22 or 24** (ESM, run via `tsx`). No database, no build step.

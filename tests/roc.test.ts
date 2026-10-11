@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { runRoc, formatRoc, type RocOptions } from "../src/sim/roc.ts";
+import { runRoc, formatRoc, empiricalFap, type RocOptions } from "../src/sim/roc.ts";
 
 // A small, fast config: short baseline + coarse cadence => ~1k points per curve.
 const SMALL: RocOptions = {
@@ -65,4 +65,14 @@ test("formatRoc renders an aligned ASCII table with a row per threshold", () => 
   assert.equal(lines.length, r.points.length + 1); // header + one row per threshold
   assert.match(lines[0], /completeness/);
   assert.match(lines[0], /false-alarm-rate/);
+});
+
+test("empiricalFap is the noise-ensemble false-alarm rate and decreases monotonically with SNR", () => {
+  const r = runRoc(SMALL);
+  const lo = empiricalFap(r.noiseSnr, 4);
+  const hi = empiricalFap(r.noiseSnr, 14);
+  // a higher statistic is exceeded by fewer (or equal) noise curves -> smaller or equal FAP
+  assert.ok(hi.fap <= lo.fap + 1e-12, `FAP must not increase with SNR: lo=${lo.fap} hi=${hi.fap}`);
+  assert.ok(hi.fap >= hi.floor - 1e-12, "FAP never below the 1/(N+1) resolution floor");
+  assert.equal(hi.n, r.noiseSnr.length);
 });

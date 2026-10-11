@@ -165,3 +165,20 @@ export function formatRoc(r: RocResult): string {
   }
   return rows.join("\n");
 }
+
+/**
+ * Calibrated empirical false-alarm probability of a single detection statistic, read off the
+ * zero-injection noise distribution produced by runRoc: the fraction of planet-free curves whose
+ * BLS peak SNR reaches `snr`. This is the false-alarm RATE at that threshold -- i.e. an empirical
+ * FAP obtained WITHOUT running per-candidate surrogates (the noise ensemble IS the surrogate).
+ * A Laplace +1 keeps a clean ensemble from reporting a literally-zero FAP. The resolution floor is
+ * 1/(N+1), so a value at the floor means "no noise curve got this high", not "impossible".
+ */
+export function empiricalFap(noiseSnr: number[], snr: number): { fap: number; exceedances: number; n: number; floor: number } {
+  const n = noiseSnr.length;
+  if (n === 0) return { fap: 1, exceedances: 0, n: 0, floor: 1 };
+  const exceedances = noiseSnr.filter((s) => s >= snr).length;
+  const floor = 1 / (n + 1);
+  const raw = (exceedances + 1) / (n + 1);
+  return { fap: Math.min(1, Math.max(raw, floor)), exceedances, n, floor };
+}

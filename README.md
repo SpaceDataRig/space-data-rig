@@ -1124,7 +1124,17 @@ collaborators (still labelled candidate by the pipeline).
 - The odd/even depth and secondary-eclipse discriminators stay DIAGNOSTIC ONLY and are deliberately NOT
   gated: real-data calibration showed they mis-kill true planets on single-sector photometry.
 
-**Next (Stage 3)**: prioritization -- rank surviving candidates by observability and emit the follow-up
-cards (`formatFollowupCard`), ideally fusing a second epoch / multi-sector coverage or a resolved blend
-measurement to lift `deep-suspect` and `moderate` records toward a genuinely corroborated candidate.
+**Stage 3 status: complete (prioritization + observability).**
+- `src/candidate/prioritize.ts` ranks surviving candidates by evidence (SNR, brightness, tier), imminence
+  (when the next transit falls), and observability -- the target's altitude at mid-transit from a reference
+  ground site, computed with standard hour-angle astronomy (verified against time-independent invariants).
+  It never re-labels a Stage-2 tier or adds a discovery claim; undetermined inputs stay neutral and are named
+  in the card. p19 now prints a ranked follow-up queue. This needs ABSOLUTE epochs, so `src/data/tglc.ts`
+  converts the TGLC reduced time (measured as BJD_TDB - BJDREFI, header value applied) to absolute BJD.
+- Odd/even and secondary-eclipse stay diagnostic-only; lifting `deep-suspect`/`moderate` records to a
+  genuinely corroborated candidate still needs a second epoch / multi-sector coverage or a resolved blend.
+
+**Next (Stage 4)**: production scale + ops for the candidate pipeline -- run the blind search across many
+sectors on a schedule, persist surviving candidates, and (behind an explicit opt-in) surface them WITHOUT
+touching the verified-planet re-check path, verdicts, bundle hashes, or the money path.
 

@@ -29,6 +29,7 @@ import { fetchTocCandidates } from "../src/data/toiArchive.ts";
 import { noveltyFromSets } from "../src/review/externalReview.ts";
 import { buildCandidateRecord, formatFollowupCard } from "../src/candidate/candidateRecord.ts";
 import { classifyDepthRegime, CALIBRATED_DEPTH } from "../src/candidate/falsePositive.ts";
+import { prioritize, formatPriorityCard, DEFAULT_SITE } from "../src/candidate/prioritize.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const UA = "Mozilla/5.0 (compatible; space-data-rig-ffi-blind)";
@@ -178,6 +179,8 @@ async function main(): Promise<void> {
 
   const asOfUtc = new Date().toISOString();
   const catalogSource = { confirmed: `nasa-tap (${confirmedSet.size} hosts)`, toi: `nasa-tap (${toiSet.size} hosts)`, asOfUtc };
+  const nowBjd = Date.now() / 86400000 + 2440587.5; // current epoch (~BJD) for transit-date math
+  const emitted: ReturnType<typeof buildCandidateRecord>[] = [];
   let novel = 0;
   let known = 0;
   let incomplete = 0;
@@ -206,6 +209,21 @@ async function main(): Promise<void> {
     });
     console.log(`\n[p19] ===== NOVEL CANDIDATE (tier: ${record.tier}) =====`);
     console.log(formatFollowupCard(record));
+    emitted.push(record);
+  }
+
+  // Stage 3: rank the surviving candidates by follow-up priority -- evidence + how soon the next transit is
+  // + how high it sits from a reference ground site. Epochs are ABSOLUTE BJD (tglc.ts applied BJDREFI), so
+  // the predicted transit date and the observability altitude are real, not fabricated.
+  const ranked = emitted
+    .map((record) => ({ record, p: prioritize(record, nowBjd) }))
+    .sort((a, b) => b.p.priorityScore - a.p.priorityScore);
+  if (ranked.length) {
+    console.log(`\n[p19] ===== STAGE-3 FOLLOW-UP QUEUE, ranked (observability from ${DEFAULT_SITE.name}) =====`);
+    ranked.forEach(({ record, p }, i) => {
+      console.log(`\n[p19] ----- rank ${i + 1}: TIC ${record.host.tic} (tier ${record.tier}, priority ${p.priorityBand} ${p.priorityScore.toFixed(2)}) -----`);
+      console.log(formatPriorityCard(record, p));
+    });
   }
 
   console.log(`\n[p19] novelty pass: ${planetBand.length} planet-band signals -> ${novel} novel, ${known} already known, ${incomplete} missing host id.`);

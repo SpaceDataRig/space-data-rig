@@ -41,6 +41,13 @@ test("rejects non-FITS bytes", () => {
   assert.throws(() => tglcBytesToLightCurve(new Uint8Array([1, 2, 3, 4, 5]), "junk"));
 });
 
+test("converts the reduced-BJD time column to ABSOLUTE BJD_TDB (for Stage-3 observability)", () => {
+  const lc = tglcBytesToLightCurve(bytes, "TGLC-test")!;
+  // Sector 1 real data: reduced time ~1325-1353; the parser must add BJDREFI=2457000 -> true BJD ~2.458e6
+  assert.ok(lc.points[0].time > 2450000 && lc.points[0].time < 2470000, `expected absolute BJD, got ${lc.points[0].time}`);
+  assert.match(lc.source!, /absolute BJD_TDB via BJDREFI=2457000 applied/);
+});
+
 test("reads host metadata from the PRIMARY header for the novelty gate", () => {
   const m = tglcHeaderMeta(bytes);
   // TICID is a quoted string in the header; the parser must surface it as the safe integer 139091033

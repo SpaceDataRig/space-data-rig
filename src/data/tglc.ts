@@ -8,8 +8,11 @@
 // detection chain (bls / vetting / significance / candidate contract) can run on them unchanged.
 //
 // Verified TGLC schema (BINTABLE EXTNAME='LIGHTCURVE', measured from a real s0001 product):
-//   time (D, BJD_TDB), psf_flux (E), aperture_flux (E), cal_psf_flux (E), cal_aper_flux (E),
-//   background (E), cadence_num (J), TESS_flags (I), TGLC_flags (I).
+//   time (D, BJD_TDB reduced by BJDREFI+BJDREFR), psf_flux (E), aperture_flux (E), cal_psf_flux (E),
+//   cal_aper_flux (E), background (E), cadence_num (J), TESS_flags (I), TGLC_flags (I).
+// The time column is a REDUCED BJD (Sector 1 measured: 1325-1353, header BJDREFI=2457000, TIMESYS=TDB,
+// MJD_BEG=58324.8 = 2018-07-25). We convert to ABSOLUTE BJD_TDB using the product's OWN BJDREFI+BJDREFR so
+// downstream ephemeris / observability (Stage 3) works on true dates, never a guessed epoch offset.
 // We fold on the calibrated column (normalized + detrended -- best for short-period transits) with a
 // documented fallback chain, and drop cadences that are NaN or carry a nonzero TESS quality flag.
 //
@@ -64,9 +67,17 @@ export function tglcBytesToLightCurve(bytes: Uint8Array, targetId: string, opts:
   const flags = has("TESS_flags") ? readColumn(table, bytes, "TESS_flags") : null;
   const maskBad = opts.maskBadFlags !== false;
 
+  // Absolute-time reference: the product reduces BJD by BJDREFI + BJDREFR (default TESS epoch 2457000.0).
+  // We trust the header's OWN value; if it is absent or non-absolute we leave the column untouched rather
+  // than assume, so an already-absolute source is never double-shifted.
+  const bjdRefI = Number(table.header.BJDREFI);
+  const bjdRefR = Number(table.header.BJDREFR);
+  const timeRef = (Number.isFinite(bjdRefI) ? bjdRefI : 0) + (Number.isFinite(bjdRefR) ? bjdRefR : 0);
+  const toAbsBjd = timeRef > 1e6 ? (t: number) => t + timeRef : (t: number) => t;
+
   const raw: LightCurvePoint[] = [];
   for (let i = 0; i < table.rows; i++) {
-    const t = time[i];
+    const t = toAbsBjd(time[i]);
     const f = flux[i];
     if (!Number.isFinite(t) || !Number.isFinite(f)) continue;
     if (maskBad && flags && flags[i] !== 0) continue;
@@ -85,7 +96,7 @@ export function tglcBytesToLightCurve(bytes: Uint8Array, targetId: string, opts:
     mission: "TESS",
     points,
     source:
-      `TGLC FFI photometry column '${fluxName}' (${sector}, REAL photometry); ` +
+      `TGLC FFI photometry column '${fluxName}' (${sector}, REAL photometry; time = absolute BJD_TDB via BJDREF${timeRef > 1e6 ? `I=${timeRef.toFixed(0)} applied` : " (product already absolute)"}); ` +
       `decontaminated PSF/aperture full-frame light curve; CC BY 4.0, cite Han et al. 2023`,
   };
 }

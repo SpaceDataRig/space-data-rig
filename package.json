@@ -28,6 +28,7 @@
     "p11:candidate-size": "tsx scripts/p11-candidate-size.ts",
     "p12:multisector": "tsx scripts/p12-multisector.ts",
     "p13:ld-fit": "tsx scripts/p13-ld-fit.ts",
+    "p14:coherence": "tsx scripts/p14-longperiod-coherence.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",
@@ -39,7 +40,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",
-    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/transitFit.test.ts tests/stitchSectors.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/oddEvenRefined.test.ts tests/toiArchive.test.ts tests/gaiaDilution.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/redNoiseAcf.test.ts tests/rho.test.ts tests/calibratedFap.test.ts tests/syntheticRedNoise.test.ts tests/injectInto.test.ts tests/uncertainty.test.ts"
+    "test": "node --import tsx --test tests/core.test.ts tests/detect.test.ts tests/exactTransit.test.ts tests/fap.test.ts tests/transitFit.test.ts tests/stitchSectors.test.ts tests/ephemeris.test.ts tests/mast.test.ts tests/mastS3.test.ts tests/mastS3Pixels.test.ts tests/tap.test.ts tests/llm.test.ts tests/deliberation.test.ts tests/vetting.test.ts tests/vettingDiscriminators.test.ts tests/oddEvenRefined.test.ts tests/toiArchive.test.ts tests/gaiaDilution.test.ts tests/roc.test.ts tests/redNoise.test.ts tests/redNoiseAcf.test.ts tests/rho.test.ts tests/calibratedFap.test.ts tests/syntheticRedNoise.test.ts tests/injectInto.test.ts tests/uncertainty.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

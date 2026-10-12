@@ -690,6 +690,32 @@ rig. (Note the bright-planet fixed error is 7.0%, tighter than the 12% full-samp
 better-sampled stars are simply better constrained.) SAFETY BOUNDARY: research probe only -- `transitFit` is
 untouched, the production path is unchanged, nothing is gated, and no planet is claimed.
 
+### A tempting fix that did not work: refine the ephemeris before the long fold (`npm run p14:coherence`)
+
+p12 said the long-period depth limit is phase coherence, not data volume -- so the obvious repair is to stop
+trusting the catalog period: time each transit, refit period+epoch by an O-C line (`src/detect/ephemeris.ts`,
+offline-tested: it recovers an injected drift perfectly on synthetic data), then fold the whole baseline at the
+refined value. p14 tries exactly that on 18 real multi-sector long-period planets and reports an honest
+NEGATIVE result:
+
+```
+median depth |err|  naive long fold       : 33.3%
+median depth |err|  per-sector median     : 28.3%   (p12's robust baseline -- still the winner)
+median depth |err|  refined-ephemeris fold: 47.5%   (WORSE than not refining at all)
+refined beats naive on 3/18, per-sector on 2/18; |refined - catalog| period shift median 0.025%
+```
+
+Why it fails, and what that teaches: the catalog periods were ALREADY precise (our re-fit moves them by a
+median 0.025%), so there is almost no drift to recover -- yet with only a handful of independently-timed
+transits per long-period target (2-11, median ~4), our own O-C period is noisier than the discovery team's,
+so folding at it smears the dip MORE, not less. The synthetic unit test passes; real cadences humble the idea
+-- the recurring lesson here that a method must be validated on real data before it is trusted. The takeaway
+is constructive: the long-period cliff is NOT removable by self re-timing from a few sectors; the robust route
+stays per-sector characterization, and beating it needs genuinely more and better-timed transits (a longer
+baseline, higher SNR), not a cleverer fold of the same sparse ones. SAFETY BOUNDARY: research probe only --
+`ephemeris.ts` is additive and offline-tested, the production path is unchanged, nothing is gated, and no
+planet is claimed.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -872,7 +898,8 @@ src/
                 toiArchive.ts (blind unconfirmed-TOI source), gaiaDilution.ts (blend diagnostic)
   detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
                 significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary),
-                transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only)
+                transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only),
+                ephemeris.ts (per-transit O-C timing -> refined period/epoch; offline only)
   sim/          transitModel.ts, exactTransit.ts (limb-darkened), injectionRecovery.ts, confidence.ts,
                 aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
                 injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)
@@ -896,6 +923,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 p11-candidate-size.ts (blind-recovered candidates: independent depth + radius),
                 p12-multisector.ts (long-period: single vs long-fold vs per-sector depth estimators),
                 p13-ld-fit.ts (tests whether fitting limb darkening beats the fixed law -- it does not),
+                p14-longperiod-coherence.ts (per-transit ephemeris refit vs the long fold -- honest negative),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -904,7 +932,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `p14:coherence`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

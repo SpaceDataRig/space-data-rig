@@ -1,0 +1,35 @@
+name: Release
+
+# Publish a formal GitHub Release when a version tag (v*) is pushed. It uses the runner's
+# built-in gh CLI with the automatic GITHUB_TOKEN (contents: write) -- no third-party action and
+# no local credential is involved. The release notes are the CHANGELOG.md curated for this version.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish GitHub Release from tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists -- skipping creation."
+          else
+            gh release create "$TAG" \
+              --title "Space Data Rig ${TAG}" \
+              --notes-file CHANGELOG.md \
+              --latest
+            echo "Created release ${TAG}."
+          fi

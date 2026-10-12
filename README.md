@@ -1147,11 +1147,22 @@ collaborators (still labelled candidate by the pipeline).
   `corroborateHosts` -- the cross-sector test that a real signal recurs on the SAME host across >=2 independent
   sectors while a single-sector systematic does not. Ranked surviving candidates are persisted to a local JSON
   research artifact under `out/` (git-ignored, NOT the production store); the script never surfaces or anchors.
-- The candidate pipeline is now surfaced on the console behind an OPT-IN, collapsed "CANDIDATE BOARD" section
-  (`web/index.html` + `web/app.js`). It reads a static snapshot `web/candidates.json` published by p22 and
-  validated by `src/candidate/snapshot.ts`, which enforces the honesty invariant that no row can carry a
-  discovery claim. The board is a read-only static asset -- it touches no worker/DO code, no verdict, no bundle
-  hash and no money path, and is kept visually separate from the verified, on-chain results. Every row is
-  labelled CANDIDATE with its tier, depth regime, follow-up priority, next transit + observability, and any
-  shared-ephemeris / cross-sector flags, so a visitor sees exactly how tentative each signal is.
+- The candidate pipeline is surfaced on the console in a default-open "CANDIDATE BOARD" section (placed above
+  the FINDINGS CATALOG) with an honest tally banner up front (`web/index.html` + `web/app.js`). It reads a static
+  snapshot `web/candidates.json` published by p22 and validated by `src/candidate/snapshot.ts`, which enforces
+  the honesty invariant that no row can carry a discovery claim. The board is a read-only static asset -- it
+  touches no worker/DO code, no verdict, no bundle hash and no money path, and is kept visually separate from
+  the verified, on-chain results. Every row is labelled CANDIDATE with its tier, depth regime, follow-up
+  priority, next transit + observability, and any shared-ephemeris / cross-sector flags.
+
+**Candidate-chain validation (measured, and it is humbling).** The blind-search candidate chain (BLS -> Stage-2
+  depth screen -> SNR>=7) was put through injection-recovery on REAL TGLC full-frame-image light curves
+  (`npm run p23:candidate-validation`). Over 60 quiet-star curves from sectors 1-3: a **false-alarm rate of
+  ~25%** (15/60 planet-free stars still yield a surviving candidate) and **low completeness** (0% at <=1500 ppm,
+  ~3% at 4000 ppm), purity proxy ~29%; a 30-curve run gave ~37% / ~11%. FFI blind search is far harder than
+  targeted SPOC photometry, which recovers 60-88% at these same depths. Conclusion, stated plainly: gated only
+  on SNR, the candidate chain is **false-positive-dominated and NOT validation-grade** -- it needs a calibrated
+  per-candidate significance gate (the empirical FAP the production verdict path already applies) before its
+  candidates carry real weight. That is why the board says up front that most rows are expected to be spurious,
+  and it is the honest gap the next Stage-4 increment is meant to close.
 

@@ -557,6 +557,7 @@ catalog depth inside +/-2sigma:       22/48 = 46% (calibrated ~95%)
 LD-sensitivity floor on depth:        12.1% (all) / 11.9% short-period  (refit across 4 limb-darkening laws)
 independent planet RADIUS vs catalog:  6.5% median (all) / 5.5% short-period  (Rp = p x Rstar; pl_rade withheld)
 combined stat+LD 1-sigma coverage:     42% (statistical-only 33%; still < ~68% -> an approximate bar)
+empirical inflation to reach 68%:      k = 3.2x  (honest 1-sigma = 3.2 x combined bar; 33/48 = 69% inside)
 ```
 
 The honest reading: on well-sampled short-period transits the exact fit recovers the catalog depth to about
@@ -599,11 +600,13 @@ chain: pixels -> shape -> depth -> radius.
 
 **Can we make the error bar honest?** Adding the measured LD spread to the statistical sigma in quadrature
 lifts the 1-sigma coverage from 33% to 42% and the 2-sigma from 46% to 56% -- a real improvement, but still
-short of the ~68% / ~95% a fully calibrated error would reach. That is the honest conclusion: limb darkening
-is the dominant systematic, yet not the only one -- an imperfect ephemeris and residual stellar activity remain
-in the error, so we quote the combined bar as an APPROXIMATE lower bound on the true uncertainty rather than
-pretend it is exact. A study that stopped at the tight statistical sigma would have overstated our precision
-by roughly a factor of two; reporting the undercoverage is the point.
+short of the ~68% a fully calibrated error would reach. Rather than stop at "approximate," we calibrate it
+empirically: scanning a single inflation factor k on +/-k*(combined bar), the coverage crosses 68% at
+**k = 3.2** (33/48 = 69% inside). So an honest depth uncertainty is about **3.2x the combined bar** -- several
+times the naive statistical sigma. That is the concrete, defensible form of "the residual is systematics-
+dominated": limb darkening is the largest term, but an imperfect ephemeris and stellar activity keep the total
+a few times larger than photon noise alone would suggest. Quoting the tight statistical sigma would have
+overstated our precision by a wide margin; we publish the measured multiplier instead of hiding the gap.
 
 ### Independent SIZE of blind-recovered, UNCONFIRMED candidates (`npm run p11:candidate-size`)
 

@@ -239,6 +239,22 @@ async function main() {
     const cov1pct = (c1 / comb.length) * 100;
     if (cov1pct >= 55) console.log(`  => the combined bar is WELL-CALIBRATED (near ~68%/~95%): add the LD spread to any quoted depth error, not the statistical sigma alone.`);
     else console.log(`  => still UNDER-covered (${cov1pct.toFixed(0)}% < ~68%): limb darkening is necessary but not sufficient -- an imperfect ephemeris and stellar activity remain unaccounted, so treat the bar as approximate.`);
+    // Empirical calibration: find the inflation factor k that makes +/-k*sigma contain ~68% of the
+    // catalog depths. This turns "under-covered" into a concrete, defensible statement -- multiply the
+    // combined bar by k to get an honest 1-sigma. Coverage is monotonic in k, so the first k that clears
+    // 68% is the minimal inflation. Measure-only: it changes no gate and claims no discovery.
+    let k68 = Number.NaN;
+    for (let k = 1; k <= 6.001; k += 0.1) {
+      const cov = comb.filter((c) => c.err <= k * c.sig).length / comb.length;
+      if (cov >= 0.68) { k68 = k; break; }
+    }
+    if (Number.isFinite(k68)) {
+      const covK = comb.filter((c) => c.err <= k68 * c.sig).length;
+      console.log(`  empirical inflation to 68% coverage: k = ${k68.toFixed(1)}x  -> honest 1-sigma = ${k68.toFixed(1)} x combined bar (${covK}/${comb.length} = ${((covK / comb.length) * 100).toFixed(0)}% inside)`);
+      console.log(`  => the statistical+LD combined bar UNDERSTATES the true 1-sigma by ~${k68.toFixed(1)}x; quote a depth as fit += k*combined for a defensible interval, not the raw bar.`);
+    } else {
+      console.log(`  no single inflation up to 6x reaches 68% -- the residual is dominated by per-target systematics (activity/ephemeris/blend) that no global scaling captures; keep the bar as a lower bound.`);
+    }
   }
   // split by period: short periods fold many transits per sector (shape well-constrained), long periods
   // see one or two (p-b shape degenerate, blending/activity dominates) -- the same single-sector cliff p7 hit.

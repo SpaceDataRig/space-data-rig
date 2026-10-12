@@ -15,7 +15,7 @@ export const CANDIDATE_DISCLAIMER =
   "These are CANDIDATES from an automated blind search over real TESS full-frame-image photometry. They are " +
   "NOT discoveries and NOT peer-reviewed: most are expected to be false positives (eclipsing binaries, " +
   "background blends, or instrumental systematics). They are shown for transparency about what the pipeline " +
-  "sees, are NOT anchored on-chain, and are kept entirely separate from the verified results above.";
+  "sees, are NOT anchored on-chain, and are kept entirely separate from the verified, on-chain results.";
 
 export interface CandidateRow {
   tic: number;

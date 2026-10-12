@@ -7,7 +7,7 @@
     3
   ],
   "referenceSite": "Maunakea (reference site)",
-  "disclaimer": "These are CANDIDATES from an automated blind search over real TESS full-frame-image photometry. They are NOT discoveries and NOT peer-reviewed: most are expected to be false positives (eclipsing binaries, background blends, or instrumental systematics). They are shown for transparency about what the pipeline sees, are NOT anchored on-chain, and are kept entirely separate from the verified results above.",
+  "disclaimer": "These are CANDIDATES from an automated blind search over real TESS full-frame-image photometry. They are NOT discoveries and NOT peer-reviewed: most are expected to be false positives (eclipsing binaries, background blends, or instrumental systematics). They are shown for transparency about what the pipeline sees, are NOT anchored on-chain, and are kept entirely separate from the verified, on-chain results.",
   "calibrationNote": "depth screen per src/candidate/falsePositive.ts (npm run p21:depth-calibrate): hard ceiling 200000 ppm, deep-suspect 40000 ppm, from n=4207 confirmed transit depths",
   "summary": {
     "rawDetections": 36,

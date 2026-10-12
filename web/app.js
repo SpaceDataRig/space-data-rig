@@ -465,6 +465,9 @@ async function loadCandidates() {
 }
 
 if (candDetailsEl) candDetailsEl.addEventListener("toggle", () => { if (candDetailsEl.open) loadCandidates(); });
+// The board ships expanded by default, so the toggle never fires on first paint -- load it up front. If a
+// visitor collapses and re-expands, loadCandidates() is guarded by candidatesLoaded and will not refetch.
+if (candDetailsEl && candDetailsEl.open) loadCandidates();
 
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the

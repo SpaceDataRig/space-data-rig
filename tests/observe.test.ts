@@ -18,6 +18,7 @@ import { buildPaymentRequired, parsePaymentEnvelope, buildPaymentResponse, parse
 import { verifyBurnTx, verifyBurnBySignature, type RpcTransactionLike } from "../src/observe/burnVerify.ts";
 import { validateObservation, observeEnvelopeHash, OBSERVATION_SCHEMA, type ObservationRecord } from "../src/observe/observation.ts";
 import { computeObservation, commissionObservation } from "../src/observe/observeApi.ts";
+import { handleBrowserRpcProxy, RPC_READ_ALLOWLIST, type RpcFetch } from "../src/observe/rpcProxy.ts";
 
 // ---- dedication -----------------------------------------------------------
 
@@ -275,4 +276,61 @@ test("commissionObservation: a not-yet-finalized / not-found burn signature -> 4
   const r = await commissionObservation({ ...COMMISSION_INPUT, payment: { scheme: "exact", payload: { signature: "UNKNOWN" } } }, { connection: conn });
   assert.equal(r.ok, false);
   assert.equal((r as { status: number }).status, 402);
+});
+
+// ---- browser RPC proxy (read-only chain reads for the in-page burn helper) -----------------
+// Load-bearing money-path boundary: the proxy exists only because public RPCs 403 browser Origins; it must
+// NEVER relay writes (sendTransaction especially), must cap shapes to single JSON-RPC objects, and must fall
+// over from a failing endpoint to the next. All offline -- fetch is injected.
+
+function stubFetch(replies: Record<string, { ok: boolean; status: number; json?: unknown } | "throw">) {
+  const seen: { url: string; body: string }[] = [];
+  const f: RpcFetch = async (url, init) => {
+    seen.push({ url, body: init.body });
+    const r = replies[url];
+    if (!r || r === "throw") throw new Error("unreachable");
+    return { ok: r.ok, status: r.status, json: async () => r.json };
+  };
+  return { f, seen };
+}
+
+test("rpc proxy: write methods (sendTransaction) are refused without touching any endpoint", async () => {
+  const { f, seen } = stubFetch({});
+  const out = await handleBrowserRpcProxy(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "sendTransaction", params: ["abc"] }), ["https://rpc.example"], f);
+  assert.equal(out.status, 403);
+  assert.equal(seen.length, 0);
+  assert.equal(RPC_READ_ALLOWLIST.has("sendTransaction"), false);
+});
+
+test("rpc proxy: an allowlisted read is forwarded and the JSON-RPC reply passes through verbatim", async () => {
+  const reply = { jsonrpc: "2.0", id: 7, result: { contextSlot: 1, value: { blockhash: "BH", lastValidBlockHeight: 2 } } };
+  const { f, seen } = stubFetch({ "https://rpc.example": { ok: true, status: 200, json: reply } });
+  const out = await handleBrowserRpcProxy(JSON.stringify({ jsonrpc: "2.0", id: 7, method: "getLatestBlockhash", params: [{ commitment: "confirmed" }] }), ["https://rpc.example"], f);
+  assert.equal(out.status, 200);
+  assert.deepEqual(out.json, reply);
+  assert.equal(seen.length, 1);
+  assert.match(seen[0].body, /"method":"getLatestBlockhash"/); // params preserved
+});
+
+test("rpc proxy: a failing primary endpoint falls over to the next configured one", async () => {
+  const reply = { jsonrpc: "2.0", id: 1, result: { value: { uiAmount: "1" } } };
+  const { f, seen } = stubFetch({
+    "https://primary.example": { ok: false, status: 429 },
+    "https://fallback.example": { ok: true, status: 200, json: reply },
+  });
+  const out = await handleBrowserRpcProxy(JSON.stringify({ method: "getTokenAccountBalance", params: ["ATA"] }), ["https://primary.example", "https://fallback.example"], f);
+  assert.equal(out.status, 200);
+  assert.equal(seen.length, 2);
+});
+
+test("rpc proxy: batches and non-JSON bodies are refused (single request objects only)", async () => {
+  const { f } = stubFetch({});
+  const batch = await handleBrowserRpcProxy(JSON.stringify([{ method: "getSlot" }, { method: "getSlot" }]), ["https://rpc.example"], f);
+  assert.equal(batch.status, 400);
+  const junk = await handleBrowserRpcProxy("not json", ["https://rpc.example"], f);
+  assert.equal(junk.status, 400);
+  const everyFail = await handleBrowserRpcProxy(JSON.stringify({ method: "getSlot" }), ["https://down.example"], f);
+  assert.equal(everyFail.status, 502);
+  const none = await handleBrowserRpcProxy(JSON.stringify({ method: "getSlot" }), [], f);
+  assert.equal(none.status, 503);
 });

@@ -32,6 +32,8 @@ import { computeObservation, commissionObservation } from "../observe/observeApi
 import { txGetterFor } from "../observe/connection.ts";
 import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
 import { buildObservationEvidence } from "../observe/evidence.ts";
+import { handleBrowserRpcProxy } from "../observe/rpcProxy.ts";
+import { endpointList } from "../solana/anchor-core.ts";
 import type { ObservationRecord } from "../observe/observation.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
@@ -405,6 +407,19 @@ app.get("/api/observe/evidence", async (c) => {
   const sig = c.req.query("sig") || undefined;
   const ev = await buildObservationEvidence(artifacts, { hash, sig }, (anchorSig, envelopeHash) => verifyObserveAnchor(anchorSig, envelopeHash));
   return c.json(ev, ev.status as 200 | 404 | 500);
+});
+
+// Read-only Solana RPC proxy for the in-page burn helper (parity with the edge /api/rpc). Public mainnet RPCs
+// 403 browser requests carrying an unknown Origin; server-to-server has no Origin, and SOLANA_RPC (private,
+// then fallbacks) is used without its URL or key reaching the browser. Allowlisted READ methods only --
+// sendTransaction is refused; the wallet signs and submits the burn itself. See src/observe/rpcProxy.ts.
+app.post("/api/rpc", async (c) => {
+  const raw = await c.req.text();
+  if (raw.length > 8192) return c.json({ error: "request body too large" }, 413);
+  const endpoints = endpointList(undefined, process.env.SOLANA_RPC, process.env.SOLANA_RPC_FALLBACKS);
+  const out = await handleBrowserRpcProxy(raw, endpoints, (url, init) => fetch(url, init));
+  if (out.status !== 200) return c.json({ error: out.error }, out.status as 400);
+  return c.json(out.json as Record<string, unknown>);
 });
 
 // Live event feed. Sends a small backlog, then streams every new seat event and

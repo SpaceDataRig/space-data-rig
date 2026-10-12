@@ -607,7 +607,10 @@ loadObserveStars();
 // fails, (3) only then ask the wallet to burn 10,000 $SDR, (4) hand the burn SIGNATURE to /api/observe/commission
 // as an x402 X-PAYMENT; the edge re-reads the burn from the chain (never trusting us) and anchors under the
 // OBSERVE_ANCHOR gate. The burn is the user's $SDR; the rig pays the one-time SOL chain fee. Verdict never changes.
-const OBSERVE_RPC = "https://api.mainnet-beta.solana.com";
+// The burn helper reads the chain through OUR read-only RPC proxy, not api.mainnet-beta directly: public
+// endpoints 403 browser requests carrying an unknown Origin, which web3.js v3 surfaces as the opaque
+// SolanaError #8100002. The proxy forwards allowlisted reads server-side (no Origin) and never sees keys.
+const OBSERVE_RPC = window.location.origin + "/api/rpc";
 
 function b64PaymentEnvelope(sig) {
   return btoa(JSON.stringify({ x402Version: 1, scheme: "exact", network: "solana-mainnet", payload: { signature: sig } }));

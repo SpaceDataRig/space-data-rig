@@ -789,6 +789,19 @@ unchanged (no bundle/money-path effect) and only a coarse-cadence caller opts in
 pins both the numeric mapping and the "default unchanged" invariant, plus that an opted-in search can never
 return a box thinner than the floor it asked for.
 
+### Per-sector robust merge, packaged ahead of the (still-gated) production wiring (`src/detect/perSector.ts`)
+
+p12/p14 measured that long-period depth accuracy is limited by PHASE COHERENCE, not data volume: fitting
+each sector locally and taking the robust MEDIAN (24.9% median error) beats stitching all sectors and folding
+once over a ~1800-day baseline (34.7%), because a tiny period error smears the transits in the long fold. We
+have now isolated that statistic -- `combineSectorFits` (median + scaled-MAD over usable per-sector depths,
+dropping `!ok`/non-finite and always reporting `nUsable`/`nSectors`) and the dependency-injected
+`perSectorDepthEstimate(lcs, fitSector)` -- as a pure, unit-tested primitive (`tests/perSector.test.ts`, including
+that the median shrugs off a single smeared outlier a mean would chase). It is NOT imported by the worker, so
+nothing about the production pipeline changes yet. The remaining step -- calling it from the edge `workflow.ts`
+so real runs use the robust estimator -- changes the worker bundle and needs a deploy, so it is deliberately
+left as an explicit, approved step, not done silently.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -972,7 +985,8 @@ src/
   detect/       bls.ts (+ cadenceAwareOptions opt-in), detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
                 significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary),
                 transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only),
-                ephemeris.ts (per-transit O-C timing -> refined period/epoch; offline only)
+                ephemeris.ts (per-transit O-C timing -> refined period/epoch; offline only),
+                perSector.ts (robust per-sector median merge; offline only, not in the worker bundle)
   sim/          transitModel.ts, exactTransit.ts (limb-darkened), injectionRecovery.ts, confidence.ts,
                 aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
                 injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)

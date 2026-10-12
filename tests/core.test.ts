@@ -9,8 +9,10 @@ import {
   DEFAULT_RPC,
   MEMO_PREFIX,
   DELIB_MEMO_PREFIX,
+  OBSERVE_MEMO_PREFIX,
   buildMemo,
   buildDeliberationMemo,
+  buildObserveMemo,
   endpointList,
   explorerUrl,
   isDevnetRpc,
@@ -62,6 +64,17 @@ test("buildDeliberationMemo uses a distinct prefix so it never collides with the
 
 test("explorerUrl targets mainnet", () => {
   assert.match(explorerUrl("SIG123"), /explorer\.solana\.com\/tx\/SIG123\?cluster=mainnet$/);
+});
+
+test("buildObserveMemo uses a third distinct prefix so it never collides with bundle or deliberation memos", () => {
+  const hash = "c".repeat(64);
+  const memo = buildObserveMemo("OBS-0001", hash);
+  assert.equal(memo, `${OBSERVE_MEMO_PREFIX}|OBS-0001|${hash}`);
+  assert.equal(memo.split("|").length, 3);
+  assert.ok(!memo.startsWith(MEMO_PREFIX + "|"));
+  assert.ok(!memo.startsWith(DELIB_MEMO_PREFIX + "|"));
+  assert.ok(memo.startsWith(OBSERVE_MEMO_PREFIX + "|"));
+  assert.notEqual(OBSERVE_MEMO_PREFIX, DELIB_MEMO_PREFIX);
 });
 
 test("isDevnetRpc only flags devnet endpoints", () => {

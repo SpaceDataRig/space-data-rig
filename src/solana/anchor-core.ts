@@ -34,6 +34,11 @@ export const MEMO_PREFIX = "sdr:1"; // space-data-rig, memo schema v1
 /** Separate memo schema for the (non-reproducible) AI deliberation receipt. Kept distinct
  *  from the science bundle prefix so an auditor can tell the two on-chain records apart. */
 export const DELIB_MEMO_PREFIX = "sdr:delib:1";
+/** Third memo namespace: a commissioned NAMED OBSERVATION envelope -- the hash of { dedication, bundleHash }
+ *  bound to an observation id. Kept distinct from the science bundle and the deliberation receipt so an
+ *  auditor can tell all three apart on-chain. This builder is pure + additive; anchoring a named observation
+ *  is a later phase and reuses the shared anchorMemoOnEndpoints path. */
+export const OBSERVE_MEMO_PREFIX = "sdr:observe:1";
 
 /** Public endpoints tried (in order) after the operator's private RPC(s). */
 export const PUBLIC_FALLBACK_RPCS = ["https://api.mainnet-beta.solana.com"];
@@ -46,6 +51,15 @@ export function buildMemo(findingId: string, bundleHash: string): string {
 /** On-chain record for a sealed deliberation receipt (integrity of model commentary). */
 export function buildDeliberationMemo(findingId: string, deliberationHash: string): string {
   return `${DELIB_MEMO_PREFIX}|${findingId}|${deliberationHash}`;
+}
+
+/**
+ * On-chain record for a commissioned named observation. `observationHash` is the envelope hash binding the
+ * (sanitized) dedication to the science bundle hash, so the public immutable record provably ties "this
+ * dedication, this payment" to "exactly this reproducible result" -- including a null (no-transit) result.
+ */
+export function buildObserveMemo(observationId: string, observationHash: string): string {
+  return `${OBSERVE_MEMO_PREFIX}|${observationId}|${observationHash}`;
 }
 
 export function explorerUrl(signature: string): string {

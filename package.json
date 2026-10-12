@@ -38,6 +38,7 @@
     "p21:depth-calibrate": "tsx scripts/p21-depth-calibrate.ts",
     "p22:blind-multisector": "tsx scripts/p22-blind-multisector.ts",
     "p23:candidate-validation": "tsx scripts/p23-candidate-validation.ts",
+    "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

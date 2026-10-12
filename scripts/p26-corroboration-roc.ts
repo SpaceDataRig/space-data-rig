@@ -118,6 +118,7 @@ async function main(): Promise<void> {
   const nNull = Math.max(20, parseInt(arg("nnull", "40"), 10));
   const depthsPpm = arg("depths", "500,1500,4000").split(",").map(Number).filter(Number.isFinite);
   const periodsDay = arg("periods", "2,4,8").split(",").map(Number).filter(Number.isFinite);
+  const nullOnly = process.argv.includes("--null-only"); // fast path: measure the FP layers on a big sample, skip the slow injected arm
 
   console.log(`[p26] corroboration ROC: sectors [${sectors.join(",")}], <=${limit} curves each (token-free TGLC), ` +
     `depths ${depthsPpm.join("/")} ppm, periods ${periodsDay.join("/")} d, seed ${seed}, FAP<=${FAP_MAX} (nNull ${nNull}).`);
@@ -181,7 +182,7 @@ async function main(): Promise<void> {
   const byDepth = new Map<number, { n: number; l1: number; l4p: number }>();
   const byPeriod = new Map<number, { n: number; l1: number; l4p: number }>();
   let trial = 0;
-  for (const smp of samples) {
+  for (const smp of (nullOnly ? [] : samples)) {
     const lc = smp.lc;
     const t0base = lc.points[0] ? lc.points[0].time : 2459000;
     const tEnd = lc.points[lc.points.length - 1] ? lc.points[lc.points.length - 1].time : t0base + 27;
@@ -230,16 +231,20 @@ async function main(): Promise<void> {
   console.log(`[p26]   L2  + empirical FAP<=${FAP_MAX}   : ${nullCounts.hostsL2} hosts = ${pct(nullCounts.hostsL2, distinctHosts)} of hosts`);
   console.log(`[p26]   L3  + reject multi-host eph : ${nullCounts.hostsL3} hosts = ${pct(nullCounts.hostsL3, distinctHosts)} of hosts   (removes sector-common shared-ephemeris dips; costs NO single-host planet)`);
   console.log(`[p26]   L4  + same-host cross-sector: ${nullCounts.hostsL4} hosts = ${pct(nullCounts.hostsL4, distinctHosts)} of hosts   (needs >=2 real sectors on the host; ${multiSectorHosts} hosts qualify)\n`);
-  console.log(`[p26] COMPLETENESS (injected arm, fraction of ${trials} injections surviving each layer):`);
-  console.log(`[p26]   L1  SNR+depth               : ${pct(injL1, trials)} (${injL1}/${trials})`);
-  console.log(`[p26]   L2  + empirical FAP<=${FAP_MAX}   : ${pct(injL2, trials)} (${injL2}/${trials})`);
-  console.log(`[p26]   L3  + reject multi-host eph : ${pct(injL2, trials)} (${injL2}/${trials})   (equals L2: single-host planets are never a multi-host artifact)\n`);
-  console.log(`[p26]   L4* split-half corroboration PROXY (must survive 2 sub-baselines of the same real curve):`);
-  console.log(`[p26]         ${pct(injL4proxy, trials)} (${injL4proxy}/${trials})   [proxy, NOT true cross-year coverage]`);
-  console.log(`[p26]   L4* by injected depth (L1 -> L4 proxy):`);
-  for (const depth of depthsPpm) { const b = byDepth.get(depth)!; console.log(`[p26]       ${String(depth).padStart(5)} ppm -> L1 ${pct(b.l1, b.n)} (${b.l1}/${b.n})  L4* ${pct(b.l4p, b.n)} (${b.l4p}/${b.n})`); }
-  console.log(`[p26]   L4* by injected period (L1 -> L4 proxy):`);
-  for (const period of periodsDay) { const b = byPeriod.get(period)!; console.log(`[p26]       ${String(period).padStart(4)} d   -> L1 ${pct(b.l1, b.n)} (${b.l1}/${b.n})  L4* ${pct(b.l4p, b.n)} (${b.l4p}/${b.n})`); }
+  if (!nullOnly) {
+    console.log(`[p26] COMPLETENESS (injected arm, fraction of ${trials} injections surviving each layer):`);
+    console.log(`[p26]   L1  SNR+depth               : ${pct(injL1, trials)} (${injL1}/${trials})`);
+    console.log(`[p26]   L2  + empirical FAP<=${FAP_MAX}   : ${pct(injL2, trials)} (${injL2}/${trials})`);
+    console.log(`[p26]   L3  + reject multi-host eph : ${pct(injL2, trials)} (${injL2}/${trials})   (equals L2: single-host planets are never a multi-host artifact)\n`);
+    console.log(`[p26]   L4* split-half corroboration PROXY (must survive 2 sub-baselines of the same real curve):`);
+    console.log(`[p26]         ${pct(injL4proxy, trials)} (${injL4proxy}/${trials})   [proxy, NOT true cross-year coverage]`);
+    console.log(`[p26]   L4* by injected depth (L1 -> L4 proxy):`);
+    for (const depth of depthsPpm) { const b = byDepth.get(depth)!; console.log(`[p26]       ${String(depth).padStart(5)} ppm -> L1 ${pct(b.l1, b.n)} (${b.l1}/${b.n})  L4* ${pct(b.l4p, b.n)} (${b.l4p}/${b.n})`); }
+    console.log(`[p26]   L4* by injected period (L1 -> L4 proxy):`);
+    for (const period of periodsDay) { const b = byPeriod.get(period)!; console.log(`[p26]       ${String(period).padStart(4)} d   -> L1 ${pct(b.l1, b.n)} (${b.l1}/${b.n})  L4* ${pct(b.l4p, b.n)} (${b.l4p}/${b.n})`); }
+  } else {
+    console.log(`[p26] COMPLETENESS: injected arm skipped (--null-only); the FP layers above are measured on a large quiet-star sample.`);
+  }
 
   const fpCutL3 = nullCounts.hostsL2 > 0 ? ((nullCounts.hostsL2 - nullCounts.hostsL3) / nullCounts.hostsL2) * 100 : NaN;
   console.log(`\n[p26] HEADLINE: L3 (reject multi-host shared ephemerides) cut the FAP-surviving false alarms by ${Number.isFinite(fpCutL3) ? fpCutL3.toFixed(0) + "%" : "n/a"} ` +

@@ -1179,7 +1179,10 @@ remains data-gated toward Stage 5.**
   host is a false positive by construction), measured on 60 hosts across sectors 1-5: L1 SNR+depth 33.3% (20/60);
   **L2 + empirical FAP<=0.05 31.7% (19/60) -- barely helps, reproducing p23**; **L3 + reject ephemerides shared by
   MULTIPLE hosts 11.7% (7/60) -- a ~63% cut of the FAP-surviving false alarms**; L4 + require the SAME host to recur
-  across >=2 sectors 0%. A 30-host replicate gave the same picture (~70% L3 cut). The decisive honest result: the
+  across >=2 sectors 0%. A 30-host replicate gave the same picture (~70% L3 cut), and a LARGER 300-host run
+  (sectors 1-10, `--null-only`) firms it: L1 27.7% -> L2 25.7% -> **L3 12.3% (a 52% cut of the FAP-surviving FP)**,
+  with 0/300 hosts recurring in two sectors -- so the effect is robust across three independent samples and the
+  same-host corroboration wall is a genuine coverage limit, not a small-sample artifact. The decisive honest result: the
   cheap structural gate (L3, already implemented as `collapseCoincident`) removes most of the coherent systematics
   that the significance gate cannot, **and it costs NO true planet** -- on the injected arm the completeness is flat
   across L1->L2->L3 (5.8% -> 5.8% -> 5.8%, 240 injections of 1500/4000 ppm at 2/4 d), because a single-host planet

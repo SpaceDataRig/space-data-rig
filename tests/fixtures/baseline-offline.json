@@ -1,0 +1,20 @@
+[
+  {
+    "targetId": "HD 189733",
+    "verdict": "accepted",
+    "score": 100,
+    "periodDays": 2.215
+  },
+  {
+    "targetId": "WASP-121",
+    "verdict": "accepted",
+    "score": 100,
+    "periodDays": 1.274
+  },
+  {
+    "targetId": "pi Men",
+    "verdict": "accepted",
+    "score": 88,
+    "periodDays": 6.26
+  }
+]

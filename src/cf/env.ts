@@ -71,7 +71,8 @@ export interface Env {
    *   OBSERVE_ANCHOR = "dry"           -> previews the observe memo (dryRun); no fee payer touched, no SOL spent.
    *   OBSERVE_ANCHOR = "live"          -> real mainnet anchor, only while the per-UTC-day count stays under
    *                                        OBSERVE_ANCHOR_DAILY_CAP (default 0, so "live" spends nothing until
-   *                                        a cap is set). Inert by default: an operator flips it to enable.
+   *                                        a cap is set; the literal "unlimited" removes the ceiling). Inert by
+   *                                        default: an operator flips it to enable.
    */
   OBSERVE_ANCHOR?: string;
   OBSERVE_ANCHOR_DAILY_CAP?: string;

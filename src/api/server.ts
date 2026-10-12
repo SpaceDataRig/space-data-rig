@@ -29,6 +29,7 @@ import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
 import { computeObservation, commissionObservation } from "../observe/observeApi.ts";
+import { resolveAnchorDailyCap } from "../observe/paymentPolicy.ts";
 import { txGetterFor } from "../observe/connection.ts";
 import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
 import { buildObservationEvidence } from "../observe/evidence.ts";
@@ -354,7 +355,7 @@ app.post("/api/observe/commission", async (c) => {
     dryRun = true;
     memo = r.memo;
   } else if (mode === "live") {
-    const cap = Math.max(0, parseInt(process.env.OBSERVE_ANCHOR_DAILY_CAP ?? "0", 10) || 0);
+    const cap = resolveAnchorDailyCap(process.env.OBSERVE_ANCHOR_DAILY_CAP);
     const day = new Date().toISOString().slice(0, 10);
     const dayPath = "observations/anchor-day.json";
     let count = 0;

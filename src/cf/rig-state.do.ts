@@ -46,6 +46,7 @@ import {
   type AnchorCoreResult,
 } from "../solana/anchor-core.ts";
 import { commissionObservation, type ObserveScience } from "../observe/observeApi.ts";
+import { resolveAnchorDailyCap } from "../observe/paymentPolicy.ts";
 import { txGetterFor } from "../observe/connection.ts";
 import type { ObservationRecord } from "../observe/observation.ts";
 
@@ -751,7 +752,7 @@ export class RigStateDO extends DurableObject<Env> {
       dryRun = true;
       memo = r.memo ?? out.memo;
     } else if (mode === "live") {
-      const cap = Math.max(0, parseInt(this.env.OBSERVE_ANCHOR_DAILY_CAP ?? "0", 10) || 0);
+      const cap = resolveAnchorDailyCap(this.env.OBSERVE_ANCHOR_DAILY_CAP);
       const day = new Date().toISOString().slice(0, 10);
       const row = this.row<{ v: string }>(`SELECT v FROM meta WHERE k = 'observeAnchorDay'`);
       let count = 0;

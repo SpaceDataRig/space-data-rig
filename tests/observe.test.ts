@@ -12,6 +12,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   SYSTEM_PROGRAM_ID,
   X402_NETWORK,
+  resolveAnchorDailyCap,
   type BurnPaymentFacts,
 } from "../src/observe/paymentPolicy.ts";
 import { buildPaymentRequired, parsePaymentEnvelope, buildPaymentResponse, parsePaymentSignature, X402_VERSION } from "../src/observe/x402.ts";
@@ -333,4 +334,28 @@ test("rpc proxy: batches and non-JSON bodies are refused (single request objects
   assert.equal(everyFail.status, 502);
   const none = await handleBrowserRpcProxy(JSON.stringify({ method: "getSlot" }), [], f);
   assert.equal(none.status, 503);
+});
+
+// ---- daily anchor cap resolution (shared by DO + Node; drives OBSERVE_ANCHOR_DAILY_CAP) -----
+// The load-bearing asymmetry: "unlimited" removes the ceiling, but 0/blank is the SAFE stop (anchor NOTHING),
+// never a silent synonym for unlimited -- canceling the cap must be an explicit act.
+test("resolveAnchorDailyCap: explicit unlimited vs numeric budget vs safe-zero stop", () => {
+  const INF = Number.POSITIVE_INFINITY;
+  assert.equal(resolveAnchorDailyCap("unlimited"), INF);
+  assert.equal(resolveAnchorDailyCap("UNLIMITED"), INF);
+  assert.equal(resolveAnchorDailyCap("  none  "), INF);
+  assert.equal(resolveAnchorDailyCap("*"), INF);
+  assert.equal(resolveAnchorDailyCap("5"), 5);
+  assert.equal(resolveAnchorDailyCap("100"), 100);
+  // the kill-switch family all collapse to 0 (anchor nothing), NOT to unlimited:
+  assert.equal(resolveAnchorDailyCap("0"), 0);
+  assert.equal(resolveAnchorDailyCap(""), 0);
+  assert.equal(resolveAnchorDailyCap("   "), 0);
+  assert.equal(resolveAnchorDailyCap(undefined), 0);
+  assert.equal(resolveAnchorDailyCap(null), 0);
+  assert.equal(resolveAnchorDailyCap("garbage"), 0);
+  assert.equal(resolveAnchorDailyCap("-3"), 0);
+  // and the caller guard is count(0) >= cap(0) === true => nothing anchored when cap is 0.
+  assert.ok(0 >= resolveAnchorDailyCap("0"));
+  assert.ok(!(0 >= resolveAnchorDailyCap("unlimited")));
 });

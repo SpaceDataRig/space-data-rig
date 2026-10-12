@@ -109,12 +109,16 @@ AUTO_RESEARCH_TMAG = "10"
 AUTO_ANCHOR = "live"
 AUTO_ANCHOR_DAILY_CAP = "100"
 # Named-observation commissioning gate (mirrors AUTO_ANCHOR, for the sdr:observe:1 paid path). OPTED IN to
-# "live" by operator decision on 2026-10-12: a verified 10,000 $SDR burn is anchored on Solana mainnet, bounded
-# by OBSERVE_ANCHOR_DAILY_CAP so a day can never spend more than that many ~5000-lamport memos (5/day ~=
-# 0.00025 SOL/day). "off" seals without anchoring; "dry" previews the memo. Set OBSERVE_ANCHOR back to "off" (or
-# cap 0) + redeploy to pause paid on-chain writes without any code change -- the same safe kill switch as AUTO_ANCHOR.
+# "live" by operator decision on 2026-10-12: a verified 10,000 $SDR burn is anchored on Solana mainnet.
+# OBSERVE_ANCHOR_DAILY_CAP is UNLIMITED by operator decision: every validly-paid observation is anchored, with
+# no per-day ceiling. The real throttle is the payment itself -- each anchor still requires its own verified,
+# exact 10,000 $SDR burn re-read from the chain -- so this cannot be spammed for free; each memo is a ~5000-
+# lamport write paid by the rig's own SOL fee wallet, whose adequacy is the operator's to watch. Kill switches,
+# both without any code change: set OBSERVE_ANCHOR = "off" to seal-but-never-anchor (spend nothing), or set
+# OBSERVE_ANCHOR_DAILY_CAP back to a number (e.g. "5") or "0" to re-bound or pause on-chain writes. NOTE: "0"/
+# blank means anchor NOTHING (a safe stop), it is NOT unlimited -- only the explicit "unlimited" word is.
 OBSERVE_ANCHOR = "live"
-OBSERVE_ANCHOR_DAILY_CAP = "5"
+OBSERVE_ANCHOR_DAILY_CAP = "unlimited"
 
 # Secrets (set with `wrangler secret put <NAME>`, never committed here):
 #   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);

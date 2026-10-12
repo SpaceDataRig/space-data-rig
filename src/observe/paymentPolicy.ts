@@ -75,3 +75,23 @@ export function evaluateBurnPayment(f: BurnPaymentFacts): PaymentCheck {
   if (!f.finalized) return { ok: false, reason: "payment transaction is not finalized on-chain" };
   return { ok: true };
 }
+
+/**
+ * Resolve the OBSERVE_ANCHOR_DAILY_CAP / AUTO_ANCHOR_DAILY_CAP Worker var into a per-UTC-day anchor budget.
+ * A single shared parser keeps the Durable Object and the Node server EXACTLY in agreement (parity) and makes
+ * the edge cases UNAMBIGUOUS from one tested place instead of two inline copies:
+ *   - a plain non-negative integer  -> that many anchors per day (e.g. "5").
+ *   - "unlimited" / "none" / "*"     -> Number.POSITIVE_INFINITY: anchor EVERY validly-paid observation, no
+ *                                       daily ceiling (the operator's explicit opt-in; the real throttle is
+ *                                       that each anchor still requires its own verified $SDR burn).
+ *   - unset, "", "0", or unparseable -> 0, which the callers treat as "seal but anchor NOTHING". NOTE the
+ *                                       deliberate asymmetry: 0 is the SAFE kill switch (spend nothing), NOT a
+ *                                       synonym for unlimited -- canceling the cap is an explicit act, never an
+ *                                       accident of a blank/mis-typed value.
+ */
+export function resolveAnchorDailyCap(raw: string | undefined | null): number {
+  const s = (raw ?? "").trim().toLowerCase();
+  if (s === "unlimited" || s === "none" || s === "*") return Number.POSITIVE_INFINITY;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}

@@ -16,6 +16,7 @@ import {
 } from "../src/observe/paymentPolicy.ts";
 import { buildPaymentRequired, parsePaymentEnvelope, buildPaymentResponse, X402_VERSION } from "../src/observe/x402.ts";
 import { validateObservation, observeEnvelopeHash, OBSERVATION_SCHEMA, type ObservationRecord } from "../src/observe/observation.ts";
+import { computeObservation } from "../src/observe/observeApi.ts";
 
 // ---- dedication -----------------------------------------------------------
 
@@ -176,4 +177,19 @@ test("observation: envelope hash is deterministic and binds the dedication", asy
   assert.equal(h1, h1b); // deterministic
   assert.match(h1, /^[0-9a-f]{64}$/);
   assert.notEqual(h1, h2); // dedication is committed to
+});
+
+// ---- server-side compute: policy is enforced BEFORE any network is touched ----
+
+test("computeObservation rejects a non-positive / non-integer tic with 400, no fetch", async () => {
+  const r = await computeObservation({ tic: 0, dedication: "for dad" });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 400);
+});
+
+test("computeObservation rejects a bad dedication server-side with 400 + reasons, no fetch", async () => {
+  const r = await computeObservation({ tic: 123456, dedication: "click http://evil.io now" });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 400);
+  assert.ok((r as { errors?: string[] }).errors && (r as { errors: string[] }).errors.length > 0);
 });

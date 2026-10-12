@@ -104,11 +104,16 @@
           <p class="observe-lede">You cannot buy a planet. You can <b>name the search</b>: pick any star (any TIC), give the observation a name &mdash; a person you miss, a date, a promise &mdash; and the rig points at that star and runs the <b>same blind, deterministic pipeline it runs for everyone</b>. Whatever it finds, or does not find, is hash-sealed and anchored on Solana, and the words you asked for are written into the sealed record. Sometimes the most honest result is zero: <i>we honestly watched your father&rsquo;s star for 27 days. No transit was detected. Verified. Sealed on-chain, forever.</i></p>
           <div class="observe-form">
             <label class="observe-field"><span>TIC (target star)</span><input id="obs-tic" type="number" inputmode="numeric" min="1" placeholder="e.g. 25155310"></label>
+            <label class="observe-field"><span>Sector (optional)</span><input id="obs-sector" type="number" inputmode="numeric" min="1" placeholder="auto"></label>
             <label class="observe-field observe-ded"><span>Dedication</span><input id="obs-dedication" type="text" maxlength="160" placeholder="for my father, who loved the night sky"></label>
+          </div>
+          <div class="observe-actions">
+            <button class="btn" id="obs-run" type="button">Run my observation</button>
+            <span class="observe-hint" id="observe-hint"></span>
           </div>
           <div class="observe-out" id="observe-out" hidden></div>
           <p class="observe-policy">Commissioning one observation burns exactly <b>10,000 $SDR</b> (a Token-2022 mint with fixed supply and revoked mint/freeze authority, so the burn is irreversible) through the x402 pay-per-call protocol. The dedication is capped at 160 characters and may not contain links or markup. <b>Payment never changes the verdict</b> &mdash; a named observation of a quiet star will honestly return a zero, sealed exactly like a discovery would be.</p>
-          <p class="observe-status" id="observe-status">PREVIEW &mdash; live commissioning (payment and on-chain anchoring) is not yet enabled. This shows the exact record your dedication would seal.</p>
+          <p class="observe-status" id="observe-status">LIVE COMPUTE &mdash; the blind search runs now on real TESS photometry and returns your sealed record. Commissioning (burn $SDR, then write the record on-chain) opens as a separate step.</p>
         </div>
       </details>
     </div>

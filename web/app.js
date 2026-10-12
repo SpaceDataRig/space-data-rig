@@ -488,13 +488,11 @@ if (candDetailsEl) candDetailsEl.addEventListener("toggle", () => { if (candDeta
 // visitor collapses and re-expands, loadCandidates() is guarded by candidatesLoaded and will not refetch.
 if (candDetailsEl && candDetailsEl.open) loadCandidates();
 
-// ---- name an observation (client-side commissioning PREVIEW) --------------
-// Lets a visitor compose a named observation and see, live, the exact sealed record + the sdr:observe:1 memo
-// that WOULD be anchored. Purely client-side: it computes a REAL SHA-256 via WebCrypto over the same canonical
-// {dedication, result} shape the server uses, but it does NOT run the pipeline, take any payment, or touch the
-// chain. Commissioning (burn + anchor) is a separate, gated step. Constants mirror src/observe/*.ts.
-const OBSERVE_MINT = "FvSE99EkoiTY8Wv34V2RpWVNxnrLe7o9gyKnd4HddtjQ";
-const OBSERVE_MEMO_PREFIX = "sdr:observe:1";
+// ---- name an observation (real, server-computed commissioning preview) -----
+// The Run button calls /api/observe, which fetches REAL TESS-SPOC photometry for the chosen star, runs the
+// SAME blind deterministic pipeline used for every target, and returns the sealed observation record + the
+// sdr:observe:1 memo that WOULD anchor. No payment is taken and nothing is anchored client-side -- that is a
+// separate, gated step. The client sanitizer only gives instant feedback; the server re-enforces the policy.
 const OBSERVE_MAX = 160;
 
 function observeSanitize(raw) {
@@ -511,49 +509,72 @@ function observeSanitize(raw) {
   return { ok: problems.length === 0, value, problems };
 }
 
-async function observeSha256(text) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+function observeHint(msg, bad) {
+  const h = $("#observe-hint");
+  if (!h) return;
+  h.textContent = msg || "";
+  h.classList.toggle("bad", !!bad);
 }
 
-// canonical JSON with keys sorted (bundleHash < dedication), mirroring src/bundle/bundle.ts canonicalJson.
-function observeCanonical(dedication, bundleHash) {
-  return `{"bundleHash":${JSON.stringify(bundleHash)},"dedication":${JSON.stringify(dedication)}}`;
-}
-
-let observeRenderSeq = 0;
-async function renderObservePreview() {
+function renderObserveResult(o) {
   const out = $("#observe-out");
   if (!out) return;
-  const seq = ++observeRenderSeq;
-  const tic = ($("#obs-tic")?.value || "").trim();
-  if (!/^\d+$/.test(tic) || parseInt(tic, 10) <= 0) { out.hidden = true; out.innerHTML = ""; return; }
-  const ded = observeSanitize($("#obs-dedication")?.value);
+  const s = o.science;
+  const r = o.record;
+  const verdictTxt = s.verdict === "no-transit"
+    ? "No transit was detected \u2014 an honest zero, sealed exactly like a discovery would be."
+    : "A blind-search signal passed the gate \u2014 still an unconfirmed candidate, not a discovery.";
   out.hidden = false;
-  if (!ded.ok) {
-    out.innerHTML = `<div class="observe-chip bad">Dedication not allowed: ${esc(ded.problems.join("; "))}.</div>`;
-    return;
-  }
-  // A DRAFT envelope hash binds the dedication to the target now; the final hash also commits to the
-  // reproducible science result (including a "no transit" zero) once the observation actually runs.
-  const draft = await observeSha256(observeCanonical(ded.value, `pending:TIC:${tic}`));
-  if (seq !== observeRenderSeq) return; // a newer keystroke already superseded this one
-  const memo = `${OBSERVE_MEMO_PREFIX}|OBS-${esc(tic)}|${draft}`;
   out.innerHTML =
     `<div class="observe-record">` +
-      `<div class="observe-row"><span class="k">Target</span><span class="v">TIC ${esc(tic)}</span></div>` +
-      `<div class="observe-row"><span class="k">Dedication</span><span class="v">&ldquo;${esc(ded.value)}&rdquo;</span></div>` +
-      `<div class="observe-row"><span class="k">Cost</span><span class="v">burn 10,000 $SDR &middot; mint <code>${esc(OBSERVE_MINT)}</code></span></div>` +
-      `<div class="observe-row"><span class="k">Discovery claim</span><span class="v">false &mdash; structurally, always</span></div>` +
-      `<div class="observe-memo"><div class="k">Memo that would anchor on-chain (sdr:observe:1)</div><code>${esc(memo)}</code></div>` +
-      `<div class="observe-note">Draft binding shown for preview. The live record is produced by the same deterministic pipeline used for every target; paying cannot alter its verdict.</div>` +
+      `<div class="observe-row"><span class="k">Target</span><span class="v">TIC ${esc(String(r.tic))}${r.sector != null ? ` \u00b7 sector ${esc(String(r.sector))}` : ""}</span></div>` +
+      `<div class="observe-row"><span class="k">Dedication</span><span class="v">&ldquo;${esc(r.dedication)}&rdquo;</span></div>` +
+      `<div class="observe-row"><span class="k">Result</span><span class="v">${verdictTxt}</span></div>` +
+      `<div class="observe-grid">` +
+        `<div><span class="k">SNR</span><span class="v">${s.snr.toFixed(1)}</span></div>` +
+        `<div><span class="k">Period</span><span class="v">${s.periodDays.toFixed(3)} d</span></div>` +
+        `<div><span class="k">Depth</span><span class="v">${Math.round(s.depthPpm)} ppm</span></div>` +
+        `<div><span class="k">Baseline</span><span class="v">${s.spanDays.toFixed(1)} d / ${s.points} pts</span></div>` +
+      `</div>` +
+      `<div class="observe-src">${esc(s.lightCurveSource)}</div>` +
+      `<div class="observe-row"><span class="k">Discovery claim</span><span class="v">false \u2014 structurally, always</span></div>` +
+      `<div class="observe-memo"><div class="k">Memo that would anchor on-chain (sdr:observe:1)</div><code>${esc(o.memo)}</code></div>` +
+      `<div class="observe-note">Computed live from public photometry just now. Not yet anchored \u2014 commissioning (burn 10,000 $SDR, then write the record on-chain) is a separate step. The verdict is the same the rig emits for this star for anyone else.</div>` +
     `</div>`;
 }
 
-const obsTicEl = $("#obs-tic");
+async function runObservation() {
+  const out = $("#observe-out");
+  const tic = ($("#obs-tic")?.value || "").trim();
+  const sector = ($("#obs-sector")?.value || "").trim();
+  const dedication = $("#obs-dedication")?.value || "";
+  if (!/^\d+$/.test(tic) || parseInt(tic, 10) <= 0) { observeHint("Enter a numeric TIC.", true); return; }
+  const ded = observeSanitize(dedication);
+  if (!ded.ok) { observeHint("Dedication: " + ded.problems.join("; "), true); return; }
+  observeHint("Running the blind search on real TESS photometry...", false);
+  const btn = $("#obs-run");
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch("/api/observe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tic: parseInt(tic, 10), sector: sector ? parseInt(sector, 10) : null, dedication: ded.value }) });
+    const o = await res.json();
+    if (!res.ok || o.error) {
+      observeHint((o.error || "request failed") + (o.errors && o.errors.length ? ` (${o.errors.join("; ")})` : ""), true);
+      if (out) { out.hidden = true; out.innerHTML = ""; }
+      return;
+    }
+    observeHint("", false);
+    renderObserveResult(o);
+  } catch (e) {
+    observeHint("Network error: " + (e && e.message ? e.message : String(e)), true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 const obsDedEl = $("#obs-dedication");
-if (obsTicEl) obsTicEl.addEventListener("input", renderObservePreview);
-if (obsDedEl) obsDedEl.addEventListener("input", renderObservePreview);
+const obsRunEl = $("#obs-run");
+if (obsDedEl) obsDedEl.addEventListener("input", () => { const d = observeSanitize(obsDedEl.value); observeHint(d.ok ? "" : "Dedication: " + d.problems.join("; "), !d.ok); });
+if (obsRunEl) obsRunEl.addEventListener("click", runObservation);
 
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the

@@ -21,6 +21,7 @@ import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import { explorerUrl } from "../solana/anchor-core.ts";
+import { computeObservation } from "../observe/observeApi.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -150,6 +151,26 @@ app.get("/api/findings/:id", async (c) => {
 app.get("/api/ledger", async (c) => {
   const ledger: LedgerEntry[] = await rigStub(c.env).listLedger();
   return c.json({ ledger });
+});
+
+// Name an Observation: run the SAME blind, deterministic pipeline on a user-chosen star and return the real,
+// reproducible result + the sealed observation envelope + the sdr:observe:1 memo that WOULD anchor. This only
+// reads public photometry + computes (no payment, no SOL spend, no on-chain write); it never touches the
+// findings ledger, any existing bundleHash, or the money path. Payment gates the ANCHOR, not the compute.
+app.post("/api/observe", async (c) => {
+  let body: { tic?: unknown; sector?: unknown; dedication?: unknown };
+  try {
+    body = (await c.req.json()) as typeof body;
+  } catch {
+    return c.json({ error: "invalid JSON body" }, 400);
+  }
+  const tic = typeof body.tic === "number" ? body.tic : parseInt(String(body.tic), 10);
+  const sectorRaw = body.sector;
+  const sector = sectorRaw == null || sectorRaw === "" ? null : typeof sectorRaw === "number" ? sectorRaw : parseInt(String(sectorRaw), 10);
+  const dedication = typeof body.dedication === "string" ? body.dedication : "";
+  const out = await computeObservation({ tic, sector, dedication });
+  if (!out.ok) return c.json({ error: out.error, errors: out.errors }, out.status as 400);
+  return c.json({ record: out.record, memo: out.memo, envelopeHash: out.envelopeHash, science: out.science });
 });
 
 // Multi-seat war-room threads. The LIST is grounded and instant -- composed from each

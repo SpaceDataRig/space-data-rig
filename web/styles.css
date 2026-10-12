@@ -281,6 +281,13 @@ a:hover { text-decoration: underline; }
 .observe-policy { font-size: 12px; color: var(--ink-dim); line-height: 1.55; margin: 12px 0 8px; }
 .observe-policy b { color: var(--gold); }
 .observe-status { font-size: 12px; color: #ffe6b3; background: rgba(255,209,102,.08); border: 1px dashed var(--gold); border-radius: 9px; padding: 9px 12px; }
+.observe-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 2px 0 14px; }
+.observe-hint { font-size: 12.5px; color: var(--ink-dim); }
+.observe-hint.bad { color: #ffb3b3; }
+.observe-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin: 2px 0; }
+.observe-grid .k { display: block; color: var(--ink-dim); font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+.observe-grid .v { color: var(--ink); font-size: 14px; }
+.observe-src { font: 500 11px var(--mono); color: var(--ink-faint); line-height: 1.5; margin: 4px 0; }
 
 /* ---- controls ---- */
 .control-panel { padding-bottom: 8px; }

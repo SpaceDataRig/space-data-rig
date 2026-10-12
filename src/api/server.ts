@@ -28,6 +28,7 @@ import { verifyBundle } from "../bundle/bundle.ts";
 import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
+import { computeObservation } from "../observe/observeApi.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
@@ -246,6 +247,25 @@ app.get("/api/bundles/:id/artifact/:name", async (c) => {
 
 // On-chain provenance ledger (works even when every RPC is unreachable).
 app.get("/api/ledger", (c) => c.json({ ledger: readLedger(LEDGER_PATH) }));
+
+// Name an Observation (parity with the edge /api/observe): run the same blind, deterministic pipeline on a
+// user-chosen star and return the real result + sealed envelope + the sdr:observe:1 memo that WOULD anchor.
+// Read public photometry + compute only -- no payment, no SOL spend, no on-chain write, no money path.
+app.post("/api/observe", async (c) => {
+  let body: { tic?: unknown; sector?: unknown; dedication?: unknown };
+  try {
+    body = (await c.req.json()) as typeof body;
+  } catch {
+    return c.json({ error: "invalid JSON body" }, 400);
+  }
+  const tic = typeof body.tic === "number" ? body.tic : parseInt(String(body.tic), 10);
+  const sectorRaw = body.sector;
+  const sector = sectorRaw == null || sectorRaw === "" ? null : typeof sectorRaw === "number" ? sectorRaw : parseInt(String(sectorRaw), 10);
+  const dedication = typeof body.dedication === "string" ? body.dedication : "";
+  const out = await computeObservation({ tic, sector, dedication });
+  if (!out.ok) return c.json({ error: out.error, errors: out.errors }, out.status as 400);
+  return c.json({ record: out.record, memo: out.memo, envelopeHash: out.envelopeHash, science: out.science });
+});
 
 // Live event feed. Sends a small backlog, then streams every new seat event and
 // a compact state pulse on each mutation, with a keep-alive ping.

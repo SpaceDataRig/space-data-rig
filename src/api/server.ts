@@ -25,6 +25,7 @@ import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
 import { verifyBundle } from "../bundle/bundle.ts";
+import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
@@ -290,6 +291,7 @@ app.get("/api/events", (c) =>
 // Kick off a pipeline run on the shared store. Returns immediately; progress
 // arrives over SSE. Only one run at a time.
 app.post("/api/run", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), process.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   if (activeRun?.running) return c.json({ error: "a run is already in progress", runId: activeRun.runId }, 409);
 
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -350,6 +352,7 @@ app.post("/api/run", async (c) => {
 
 // Anchor one finding's bundle hash on Solana mainnet (or dry-run preview).
 app.post("/api/anchor/:id", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), process.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id"));
   const f = id ? store.getFinding(id) : undefined;
   if (!f) return c.json({ error: "finding not found" }, 404);
@@ -409,6 +412,7 @@ app.post("/api/anchor/:id", async (c) => {
 // (finding, deliberationHash): replays a prior tx without spending mainnet fees again.
 // dryRun previews the memo without touching the chain or the keypair.
 app.post("/api/anchor/:id/deliberation", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), process.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id"));
   const deliberationHash = id ? (await artifacts.getText(`deliberations/${id}/HASH.txt`))?.trim() ?? "" : "";
   if (!id || !deliberationHash)

@@ -81,4 +81,10 @@ export interface Env {
   SOLANA_RPC?: string;
   /** mainnet fee-payer secret key as a JSON byte array (web3 v2). */
   SOLANA_KEYPAIR?: string;
+  /**
+   * Optional admin bearer token gating the state-changing endpoints (/api/run, /api/anchor/*).
+   * Unset/empty = open (today's behaviour, so shipping this code cannot silently break the live
+   * dashboard); set it via `wrangler secret put ADMIN_TOKEN` to require `Authorization: Bearer <t>`.
+   */
+  ADMIN_TOKEN?: string;
 }

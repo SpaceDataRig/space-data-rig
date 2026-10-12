@@ -15,6 +15,7 @@ import { RigStateDO } from "./rig-state.do.ts";
 import { RigRunWorkflow } from "./workflow.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
 import { verifyBundle } from "../bundle/bundle.ts";
+import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
@@ -239,6 +240,7 @@ app.get("/api/bundles/:id/artifact/:name", async (c) => {
 // mirroring the Node guard), then a Workflow instance is created with the authoritative
 // runId and returns immediately -- progress streams to the browser over the DO WebSocket.
 app.post("/api/run", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   // Public endpoint: keep the clamps tight. Every target is a durable workflow branch and
   // every confidence trial is a full BLS sweep inside one step's CPU budget.
@@ -287,6 +289,7 @@ app.post("/api/run", async (c) => {
 // The transaction is built + submitted INSIDE the DO (serialised fee-payer, wall-clock
 // I/O); this route just relays the outcome and maps it to an HTTP status.
 app.post("/api/anchor/:id", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id") ?? "");
   if (!id) return c.json({ error: "finding not found" }, 404);
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -300,6 +303,7 @@ app.post("/api/anchor/:id", async (c) => {
 // (finding, deliberationHash): a prior successful tx is replayed without spending fees
 // again. dryRun previews the memo without touching the chain or the keypair.
 app.post("/api/anchor/:id/deliberation", async (c) => {
+  if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id") ?? "");
   if (!id) return c.json({ error: "finding not found" }, 404);
   const store = artifacts(c.env);

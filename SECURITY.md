@@ -23,6 +23,14 @@ you wish) before any public disclosure.
   (`POST /api/anchor/:id`, `POST /api/run`) are the highest-value targets;
   reports about abuse paths, missing rate limits, or state-machine lockups there
   are especially welcome.
+- Those mutating endpoints support an OPT-IN admin gate (audit finding, 2026-10):
+  set `ADMIN_TOKEN` (`wrangler secret put ADMIN_TOKEN` on the edge, or in `.env`
+  for the Node server) and every `POST /api/run` / `POST /api/anchor/*` must then
+  carry `Authorization: Bearer <token>` (constant-time compared) or get a 401.
+  When `ADMIN_TOKEN` is unset the endpoints stay open so a deployment is never
+  silently broken by this code -- operators close the hole by setting the secret.
+  Read endpoints and the public dashboard are unaffected; the autonomous cron path
+  runs inside the Worker and does not call these HTTP routes, so it keeps working.
 - RPC endpoints configured for anchoring embed provider API keys in their URL
   path by design (hosted providers). The codebase treats every user-visible
   error string, event-log entry and ledger field for these URLs as required to

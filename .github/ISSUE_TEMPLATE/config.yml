@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security issue (private)
+    url: https://github.com/SpaceDataRig/space-data-rig/security/advisories/new
+    about: Please do not open a public issue for vulnerabilities. See SECURITY.md.
+  - name: Live dashboard
+    url: https://spacedatarig.app
+    about: Watch the rig run autonomously on real public data in production.
+  - name: Latest release / changelog
+    url: https://github.com/SpaceDataRig/space-data-rig/releases
+    about: Tagged, reproducible releases are published automatically from version tags.

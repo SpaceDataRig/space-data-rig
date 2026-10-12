@@ -1,0 +1,42 @@
+name: Feature / improvement
+description: Suggest an idea, a science improvement, or a task worth taking on
+title: "[feat]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Good ideas are welcome, including ones suitable for a first contribution.
+        If you would like to build it yourself, say so and we will help you get started.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this improve?
+      description: The motivation, and how it fits the project's honesty/reproducibility goals.
+      placeholder: It would help if ... because ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: A sketch of the approach, and which module it touches (core, detect, sim, cf, web).
+  - type: dropdown
+    id: goodfirst
+    attributes:
+      label: Good first issue?
+      description: Is this scoped enough for a new contributor to take on?
+      options:
+        - "yes"
+        - "no"
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Agreement
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
+        - label: I understand changes to detection output or the money path need a measured rationale
+          required: false

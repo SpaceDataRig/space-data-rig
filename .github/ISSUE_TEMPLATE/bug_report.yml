@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible problem in the pipeline, dashboard, or API
+title: "[bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make this rig more trustworthy. Please fill in as much as
+        you can -- reproducible details are what let us verify a fix.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: The run reported X, but I expected Y.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and the runtime used.
+      placeholder: |
+        1. npm run orchestrator -- --offline --targets 2
+        2. See error ...
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      description: Where did this happen?
+      options:
+        - Node (local / orchestrator)
+        - Cloudflare Workers (spacedatarig.app)
+        - Dashboard (web)
+        - CI
+    validations:
+      required: true
+  - type: input
+    id: runid
+    attributes:
+      label: Run id / bundle hash (if relevant)
+      description: Bundle hashes make findings reproducible -- share them freely.
+      placeholder: run-YYYYMMDD-HHMMSS or a SHA-256
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.1.0 or a commit hash
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I ran `npm run typecheck:all` and `npm test` (reporting a code issue)
+          required: false
+        - label: This is not a security vulnerability (those go to SECURITY.md, privately)
+          required: true

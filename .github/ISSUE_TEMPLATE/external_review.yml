@@ -1,0 +1,45 @@
+name: Independent review
+description: Ask the rig to audit your candidate, or challenge/reproduce one of our results
+title: "[review]: "
+labels: ["review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The pipeline exists to be checked. Use this to request an independent review
+        of an external candidate, or to dispute/verify one of our reported results.
+        Everything here is reproducible from public data plus a hash-sealed bundle.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - "Review MY candidate with your rig"
+        - "I want to challenge / reproduce ONE of your results"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: >
+        For a candidate: host id (TIC/Gaia), period, epoch, depth, duration, and a link to
+        the source. For a challenge: the run id or bundle hash and which claim you dispute.
+      placeholder: |
+        Candidate TIC 370612437, P=3.5649 d, depth 210 ppm, T14 1.44 h, source: <link>
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting links / data
+      description: Public repo, DOI, Zenodo record, preprint, or the bundle manifest URL.
+  - type: checkboxes
+    id: framing
+    attributes:
+      label: Shared expectations
+      options:
+        - label: A non-detection by an untuned detector is a limit of the detector, not a refutation
+          required: true
+        - label: An external candidate remains attributed to its original author; a review is not a discovery claim
+          required: true

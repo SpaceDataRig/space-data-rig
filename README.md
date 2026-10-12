@@ -1,5 +1,26 @@
 # Space Data Rig
 
+[![CI](https://github.com/SpaceDataRig/space-data-rig/actions/workflows/ci.yml/badge.svg)](https://github.com/SpaceDataRig/space-data-rig/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/SpaceDataRig/space-data-rig)](https://github.com/SpaceDataRig/space-data-rig/releases)
+[![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![status: live](https://img.shields.io/badge/status-live-brightgreen)](https://spacedatarig.app)
+
+**Project health & governance (all verifiable, none of it a claim of size):** automated
+checks run on every push/PR ([CI](https://github.com/SpaceDataRig/space-data-rig/actions));
+reproducible versions are tagged and released
+([releases](https://github.com/SpaceDataRig/space-data-rig/releases) /
+[CHANGELOG.md](CHANGELOG.md)); contributions are welcome
+([CONTRIBUTING.md](CONTRIBUTING.md)) under a
+[code of conduct](CODE_OF_CONDUCT.md); how the project is run and decided is documented in
+[GOVERNANCE.md](GOVERNANCE.md); report vulnerabilities privately via
+[SECURITY.md](SECURITY.md).
+
+**Authorship, stated honestly:** this is currently maintained by one human owner working
+with an autonomous AI coding agent; agent-authored commits use an explicitly-labelled
+automated identity and AI collaboration is disclosed rather than hidden. We do not create
+extra accounts to imply more contributors than there are -- maturity here is the
+reproducible engineering (public data in, hash-sealed bundle out), not headcount.
+
 An OpenRig-style, five-seat AI team that runs a **fully reproducible transit-detection
 loop**: it pulls real confirmed-planet parameters from the NASA Exoplanet Archive, resolves
 each target's light curve (real MAST TESS photometry where curated -- or, with the opt-in

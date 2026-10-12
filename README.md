@@ -1160,9 +1160,14 @@ collaborators (still labelled candidate by the pipeline).
   (`npm run p23:candidate-validation`). Over 60 quiet-star curves from sectors 1-3: a **false-alarm rate of
   ~25%** (15/60 planet-free stars still yield a surviving candidate) and **low completeness** (0% at <=1500 ppm,
   ~3% at 4000 ppm), purity proxy ~29%; a 30-curve run gave ~37% / ~11%. FFI blind search is far harder than
-  targeted SPOC photometry, which recovers 60-88% at these same depths. Conclusion, stated plainly: gated only
-  on SNR, the candidate chain is **false-positive-dominated and NOT validation-grade** -- it needs a calibrated
-  per-candidate significance gate (the empirical FAP the production verdict path already applies) before its
-  candidates carry real weight. That is why the board says up front that most rows are expected to be spurious,
-  and it is the honest gap the next Stage-4 increment is meant to close.
+  targeted SPOC photometry, which recovers 60-88% at these same depths. Conclusion: gated only on SNR, the
+  candidate chain is **false-positive-dominated and NOT validation-grade**. We then TESTED the obvious fix --
+  adding the per-candidate empirical-FAP gate the production verdict path uses (SNR>=7 AND FAP<=0.05, nulls
+  matched to each star's own noise color) -- and it barely helped: the false-alarm rate only fell ~25% -> ~23%,
+  completeness was unchanged, and the surviving false positives were still the shared-ephemeris systematics. The
+  reason is instructive: those false alarms are COHERENT instrumental features (sector-common dips and spikes),
+  which a stochastic noise surrogate cannot represent, so they score as "significant". A significance gate is
+  therefore NOT the lever here. The real controls are cross-sector / multi-epoch corroboration and a
+  resolved-blend / centroid check -- exactly what the board flags, and why it states up front that most rows are
+  expected to be spurious. `p23:candidate-validation` stays as the permanent regression that measures all this.
 

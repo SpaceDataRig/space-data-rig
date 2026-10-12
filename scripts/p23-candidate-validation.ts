@@ -27,6 +27,7 @@ import type { LightCurve } from "../src/core/types.ts";
 import { injectTransitInto, periodMatched } from "../src/sim/injectInto.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { foldedEpochDelta } from "../src/candidate/dedup.ts";
+import { calibratedFap } from "../src/detect/significance.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const UA = "Mozilla/5.0 (compatible; space-data-rig-candidate-validation)";
@@ -63,6 +64,15 @@ function runChain(lc: LightCurve): ChainResult {
   const assess = classifyDepthRegime(depthPpm);
   const emitted = assess.planetPlausible && depthPpm >= 200 && r.snr >= 7;
   return { emitted, periodDays: r.periodDays, depthPpm, snr: r.snr, epochBjd: epochAtMinFlux(lc), regime: assess.regime };
+}
+
+// The production significance gate the candidate chain was MISSING: a per-candidate empirical FAP against
+// nulls drawn from the SAME star's own noise color. Threshold 0.05 matches the critic (nNull=60 -> floor
+// 1/(60+1)=0.0164 < 0.05, so it cannot silently reject everything). Applied only DOWNSTREAM of the SNR gate,
+// so cost is bounded to the handful of curves that already look like candidates.
+const FAP_MAX = 0.05;
+function passesFap(lc: LightCurve, r: ChainResult, nNull: number, seed: number): boolean {
+  try { return calibratedFap(lc, r.snr, r.periodDays, { nNull, seed }).fap <= FAP_MAX; } catch { return false; }
 }
 
 interface Curve { lc: LightCurve; tic: number; }
@@ -139,19 +149,29 @@ async function main(): Promise<void> {
   if (!curves.length) { console.log(`\n[p23] no usable curves. VERDICT: NO-USEFUL-DATA`); return; }
   console.log(`\n[p23] ${curves.length} real quiet-star curves loaded. Running NULL arm (no planet -> every candidate is a false positive)...`);
 
-  // NULL arm
+  const nNull = Math.max(20, parseInt(arg("nnull", "60"), 10));
+
+  // NULL arm -- a quiet star has no planet, so every surviving candidate is a false positive. We score it
+  // under BOTH the current SNR-only gate and the SNR + empirical-FAP gate the production path uses.
   let nullEmitted = 0;
+  let nullFapSurvivors = 0;
   const nullHits: { tic: number; periodDays: number; epochBjd: number }[] = [];
+  const nullFapHits: { tic: number; periodDays: number; epochBjd: number }[] = [];
   for (const c of curves) {
     const r = runChain(c.lc);
-    if (r.emitted) { nullEmitted++; nullHits.push({ tic: c.tic, periodDays: r.periodDays, epochBjd: r.epochBjd }); }
+    if (!r.emitted) continue;
+    nullEmitted++;
+    nullHits.push({ tic: c.tic, periodDays: r.periodDays, epochBjd: r.epochBjd });
+    if (passesFap(c.lc, r, nNull, seed)) { nullFapSurvivors++; nullFapHits.push({ tic: c.tic, periodDays: r.periodDays, epochBjd: r.epochBjd }); }
   }
   const sys = sharedEphemerisHosts(nullHits);
+  const sysFap = sharedEphemerisHosts(nullFapHits);
 
-  // INJECTED arm
+  // INJECTED arm -- recover a known planet injected into the SAME real curves.
   const byDepth = new Map<number, { rec: number; n: number }>();
   const byPeriod = new Map<number, { rec: number; n: number }>();
   let tp = 0;
+  let tpFap = 0;
   let injected = 0;
   let trial = 0;
   for (const c of curves) {
@@ -160,25 +180,33 @@ async function main(): Promise<void> {
         trial++;
         const inj = injectTransitInto(c.lc, { seed: seed + trial, periodDays: period, depthFrac: depth / 1e6 });
         const r = runChain(inj);
-        const recovered = r.emitted && periodMatched(r.periodDays, period, 5);
         injected++;
-        const d = byDepth.get(depth) ?? { rec: 0, n: 0 }; d.n++; if (recovered) { d.rec++; tp++; } byDepth.set(depth, d);
-        const p = byPeriod.get(period) ?? { rec: 0, n: 0 }; p.n++; if (recovered) p.rec++; byPeriod.set(period, p);
+        const recovered = r.emitted && periodMatched(r.periodDays, period, 5);
+        const d = byDepth.get(depth) ?? { rec: 0, n: 0 }; d.n++; byDepth.set(depth, d);
+        const p = byPeriod.get(period) ?? { rec: 0, n: 0 }; p.n++; byPeriod.set(period, p);
+        if (recovered) {
+          tp++; d.rec++; p.rec++;
+          if (passesFap(inj, r, nNull, seed)) tpFap++;
+        }
       }
     }
   }
 
-  console.log(`\n[p23] ===== CANDIDATE-CHAIN VALIDATION (blind BLS + Stage-2 depth screen + SNR>=7) =====`);
-  console.log(`[p23] curves (real, quiet): ${curves.length}; injections: ${injected}`);
-  console.log(`\n[p23] COMPLETENESS by injected depth:`);
+  console.log(`\n[p23] ===== CANDIDATE-CHAIN VALIDATION (blind BLS + Stage-2 depth screen + SNR>=7, then +/- empirical FAP<=${FAP_MAX}) =====`);
+  console.log(`[p23] curves (real, quiet): ${curves.length}; injections: ${injected}; FAP nulls per candidate: ${nNull}`);
+  console.log(`\n[p23] COMPLETENESS by injected depth (SNR gate):`);
   for (const depth of depthsPpm) { const b = byDepth.get(depth)!; console.log(`[p23]   ${String(depth).padStart(5)} ppm -> ${pct(b.rec, b.n)} (${b.rec}/${b.n})`); }
-  console.log(`[p23] COMPLETENESS by injected period:`);
+  console.log(`[p23] COMPLETENESS by injected period (SNR gate):`
+  );
   for (const period of periodsDay) { const b = byPeriod.get(period)!; console.log(`[p23]   ${String(period).padStart(4)} d   -> ${pct(b.rec, b.n)} (${b.rec}/${b.n})`); }
-  console.log(`\n[p23] FALSE-ALARM RATE (null arm, no planet injected): ${nullEmitted}/${curves.length} quiet stars produced a surviving candidate = ${pct(nullEmitted, curves.length)}.`);
-  console.log(`[p23]   of those ${nullEmitted} false positives: ${sys.groups} independent ephemeris group(s), ${sys.multiHostGroups} of them shared across multiple hosts (${sys.hostsInMulti} host-rows) -> the sector-common systematic artifact.`);
+  console.log(`\n[p23] FALSE-ALARM RATE (null arm, no planet injected):`);
+  console.log(`[p23]   SNR gate only       : ${nullEmitted}/${curves.length} quiet stars yield a candidate = ${pct(nullEmitted, curves.length)}  (${sys.groups} ephemeris groups, ${sys.multiHostGroups} shared across hosts = ${sys.hostsInMulti} rows)`);
+  console.log(`[p23]   SNR + empirical FAP : ${nullFapSurvivors}/${curves.length} = ${pct(nullFapSurvivors, curves.length)}  (${sysFap.groups} groups, ${sysFap.multiHostGroups} shared across hosts = ${sysFap.hostsInMulti} rows)`);
+  console.log(`[p23] COMPLETENESS overall: SNR ${pct(tp, injected)} -> SNR+FAP ${pct(tpFap, injected)} (of ${injected} injections)`);
   const purity = tp + nullEmitted > 0 ? (tp / (tp + nullEmitted)) * 100 : NaN;
-  console.log(`\n[p23] PURITY proxy TP/(TP+FP) over this curve population: ${Number.isFinite(purity) ? purity.toFixed(1) + "%" : "n/a"} (TP=${tp} recovered injections, FP=${nullEmitted} null candidates).`);
-  console.log(`[p23] NOTE: single-sector ~27 d baseline caps recoverable periods (>=2 transits needed); long-period completeness is physically limited, not a bug. Figures characterize the CANDIDATE chain on real photometry, not the production verdict path, and are not a sky completeness.`);
+  const purityFap = tpFap + nullFapSurvivors > 0 ? (tpFap / (tpFap + nullFapSurvivors)) * 100 : NaN;
+  console.log(`\n[p23] PURITY proxy TP/(TP+FP): SNR ${Number.isFinite(purity) ? purity.toFixed(1) + "%" : "n/a"} (TP=${tp}, FP=${nullEmitted}) -> SNR+FAP ${Number.isFinite(purityFap) ? purityFap.toFixed(1) + "%" : "n/a"} (TP=${tpFap}, FP=${nullFapSurvivors}).`);
+  console.log(`[p23] NOTE: single-sector ~27 d baseline caps recoverable periods; long-period completeness is physical, not a bug. Figures characterize the CANDIDATE chain on real photometry, not the production verdict path, and are not a sky completeness.`);
   console.log(`\nVERDICT: CANDIDATE-CHAIN-MEASURED`);
 }
 

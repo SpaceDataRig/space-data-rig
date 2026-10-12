@@ -288,6 +288,14 @@ a:hover { text-decoration: underline; }
 .observe-grid .k { display: block; color: var(--ink-dim); font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
 .observe-grid .v { color: var(--ink); font-size: 14px; }
 .observe-src { font: 500 11px var(--mono); color: var(--ink-faint); line-height: 1.5; margin: 4px 0; }
+.btn.gold { background: linear-gradient(180deg, rgba(255, 209, 102, 0.22), rgba(255, 209, 102, 0.08)); border-color: rgba(255, 209, 102, 0.55); color: #fff3d0; }
+.btn.gold:hover { box-shadow: 0 0 26px -4px rgba(255, 209, 102, 0.7); border-color: var(--gold); }
+.observe-evidence { margin-top: 12px; }
+.observe-ev { border: 1px solid var(--edge); border-left: 4px solid var(--gold); border-radius: 10px; background: rgba(58, 224, 255, 0.04); padding: 12px 14px; display: grid; gap: 8px; }
+.observe-ev-head { font: 700 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.observe-ev code { color: var(--gold); word-break: break-all; font-size: 12.5px; }
+.observe-ev-note { font-size: 12px; color: var(--ink-dim); line-height: 1.6; }
+.observe-ev a { color: #8fd0ff; }
 .observe-pick { margin-bottom: 12px; }
 .observe-field-wide { flex: 1 1 100%; }
 .observe-field select { font: 500 14px var(--sans); color: var(--ink); background: rgba(20,28,48,0.9); border: 1px solid rgba(255,255,255,.14); border-radius: 9px; padding: 10px 12px; }

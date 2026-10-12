@@ -39,6 +39,7 @@
     "p22:blind-multisector": "tsx scripts/p22-blind-multisector.ts",
     "p23:candidate-validation": "tsx scripts/p23-candidate-validation.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
+    "web:bundle": "esbuild src/observe/browserBurn.ts --bundle --format=esm --platform=browser --conditions=browser --minify --outfile=web/vendor/solana-burn.js",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

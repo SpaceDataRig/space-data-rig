@@ -112,11 +112,13 @@
           </div>
           <div class="observe-actions">
             <button class="btn" id="obs-run" type="button">Run my observation</button>
+            <button class="btn gold" id="obs-commission" type="button" title="Burns 10,000 $SDR from your wallet, then the rig writes the sealed record to Solana mainnet">Connect wallet and commission</button>
             <span class="observe-hint" id="observe-hint"></span>
           </div>
           <div class="observe-out" id="observe-out" hidden></div>
+          <div class="observe-evidence" id="observe-evidence" hidden></div>
           <p class="observe-policy">Commissioning one observation burns exactly <b>10,000 $SDR</b> (a Token-2022 mint with fixed supply and revoked mint/freeze authority, so the burn is irreversible) through the x402 pay-per-call protocol. The dedication is capped at 160 characters and may not contain links or markup. <b>Payment never changes the verdict</b> &mdash; a named observation of a quiet star will honestly return a zero, sealed exactly like a discovery would be.</p>
-          <p class="observe-status" id="observe-status">LIVE COMPUTE &mdash; the blind search runs now on real TESS photometry and returns your sealed record. Commissioning (burn $SDR, then write the record on-chain) opens as a separate step.</p>
+          <p class="observe-status" id="observe-status">LIVE COMPUTE &mdash; the blind search runs now on real TESS photometry and returns your sealed record, free. To make it an immutable on-chain memorial, <b>commission</b> it: that burns 10,000 $SDR from your wallet, and the rig writes the sealed record to Solana mainnet (it pays the one-time chain fee). Commissioning never changes the verdict.</p>
         </div>
       </details>
     </div>

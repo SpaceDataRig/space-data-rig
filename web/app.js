@@ -601,6 +601,95 @@ if ($("#obs-pick")) $("#obs-pick").addEventListener("change", (e) => {
 });
 loadObserveStars();
 
+// ---- commission a named observation (the paid, on-chain path) ----
+// Flow, deliberately ordered so NOTHING irreversible happens on bad input: (1) sanitize client-side, (2) run the
+// FREE compute first -- the server re-sanitizes + confirms usable photometry -- and abort before any burn if it
+// fails, (3) only then ask the wallet to burn 10,000 $SDR, (4) hand the burn SIGNATURE to /api/observe/commission
+// as an x402 X-PAYMENT; the edge re-reads the burn from the chain (never trusting us) and anchors under the
+// OBSERVE_ANCHOR gate. The burn is the user's $SDR; the rig pays the one-time SOL chain fee. Verdict never changes.
+const OBSERVE_RPC = "https://api.mainnet-beta.solana.com";
+
+function b64PaymentEnvelope(sig) {
+  return btoa(JSON.stringify({ x402Version: 1, scheme: "exact", network: "solana-mainnet", payload: { signature: sig } }));
+}
+
+function renderObserveEvidence(o) {
+  const el = $("#observe-evidence");
+  if (!el) return;
+  const status = o.anchored
+    ? "ANCHORED on Solana mainnet"
+    : o.dryRun
+      ? "sealed (anchor previewed only - the operator gate is in dry mode)"
+      : o.capReached
+        ? "sealed (on-chain write deferred: the daily anchor budget was reached)"
+        : "sealed (on-chain anchoring is currently paused by the operator)";
+  const txLine = (o.anchored || o.alreadyAnchored) && o.signature
+    ? `<a href="${esc(o.explorerUrl)}" target="_blank" rel="noopener">tx ${esc(String(o.signature).slice(0, 20))}... &middot; slot ${esc(String(o.slot ?? "?"))}</a>`
+    : "(not yet on-chain)";
+  el.hidden = false;
+  el.innerHTML =
+    `<div class="observe-ev">` +
+      `<div class="observe-ev-head">${o.anchored ? "On-chain memorial" : "Record sealed"}</div>` +
+      `<div class="observe-row"><span class="k">Status</span><span class="v">${esc(status)}</span></div>` +
+      `<div class="observe-row"><span class="k">Memo</span><span class="v"><code>${esc(o.memo)}</code></span></div>` +
+      `<div class="observe-row"><span class="k">Envelope hash</span><span class="v"><code>${esc(o.envelopeHash)}</code></span></div>` +
+      `<div class="observe-row"><span class="k">Transaction</span><span class="v">${txLine}</span></div>` +
+      `<div class="observe-row"><span class="k">Discovery claim</span><span class="v">false \u2014 structurally, always</span></div>` +
+      `<div class="observe-ev-note">This can be re-verified from the chain without trusting us: paste the memo hash or the transaction signature into the evidence checker, or run the verifier CLI.</div>` +
+    `</div>`;
+}
+
+async function commissionObservation() {
+  const btn = $("#obs-commission");
+  const tic = ($("#obs-tic")?.value || "").trim();
+  const sector = ($("#obs-sector")?.value || "").trim();
+  const dedication = $("#obs-dedication")?.value || "";
+  if (!/^\d+$/.test(tic) || parseInt(tic, 10) <= 0) { observeHint("Enter a numeric TIC first.", true); return; }
+  const ded = observeSanitize(dedication);
+  if (!ded.ok) { observeHint("Dedication: " + ded.problems.join("; "), true); return; }
+
+  // Gate content BEFORE any burn: a free server-side compute validates the dedication + confirms the star.
+  observeHint("Validating your dedication and photometry before any burn...", false);
+  let pre;
+  try {
+    const pres = await fetch("/api/observe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tic: parseInt(tic, 10), sector: sector ? parseInt(sector, 10) : null, dedication: ded.value }) });
+    pre = await pres.json();
+    if (!pres.ok || pre.error) { observeHint("Nothing burned. " + (pre.error || "compute failed") + (pre.errors && pre.errors.length ? ` (${pre.errors.join("; ")})` : ""), true); return; }
+    renderObserveResult(pre);
+  } catch (e) { observeHint("Network error before burn (nothing charged): " + ((e && e.message) ? e.message : String(e)), true); return; }
+
+  if (btn) btn.disabled = true;
+  let sig;
+  try {
+    observeHint("Opening your wallet to burn 10,000 $SDR...", false);
+    const mod = await import("/vendor/solana-burn.js");
+    const res = await mod.burnForObservation(OBSERVE_RPC);
+    sig = res.signature;
+    observeHint("Burn is on-chain (" + sig.slice(0, 16) + "...). Sealing your record...", false);
+  } catch (e) {
+    observeHint("No burn happened: " + ((e && e.message) ? e.message : String(e)), true);
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  try {
+    const cres = await fetch("/api/observe/commission", { method: "POST", headers: { "content-type": "application/json", "X-PAYMENT": b64PaymentEnvelope(sig) }, body: JSON.stringify({ tic: parseInt(tic, 10), sector: sector ? parseInt(sector, 10) : null, dedication: ded.value }) });
+    const o = await cres.json();
+    if (!cres.ok || o.error) {
+      observeHint("Your burn is on-chain but sealing was rejected: " + (o.error || "server error") + ". Keep this tx for follow-up: " + sig.slice(0, 16) + "...", true);
+      return;
+    }
+    observeHint(o.anchored ? "Sealed and anchored on Solana mainnet." : "Sealed; the on-chain write is gated by the operator.", !o.anchored);
+    renderObserveResult(o);
+    renderObserveEvidence(o);
+  } catch (e) {
+    observeHint("Sealing request failed after your burn (tx " + sig.slice(0, 16) + "...): " + ((e && e.message) ? e.message : String(e)), true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+if ($("#obs-commission")) $("#obs-commission").addEventListener("click", commissionObservation);
+
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the
 // grounded seed already shown simply stays. Never throws into the boot path.

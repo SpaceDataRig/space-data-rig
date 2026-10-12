@@ -1193,3 +1193,16 @@ collaborators (still labelled candidate by the pipeline).
   claimed; the candidate board already flags shared-ephemeris rows exactly as L3 sees them. Reproduce with
   `npm run p26:corroboration -- --sectors 1,2,3,4,5 --limit 12 --depths 1500,4000 --periods 2,4 --seed 13`.
 
+**A tempting cheap shortcut that does NOT work: in-transit shape coherence (npm run p27:shape-coherence).** If the
+  FP that survive the significance gate are one-point instrumental spikes, an in-box MEDIAN-vs-MEAN depth ratio
+  (`src/detect/shapeCoherence.ts`, 3 offline cases) should read ~0 for a spike and ~1 for a transit that fills its
+  own box. We MEASURED it rather than assumed, on 60 real quiet-star TGLC curves: injected true positives read
+  median ratio 1.05, but the null-arm false positives read 1.02 (and the single-host residuals that survive the
+  multi-host collapse 1.08 -- if anything HIGHER). The threshold scan flags 0% of FP while keeping 100% of TP at
+  every cut: **no separation at all.** The reason is the same mechanism p26 exposed -- these are not ragged single
+  samples; they are coherent features that stack consistently under the fold, so their box median matches its mean
+  just like a planet's does. This is a useful negative result: it RULES OUT a per-curve shape shortcut and
+  re-establishes that REPEATABILITY across independent baselines is the only lever on this FP class -- which is
+  exactly why validation-grade needs the deeper multi-sector coverage deferred to Stage 5. Measure-only, nothing
+  gated. Reproduce with `npm run p27:shape-coherence`.
+

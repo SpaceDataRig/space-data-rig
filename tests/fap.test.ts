@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 
 import { estimateFap } from "../src/detect/fap.ts";
 import { generateSyntheticTransit } from "../src/data/synthetic.ts";
+import { makeRedNoiseLightCurve } from "../src/sim/redNoise.ts";
 import type { LightCurve } from "../src/core/types.ts";
 
 // Keep the period grid narrow so the ~60 surrogate BLS runs stay fast in CI.
@@ -64,4 +65,24 @@ test("FAP is deterministic: same seed reproduces the same null exceedances", () 
   const b = estimateFap(lc, { trials: 40, seed: 2024, bls: GRID });
   assert.equal(a.exceedances, b.exceedances);
   assert.equal(a.fap, b.fap);
+});
+
+test("a red-noise planet-free curve is NOT spuriously significant (block bootstrap keeps correlation)", () => {
+  // Regression guard for audit #3: the OLD per-point time-jitter surrogate whitened the null, so a
+  // strongly correlated (rho=0.6) planet-free curve got a floor FAP (~0) and looked significant -- the
+  // p20 probe measured that FAR climbing to ~100%. The moving-block bootstrap preserves the AR(1)
+  // structure, so the null ensemble matches the observed power and the FAP must NOT sit at the floor.
+  const lc = makeRedNoiseLightCurve({
+    seed: 77,
+    periodDays: 5,
+    depthFrac: 0,
+    noisePpm: 300,
+    rho: 0.6,
+    cadenceSec: 120,
+    baselineDays: 20,
+    dutyCycle: 0.9,
+    targetIdLabel: "fap-red",
+  });
+  const res = estimateFap(lc, { trials: 60, seed: 5, bls: GRID });
+  assert.ok(res.fap > 0.05, `a red-noise null must not look significant; got FAP ${res.fap} (exceedances ${res.exceedances})`);
 });

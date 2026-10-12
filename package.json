@@ -34,6 +34,7 @@
     "p17:ffi": "tsx scripts/p17-ffi-feasibility.ts",
     "p18:baseline": "tsx scripts/p18-regression-baseline.ts",
     "p19:ffi-blind": "tsx scripts/p19-ffi-blind.ts",
+    "p20:fap-rednoise": "tsx scripts/p20-fap-rednoise.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

@@ -77,7 +77,7 @@ export interface ReviewVetting {
    *  empirically calibrated: confirmed planets measured by scripts/p2-vet-calibrate.ts cluster
    *  at <=0.5 arcsec, so a 2.0 arcsec cut rejects blends without dropping true positives). */
   shiftThresholdArcsec?: number;
-  /** calibrated false-alarm probability of the BLS peak (see src/detect/fap.ts). */
+  /** calibrated false-alarm probability of the BLS peak (see src/detect/significance.ts calibratedFap -- AR(1)-model nulls matched to the star's own noise color). */
   fap?: number;
   /** FAP above which the peak is deemed not significant against the null (default 0.05, calibrated on real planets and kept above the ensemble resolution floor 1/(nNull+1)). */
   fapThreshold?: number;

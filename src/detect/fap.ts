@@ -2,24 +2,39 @@
 // null -- the statistic that turns the heuristic BLS SNR into a defensible significance.
 //
 // The observed detection statistic is BLS max-power over the trial period grid. We build
-// a NULL distribution of that statistic by scrambling the REAL transit's phase coherence
-// while keeping the noise amplitude distribution intact: each point's TIME is perturbed
-// by a uniform jitter of +-P/3 (P = the detected period). A genuine periodic dip is smeared
-// out (transits no longer stack) so its BLS power collapses, whereas white/correlated noise
-// is statistically unchanged. The empirical FAP of the real candidate is the fraction of
-// such phase-scrambled surrogates whose max-power reaches the observed power. This is more
-// honest than a Gaussian SNR cut, which assumes white noise and ignores the look-elsewhere
-// effect across the period grid.
+// a NULL distribution of that statistic by destroying the REAL transit's phase coherence
+// while KEEPING the noise's own temporal correlation intact. We do that with a MOVING-BLOCK
+// bootstrap: the time grid is fixed and the flux is resampled in contiguous blocks of length
+// `blockLength` (default 8 cadences), so short-range AR(1) correlation survives inside each
+// block (red noise stays red) while reordering blocks breaks the recurring transit so it no
+// longer stacks. The empirical FAP of the real candidate is the fraction of such surrogates
+// whose max-power reaches the observed power. This is more honest than a Gaussian SNR cut,
+// which assumes white noise and ignores the look-elsewhere effect across the period grid.
 //
-// (A plain circular time-shift is NOT used: it translates the whole series and PRESERVES
+// WHY NOT PER-POINT TIME JITTER (the earlier implementation): jittering each sample's time
+// independently scrambles the ordering and DESTROYS the AR(1) autocorrelation, whitening the
+// null. On a red-noise host the null powers then collapse far below the (still red) observed
+// power, so FAP is grossly optimistic -- measured with npm run p20:fap-rednoise: false-alarm
+// rate on PLANET-FREE curves climbed 0% -> 92% -> 100% as rho went 0 -> 0.3 -> 0.8.
+//
+// HONEST LIMIT OF THE BLOCK BOOTSTRAP: sizing blocks from the measured rho (block ~ 4/(1-rho))
+// cuts that optimism sharply (rho 0.3: 92% -> 0%) but does NOT fully remove it -- p20 still shows
+// FAR ~42% at rho 0.6 and ~83% at rho 0.8, because NO time-resampling surrogate reproduces the
+// 1/f excess power BLS is sensitive to at low frequency. A properly calibrated significance for a
+// correlated host must MODEL the noise, not resample it: that is src/detect/significance.ts
+// calibratedFap (AR(1)-model nulls), which is the PRODUCTION gate. estimateFap is a model-free
+// surrogate that is trustworthy only for near-white curves; it is not wired into any verdict.
+//
+// (A plain circular time-shift is NOT used either: it translates the whole series and PRESERVES
 // the transits, so it fails to destroy the signal -- caught by the regression tests.)
 //
-// Deterministic: the jitter draws come from a seeded PRNG, so repeated runs and the tests
-// are reproducible. Additive only -- NOT wired into the default pipeline, whose synthetic
-// path numbers feed the reproducible bundle hash.
+// Deterministic: the block draws come from a seeded PRNG, so repeated runs and the tests are
+// reproducible. Additive only -- NOT wired into the default pipeline; the PRODUCTION significance
+// gate is src/detect/significance.ts calibratedFap (AR(1)-model nulls), which this module predates.
 
 import type { LightCurve } from "../core/types.ts";
 import { bls, type BLSOptions } from "./bls.ts";
+import { estimateRho } from "../sim/redNoise.ts";
 
 /** Local deterministic PRNG (mulberry32) so the surrogate shifts are reproducible
  *  without importing the synthetic module (whose output feeds the bundle hash). */
@@ -40,6 +55,8 @@ export interface FapOptions {
   seed?: number;
   /** BLS search options reused for every surrogate. */
   bls?: BLSOptions;
+  /** moving-block length in cadences; must exceed the noise memory but stay under the transit width. */
+  blockLength?: number;
 }
 
 export interface FapResult {
@@ -63,19 +80,38 @@ export function estimateFap(lc: LightCurve, opts: FapOptions = {}): FapResult {
 
   const obs = bls(lc, blsOpts);
   const observedPower = obs.power;
-  const jitterDays = obs.periodDays / 3; // smear a single transit well beyond its own width
 
   const times = lc.points.map((p) => p.time);
   const flux = lc.points.map((p) => p.flux);
   const errs = lc.points.map((p) => p.fluxErr ?? null);
+  const n = flux.length;
+  // Moving-block bootstrap: keep the time grid, resample flux in contiguous blocks so short-range
+  // AR(1) correlation is preserved (a per-point jitter would whiten it and make FAP optimistic).
+  // The block must be LONGER than the noise memory ~1/(1-rho) or the correlation leaks out; we size
+  // it from the curve's OWN measured rho (a fixed 8 was still optimistic at rho~0.8). An explicit
+  // blockLength overrides. Cap well under n so there are enough blocks to actually scramble phase.
+  const rho = estimateRho(flux);
+  const memory = Number.isFinite(rho) ? 1 / (1 - Math.min(0.95, Math.max(0, rho))) : 1;
+  const autoBlock = Math.max(8, Math.ceil(4 * memory));
+  const block = Math.max(2, Math.min(opts.blockLength ?? autoBlock, Math.floor(n / 3)));
+  const nBlocks = Math.ceil(n / block);
 
   let exceedances = 0;
   for (let i = 0; i < trials; i++) {
+    const sb = new Array<number>(n);
+    for (let b = 0; b < nBlocks; b++) {
+      const start = Math.floor(rand() * Math.max(1, n - block + 1));
+      for (let k = 0; k < block; k++) {
+        const idx = b * block + k;
+        if (idx >= n) break;
+        sb[idx] = flux[start + k];
+      }
+    }
     const surrogate: LightCurve = {
       ...lc,
       points: times.map((t, idx) => ({
-        time: t + (rand() - 0.5) * 2 * jitterDays,
-        flux: flux[idx],
+        time: t,
+        flux: sb[idx],
         fluxErr: errs[idx] ?? undefined,
       })),
     };

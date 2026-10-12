@@ -31,6 +31,7 @@
     "p14:coherence": "tsx scripts/p14-longperiod-coherence.ts",
     "p15:review": "tsx scripts/p15-external-review.ts",
     "p16:review": "tsx scripts/p16-review-library.ts",
+    "p17:ffi": "tsx scripts/p17-ffi-feasibility.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

@@ -1,6 +1,6 @@
 # Space Data Rig -- Full Project Handoff
 
-Last updated: 2026-10-12. Status: production live at https://spacedatarig.app.
+Last updated: 2026-10-13. Status: production live at https://spacedatarig.app.
 Repo: https://github.com/SpaceDataRig/space-data-rig (branch main).
 This document is the single entry point for anyone (human or AI agent) taking over
 the project. Read it fully before touching code, deploying, or spending money.
@@ -90,10 +90,12 @@ docker-compose, CULTURE.md).
 - src/core/       RigStore, types, auth (ADMIN_TOKEN bearer, constant-time), anchor-verify, ports.
 - src/data/       catalog TAP, MAST tiers, FITS parsers, TGLC, TOI archive, Gaia dilution, synthetic.
 - src/detect/     detrend, BLS, alias resolver hooks, transit fit (exact limb-darkened), ephemeris,
-                  per-sector robust depth, significance/calibrated FAP, vetting discriminators, SVG plots.
+                  per-sector robust depth, significance/calibrated FAP, vetting discriminators,
+                  shapeCoherence (in-transit median-vs-mean spike test; research-only, never gates), SVG plots.
 - src/sim/        exactTransit, transitModel, redNoise, injectInto, injectionRecovery, roc, confidence.
 - src/critic/     review.ts (mission-critic verdicts, centroid vetting gate).
-- src/candidate/  candidateRecord, dedup, falsePositive, prioritize, snapshot (blind-mode chain).
+- src/candidate/  candidateRecord, dedup, falsePositive, prioritize, snapshot (blind-mode chain),
+                  corroboration (applyLayerFilters: the L1-L4 cross-sector FP layers; research-only).
 - src/review/     externalReview.ts -- reusable library to independently audit a THIRD-PARTY
                   candidate claim (research-only; never gates, accepts, or anchors).
 - src/ai/         llm.ts, discussion.ts, threads.ts, deliberation.ts (side-channel LLM layer).
@@ -111,9 +113,10 @@ docker-compose, CULTURE.md).
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
-- scripts/        p0..p25 experiment scripts (see section 6) + verify-observe.ts + p2-anchor.ts
+- scripts/        p0..p27 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
+                  measure the Stage-4 FP lever on real FFI) + verify-observe.ts + p2-anchor.ts
                   + wallet-import.ts + validate-curated.ts + bls_astropy_check.py (dev-only).
-- tests/          41 test files, run via `npm test` (node --import tsx --test, explicit list in
+- tests/          43 test files, run via `npm test` (node --import tsx --test, explicit list in
                   package.json -- NEW TEST FILES MUST BE ADDED TO THAT LIST).
 - web/            dashboard.
 - out/            local artifacts, state snapshot, fee keypair (gitignored), commit-message
@@ -212,7 +215,7 @@ Changing any money-path switch or deploying requires EXPLICIT operator go-ahead.
 Local: `npm run orchestrator` (CLI pipeline), `npm start` or `npm run api` (dashboard +
 API + SSE on :8787), `npx wrangler dev` (edge simulation).
 Verify gate before any commit: `npm run typecheck:all` (Node + Worker tsconfigs) AND
-`npm test` (224 tests currently). For observe changes also `npm run verify:observe`.
+`npm test` (233 tests currently). For observe changes also `npm run verify:observe`.
 Deploy: `npx wrangler deploy`. BEFORE deploying, poll until no active run
 (activeRun.running == false) -- never redeploy mid-run. After deploy, probe production:
 GET /health (200), POST /api/observe/commission without payment (402, zero spend),
@@ -273,13 +276,17 @@ the Actions web page when the anonymous API is rate-limited.
 - wrangler deploy can fail on "Trigger configuration only partially updated" (fetch
   failed) while the code itself deployed fine -- retry once and confirm.
 
-## 13. Current state (as of 2026-10-12)
+## 13. Current state (as of 2026-10-13)
 
-- Git: HEAD == origin/main == 1d42b18 (working tree clean).
+- Git: HEAD == origin/main == fa8f9c6 (working tree clean apart from this handoff update).
 - Production: wrangler version e43b9a5a-492b-4f82-a617-35b05a7fa483, spacedatarig.app.
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 224/224 green. CI runs #104-#107 all Success.
+- Tests: 233/233 green (added tests/corroboration.test.ts +6 and tests/shapeCoherence.test.ts +3).
+- Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
+  coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
+  fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,
+  re-establishing repeatability as the only lever). All research-only: worker not touched, nothing gated.
 - Recent observe commits: cfe56b4 (request() path) -> 5da5ef9 (/api/rpc proxy, real fix
   for #8100002) -> 00da5a7 (full unsigned wire for Phantom) -> 1d42b18 (cap unlimited).
 - Production probes all pass: no-payment commission -> 402 (zero spend), forged sig -> 402,
@@ -292,7 +299,7 @@ the Actions web page when the anonymous API is rate-limited.
 ## 14. Suggested onboarding order for the successor
 
 1. Read this file, then README.md (full science narrative), then wrangler.toml comments.
-2. npm ci; npm run typecheck:all; npm test -- confirm 224 green locally.
+2. npm ci; npm run typecheck:all; npm test -- confirm 233 green locally.
 3. npm start; open the dashboard; watch one run stream.
 4. npm run verify:observe; skim src/observe/*.ts in the order listed in section 5.
 5. Only then consider deploys -- and never without explicit operator go-ahead.

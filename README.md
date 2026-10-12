@@ -1171,3 +1171,25 @@ collaborators (still labelled candidate by the pipeline).
   resolved-blend / centroid check -- exactly what the board flags, and why it states up front that most rows are
   expected to be spurious. `p23:candidate-validation` stays as the permanent regression that measures all this.
 
+**The corroboration lever, MEASURED (npm run p26:corroboration).** p23 named cross-sector / multi-epoch corroboration
+  as the right FP lever but did not quantify what it costs. We packaged the gates as a pure, offline-tested module
+  (`src/candidate/corroboration.ts` `applyLayerFilters`, 6 cases in `tests/corroboration.test.ts`) and drove them on
+  REAL quiet-star TGLC curves in a two-arm ROC. Four cumulative layers on the null arm (every surviving planet-free
+  host is a false positive by construction), measured on 60 hosts across sectors 1-5: L1 SNR+depth 33.3% (20/60);
+  **L2 + empirical FAP<=0.05 31.7% (19/60) -- barely helps, reproducing p23**; **L3 + reject ephemerides shared by
+  MULTIPLE hosts 11.7% (7/60) -- a ~63% cut of the FAP-surviving false alarms**; L4 + require the SAME host to recur
+  across >=2 sectors 0%. A 30-host replicate gave the same picture (~70% L3 cut). The decisive honest result: the
+  cheap structural gate (L3, already implemented as `collapseCoincident`) removes most of the coherent systematics
+  that the significance gate cannot, **and it costs NO true planet** -- on the injected arm the completeness is flat
+  across L1->L2->L3 (5.8% -> 5.8% -> 5.8%, 240 injections of 1500/4000 ppm at 2/4 d), because a single-host planet
+  is never a multi-host artifact. The extra cut L4 would give (drive FP to 0) is gated by same-host multi-sector
+  coverage, which a single-pass FFI sample essentially never provides (0/60 hosts recurred -- the same wall p22 hit
+  at 0 corroborated). To still price that lever we split one real curve into two sub-baselines and require a coherent
+  injected transit to survive BOTH: completeness collapses 5.8% -> 0.8%, i.e. demanding repeatability in two
+  independent windows is brutal on shallow FFI. So the honest, data-grounded conclusion is: **adopt L3 now as the
+  high-value FP control; treat same-host cross-sector corroboration (L4) as a tier-cap / flag, not a hard reject,
+  because turning it into a gate would gut completeness until a genuinely deeper multi-sector baseline exists
+  (Stage 5 -- more sectors / collaborators).** This is a research measurement: nothing is gated, anchored, spent, or
+  claimed; the candidate board already flags shared-ephemeris rows exactly as L3 sees them. Reproduce with
+  `npm run p26:corroboration -- --sectors 1,2,3,4,5 --limit 12 --depths 1500,4000 --periods 2,4 --seed 13`.
+

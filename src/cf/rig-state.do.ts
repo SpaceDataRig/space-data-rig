@@ -386,11 +386,14 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async recordFinding(finding: Finding): Promise<Finding> {
-    // Finding ids are deterministic (F-<target>): a re-run must NOT silently un-anchor a
-    // previously sealed finding, even though its ledger tx stays valid on-chain. Merge-
-    // preserve the anchor stamp across INSERT OR REPLACE instead of clobbering it.
+    // Finding ids are deterministic (F-<target>): a re-run must NOT silently un-anchor a previously
+    // sealed finding. But the anchor stamp is only carried across when the bundle hash is UNCHANGED:
+    // if a re-run produced a different bundle, inheriting the old solanaTx would advertise provenance
+    // for a bundle the chain never anchored (the hash-drift bug). The on-chain tx + ledger stay valid
+    // for the prior hash; the new bundle starts un-anchored and can be re-anchored on its own merits.
     const prev = this.row<{ data: string }>(`SELECT data FROM findings WHERE id = ?`, finding.id);
-    const prevTx = prev ? ((JSON.parse(prev.data) as Finding).solanaTx ?? undefined) : undefined;
+    const prevFinding = prev ? (JSON.parse(prev.data) as Finding) : undefined;
+    const prevTx = prevFinding?.solanaTx != null && prevFinding.bundleHash === finding.bundleHash ? prevFinding.solanaTx : undefined;
     const stored = this.stripFinding({ ...finding, solanaTx: finding.solanaTx ?? prevTx });
     this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO findings (id, created_at, data) VALUES (?, ?, ?)`, stored.id, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();
@@ -409,9 +412,10 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async recordBundle(bundle: BundleRecord): Promise<BundleRecord> {
-    // Same anchor-stamp preservation as recordFinding (deterministic finding ids).
+    // Same hash-guarded anchor preservation as recordFinding (deterministic finding ids).
     const prev = this.row<{ data: string }>(`SELECT data FROM bundles WHERE finding_id = ?`, bundle.findingId);
-    const prevTx = prev ? ((JSON.parse(prev.data) as BundleRecord).solanaTx ?? undefined) : undefined;
+    const prevBundle = prev ? (JSON.parse(prev.data) as BundleRecord) : undefined;
+    const prevTx = prevBundle?.solanaTx != null && prevBundle.hash === bundle.hash ? prevBundle.solanaTx : undefined;
     const stored = { ...bundle, solanaTx: bundle.solanaTx ?? prevTx };
     this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO bundles (finding_id, created_at, data) VALUES (?, ?, ?)`, stored.findingId, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();

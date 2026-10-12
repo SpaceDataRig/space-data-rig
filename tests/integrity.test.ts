@@ -8,6 +8,8 @@ import { join } from "node:path";
 
 import type { ArtifactStore } from "../src/core/ports.ts";
 import type { Finding } from "../src/core/types.ts";
+import type { BundleRecord } from "../src/core/state-types.ts";
+import { RigStore } from "../src/core/store.ts";
 import { composeBundle, persistBundle, verifyBundle } from "../src/bundle/bundle.ts";
 import { getOrCreateKeypair } from "../src/solana/anchor.ts";
 
@@ -110,4 +112,33 @@ test("getOrCreateKeypair creates a keypair only when the file is genuinely absen
   assert.ok(kp);
   assert.equal(existsSync(p), true);
   rmSync(dir, { recursive: true, force: true });
+});
+
+// ---- issue #2: bundle-hash drift (anchor stamp must not leak across a changed hash) ----
+
+const findingAt = (bundleHash: string, solanaTx?: string): Finding =>
+  ({ id: "F-drift", targetId: "HR 858 c", createdAt: "2026-01-01T00:00:00.000Z", verdict: "accepted", verdictReason: "", bundleHash, solanaTx }) as unknown as Finding;
+
+test("a re-run with the SAME bundle hash keeps the on-chain anchor stamp", () => {
+  const store = new RigStore();
+  store.addFinding(findingAt("hashA", "sigA"));
+  const again = store.addFinding(findingAt("hashA", undefined));
+  assert.equal(again.solanaTx, "sigA", "same bundle -> still anchored, keep the tx");
+});
+
+test("a re-run with a DIFFERENT bundle hash does NOT inherit the stale anchor", () => {
+  const store = new RigStore();
+  store.addFinding(findingAt("hashA", "sigA"));
+  const rerun = store.addFinding(findingAt("hashB", undefined));
+  assert.equal(rerun.bundleHash, "hashB");
+  assert.equal(rerun.solanaTx, undefined, "a new bundle must not claim the prior run's on-chain anchor");
+});
+
+test("addBundle likewise refuses to carry a tx across a changed hash", () => {
+  const store = new RigStore();
+  store.addBundle({ findingId: "F-drift", hash: "hA", createdAt: "2026-01-01T00:00:00.000Z", solanaTx: "sigA" } as unknown as BundleRecord);
+  const same = store.addBundle({ findingId: "F-drift", hash: "hA", createdAt: "2026-01-01T00:00:00.000Z" } as unknown as BundleRecord);
+  assert.equal(same.solanaTx, "sigA", "same hash -> inherit");
+  const changed = store.addBundle({ findingId: "F-drift", hash: "hB", createdAt: "2026-01-01T00:00:00.000Z" } as unknown as BundleRecord);
+  assert.equal(changed.solanaTx, undefined, "changed hash -> no stale anchor");
 });

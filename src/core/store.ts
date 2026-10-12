@@ -135,9 +135,13 @@ export class RigStore {
   // ---- findings ------------------------------------------------------------
 
   addFinding(f: Finding): Finding {
-    // Re-running a target must not drop its on-chain anchor stamp (ids are deterministic).
+    // Re-running a target must not drop its on-chain anchor stamp -- BUT only when the bundle is
+    // actually the same one that was anchored. If a re-run changed the bundle hash, inheriting the old
+    // solanaTx would advertise provenance for a bundle the chain never saw (the hash-drift bug). The
+    // on-chain tx + ledger stay valid for the prior hash; the new bundle simply starts un-anchored.
     const prev = this.findings.get(f.id);
-    const next = f.solanaTx == null && prev?.solanaTx != null ? { ...f, solanaTx: prev.solanaTx } : f;
+    const sameBundle = prev?.solanaTx != null && prev.bundleHash === f.bundleHash;
+    const next = f.solanaTx == null && sameBundle ? { ...f, solanaTx: prev!.solanaTx } : f;
     this.findings.set(next.id, next);
     this.touch();
     return next;
@@ -163,9 +167,11 @@ export class RigStore {
   // ---- bundles -------------------------------------------------------------
 
   addBundle(b: BundleRecord): BundleRecord {
-    // Same anchor-stamp preservation as addFinding.
+    // Same hash-guarded anchor preservation as addFinding: only carry the tx across when the bundle
+    // hash is unchanged, so a re-run never points a stale anchor at a different bundle.
     const prev = this.bundles.get(b.findingId);
-    const next = b.solanaTx == null && prev?.solanaTx != null ? { ...b, solanaTx: prev.solanaTx } : b;
+    const sameBundle = prev?.solanaTx != null && prev.hash === b.hash;
+    const next = b.solanaTx == null && sameBundle ? { ...b, solanaTx: prev!.solanaTx } : b;
     this.bundles.set(next.findingId, next);
     this.touch();
     return next;

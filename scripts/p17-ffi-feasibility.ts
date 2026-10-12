@@ -27,7 +27,7 @@
 //
 // Run:  npx tsx scripts/p17-ffi-feasibility.ts  [--prefix mast/hlsp/] [--deep]
 
-import { fitsToLightCurve } from "../src/data/mast.ts";
+import { tglcBytesToLightCurve } from "../src/data/tglc.ts";
 import { bls } from "../src/detect/bls.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
@@ -139,11 +139,15 @@ async function main(): Promise<void> {
         const bytes = await downloadFull(sampleKey);
         if (bytes) {
           try {
-            const lc = fitsToLightCurve(bytes, "p17-probe");
-            const r = bls(lc);
-            console.log(`[p17] END-TO-END: parsed ${lc.points.length} points; BLS best period ${r.periodDays.toFixed(4)} d SNR ${r.snr.toFixed(1)} depth ${(r.depth * 1e6).toFixed(0)} ppm`);
+            const lc = tglcBytesToLightCurve(bytes, "p17-probe");
+            if (!lc) {
+              console.log(`[p17] FITS parsed but <20 usable cadences survived flag/NaN masking.`);
+            } else {
+              const r = bls(lc);
+              console.log(`[p17] END-TO-END on REAL TGLC: ${lc.points.length} cadences; BLS best period ${r.periodDays.toFixed(4)} d SNR ${r.snr.toFixed(1)} depth ${(r.depth * 1e6).toFixed(0)} ppm`);
+            }
           } catch (e) {
-            console.log(`[p17] downloaded FITS but fitsToLightCurve/bls failed (TGLC/QLP column names differ from SPOC PDCSAP -> add a column map in Stage 1): ${e instanceof Error ? e.message : e}`);
+            console.log(`[p17] downloaded FITS but the TGLC parser/bls failed (not a TGLC-shaped file? column map?): ${e instanceof Error ? e.message : e}`);
           }
         }
       }

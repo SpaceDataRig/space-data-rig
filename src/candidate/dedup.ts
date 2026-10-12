@@ -97,3 +97,54 @@ export function collapseCoincident(records: CandidateRecord[], o: CoincidenceOpt
   groups.sort((a, b) => bySnrDesc(a.representative, b.representative));
   return groups;
 }
+
+/** A candidate record tagged with the TESS sector it was found in (sector identity is outside the record). */
+export interface TaggedCandidate {
+  record: CandidateRecord;
+  sector: number;
+}
+
+/**
+ * Per-host cross-sector corroboration: the strongest single-sector-independent FP test we have offline.
+ * A real planet orbits ONE star and its (period, epoch) should reappear whenever that star is observed in a
+ * DIFFERENT sector; a single-sector systematic (shared dip / window alias) does not reproduce on the same
+ * host across independent baselines. We cluster each host's own detections by ephemeris coincidence and
+ * mark it corroborated when one cluster spans >=2 distinct sectors.
+ */
+export interface HostCorroboration {
+  tic: number;
+  bestPeriodDays: number;
+  bestEpochBjd: number;
+  distinctSectors: number; // number of different sectors holding a coincident-ephemeris detection for this host
+  corroborated: boolean;   // >= 2 distinct sectors -> recurs across independent baselines
+}
+
+export function corroborateHosts(items: TaggedCandidate[], o: CoincidenceOptions = DEFAULT_COINCIDENCE): HostCorroboration[] {
+  const byHost = new Map<number, TaggedCandidate[]>();
+  for (const it of items) {
+    const tic = it.record.host.tic;
+    if (!Number.isFinite(tic)) continue;
+    const arr = byHost.get(tic) ?? [];
+    arr.push(it);
+    byHost.set(tic, arr);
+  }
+  const out: HostCorroboration[] = [];
+  for (const [tic, list] of byHost) {
+    // greedy: grow clusters of mutually-coincident ephemerides, tracking the sectors each touches
+    const clusters: { rep: TaggedCandidate; sectors: Set<number> }[] = [];
+    for (const it of list) {
+      const hit = clusters.find((c) => coincident(c.rep.record, it.record, o));
+      if (hit) hit.sectors.add(it.sector);
+      else clusters.push({ rep: it, sectors: new Set([it.sector]) });
+    }
+    let best = { periodDays: NaN, epochBjd: NaN, distinctSectors: 0 };
+    for (const c of clusters) {
+      if (c.sectors.size > best.distinctSectors) {
+        best = { periodDays: c.rep.record.detection.periodDays, epochBjd: c.rep.record.detection.epochBjd, distinctSectors: c.sectors.size };
+      }
+    }
+    out.push({ tic, bestPeriodDays: best.periodDays, bestEpochBjd: best.epochBjd, distinctSectors: best.distinctSectors, corroborated: best.distinctSectors >= 2 });
+  }
+  out.sort((a, b) => b.distinctSectors - a.distinctSectors || a.tic - b.tic);
+  return out;
+}

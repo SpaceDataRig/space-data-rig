@@ -3,7 +3,7 @@
 // common systematic -- that is evidence about the data, not N independent planets.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { collapseCoincident, foldedEpochDelta, DEFAULT_COINCIDENCE, type EphemerisGroup } from "../src/candidate/dedup.ts";
+import { collapseCoincident, foldedEpochDelta, corroborateHosts, DEFAULT_COINCIDENCE, type EphemerisGroup, type TaggedCandidate } from "../src/candidate/dedup.ts";
 import type { CandidateRecord } from "../src/candidate/candidateRecord.ts";
 
 function rec(tic: number, periodDays: number, epochBjd: number, snr: number): CandidateRecord {
@@ -65,4 +65,25 @@ test("groups are ordered by representative SNR descending", () => {
 test("default tolerance is documented + finite", () => {
   assert.ok(DEFAULT_COINCIDENCE.periodTolPct > 0 && DEFAULT_COINCIDENCE.periodTolPct < 5);
   assert.ok(DEFAULT_COINCIDENCE.t0TolDays > 0 && DEFAULT_COINCIDENCE.t0TolDays < 1);
+});
+
+const tag = (tic: number, sector: number, periodDays: number, epochBjd: number, snr = 10): TaggedCandidate => ({ record: rec(tic, periodDays, epochBjd, snr), sector });
+
+test("a host whose ephemeris recurs in 2+ sectors is corroborated", () => {
+  const reps = corroborateHosts([tag(7, 1, 10.1313, 2458349.1827), tag(7, 5, 10.1313, 2458349.1827)]);
+  assert.equal(reps.length, 1);
+  assert.equal(reps[0].distinctSectors, 2);
+  assert.equal(reps[0].corroborated, true);
+});
+
+test("a single-sector detection is NOT corroborated (the cross-sector FP test)", () => {
+  const reps = corroborateHosts([tag(7, 1, 10.1313, 2458349.1827)]);
+  assert.equal(reps[0].distinctSectors, 1);
+  assert.equal(reps[0].corroborated, false);
+});
+
+test("same host, different ephemerides in different sectors is not treated as recurrence", () => {
+  const reps = corroborateHosts([tag(7, 1, 10.1313, 2458349.1827), tag(7, 5, 4.7951, 2458349.1827)]);
+  assert.equal(reps[0].distinctSectors, 1, "each ephemeris cluster touches only one sector");
+  assert.equal(reps[0].corroborated, false);
 });

@@ -1142,7 +1142,11 @@ collaborators (still labelled candidate by the pipeline).
   `src/candidate/dedup.ts` clusters candidates by ephemeris (period within 0.5%, period-folded epoch within
   0.05 d) and flags any group spanning multiple hosts as a suspected common systematic, ranking ONE
   representative each; p19 applies it before emitting the follow-up queue.
-- Still ahead in Stage 4: cross-sector corroboration (a real signal recurs in independent sectors; a
-  single-sector systematic does not), candidate persistence, and -- behind an explicit opt-in -- surfacing
-  them WITHOUT touching the verified-planet re-check path, verdicts, bundle hashes, or the money path.
+- `scripts/p22-blind-multisector.ts` (`npm run p22:blind-multisector`) scales the p19 chain across a list of
+  sectors, then (a) collapses coincident ephemerides (multi-host = suspected systematic) and (b) runs
+  `corroborateHosts` -- the cross-sector test that a real signal recurs on the SAME host across >=2 independent
+  sectors while a single-sector systematic does not. Ranked surviving candidates are persisted to a local JSON
+  research artifact under `out/` (git-ignored, NOT the production store); the script never surfaces or anchors.
+- Still ahead in Stage 4: only the explicit opt-in to PRESENT candidates on the live site -- a deploy + go, and
+  it must not touch the verified-planet re-check path, verdicts, bundle hashes, or the money path.
 

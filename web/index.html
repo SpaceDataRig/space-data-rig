@@ -59,6 +59,75 @@
     </div>
   </section>
 
+  <!-- ============ full speech record ============ -->
+  <section class="section transcript-section">
+    <div class="section-head">
+      <h2>DELIBERATION LOG</h2>
+      <label class="check inline"><input type="checkbox" id="transcript-autoscroll" checked /> <span>follow</span></label>
+    </div>
+    <div class="transcript" id="transcript" role="log" aria-live="polite"></div>
+  </section>
+
+  <!-- ============ telemetry ============ -->
+  <section class="section">
+    <div class="telemetry glass">
+      <div class="tel" data-tone="good"><span class="tel-num" id="stat-confirmed">0</span><span class="tel-lbl">confirmed</span></div>
+      <div class="tel" data-tone="warn"><span class="tel-num" id="stat-watch">0</span><span class="tel-lbl">watchlist</span></div>
+      <div class="tel" data-tone="bad"><span class="tel-num" id="stat-rejected">0</span><span class="tel-lbl">rejected</span></div>
+      <div class="tel" data-tone="chain"><span class="tel-num" id="stat-anchored">0</span><span class="tel-lbl">on-chain</span></div>
+      <div class="tel"><span class="tel-num" id="stat-done">0</span><span class="tel-lbl">targets</span></div>
+    </div>
+  </section>
+
+  <!-- ============ findings board ============ -->
+  <section class="section">
+    <div class="section-head">
+      <h2>FINDINGS CATALOG</h2>
+      <span class="hint" id="findings-count">0 findings</span>
+    </div>
+    <p class="findings-note">Closed-loop self-test: each signal is seeded from live NASA catalog parameters, recovered by the detector, and cross-checked against the same catalog. Verdicts validate the pipeline -- they do not claim new planets.</p>
+    <div class="prov-bar" id="prov-bar" hidden></div>
+    <div class="board" id="board"><p class="empty">Awaiting first light. Launch a run to watch the table deliberate.</p></div>
+    <div class="board-foot"><button class="btn tiny ghost" id="board-more" hidden>More</button></div>
+  </section>
+
+  <!-- ============ controls + ledger ============ -->
+  <section class="section two-col">
+    <div class="glass control-panel">
+      <div class="panel-head"><h2>MISSION CONTROL</h2><span class="run-status" id="run-status">idle</span></div>
+      <form id="run-form" class="run-form">
+        <label class="field"><span>Targets</span><input type="number" id="in-targets" min="1" max="50" value="4" /></label>
+        <label class="field"><span>Stage delay (ms)</span><input type="number" id="in-delay" min="0" max="5000" step="50" value="300" /></label>
+        <label class="field"><span>Recovery trials</span><input type="number" id="in-confidence" min="1" max="64" value="8" /></label>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="in-offline" /> <span>Offline catalog</span></label>
+          <label class="check"><input type="checkbox" id="in-resume" /> <span>Resume snapshot</span></label>
+        </div>
+        <button type="submit" class="btn primary wide" id="run-submit">Run pipeline</button>
+        <p class="note">chair &rarr; fetch &rarr; scout &rarr; sim &rarr; critic &rarr; reporter. Each run checkpoints to a snapshot so it can stop and resume.</p>
+      </form>
+    </div>
+
+    <div class="glass">
+      <div class="panel-head"><h2>ON-CHAIN LEDGER</h2><button class="btn tiny ghost" id="ledger-refresh">refresh</button></div>
+      <div class="ledger" id="ledger"><p class="empty">Nothing anchored yet.</p></div>
+      <details class="howto"><summary>How to read this (plain English)</summary>
+        <ul>
+          <li><b>Period</b> - the planet's "year": days between dips.</li>
+          <li><b>Depth (ppm)</b> - how much the star dims, parts per million.</li>
+          <li><b>SNR</b> - signal strength; above ~7 we trust it over noise.</li>
+          <li><b>Confidence</b> - % of times the signal survives a fresh-noise replay.</li>
+          <li><b>Significance (FAP)</b> - the odds that plain noise on THIS star alone could fake a dip this
+            strong; a lower number is more believable, and we reject above 0.05.</li>
+          <li><b>Blind verdict</b> - the judge ruled on the evidence without being shown the expected answer;
+            "confirmed" here means the pipeline recovered a known signal, not that it found a new planet.</li>
+          <li><b>Bundle hash</b> - fingerprint of the whole analysis; same inputs, same hash.</li>
+          <li><b>On-chain</b> - that hash on Solana mainnet, a public timestamped proof.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
   <!-- ============ mission brief: what this rig is ============ -->
   <section class="section about-section">
     <div class="glass about">
@@ -189,75 +258,6 @@
       </figure>
       <p class="rigor-foot">These are checks of the METHOD on real, already-known data, run on freely published
          telescope products. They show the pipeline is trustworthy; they are not a claim of any new world.</p>
-      </details>
-    </div>
-  </section>
-
-  <!-- ============ full speech record ============ -->
-  <section class="section transcript-section">
-    <div class="section-head">
-      <h2>DELIBERATION LOG</h2>
-      <label class="check inline"><input type="checkbox" id="transcript-autoscroll" checked /> <span>follow</span></label>
-    </div>
-    <div class="transcript" id="transcript" role="log" aria-live="polite"></div>
-  </section>
-
-  <!-- ============ telemetry ============ -->
-  <section class="section">
-    <div class="telemetry glass">
-      <div class="tel" data-tone="good"><span class="tel-num" id="stat-confirmed">0</span><span class="tel-lbl">confirmed</span></div>
-      <div class="tel" data-tone="warn"><span class="tel-num" id="stat-watch">0</span><span class="tel-lbl">watchlist</span></div>
-      <div class="tel" data-tone="bad"><span class="tel-num" id="stat-rejected">0</span><span class="tel-lbl">rejected</span></div>
-      <div class="tel" data-tone="chain"><span class="tel-num" id="stat-anchored">0</span><span class="tel-lbl">on-chain</span></div>
-      <div class="tel"><span class="tel-num" id="stat-done">0</span><span class="tel-lbl">targets</span></div>
-    </div>
-  </section>
-
-  <!-- ============ findings board ============ -->
-  <section class="section">
-    <div class="section-head">
-      <h2>FINDINGS CATALOG</h2>
-      <span class="hint" id="findings-count">0 findings</span>
-    </div>
-    <p class="findings-note">Closed-loop self-test: each signal is seeded from live NASA catalog parameters, recovered by the detector, and cross-checked against the same catalog. Verdicts validate the pipeline -- they do not claim new planets.</p>
-    <div class="prov-bar" id="prov-bar" hidden></div>
-    <div class="board" id="board"><p class="empty">Awaiting first light. Launch a run to watch the table deliberate.</p></div>
-    <div class="board-foot"><button class="btn tiny ghost" id="board-more" hidden>More</button></div>
-  </section>
-
-  <!-- ============ controls + ledger ============ -->
-  <section class="section two-col">
-    <div class="glass control-panel">
-      <div class="panel-head"><h2>MISSION CONTROL</h2><span class="run-status" id="run-status">idle</span></div>
-      <form id="run-form" class="run-form">
-        <label class="field"><span>Targets</span><input type="number" id="in-targets" min="1" max="50" value="4" /></label>
-        <label class="field"><span>Stage delay (ms)</span><input type="number" id="in-delay" min="0" max="5000" step="50" value="300" /></label>
-        <label class="field"><span>Recovery trials</span><input type="number" id="in-confidence" min="1" max="64" value="8" /></label>
-        <div class="checks">
-          <label class="check"><input type="checkbox" id="in-offline" /> <span>Offline catalog</span></label>
-          <label class="check"><input type="checkbox" id="in-resume" /> <span>Resume snapshot</span></label>
-        </div>
-        <button type="submit" class="btn primary wide" id="run-submit">Run pipeline</button>
-        <p class="note">chair &rarr; fetch &rarr; scout &rarr; sim &rarr; critic &rarr; reporter. Each run checkpoints to a snapshot so it can stop and resume.</p>
-      </form>
-    </div>
-
-    <div class="glass">
-      <div class="panel-head"><h2>ON-CHAIN LEDGER</h2><button class="btn tiny ghost" id="ledger-refresh">refresh</button></div>
-      <div class="ledger" id="ledger"><p class="empty">Nothing anchored yet.</p></div>
-      <details class="howto"><summary>How to read this (plain English)</summary>
-        <ul>
-          <li><b>Period</b> - the planet's "year": days between dips.</li>
-          <li><b>Depth (ppm)</b> - how much the star dims, parts per million.</li>
-          <li><b>SNR</b> - signal strength; above ~7 we trust it over noise.</li>
-          <li><b>Confidence</b> - % of times the signal survives a fresh-noise replay.</li>
-          <li><b>Significance (FAP)</b> - the odds that plain noise on THIS star alone could fake a dip this
-            strong; a lower number is more believable, and we reject above 0.05.</li>
-          <li><b>Blind verdict</b> - the judge ruled on the evidence without being shown the expected answer;
-            "confirmed" here means the pipeline recovered a known signal, not that it found a new planet.</li>
-          <li><b>Bundle hash</b> - fingerprint of the whole analysis; same inputs, same hash.</li>
-          <li><b>On-chain</b> - that hash on Solana mainnet, a public timestamped proof.</li>
-        </ul>
       </details>
     </div>
   </section>

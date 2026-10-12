@@ -1134,7 +1134,15 @@ collaborators (still labelled candidate by the pipeline).
 - Odd/even and secondary-eclipse stay diagnostic-only; lifting `deep-suspect`/`moderate` records to a
   genuinely corroborated candidate still needs a second epoch / multi-sector coverage or a resolved blend.
 
-**Next (Stage 4)**: production scale + ops for the candidate pipeline -- run the blind search across many
-sectors on a schedule, persist surviving candidates, and (behind an explicit opt-in) surface them WITHOUT
-touching the verified-planet re-check path, verdicts, bundle hashes, or the money path.
+**Stage 4 status: in progress (false-positive control first).**
+- Measured on real Sector 1 data, the single-sector blind search returns the SAME (period, epoch) on several
+  unrelated host stars -- a sector-common systematic (the crude "deepest cadence" epoch estimator plus a
+  ~sector-length window alias of the BLS periodogram), NOT independent planets. Scaling out before handling
+  this would multiply one artifact into many fake candidates. So Stage 4 opens with a coincidence collapse:
+  `src/candidate/dedup.ts` clusters candidates by ephemeris (period within 0.5%, period-folded epoch within
+  0.05 d) and flags any group spanning multiple hosts as a suspected common systematic, ranking ONE
+  representative each; p19 applies it before emitting the follow-up queue.
+- Still ahead in Stage 4: cross-sector corroboration (a real signal recurs in independent sectors; a
+  single-sector systematic does not), candidate persistence, and -- behind an explicit opt-in -- surfacing
+  them WITHOUT touching the verified-planet re-check path, verdicts, bundle hashes, or the money path.
 

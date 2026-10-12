@@ -30,6 +30,7 @@ import { noveltyFromSets } from "../src/review/externalReview.ts";
 import { buildCandidateRecord, formatFollowupCard } from "../src/candidate/candidateRecord.ts";
 import { classifyDepthRegime, CALIBRATED_DEPTH } from "../src/candidate/falsePositive.ts";
 import { prioritize, formatPriorityCard, DEFAULT_SITE } from "../src/candidate/prioritize.ts";
+import { collapseCoincident } from "../src/candidate/dedup.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const UA = "Mozilla/5.0 (compatible; space-data-rig-ffi-blind)";
@@ -215,13 +216,25 @@ async function main(): Promise<void> {
   // Stage 3: rank the surviving candidates by follow-up priority -- evidence + how soon the next transit is
   // + how high it sits from a reference ground site. Epochs are ABSOLUTE BJD (tglc.ts applied BJDREFI), so
   // the predicted transit date and the observability altitude are real, not fabricated.
-  const ranked = emitted
-    .map((record) => ({ record, p: prioritize(record, nowBjd) }))
+  //
+  // Stage 4 (FP control): collapse candidates that share ONE ephemeris across DIFFERENT host stars -- a real
+  // planet lives on one star, so N hosts lighting up at the same (period, epoch) is a sector-common systematic
+  // or window alias, not N independent candidates. We rank independent ephemerides (one representative each)
+  // and label any collapsed group so the artifact is visible, never silently merged.
+  const groups = collapseCoincident(emitted);
+  const shared = groups.filter((g) => g.suspectedCommonSystematic);
+  if (shared.length) {
+    console.log(`\n[p19] Stage-4 FP control: ${shared.length} ephemeris group(s) span multiple hosts (same period+epoch) -> NOT independent; likely a sector-common systematic / window alias. Collapsed to one representative each:`);
+    for (const g of shared) console.log(`[p19]   P=${g.representative.detection.periodDays.toFixed(4)} d, T0=${g.representative.detection.epochBjd.toFixed(4)} BJD shared by ${g.distinctHosts} hosts: ${g.members.map((m) => `TIC ${m.host.tic}`).join(", ")}`);
+  }
+  const ranked = groups
+    .map((g) => ({ g, record: g.representative, p: prioritize(g.representative, nowBjd) }))
     .sort((a, b) => b.p.priorityScore - a.p.priorityScore);
   if (ranked.length) {
-    console.log(`\n[p19] ===== STAGE-3 FOLLOW-UP QUEUE, ranked (observability from ${DEFAULT_SITE.name}) =====`);
-    ranked.forEach(({ record, p }, i) => {
-      console.log(`\n[p19] ----- rank ${i + 1}: TIC ${record.host.tic} (tier ${record.tier}, priority ${p.priorityBand} ${p.priorityScore.toFixed(2)}) -----`);
+    console.log(`\n[p19] ===== STAGE-3/4 FOLLOW-UP QUEUE, ranked per independent ephemeris (observability from ${DEFAULT_SITE.name}) =====`);
+    ranked.forEach(({ g, record, p }, i) => {
+      const dup = g.suspectedCommonSystematic ? ` [collapsed ${g.distinctHosts} coincident hosts -> treat as ONE systematic, needs cross-sector / resolved-blend check]` : "";
+      console.log(`\n[p19] ----- rank ${i + 1}: TIC ${record.host.tic} (tier ${record.tier}, priority ${p.priorityBand} ${p.priorityScore.toFixed(2)})${dup} -----`);
       console.log(formatPriorityCard(record, p));
     });
   }

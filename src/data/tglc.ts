@@ -18,7 +18,7 @@
 // record the exact column used in the provenance string. This parser is pure over bytes it is given;
 // it does no network I/O and is NOT imported by the worker, so it cannot touch a bundle hash.
 
-import { readFitsTable, readColumn } from "./fits.ts";
+import { readFitsTable, readColumn, readFitsPrimaryHeader } from "./fits.ts";
 import type { LightCurve, LightCurvePoint } from "../core/types.ts";
 
 const FLUX_CANDIDATES = ["cal_psf_flux", "cal_aper_flux", "psf_flux", "aperture_flux"] as const;
@@ -87,5 +87,37 @@ export function tglcBytesToLightCurve(bytes: Uint8Array, targetId: string, opts:
     source:
       `TGLC FFI photometry column '${fluxName}' (${sector}, REAL photometry); ` +
       `decontaminated PSF/aperture full-frame light curve; CC BY 4.0, cite Han et al. 2023`,
+  };
+}
+
+export interface TglcHeaderMeta {
+  /** Host TESS Input Catalog id (the key used for novelty de-duplication), or null if absent. */
+  tic: number | null;
+  ra: number | null;
+  dec: number | null;
+  tmag: number | null;
+  sector: number | null;
+}
+
+function numOrNull(v: string | number | undefined): number | null {
+  if (v == null) return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Extract host metadata from the PRIMARY header for the novelty gate and follow-up card.
+ * TICID is stored as a quoted string (~1e8, safe as a JS number) and is what the confirmed/TOI
+ * catalogs key on. We deliberately do NOT use GAIADR3 as an identifier: it is an int64 beyond
+ * 2^53 and would silently lose precision. Pure over bytes; no network; not imported by the worker.
+ */
+export function tglcHeaderMeta(bytes: Uint8Array): TglcHeaderMeta {
+  const h = readFitsPrimaryHeader(bytes);
+  return {
+    tic: numOrNull(h.TICID as string | number | undefined),
+    ra: numOrNull(h.RA_OBJ as string | number | undefined),
+    dec: numOrNull(h.DEC_OBJ as string | number | undefined),
+    tmag: numOrNull(h.TESSMAG as string | number | undefined),
+    sector: numOrNull(h.SECTOR as string | number | undefined),
   };
 }

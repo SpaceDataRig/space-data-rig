@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { tglcBytesToLightCurve } from "../src/data/tglc.ts";
+import { tglcBytesToLightCurve, tglcHeaderMeta } from "../src/data/tglc.ts";
 
 // A real TGLC s0001 product (Gaia DR3 6479517581213243264, TIC 139091033), downloaded token-free from
 // the public stpubdata bucket and committed so this test proves the parser against REAL bytes with no
@@ -39,4 +39,14 @@ test("deterministic: two parses are identical", () => {
 
 test("rejects non-FITS bytes", () => {
   assert.throws(() => tglcBytesToLightCurve(new Uint8Array([1, 2, 3, 4, 5]), "junk"));
+});
+
+test("reads host metadata from the PRIMARY header for the novelty gate", () => {
+  const m = tglcHeaderMeta(bytes);
+  // TICID is a quoted string in the header; the parser must surface it as the safe integer 139091033
+  assert.equal(m.tic, 139091033);
+  assert.equal(m.sector, 1);
+  assert.ok(m.ra != null && Math.abs(m.ra - 319.3695096649233) < 1e-6, `ra=${m.ra}`);
+  assert.ok(m.dec != null && Math.abs(m.dec - -47.03374652357791) < 1e-6, `dec=${m.dec}`);
+  assert.ok(m.tmag != null && Math.abs(m.tmag - 8.138207467213718) < 1e-6, `tmag=${m.tmag}`);
 });

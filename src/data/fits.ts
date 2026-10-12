@@ -132,6 +132,24 @@ export function readFitsTable(bytes: Uint8Array): FitsTable {
   return table;
 }
 
+/**
+ * Read the PRIMARY HDU header keywords only. Object-level metadata for TGLC products
+ * (TICID, RA_OBJ, DEC_OBJ, TESSMAG, SECTOR) lives in the PRIMARY header, NOT in the
+ * BINTABLE extension that readFitsTable returns. Additive: it does not alter readFitsTable,
+ * so the production real-photometry path and any bundle hash are untouched.
+ */
+export function readFitsPrimaryHeader(bytes: Uint8Array): Record<string, string | number> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (ascii(view, 0, 6) !== "SIMPLE") throw new Error("not a FITS file (missing SIMPLE)");
+  const { cards } = readHeaderBlock(view, 0);
+  const header: Record<string, string | number> = {};
+  for (const c of cards) {
+    const key = c.slice(0, 8).trim();
+    if (key) header[key] = cardValue(c);
+  }
+  return header;
+}
+
 /** Read one numeric column as Float64Array (NaN preserved for masked points). */
 export function readColumn(table: FitsTable, bytes: Uint8Array, name: string): Float64Array {
   const col = table.columns.find((c) => c.name === name);

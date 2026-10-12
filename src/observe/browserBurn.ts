@@ -159,16 +159,40 @@ export async function burnForObservation(rpcUrl: string): Promise<BurnResult> {
   tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
 
   // Send path matters more than it looks. This bundle builds a web3.js v3 Transaction, whose sign()/serialize()
-  // are ASYNC; Phantom's object-based signAndSendTransaction was written against v1's synchronous contract and
-  // chokes on a v3 object (surfaces as a generic wallet error, e.g. Phantom #8100002). The documented low-level
-  // string path avoids the mismatch entirely: serializeMessage() is still SYNC in v3, so we base58 the message
-  // ourselves and the wallet deserializes, signs and submits it with its own v1 copy of web3.js.
-  const message = tx.serializeMessage();
+  // are ASYNC; handing Phantom the raw OBJECT relies on v1's synchronous contract and is fragile. The
+  // documented low-level path passes a STRING and lets the wallet deserialize with its own web3.js copy. Two
+  // string shapes exist in the wild and Phantom versions disagree about which they accept:
+  //   (a) the FULL UNSIGNED WIRE: empty signature table + message. This is what Phantom actually deserializes --
+  //       verified live against spacedatarig.app: passing only (b) makes Phantom throw
+  //       "Transaction message version 2 deserialization is not supported" (its VersionedTransaction reader
+  //       misaligns on the bare message and reads a version header out of account bytes).
+  //   (b) the BARE MESSAGE (serializeMessage, still SYNC in v3) -- the shape Phantom's docs example shows.
+  // We send (a) first; only if the wallet complains about DESERIALIZATION (before ever prompting the user) do
+  // we retry (b). Any other error (decline, simulate-fail) surfaces immediately -- no repeated popups, and if
+  // nothing lands on-chain nothing is burned.
+  const unsignedWire = await tx.serialize({ requireAllSignatures: false, verifySignatures: false });
+  const bareMessage = tx.serializeMessage();
+  const forms: { label: string; bytes: Uint8Array }[] = [
+    { label: "unsigned-wire", bytes: unsignedWire },
+    { label: "bare-message", bytes: bareMessage },
+  ];
   let signature: string | undefined;
   try {
     if (typeof provider.request === "function") {
-      const sent = await provider.request({ method: "signAndSendTransaction", params: { message: bs58Encode(message) } });
-      signature = typeof sent === "string" ? sent : sent.signature;
+      let lastErr: unknown;
+      for (let i = 0; i < forms.length; i++) {
+        try {
+          const sent = await provider.request({ method: "signAndSendTransaction", params: { message: bs58Encode(forms[i].bytes) } });
+          signature = typeof sent === "string" ? sent : sent.signature;
+          break;
+        } catch (e) {
+          lastErr = e;
+          const m = String((e as Error)?.message ?? e);
+          const isDeserializeComplaint = /deserializ|message version/i.test(m);
+          if (!isDeserializeComplaint || i === forms.length - 1) throw e;
+        }
+      }
+      if (!signature && lastErr) throw lastErr;
     } else if (typeof provider.signAndSendTransaction === "function") {
       const sent = await provider.signAndSendTransaction(tx, { skipPreflight: false });
       signature = typeof sent === "string" ? sent : sent.signature;

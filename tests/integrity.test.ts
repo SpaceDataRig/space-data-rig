@@ -8,8 +8,9 @@ import { join } from "node:path";
 
 import type { ArtifactStore } from "../src/core/ports.ts";
 import type { Finding } from "../src/core/types.ts";
-import type { BundleRecord } from "../src/core/state-types.ts";
+import type { BundleRecord, LedgerEntry } from "../src/core/state-types.ts";
 import { RigStore } from "../src/core/store.ts";
+import { anchorStampIsValid } from "../src/core/anchor-verify.ts";
 import { composeBundle, persistBundle, verifyBundle } from "../src/bundle/bundle.ts";
 import { getOrCreateKeypair } from "../src/solana/anchor.ts";
 
@@ -141,4 +142,35 @@ test("addBundle likewise refuses to carry a tx across a changed hash", () => {
   assert.equal(same.solanaTx, "sigA", "same hash -> inherit");
   const changed = store.addBundle({ findingId: "F-drift", hash: "hB", createdAt: "2026-01-01T00:00:00.000Z" } as unknown as BundleRecord);
   assert.equal(changed.solanaTx, undefined, "changed hash -> no stale anchor");
+});
+
+// ---- the ledger cross-check rule (the residual drift hole the audit found live on HAT-P-11-b) ----
+
+const led = (findingId: string, bundleHash: string, signature: string, status: LedgerEntry["status"] = "anchored"): LedgerEntry =>
+  ({ findingId, bundleHash, signature, status } as LedgerEntry);
+
+const fnd = (id: string, bundleHash: string, solanaTx?: string): Finding =>
+  ({ id, targetId: id, createdAt: "2026-01-01T00:00:00.000Z", verdict: "accepted", verdictReason: "", bundleHash, solanaTx }) as unknown as Finding;
+
+test("anchorStampIsValid requires an anchored ledger entry matching BOTH the tx and the current hash", () => {
+  assert.equal(anchorStampIsValid(led("F", "hA", "sigA"), "hA", "sigA"), true);
+  assert.equal(anchorStampIsValid(led("F", "hA", "sigA"), "hB", "sigA"), false, "bundle hash drifted from what the tx anchored");
+  assert.equal(anchorStampIsValid(led("F", "hA", "sigB"), "hA", "sigA"), false, "stamp tx differs from ledger tx");
+  assert.equal(anchorStampIsValid(led("F", "hA", "sigA", "failed"), "hA", "sigA"), false, "a failed ledger row proves nothing");
+  assert.equal(anchorStampIsValid(undefined, "hA", "sigA"), false, "no ledger entry at all");
+  assert.equal(anchorStampIsValid(led("F", "hA", "sigA"), "hA", undefined), false, "nothing stamped");
+});
+
+test("reconcileAnchorStamps drops a drifted stamp but keeps a ledger-confirmed one (no spend)", () => {
+  const store = new RigStore();
+  store.addFinding(fnd("F-ok", "hashA", "sigA"));
+  store.addFinding(fnd("F-bad", "hashB", "sigA")); // current hash B, but sigA sealed hash A
+  store.addBundle({ findingId: "F-bad", hash: "hashB", createdAt: "2026-01-01T00:00:00.000Z", solanaTx: "sigA" } as unknown as BundleRecord);
+  const ledger = [led("F-ok", "hashA", "sigA"), led("F-bad", "hashA", "sigA")];
+  const r = store.reconcileAnchorStamps(ledger);
+  assert.equal(store.getFinding("F-ok")!.solanaTx, "sigA", "valid anchor is preserved");
+  assert.equal(store.getFinding("F-bad")!.solanaTx, undefined, "drifted stamp is cleared");
+  assert.equal(store.listBundles().find((b) => b.findingId === "F-bad")!.solanaTx, undefined, "bundle stamp cleared too");
+  assert.equal(r.clearedFindings, 1);
+  assert.equal(r.clearedBundles, 1);
 });

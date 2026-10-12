@@ -13,9 +13,11 @@ import { EventEmitter } from "node:events";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Finding, RigEvent, SeatName, Task } from "./types.ts";
+import { anchorStampIsValid, indexLedgerByFinding } from "./anchor-verify.ts";
 import {
   SEAT_ORDER,
   type BundleRecord,
+  type LedgerEntry,
   type RigSnapshot,
   type RigStats,
   type SeatState,
@@ -187,6 +189,32 @@ export class RigStore {
 
   listBundles(): BundleRecord[] {
     return [...this.bundles.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+
+  /**
+   * Integrity sweep (spends NOTHING), parity with the RigStateDO. The Node store does not own the
+   * ledger (the fs ledger in solana/anchor.ts does), so the caller passes the current ledger rows. Any
+   * finding/bundle whose `solanaTx` is not confirmed by an `anchored` ledger entry binding that exact
+   * signature to the CURRENT bundle hash has the stale stamp dropped, so the UI never presents a tx
+   * that sealed a superseded bundle as proof for the one now displayed. Returns how many were cleared.
+   */
+  reconcileAnchorStamps(ledger: LedgerEntry[]): { clearedFindings: number; clearedBundles: number } {
+    const byId = indexLedgerByFinding(ledger);
+    let clearedFindings = 0;
+    let clearedBundles = 0;
+    for (const f of this.findings.values()) {
+      if (!f.solanaTx) continue;
+      if (anchorStampIsValid(byId.get(f.id), f.bundleHash, f.solanaTx)) continue;
+      this.updateFinding(f.id, { solanaTx: undefined });
+      clearedFindings += 1;
+    }
+    for (const b of this.bundles.values()) {
+      if (!b.solanaTx) continue;
+      if (anchorStampIsValid(byId.get(b.findingId), b.hash, b.solanaTx)) continue;
+      this.updateBundle(b.findingId, { solanaTx: undefined });
+      clearedBundles += 1;
+    }
+    return { clearedFindings, clearedBundles };
   }
 
   // ---- events --------------------------------------------------------------

@@ -19,6 +19,7 @@
 
 import { DurableObject } from "cloudflare:workers";
 import type { Finding, RigEvent, SeatName, Task } from "../core/types.ts";
+import { anchorStampIsValid } from "../core/anchor-verify.ts";
 import {
   SEAT_ORDER,
   defaultSeats,
@@ -62,6 +63,12 @@ export class RigStateDO extends DurableObject<Env> {
       await this.ensureSchema();
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
       await this.hydrateIfEmpty();
+      // Self-heal any anchor stamp that does not match its current bundle hash (no spend, display truth).
+      try {
+        await this.reconcileAnchorStamps();
+      } catch {
+        /* an integrity sweep must never crash cold start */
+      }
     });
   }
 
@@ -250,6 +257,40 @@ export class RigStateDO extends DurableObject<Env> {
     return this.all<{ data: string }>(`SELECT data FROM ledger ORDER BY anchored_at DESC`).map((r) => JSON.parse(r.data) as LedgerEntry);
   }
 
+  /** Whether the ledger records an `anchored` entry binding exactly signature=solanaTx AND hash=bundleHash. */
+  private ledgerAnchored(findingId: string, bundleHash: string | undefined, solanaTx: string | undefined): boolean {
+    const row = this.row<{ data: string }>(`SELECT data FROM ledger WHERE finding_id = ?`, findingId);
+    const entry = row ? (JSON.parse(row.data) as LedgerEntry) : undefined;
+    return anchorStampIsValid(entry, bundleHash, solanaTx);
+  }
+
+  /**
+   * Integrity sweep (spends NOTHING): drop any finding/bundle `solanaTx` stamp whose ledger entry does
+   * not confirm it as an `anchored` binding of the CURRENT bundle hash. Without this, a row already
+   * persisted in the drifted state (from before the guard fix, or re-hydrated from an old snapshot)
+   * would keep displaying a sealed/on-chain badge pointing at a tx that anchored a superseded hash.
+   * The tx + ledger row stay valid for the prior bundle; the card just stops claiming it proves THIS one.
+   * Runs once on cold start (after hydration); safe to call repeatedly; persists cleaned rows.
+   */
+  async reconcileAnchorStamps(): Promise<{ clearedFindings: number; clearedBundles: number }> {
+    let clearedFindings = 0;
+    let clearedBundles = 0;
+    for (const f of this.listFindings()) {
+      if (!f.solanaTx) continue;
+      if (this.ledgerAnchored(f.id, f.bundleHash, f.solanaTx)) continue;
+      await this.updateFinding(f.id, { solanaTx: undefined });
+      clearedFindings += 1;
+    }
+    for (const b of this.listBundles()) {
+      if (!b.solanaTx) continue;
+      if (this.ledgerAnchored(b.findingId, b.hash, b.solanaTx)) continue;
+      await this.updateBundle(b.findingId, { solanaTx: undefined });
+      clearedBundles += 1;
+    }
+    if (clearedFindings || clearedBundles) await this.saveSnapshot();
+    return { clearedFindings, clearedBundles };
+  }
+
   snapshot(): RigSnapshot {
     return {
       version: SNAPSHOT_VERSION,
@@ -387,13 +428,17 @@ export class RigStateDO extends DurableObject<Env> {
 
   async recordFinding(finding: Finding): Promise<Finding> {
     // Finding ids are deterministic (F-<target>): a re-run must NOT silently un-anchor a previously
-    // sealed finding. But the anchor stamp is only carried across when the bundle hash is UNCHANGED:
-    // if a re-run produced a different bundle, inheriting the old solanaTx would advertise provenance
-    // for a bundle the chain never anchored (the hash-drift bug). The on-chain tx + ledger stay valid
-    // for the prior hash; the new bundle starts un-anchored and can be re-anchored on its own merits.
+    // sealed finding. But the anchor stamp is only carried across when the LEDGER confirms that exact
+    // tx actually anchored THIS bundle hash. Comparing the row's own previous hash is not enough: a row
+    // already persisted in the drifted state (current hash + stale tx covering an older hash) would keep
+    // re-inheriting the wrong tx on every same-hash re-run -- the hole the audit's HAT-P-11-b case shows.
+    // The append-only ledger is ground truth; a new bundle with no confirming entry starts un-anchored.
     const prev = this.row<{ data: string }>(`SELECT data FROM findings WHERE id = ?`, finding.id);
     const prevFinding = prev ? (JSON.parse(prev.data) as Finding) : undefined;
-    const prevTx = prevFinding?.solanaTx != null && prevFinding.bundleHash === finding.bundleHash ? prevFinding.solanaTx : undefined;
+    const prevTx =
+      prevFinding?.solanaTx != null && this.ledgerAnchored(finding.id, finding.bundleHash, prevFinding.solanaTx)
+        ? prevFinding.solanaTx
+        : undefined;
     const stored = this.stripFinding({ ...finding, solanaTx: finding.solanaTx ?? prevTx });
     this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO findings (id, created_at, data) VALUES (?, ?, ?)`, stored.id, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();
@@ -412,10 +457,11 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async recordBundle(bundle: BundleRecord): Promise<BundleRecord> {
-    // Same hash-guarded anchor preservation as recordFinding (deterministic finding ids).
+    // Same ledger-confirmed anchor preservation as recordFinding: a stale tx is never carried across a
+    // bundle whose current hash the ledger does not match to that exact signature.
     const prev = this.row<{ data: string }>(`SELECT data FROM bundles WHERE finding_id = ?`, bundle.findingId);
     const prevBundle = prev ? (JSON.parse(prev.data) as BundleRecord) : undefined;
-    const prevTx = prevBundle?.solanaTx != null && prevBundle.hash === bundle.hash ? prevBundle.solanaTx : undefined;
+    const prevTx = prevBundle?.solanaTx != null && this.ledgerAnchored(bundle.findingId, bundle.hash, prevBundle.solanaTx) ? prevBundle.solanaTx : undefined;
     const stored = { ...bundle, solanaTx: bundle.solanaTx ?? prevTx };
     this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO bundles (finding_id, created_at, data) VALUES (?, ?, ?)`, stored.findingId, stored.createdAt, JSON.stringify(stored));
     await this.ctx.storage.sync();

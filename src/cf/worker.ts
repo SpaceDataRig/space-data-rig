@@ -22,6 +22,7 @@ import { threadsFor } from "../ai/threads.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import { explorerUrl } from "../solana/anchor-core.ts";
 import { computeObservation } from "../observe/observeApi.ts";
+import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -171,6 +172,43 @@ app.post("/api/observe", async (c) => {
   const out = await computeObservation({ tic, sector, dedication });
   if (!out.ok) return c.json({ error: out.error, errors: out.errors }, out.status as 400);
   return c.json({ record: out.record, memo: out.memo, envelopeHash: out.envelopeHash, science: out.science });
+});
+
+// Commission a NAMED OBSERVATION (the PAID path). The x402 handshake: an unpaid call returns 402 with an
+// X-PAYMENT-REQUIRED challenge (burn exactly 10,000 $SDR). A retry carrying X-PAYMENT (a base64 envelope holding
+// the SIGNATURE of the burn the client already submitted) is verified FROM THE CHAIN by the DO -- never trusting
+// the client -- then the SAME blind deterministic search runs and, under the OBSERVE_ANCHOR gate, the envelope
+// hash is anchored on mainnet (sdr:observe:1). Payment gates the anchor only; it never changes the verdict.
+app.post("/api/observe/commission", async (c) => {
+  const xPayment = c.req.header("X-PAYMENT") ?? null;
+  let body: { tic?: unknown; sector?: unknown; dedication?: unknown };
+  try {
+    body = (await c.req.json()) as typeof body;
+  } catch {
+    return c.json({ error: "invalid JSON body" }, 400);
+  }
+  const tic = typeof body.tic === "number" ? body.tic : parseInt(String(body.tic), 10);
+  const sectorRaw = body.sector;
+  const sector = sectorRaw == null || sectorRaw === "" ? null : typeof sectorRaw === "number" ? sectorRaw : parseInt(String(sectorRaw), 10);
+  const dedication = typeof body.dedication === "string" ? body.dedication : "";
+
+  const res = await rigStub(c.env).observeCommission({ tic, sector, dedication, xPaymentB64: xPayment });
+
+  if (!res.ok) {
+    if (res.status === 402) {
+      const challenge = buildPaymentRequired({ resource: "/api/observe/commission", description: "Commission a named observation: burn exactly 10,000 $SDR.", error: res.error });
+      return c.json({ error: res.error }, 402, { "X-PAYMENT-REQUIRED": btoa(JSON.stringify(challenge)) });
+    }
+    return c.json({ error: res.error, errors: res.errors }, res.status as 400);
+  }
+
+  const burnSig = res.paymentSignature ?? "";
+  const receipt = buildPaymentResponse(burnSig, burnSig ? explorerUrl(burnSig) : "", new Date().toISOString());
+  return c.json(
+    { record: res.record, memo: res.memo, envelopeHash: res.envelopeHash, anchored: res.anchored, alreadyAnchored: res.alreadyAnchored, dryRun: res.dryRun, capReached: res.capReached, signature: res.signature, slot: res.slot, explorerUrl: res.explorerUrl, science: res.science },
+    200,
+    { "X-PAYMENT-RESPONSE": btoa(JSON.stringify(receipt)) },
+  );
 });
 
 // Multi-seat war-room threads. The LIST is grounded and instant -- composed from each

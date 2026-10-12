@@ -22,8 +22,10 @@ import {
   anchorMemoOnEndpoints,
   buildMemo,
   buildDeliberationMemo,
+  buildObserveMemo,
   DEFAULT_RPC,
   DELIB_MEMO_PREFIX,
+  OBSERVE_MEMO_PREFIX,
   endpointList,
   explorerUrl,
   keypairFromSecretBytes,
@@ -33,7 +35,7 @@ import {
   type VerifyResult,
 } from "./anchor-core.ts";
 
-export { buildMemo, buildDeliberationMemo, DEFAULT_RPC, DELIB_MEMO_PREFIX, explorerUrl, MEMO_PREFIX, MEMO_PROGRAM_ID };
+export { buildMemo, buildDeliberationMemo, buildObserveMemo, DEFAULT_RPC, DELIB_MEMO_PREFIX, OBSERVE_MEMO_PREFIX, explorerUrl, MEMO_PREFIX, MEMO_PROGRAM_ID };
 
 export interface AnchorOptions {
   rpcUrl?: string;
@@ -205,6 +207,39 @@ export async function anchorDeliberationHash(
 /** Independently verify a deliberation anchor against the chain (delib memo prefix). */
 export function verifyDeliberationAnchor(signature: string, deliberationHash: string, rpcUrl?: string): Promise<VerifyResult> {
   return verifyOnEndpoints(rpcCandidates(rpcUrl), signature, deliberationHash, DELIB_MEMO_PREFIX);
+}
+
+/**
+ * Anchor a commissioned NAMED OBSERVATION envelope hash on Solana with the SEPARATE sdr:observe:1 memo schema
+ * (never the science bundle or the deliberation receipt). Same endpoint walk + keypair as the other anchors;
+ * dryRun previews the memo without touching the network or the keypair.
+ */
+export async function anchorObservationHash(
+  observationId: string,
+  observationHash: string,
+  opts: AnchorOptions = {},
+): Promise<AnchorResult> {
+  const memo = buildObserveMemo(observationId, observationHash);
+  if (opts.dryRun) return { ok: true, memo, dryRun: true };
+
+  const endpoints = rpcCandidates(opts.rpcUrl);
+  const keypairPath = opts.keypairPath ?? process.env.SOLANA_KEYPAIR ?? resolve("out", "anchor-keypair.json");
+  let kp: Keypair;
+  try {
+    kp = await getOrCreateKeypair(keypairPath);
+  } catch (e) {
+    return { ok: false, memo, error: `keypair load failed (${keypairPath}): ${e instanceof Error ? e.message : String(e)}` };
+  }
+  const res = await anchorMemoOnEndpoints(endpoints, kp, memo, {
+    airdropSol: opts.airdropSol,
+    commitment: opts.commitment,
+  });
+  return { ...res, dryRun: false };
+}
+
+/** Independently verify a named-observation anchor against the chain (observe memo prefix). */
+export function verifyObserveAnchor(signature: string, observationHash: string, rpcUrl?: string): Promise<VerifyResult> {
+  return verifyOnEndpoints(rpcCandidates(rpcUrl), signature, observationHash, OBSERVE_MEMO_PREFIX);
 }
 
 // ---- local anchor ledger (fs; mirrors on-chain state for the CLI + server) ---

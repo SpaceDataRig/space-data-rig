@@ -39,11 +39,15 @@ import {
   anchorMemoOnEndpoints,
   buildMemo,
   buildDeliberationMemo,
+  buildObserveMemo,
   endpointList,
   explorerUrl,
   keypairFromSecretJson,
   type AnchorCoreResult,
 } from "../solana/anchor-core.ts";
+import { commissionObservation, type ObserveScience } from "../observe/observeApi.ts";
+import { txGetterFor } from "../observe/connection.ts";
+import type { ObservationRecord } from "../observe/observation.ts";
 
 const SNAPSHOT_VERSION = 1;
 const MAX_EVENTS = 1000; // ring buffer cap so state stays bounded
@@ -618,6 +622,204 @@ export class RigStateDO extends DurableObject<Env> {
         : `Deliberation anchor failed for ${findingId}: ${res.error ?? "unknown"} -- the receipt hash is still valid off-chain.`,
     );
     return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
+  }
+
+  /**
+   * Anchor a commissioned NAMED OBSERVATION envelope (sdr:observe:1|<id>|<hash>) on mainnet. The hash binds
+   * the (sanitized) dedication to the science bundle hash, so the public immutable record ties a dedication to
+   * an exact reproducible result (including a no-transit zero). Third memo namespace, deliberately distinct
+   * from the science bundle and the deliberation receipt; NEVER written to the SQLite bundle ledger and never
+   * affects bundleHash/the deterministic run. Chain I/O mirrors anchorDeliberation (serialised fee-payer).
+   * Only reached when an operator has enabled commissioning (OBSERVE_ANCHOR=live) AND a valid $SDR burn was
+   * verified on-chain -- this method itself does no payment checking.
+   */
+  async anchorObservation(
+    observationId: string,
+    observationHash: string,
+    opts?: { dryRun?: boolean },
+  ): Promise<{ ok: boolean; memo?: string; signature?: string; slot?: number; explorerUrl?: string; error?: string; httpStatus: number; dryRun?: boolean }> {
+    if (!observationId || !observationHash) return { ok: false, httpStatus: 400, error: "observation id + hash required to anchor" };
+    const memo = buildObserveMemo(observationId, observationHash);
+    if (opts?.dryRun) return { ok: true, memo, dryRun: true, httpStatus: 200 };
+    if (!this.env.SOLANA_KEYPAIR)
+      return { ok: false, memo, httpStatus: 400, error: "no SOLANA_KEYPAIR secret configured on the Worker (set it with: wrangler secret put SOLANA_KEYPAIR)" };
+
+    const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
+    await this.emitEvent("reporter", "info", `Anchoring named observation ${observationId} on Solana mainnet...`);
+
+    let res: AnchorCoreResult;
+    try {
+      const kp = await keypairFromSecretJson(this.env.SOLANA_KEYPAIR);
+      res = await anchorMemoOnEndpoints(endpoints, kp, memo, { commitment: "confirmed" });
+    } catch (e) {
+      res = { ok: false, memo, error: e instanceof Error ? e.message : String(e) };
+    }
+
+    await this.emitEvent(
+      "reporter",
+      res.ok ? "result" : "warn",
+      res.ok && res.signature
+        ? `Anchored named observation ${observationId}: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}).`
+        : `Observation anchor failed for ${observationId}: ${res.error ?? "unknown"} -- the sealed record hash is still valid off-chain.`,
+    );
+    return { ok: res.ok, memo, signature: res.signature, slot: res.slot, explorerUrl: res.explorerUrl, error: res.error, httpStatus: 200 };
+  }
+
+  /**
+   * Commission a NAMED OBSERVATION end to end (the money-safety path). Decodes the x402 X-PAYMENT (the SIGNATURE
+   * of a burn the client already submitted), RE-READS that burn from the chain and verifies it against the policy
+   * (never trusts the client), runs the SAME blind deterministic compute, then -- under the OBSERVE_ANCHOR gate
+   * + a per-UTC-day budget -- anchors the envelope hash on mainnet (sdr:observe:1). Enforces: one burn commissions
+   * at most one observation (replay guard keyed by signature), and a re-commission of the SAME envelopeHash replays
+   * the prior tx without new spend. Persists the sealed record + anchor under the observations/ namespace, NEVER
+   * the science ledger; bundleHash and the deterministic run are untouched.
+   */
+  async observeCommission(input: {
+    tic: number;
+    sector: number | null;
+    dedication: string;
+    xPaymentB64?: string | null;
+  }): Promise<{
+    ok: boolean;
+    status: number;
+    error?: string;
+    errors?: string[];
+    record?: ObservationRecord;
+    memo?: string;
+    envelopeHash?: string;
+    paymentSignature?: string;
+    anchored?: boolean;
+    alreadyAnchored?: boolean;
+    dryRun?: boolean;
+    capReached?: boolean;
+    signature?: string;
+    slot?: number;
+    explorerUrl?: string;
+    science?: ObserveScience;
+  }> {
+    // 1) decode the x402 payment envelope (base64 JSON) if present; absence => "payment required" from the layer below.
+    let payment: unknown = null;
+    if (input.xPaymentB64) {
+      try {
+        payment = JSON.parse(atob(input.xPaymentB64));
+      } catch {
+        return { ok: false, status: 400, error: "X-PAYMENT is not valid base64-encoded JSON" };
+      }
+    }
+
+    // 2) verify the burn FROM THE CHAIN, then run the deterministic compute. commissionObservation spends nothing.
+    const connection = txGetterFor(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
+    const out = await commissionObservation({ tic: input.tic, sector: input.sector, dedication: input.dedication, payment }, { connection });
+    if (!out.ok) return { ok: false, status: out.status, error: out.error, errors: out.errors };
+
+    const obsId = out.record.observationId;
+    const envelopeHash = out.envelopeHash;
+    const burnSig = out.paymentSignature;
+
+    // 3) replay guard: one 10,000 $SDR burn commissions exactly one observation.
+    if (await this.artifacts.exists(`observations/by-sig/${burnSig}.json`)) {
+      await this.emitEvent("reporter", "warn", `Observation commission REJECTED: burn ${burnSig.slice(0, 16)}... already spent.`);
+      return { ok: false, status: 402, error: "payment already used: each 10,000 $SDR burn commissions exactly one observation" };
+    }
+
+    // 4) idempotency: the same envelopeHash already anchored -> replay the prior tx (no second spend).
+    const priorText = await this.artifacts.getText(`observations/${envelopeHash}/anchor.json`);
+    if (priorText) {
+      try {
+        const prior = JSON.parse(priorText) as { signature?: string; envelopeHash?: string; memo?: string; slot?: number; explorerUrl?: string };
+        if (prior.signature && prior.envelopeHash === envelopeHash) {
+          await this.markBurnUsed(burnSig, envelopeHash);
+          return { ok: true, status: 200, record: out.record, memo: prior.memo ?? out.memo, envelopeHash, paymentSignature: burnSig, anchored: true, alreadyAnchored: true, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl, science: out.science };
+        }
+      } catch {
+        /* corrupt prior record: fall through and (re)anchor */
+      }
+    }
+
+    // 5) OBSERVE_ANCHOR gate (off | dry | live) + live per-UTC-day budget, mirroring AUTO_ANCHOR.
+    const mode = (this.env.OBSERVE_ANCHOR ?? "off").toLowerCase();
+    let anchored = false;
+    let dryRun = false;
+    let capReached = false;
+    let memo = out.memo;
+    let signature: string | undefined;
+    let slot: number | undefined;
+    let anchorExplorer: string | undefined;
+
+    if (mode === "dry") {
+      const r = await this.anchorObservation(obsId, envelopeHash, { dryRun: true });
+      dryRun = true;
+      memo = r.memo ?? out.memo;
+    } else if (mode === "live") {
+      const cap = Math.max(0, parseInt(this.env.OBSERVE_ANCHOR_DAILY_CAP ?? "0", 10) || 0);
+      const day = new Date().toISOString().slice(0, 10);
+      const row = this.row<{ v: string }>(`SELECT v FROM meta WHERE k = 'observeAnchorDay'`);
+      let count = 0;
+      if (row) {
+        try {
+          const rec = JSON.parse(row.v) as { day?: string; count?: number };
+          if (rec.day === day) count = rec.count ?? 0;
+        } catch {
+          /* unreadable counter => treat as a fresh day */
+        }
+      }
+      if (count >= cap) {
+        capReached = true;
+        await this.emitEvent("reporter", "warn", `Observation ${obsId} sealed but NOT anchored: daily live budget ${cap}/day exhausted (OBSERVE_ANCHOR_DAILY_CAP).`);
+      } else {
+        const r = await this.anchorObservation(obsId, envelopeHash, { dryRun: false });
+        if (r.ok && r.signature) {
+          anchored = true;
+          signature = r.signature;
+          slot = r.slot;
+          anchorExplorer = r.explorerUrl ?? explorerUrl(r.signature);
+          memo = r.memo ?? out.memo;
+          this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO meta (k, v) VALUES ('observeAnchorDay', ?)`, JSON.stringify({ day, count: count + 1 }));
+          await this.ctx.storage.sync();
+          await this.artifacts.put(
+            `observations/${envelopeHash}/anchor.json`,
+            JSON.stringify({ obsId, envelopeHash, memo, signature, slot, explorerUrl: anchorExplorer, burnSig, anchoredAt: new Date().toISOString() }, null, 2),
+            "application/json",
+          );
+        }
+      }
+    }
+
+    // 6) persist the sealed record (paid + verified) for the evidence viewer, and mark the burn spent.
+    const finalRecord: ObservationRecord = { ...out.record };
+    if (anchored) {
+      finalRecord.status = "anchored";
+      finalRecord.anchor = { memo, signature: signature ?? null };
+    }
+    await this.artifacts.put(
+      `observations/${envelopeHash}/record.json`,
+      JSON.stringify({ record: finalRecord, science: out.science, paymentSignature: burnSig }, null, 2),
+      "application/json",
+    );
+    await this.markBurnUsed(burnSig, envelopeHash);
+
+    await this.emitEvent(
+      "reporter",
+      anchored ? "result" : "info",
+      anchored
+        ? `Named observation ${obsId} anchored on mainnet (slot ${slot}).`
+        : dryRun
+          ? `Named observation ${obsId} sealed; anchor previewed (dry), no SOL spent.`
+          : capReached
+            ? `Named observation ${obsId} sealed; anchor deferred (daily budget).`
+            : `Named observation ${obsId} sealed (OBSERVE_ANCHOR=off, not anchored).`,
+    );
+
+    return { ok: true, status: 200, record: finalRecord, memo, envelopeHash, paymentSignature: burnSig, anchored, dryRun, capReached, signature, slot, explorerUrl: anchorExplorer, science: out.science };
+  }
+
+  /** Record that a burn signature has been spent, so it can never commission a second observation. */
+  private async markBurnUsed(signature: string, envelopeHash: string): Promise<void> {
+    await this.artifacts.put(
+      `observations/by-sig/${signature}.json`,
+      JSON.stringify({ envelopeHash, usedAt: new Date().toISOString() }, null, 2),
+      "application/json",
+    );
   }
 
   /**

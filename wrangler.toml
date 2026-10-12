@@ -108,6 +108,12 @@ AUTO_RESEARCH_TARGETS = "8"
 AUTO_RESEARCH_TMAG = "10"
 AUTO_ANCHOR = "live"
 AUTO_ANCHOR_DAILY_CAP = "100"
+# Named-observation commissioning gate (mirrors AUTO_ANCHOR, for the sdr:observe:1 paid path). INERT by
+# default so shipping this code spends NOTHING: "off" seals a paid observation without anchoring it; "dry"
+# previews the memo; "live" anchors on mainnet only within OBSERVE_ANCHOR_DAILY_CAP. An operator flips it to
+# "live" + a small cap (e.g. 5) in a safe window to open paid anchoring, exactly as AUTO_ANCHOR was opted in.
+OBSERVE_ANCHOR = "off"
+OBSERVE_ANCHOR_DAILY_CAP = "0"
 
 # Secrets (set with `wrangler secret put <NAME>`, never committed here):
 #   SOLANA_RPC                       private first-choice RPC URL (Alchemy key);

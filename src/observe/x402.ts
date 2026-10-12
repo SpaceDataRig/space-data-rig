@@ -126,6 +126,23 @@ export function parsePaymentEnvelope(obj: unknown): PaymentParseResult {
   };
 }
 
+/**
+ * Extract the on-chain burn SIGNATURE from a decoded X-PAYMENT body. Our commission flow has the client send
+ * the signature of the burn it already submitted (the server then re-reads + verifies it from the chain via
+ * burnVerify), which avoids shipping a Solana SDK to the browser and never trusts the client's claim. Accepts
+ * payload.signature (preferred) or payload.transaction (a serialized tx) whose value we treat as the sig.
+ */
+export function parsePaymentSignature(obj: unknown): { ok: true; signature: string } | { ok: false; error: string } {
+  if (typeof obj !== "object" || obj === null) return { ok: false, error: "payment body is not an object" };
+  const p = obj as Record<string, unknown>;
+  if (p.scheme != null && p.scheme !== "exact") return { ok: false, error: 'scheme must be "exact"' };
+  const payload = p.payload as Record<string, unknown> | undefined;
+  if (!payload || typeof payload !== "object") return { ok: false, error: "payload object missing" };
+  const sig = typeof payload.signature === "string" ? payload.signature : typeof payload.transaction === "string" ? payload.transaction : "";
+  if (!sig.trim()) return { ok: false, error: "payload.signature (or payload.transaction) must be a non-empty string" };
+  return { ok: true, signature: sig.trim() };
+}
+
 /** The `X-PAYMENT-RESPONSE` value returned on a successful, verified payment. */
 export interface PaymentResponseHeader {
   success: true;

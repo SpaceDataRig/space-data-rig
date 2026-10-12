@@ -28,13 +28,17 @@ import { verifyBundle } from "../bundle/bundle.ts";
 import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
-import { computeObservation } from "../observe/observeApi.ts";
+import { computeObservation, commissionObservation } from "../observe/observeApi.ts";
+import { txGetterFor } from "../observe/connection.ts";
+import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
+import type { ObservationRecord } from "../observe/observation.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import {
   anchorBundleHash,
   anchorDeliberationHash,
+  anchorObservationHash,
   upsertLedger,
   readLedger,
   explorerUrl,
@@ -265,6 +269,130 @@ app.post("/api/observe", async (c) => {
   const out = await computeObservation({ tic, sector, dedication });
   if (!out.ok) return c.json({ error: out.error, errors: out.errors }, out.status as 400);
   return c.json({ record: out.record, memo: out.memo, envelopeHash: out.envelopeHash, science: out.science });
+});
+
+// ---- named-observation commissioning (PAID path, parity with the edge) ---------------------------------
+// Node-side base64 (server is Node-only): avoids relying on atob/btoa typings and mirrors the x402 headers.
+const b64Decode = (s: string): unknown => JSON.parse(Buffer.from(s, "base64").toString("utf8"));
+const b64Encode = (o: unknown): string => Buffer.from(JSON.stringify(o)).toString("base64");
+
+// Commission a NAMED OBSERVATION. x402 handshake identical in shape to the edge: unpaid -> 402 + X-PAYMENT-REQUIRED
+// (burn exactly 10,000 $SDR); with X-PAYMENT (a burn tx SIGNATURE) the burn is re-read FROM THE CHAIN and verified
+// (never trusting the client), the SAME deterministic search runs, and the envelope hash anchors on mainnet under
+// the OBSERVE_ANCHOR gate. Idempotent by envelopeHash; one burn signature commissions at most one observation.
+app.post("/api/observe/commission", async (c) => {
+  const xPayment = c.req.header("X-PAYMENT") ?? null;
+  let body: { tic?: unknown; sector?: unknown; dedication?: unknown };
+  try {
+    body = (await c.req.json()) as typeof body;
+  } catch {
+    return c.json({ error: "invalid JSON body" }, 400);
+  }
+  const tic = typeof body.tic === "number" ? body.tic : parseInt(String(body.tic), 10);
+  const sectorRaw = body.sector;
+  const sector = sectorRaw == null || sectorRaw === "" ? null : typeof sectorRaw === "number" ? sectorRaw : parseInt(String(sectorRaw), 10);
+  const dedication = typeof body.dedication === "string" ? body.dedication : "";
+
+  let payment: unknown = null;
+  if (xPayment) {
+    try {
+      payment = b64Decode(xPayment);
+    } catch {
+      return c.json({ error: "X-PAYMENT is not valid base64-encoded JSON" }, 400);
+    }
+  }
+
+  const connection = txGetterFor(undefined, process.env.SOLANA_RPC, process.env.SOLANA_RPC_FALLBACKS);
+  const out = await commissionObservation({ tic, sector, dedication, payment }, { connection });
+  if (!out.ok) {
+    if (out.status === 402) {
+      const challenge = buildPaymentRequired({ resource: "/api/observe/commission", description: "Commission a named observation: burn exactly 10,000 $SDR.", error: out.error });
+      return c.json({ error: out.error }, 402, { "X-PAYMENT-REQUIRED": b64Encode(challenge) });
+    }
+    return c.json({ error: out.error, errors: out.errors }, out.status as 400);
+  }
+
+  const obsId = out.record.observationId;
+  const envelopeHash = out.envelopeHash;
+  const burnSig = out.paymentSignature;
+
+  // replay guard: one 10,000 $SDR burn commissions exactly one observation.
+  if (await artifacts.exists(`observations/by-sig/${burnSig}.json`)) {
+    return c.json({ error: "payment already used: each 10,000 $SDR burn commissions exactly one observation" }, 402);
+  }
+
+  // idempotency: the same envelopeHash already anchored -> replay the prior receipt (no second spend).
+  const priorText = await artifacts.getText(`observations/${envelopeHash}/anchor.json`);
+  if (priorText) {
+    try {
+      const prior = JSON.parse(priorText) as { signature?: string; envelopeHash?: string; memo?: string; slot?: number; explorerUrl?: string };
+      if (prior.signature && prior.envelopeHash === envelopeHash) {
+        await artifacts.put(`observations/by-sig/${burnSig}.json`, JSON.stringify({ envelopeHash, usedAt: new Date().toISOString() }));
+        const receipt = buildPaymentResponse(burnSig, explorerUrl(burnSig), new Date().toISOString());
+        return c.json({ record: out.record, memo: prior.memo ?? out.memo, envelopeHash, anchored: true, alreadyAnchored: true, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl, science: out.science }, 200, { "X-PAYMENT-RESPONSE": b64Encode(receipt) });
+      }
+    } catch {
+      /* corrupt prior record: fall through and (re)anchor */
+    }
+  }
+
+  const mode = (process.env.OBSERVE_ANCHOR ?? "off").toLowerCase();
+  let anchored = false;
+  let dryRun = false;
+  let capReached = false;
+  let memo = out.memo;
+  let signature: string | undefined;
+  let slot: number | undefined;
+  let anchorExplorer: string | undefined;
+
+  if (mode === "dry") {
+    const r = await anchorObservationHash(obsId, envelopeHash, { dryRun: true });
+    dryRun = true;
+    memo = r.memo;
+  } else if (mode === "live") {
+    const cap = Math.max(0, parseInt(process.env.OBSERVE_ANCHOR_DAILY_CAP ?? "0", 10) || 0);
+    const day = new Date().toISOString().slice(0, 10);
+    const dayPath = "observations/anchor-day.json";
+    let count = 0;
+    const dayText = await artifacts.getText(dayPath);
+    if (dayText) {
+      try {
+        const rec = JSON.parse(dayText) as { day?: string; count?: number };
+        if (rec.day === day) count = rec.count ?? 0;
+      } catch {
+        /* unreadable counter => fresh day */
+      }
+    }
+    if (count >= cap) {
+      capReached = true;
+    } else {
+      store.emitEvent("reporter", "info", `Anchoring named observation ${obsId} on Solana mainnet...`);
+      const r = await anchorObservationHash(obsId, envelopeHash, {});
+      if (r.ok && r.signature) {
+        anchored = true;
+        signature = r.signature;
+        slot = r.slot;
+        anchorExplorer = explorerUrl(r.signature);
+        memo = r.memo;
+        await artifacts.put(dayPath, JSON.stringify({ day, count: count + 1 }));
+        await artifacts.put(
+          `observations/${envelopeHash}/anchor.json`,
+          JSON.stringify({ obsId, envelopeHash, memo, signature, slot, explorerUrl: anchorExplorer, burnSig, anchoredAt: new Date().toISOString() }, null, 2),
+        );
+      }
+    }
+  }
+
+  const finalRecord: ObservationRecord = { ...out.record };
+  if (anchored) {
+    finalRecord.status = "anchored";
+    finalRecord.anchor = { memo, signature: signature ?? null };
+  }
+  await artifacts.put(`observations/${envelopeHash}/record.json`, JSON.stringify({ record: finalRecord, science: out.science, paymentSignature: burnSig }, null, 2));
+  await artifacts.put(`observations/by-sig/${burnSig}.json`, JSON.stringify({ envelopeHash, usedAt: new Date().toISOString() }));
+
+  const receipt = buildPaymentResponse(burnSig, explorerUrl(burnSig), new Date().toISOString());
+  return c.json({ record: finalRecord, memo, envelopeHash, anchored, dryRun, capReached, signature, slot, explorerUrl: anchorExplorer, science: out.science }, 200, { "X-PAYMENT-RESPONSE": b64Encode(receipt) });
 });
 
 // Live event feed. Sends a small backlog, then streams every new seat event and

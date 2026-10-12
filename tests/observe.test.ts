@@ -14,9 +14,10 @@ import {
   X402_NETWORK,
   type BurnPaymentFacts,
 } from "../src/observe/paymentPolicy.ts";
-import { buildPaymentRequired, parsePaymentEnvelope, buildPaymentResponse, X402_VERSION } from "../src/observe/x402.ts";
+import { buildPaymentRequired, parsePaymentEnvelope, buildPaymentResponse, parsePaymentSignature, X402_VERSION } from "../src/observe/x402.ts";
+import { verifyBurnTx, verifyBurnBySignature, type RpcTransactionLike } from "../src/observe/burnVerify.ts";
 import { validateObservation, observeEnvelopeHash, OBSERVATION_SCHEMA, type ObservationRecord } from "../src/observe/observation.ts";
-import { computeObservation } from "../src/observe/observeApi.ts";
+import { computeObservation, commissionObservation } from "../src/observe/observeApi.ts";
 
 // ---- dedication -----------------------------------------------------------
 
@@ -192,4 +193,86 @@ test("computeObservation rejects a bad dedication server-side with 400 + reasons
   assert.equal(r.ok, false);
   assert.equal((r as { status: number }).status, 400);
   assert.ok((r as { errors?: string[] }).errors && (r as { errors: string[] }).errors.length > 0);
+});
+
+// ---- on-chain burn verifier (fabricated RPC transactions, no chain) ----
+
+const PAYER = "WALLET11111111111111111111111111111111111111";
+function burnIx(mint: string, amount: string, programId: string): Record<string, unknown> {
+  return { programId, parsed: { type: "burn", info: { mint, amount, authority: PAYER } } };
+}
+function rpcTx(over: Partial<{ instructions: Record<string, unknown>[]; inner: Record<string, unknown>[]; confirmationStatus: string; err: unknown }> = {}): RpcTransactionLike {
+  return {
+    confirmationStatus: over.confirmationStatus ?? "finalized",
+    transaction: { message: { accountKeys: [{ pubkey: PAYER, signer: true }], instructions: over.instructions ?? [burnIx(SDR_MINT, "10000000000", TOKEN_2022_PROGRAM_ID)] } },
+    meta: { err: over.err ?? null, innerInstructions: (over.inner ?? []).map((ix) => ({ instructions: [ix] })) },
+  };
+}
+
+test("burnVerify: a finalized $SDR Token-2022 burn of exactly 1e10 passes", () => {
+  assert.equal(verifyBurnTx(rpcTx()).check.ok, true);
+});
+
+test("burnVerify: wrong amount / wrong mint / wrong program / not-finalized / errored all rejected", () => {
+  assert.equal(verifyBurnTx(rpcTx({ instructions: [burnIx(SDR_MINT, "9999999999", TOKEN_2022_PROGRAM_ID)] })).check.ok, false);
+  assert.equal(verifyBurnTx(rpcTx({ instructions: [burnIx("OTHERmint111111111111111111111111111111111111", "10000000000", TOKEN_2022_PROGRAM_ID)] })).check.ok, false);
+  assert.equal(verifyBurnTx(rpcTx({ instructions: [burnIx(SDR_MINT, "10000000000", "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")] })).check.ok, false);
+  assert.equal(verifyBurnTx(rpcTx({ confirmationStatus: "confirmed" })).check.ok, false);
+  assert.equal(verifyBurnTx(rpcTx({ err: { InstructionError: [0, "Custom"] } })).check.ok, false);
+});
+
+test("burnVerify: a burn hidden in inner instructions is still found", () => {
+  const tx = rpcTx({ instructions: [{ programId: "11111111111111111111111111111111", parsed: { type: "initialize" } }] });
+  tx.meta!.innerInstructions = [{ instructions: [burnIx(SDR_MINT, "10000000000", TOKEN_2022_PROGRAM_ID)] }];
+  assert.equal(verifyBurnTx(tx).check.ok, true);
+});
+
+test("burnVerify: signature lookup handles not-found and success", async () => {
+  const notFound = { getTransaction: async () => null };
+  assert.equal((await verifyBurnBySignature(notFound, "SIG")).check.ok, false);
+  const found = { getTransaction: async () => rpcTx() };
+  assert.equal((await verifyBurnBySignature(found, "SIG")).check.ok, true);
+  assert.equal((await verifyBurnBySignature(found, "")).check.ok, false);
+});
+
+// ---- x402 payment-signature envelope ----
+
+test("parsePaymentSignature: accepts payload.signature, rejects missing / wrong scheme", () => {
+  assert.equal(parsePaymentSignature({ scheme: "exact", payload: { signature: "SIGabc" } }).ok, true);
+  assert.equal(parsePaymentSignature({ scheme: "exact", payload: { transaction: "SER" } }).ok, true); // tx treated as sig handle
+  assert.equal(parsePaymentSignature({ payload: {} }).ok, false);
+  assert.equal(parsePaymentSignature({ scheme: "transfer", payload: { signature: "x" } }).ok, false);
+  assert.equal(parsePaymentSignature(null).ok, false);
+});
+
+// ---- commission gating: money-safety branches return BEFORE any network compute ----
+
+const COMMISSION_INPUT = { tic: 25155310, sector: 4, dedication: "for my father, who loved the night sky" };
+
+test("commissionObservation: no payment -> 402 (payment required); compute never runs", async () => {
+  const r = await commissionObservation(COMMISSION_INPUT, { connection: { getTransaction: async () => null } });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 402);
+});
+
+test("commissionObservation: malformed payment envelope -> 400", async () => {
+  const r = await commissionObservation({ ...COMMISSION_INPUT, payment: { scheme: "exact", payload: {} } }, { connection: { getTransaction: async () => null } });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 400);
+});
+
+test("commissionObservation: a signature that is NOT a qualifying $SDR burn -> 402, and the search is never run", async () => {
+  // wrong amount (1 base unit, not 1e10) -> verifyBurnBySignature ok:false -> rejected BEFORE compute.
+  const badTx = rpcTx({ instructions: [burnIx(SDR_MINT, "1", TOKEN_2022_PROGRAM_ID)] });
+  const conn = { getTransaction: async () => badTx };
+  const r = await commissionObservation({ ...COMMISSION_INPUT, payment: { scheme: "exact", payload: { signature: "SIG" } } }, { connection: conn });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 402);
+});
+
+test("commissionObservation: a not-yet-finalized / not-found burn signature -> 402", async () => {
+  const conn = { getTransaction: async () => null }; // signature unknown to every endpoint
+  const r = await commissionObservation({ ...COMMISSION_INPUT, payment: { scheme: "exact", payload: { signature: "UNKNOWN" } } }, { connection: conn });
+  assert.equal(r.ok, false);
+  assert.equal((r as { status: number }).status, 402);
 });

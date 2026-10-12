@@ -65,6 +65,16 @@ export interface Env {
   AUTO_RESEARCH_TMAG?: string;
   AUTO_ANCHOR?: string;
   AUTO_ANCHOR_DAILY_CAP?: string;
+  /**
+   * Named-observation anchoring gate, mirroring AUTO_ANCHOR but for the commissioned sdr:observe:1 records.
+   *   OBSERVE_ANCHOR = "off" (default) -> a valid $SDR burn seals the record but NEVER anchors it (no spend).
+   *   OBSERVE_ANCHOR = "dry"           -> previews the observe memo (dryRun); no fee payer touched, no SOL spent.
+   *   OBSERVE_ANCHOR = "live"          -> real mainnet anchor, only while the per-UTC-day count stays under
+   *                                        OBSERVE_ANCHOR_DAILY_CAP (default 0, so "live" spends nothing until
+   *                                        a cap is set). Inert by default: an operator flips it to enable.
+   */
+  OBSERVE_ANCHOR?: string;
+  OBSERVE_ANCHOR_DAILY_CAP?: string;
 
   // ---- optional secrets (wrangler secret put) ----
   OPENAI_API_KEY?: string;

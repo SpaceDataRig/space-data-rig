@@ -22,6 +22,8 @@ import { classifyDepthRegime } from "../candidate/falsePositive.ts";
 import { downsampleBinned } from "../detect/significance.ts";
 import { canonicalJson, sha256Hex } from "../bundle/bundle.ts";
 import { buildObserveMemo } from "../solana/anchor-core.ts";
+import { verifyBurnBySignature, type TxGetter } from "./burnVerify.ts";
+import { parsePaymentSignature } from "./x402.ts";
 import { sanitizeDedication } from "./dedication.ts";
 import { OBSERVATION_SCHEMA, observeEnvelopeHash, validateObservation, type ObservationRecord } from "./observation.ts";
 import { OBSERVATION_COST_RAW, SDR_MINT, X402_NETWORK } from "./paymentPolicy.ts";
@@ -163,4 +165,42 @@ export async function computeObservation(input: ObserveInput, deps: ObserveDeps 
       lightCurveSource: scienceResult.lightCurveSource,
     },
   };
+}
+
+export interface CommissionInput extends ObserveInput {
+  /** the decoded X-PAYMENT envelope (the client sends the SIGNATURE of the $SDR burn it already submitted) */
+  payment?: unknown;
+}
+
+export type CommissionOutcome =
+  | { ok: true; record: ObservationRecord; memo: string; envelopeHash: string; science: ObserveScience; paymentSignature: string }
+  | { ok: false; status: number; error: string; errors?: string[] };
+
+/**
+ * Commission (paid) path: require + parse the x402 payment (a burn SIGNATURE), re-read the burn FROM THE
+ * CHAIN and verify it against the policy (never trusting the client), and only then run the same deterministic
+ * computeObservation. On success the record is marked paid + sealed; the caller (the edge route) then anchors
+ * the envelope via the DO. This function spends nothing -- it only reads + verifies + computes. Any failure
+ * returns an HTTP status the route maps directly (402 = payment required/invalid, 400 = malformed).
+ */
+export async function commissionObservation(
+  input: CommissionInput,
+  deps: ObserveDeps & { connection: TxGetter },
+): Promise<CommissionOutcome> {
+  if (input.payment == null) return { ok: false, status: 402, error: "payment required: submit a 10,000 $SDR burn and its signature in X-PAYMENT" };
+  const ps = parsePaymentSignature(input.payment);
+  if (!ps.ok) return { ok: false, status: 400, error: ps.error };
+
+  const { check } = await verifyBurnBySignature(deps.connection, ps.signature);
+  if (!check.ok) return { ok: false, status: 402, error: `payment not valid: ${check.reason ?? "rejected"}` };
+
+  const out = await computeObservation({ tic: input.tic, sector: input.sector, dedication: input.dedication }, deps);
+  if (!out.ok) return out;
+
+  const paidRecord: ObservationRecord = {
+    ...out.record,
+    payment: { ...out.record.payment, txSignature: ps.signature, verified: true },
+    status: "sealed",
+  };
+  return { ok: true, record: paidRecord, memo: out.memo, envelopeHash: out.envelopeHash, science: out.science, paymentSignature: ps.signature };
 }

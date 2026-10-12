@@ -26,12 +26,50 @@ import {
   validateObservation,
   type ObservationRecord,
 } from "../src/observe/observation.ts";
-import { OBSERVATION_COST_RAW, SDR_MINT, X402_NETWORK } from "../src/observe/paymentPolicy.ts";
+import { OBSERVATION_COST_RAW, SDR_MINT, TOKEN_2022_PROGRAM_ID, X402_NETWORK } from "../src/observe/paymentPolicy.ts";
+import { commissionObservation } from "../src/observe/observeApi.ts";
+import type { TxGetter, RpcTransactionLike } from "../src/observe/burnVerify.ts";
+import { anchorObservationHash } from "../src/solana/anchor.ts";
 import { buildObserveMemo } from "../src/solana/anchor-core.ts";
 
 function arg(name: string, def = ""): string {
   const p = process.argv.find((a) => a.startsWith(`--${name}=`));
   return p ? p.slice(name.length + 3) : def;
+}
+
+// A fabricated jsonParsed transaction carrying a valid 10,000 $SDR Token-2022 burn, returned by a fake TxGetter.
+// This lets the PoC exercise the REAL commission path (verify -> compute -> seal -> preview anchor) with NO chain
+// read and NO money: verifyBurnBySignature is fed our invented tx instead of the network.
+function fabricatedBurnConnection(): TxGetter {
+  const PAYER = "WALLET11111111111111111111111111111111111111";
+  const tx: RpcTransactionLike = {
+    confirmationStatus: "finalized",
+    transaction: { message: { accountKeys: [{ pubkey: PAYER, signer: true }], instructions: [{ programId: TOKEN_2022_PROGRAM_ID, parsed: { type: "burn", info: { mint: SDR_MINT, amount: OBSERVATION_COST_RAW.toString(), authority: PAYER } } }] } },
+    meta: { err: null, innerInstructions: [] },
+  };
+  return { async getTransaction(): Promise<RpcTransactionLike | null> { return tx; } };
+}
+
+// The commission path, driven end to end with a FABRICATED burn (no chain, no money): the server-side logic is
+// exactly production's -- verify the burn from the (invented) tx, run the SAME blind pipeline, seal a paid record,
+// then preview the sdr:observe:1 memo the DO would anchor under OBSERVE_ANCHOR. computeObservation still fetches
+// REAL public photometry, so this touches the network for DATA only, never the chain and never a wallet.
+async function runCommission(tic: number, sector: number | null, dedication: string): Promise<void> {
+  console.log(`[p24] COMMISSION mode (fabricated burn -- NO chain, NO money): verifying 10,000 $SDR, then running the pipeline...`);
+  const out = await commissionObservation(
+    { tic, sector, dedication, payment: { x402Version: 1, scheme: "exact", network: X402_NETWORK, payload: { signature: "FABRICATED-BURN-SIGNATURE" } } },
+    { connection: fabricatedBurnConnection() },
+  );
+  if (!out.ok) {
+    console.log(`[p24] commission did NOT complete (server policy/data): ${out.error}${out.errors ? ` -- ${out.errors.join("; ")}` : ""}`);
+    console.log(`[p24] (a rejection here is the money-safety gate working: no seal, no anchor, nothing spent.)`);
+    console.log(`\nVERDICT: COMMISSION-REJECTED`);
+    return;
+  }
+  console.log(`[p24] verdict: ${out.record.science.verdict}; status: ${out.record.status}; payment.verified: ${out.record.payment.verified}; discoveryClaim: ${out.record.discoveryClaim}`);
+  const preview = await anchorObservationHash(out.record.observationId, out.envelopeHash, { dryRun: true });
+  console.log(`[p24] DRY-RUN observe memo that WOULD anchor (no SOL spent): ${preview.memo}`);
+  console.log(`\nVERDICT: COMMISSION-POC-OK`);
 }
 
 async function main(): Promise<void> {
@@ -56,6 +94,13 @@ async function main(): Promise<void> {
     return;
   }
   console.log(`[p24] dedication accepted (sanitized): "${ded.value}"`);
+
+  // --commission: run the REAL paid pipeline against a fabricated burn (no chain, no money) and exit.
+  // Accept both a bare --commission flag and --commission=1 (arg() only matches the key=value form).
+  if (process.argv.includes("--commission") || arg("commission") !== "") {
+    await runCommission(ticRaw, sectors[0] ?? null, ded.value);
+    return;
+  }
 
   // STEP 2: pull REAL photometry for this star from the token-free TESS-SPOC public bucket.
   const targetId = `TIC ${ticRaw}`;

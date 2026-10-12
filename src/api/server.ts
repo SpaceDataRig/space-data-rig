@@ -31,6 +31,7 @@ import { readCodeVersion } from "../node/code-version.ts";
 import { computeObservation, commissionObservation } from "../observe/observeApi.ts";
 import { txGetterFor } from "../observe/connection.ts";
 import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
+import { buildObservationEvidence } from "../observe/evidence.ts";
 import type { ObservationRecord } from "../observe/observation.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
@@ -39,6 +40,7 @@ import {
   anchorBundleHash,
   anchorDeliberationHash,
   anchorObservationHash,
+  verifyObserveAnchor,
   upsertLedger,
   readLedger,
   explorerUrl,
@@ -393,6 +395,16 @@ app.post("/api/observe/commission", async (c) => {
 
   const receipt = buildPaymentResponse(burnSig, explorerUrl(burnSig), new Date().toISOString());
   return c.json({ record: finalRecord, memo, envelopeHash, anchored, dryRun, capReached, signature, slot, explorerUrl: anchorExplorer, science: out.science }, 200, { "X-PAYMENT-RESPONSE": b64Encode(receipt) });
+});
+
+// Independently verify a sealed named observation from its envelope hash (?hash=) or the burn signature that
+// commissioned it (?sig=): re-derive the envelope hash from the stored dedication + bundle hash (tamper-evidence)
+// and check the sdr:observe:1 anchor on-chain. Read-only -- never touches the ledger, never spends.
+app.get("/api/observe/evidence", async (c) => {
+  const hash = c.req.query("hash") || undefined;
+  const sig = c.req.query("sig") || undefined;
+  const ev = await buildObservationEvidence(artifacts, { hash, sig }, (anchorSig, envelopeHash) => verifyObserveAnchor(anchorSig, envelopeHash));
+  return c.json(ev, ev.status as 200 | 404 | 500);
 });
 
 // Live event feed. Sends a small backlog, then streams every new seat event and

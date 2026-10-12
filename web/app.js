@@ -690,6 +690,51 @@ async function commissionObservation() {
 }
 if ($("#obs-commission")) $("#obs-commission").addEventListener("click", commissionObservation);
 
+// Verify a sealed observation INDEPENDENTLY: the route re-derives the envelope hash from the stored dedication +
+// bundle hash (tamper-evidence) and checks the sdr:observe:1 anchor straight from the chain. A 64-hex input is
+// treated as an envelope hash; anything else as a burn transaction signature.
+async function verifyObservationEvidence() {
+  const el = $("#observe-verify-out");
+  if (!el) return;
+  const q = ($("#obs-verify")?.value || "").trim();
+  if (!q) { el.hidden = false; el.innerHTML = `<div class="observe-ev-bad">Enter an envelope hash or a transaction signature.</div>`; return; }
+  const isHash = /^[0-9a-f]{64}$/i.test(q);
+  const url = `/api/observe/evidence?${isHash ? "hash" : "sig"}=${encodeURIComponent(q)}`;
+  el.hidden = false;
+  el.innerHTML = `<div class="observe-ev-muted">Reading the record and checking the chain...</div>`;
+  let ev;
+  try {
+    const res = await fetch(url);
+    ev = await res.json();
+    if (!res.ok) { el.innerHTML = `<div class="observe-ev-bad">${esc((ev && ev.reason) ? ev.reason : "not found")}</div>`; return; }
+  } catch (e) { el.innerHTML = `<div class="observe-ev-bad">Network error: ${esc((e && e.message) ? e.message : String(e))}</div>`; return; }
+  const rec = ev.record || {};
+  const sci = rec.science || {};
+  const v = ev.verify;
+  const chainLine = !v
+    ? "not anchored on-chain (sealed off-chain only)"
+    : v.ok
+      ? "VERIFIED on-chain - the memo hash matches"
+      : v.found
+        ? "found on-chain but the memo does NOT match this record"
+        : "anchor transaction not found on any RPC yet";
+  const integ = ev.integrityMatches
+    ? "integrity OK - recomputed envelope hash matches"
+    : "INTEGRITY FAIL - recomputed hash differs, do not trust this record";
+  const explink = ev.explorerUrl ? ` <a href="${esc(ev.explorerUrl)}" target="_blank" rel="noopener">view transaction</a>` : "";
+  const claim = rec.discoveryClaim === false ? "false" : "unexpected";
+  el.innerHTML =
+    `<div class="observe-ev">` +
+      `<div class="observe-ev-head">Evidence - ${ev.ok ? "authentic" : "check carefully"}</div>` +
+      `<div class="observe-row"><span class="k">Dedication</span><span class="v">&ldquo;${esc(String(rec.dedication ?? ""))}&rdquo;</span></div>` +
+      `<div class="observe-row"><span class="k">Verdict</span><span class="v">${esc(String(sci.verdict ?? "?"))} &middot; discovery claim: ${esc(claim)}</span></div>` +
+      `<div class="observe-row"><span class="k">Envelope hash</span><span class="v"><code>${esc(ev.envelopeHash ?? "")}</code></span></div>` +
+      `<div class="observe-row"><span class="k">Integrity</span><span class="v">${esc(integ)}</span></div>` +
+      `<div class="observe-row"><span class="k">On-chain</span><span class="v">${esc(chainLine)}${explink}</span></div>` +
+    `</div>`;
+}
+if ($("#obs-verify-btn")) $("#obs-verify-btn").addEventListener("click", verifyObservationEvidence);
+
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the
 // grounded seed already shown simply stays. Never throws into the boot path.

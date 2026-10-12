@@ -296,6 +296,12 @@ a:hover { text-decoration: underline; }
 .observe-ev code { color: var(--gold); word-break: break-all; font-size: 12.5px; }
 .observe-ev-note { font-size: 12px; color: var(--ink-dim); line-height: 1.6; }
 .observe-ev a { color: #8fd0ff; }
+.observe-verify { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.observe-verify .observe-field-wide { flex: 1 1 320px; }
+.observe-verify input { font: 500 13px var(--mono); color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.14); border-radius: 9px; padding: 10px 12px; width: 100%; }
+.observe-verify-out { margin-top: 10px; }
+.observe-ev-bad { color: #ffb3b3; border: 1px solid rgba(255,120,120,.5); background: rgba(255,120,120,.08); border-radius: 9px; padding: 10px 12px; font-size: 12.5px; }
+.observe-ev-muted { color: var(--ink-dim); font-size: 12.5px; padding: 6px 2px; }
 .observe-pick { margin-bottom: 12px; }
 .observe-field-wide { flex: 1 1 100%; }
 .observe-field select { font: 500 14px var(--sans); color: var(--ink); background: rgba(20,28,48,0.9); border: 1px solid rgba(255,255,255,.14); border-radius: 9px; padding: 10px 12px; }

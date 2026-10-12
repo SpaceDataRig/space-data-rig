@@ -20,9 +20,10 @@ import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
-import { explorerUrl } from "../solana/anchor-core.ts";
+import { explorerUrl, endpointList, verifyOnEndpoints, OBSERVE_MEMO_PREFIX } from "../solana/anchor-core.ts";
 import { computeObservation } from "../observe/observeApi.ts";
 import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
+import { buildObservationEvidence } from "../observe/evidence.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
@@ -209,6 +210,18 @@ app.post("/api/observe/commission", async (c) => {
     200,
     { "X-PAYMENT-RESPONSE": btoa(JSON.stringify(receipt)) },
   );
+});
+
+// Independently verify a sealed named observation from its envelope hash (?hash=) or the burn signature that
+// commissioned it (?sig=): re-derives the envelope hash from the stored dedication + bundle hash (tamper-evidence)
+// and checks the sdr:observe:1 anchor on-chain. Read-only -- never touches the ledger, never spends.
+app.get("/api/observe/evidence", async (c) => {
+  const hash = c.req.query("hash") || undefined;
+  const sig = c.req.query("sig") || undefined;
+  const endpoints = endpointList(undefined, c.env.SOLANA_RPC, c.env.SOLANA_RPC_FALLBACKS);
+  const ev = await buildObservationEvidence(artifacts(c.env), { hash, sig }, (anchorSig, envelopeHash) =>
+    verifyOnEndpoints(endpoints, anchorSig, envelopeHash, OBSERVE_MEMO_PREFIX));
+  return c.json(ev, ev.status as 200 | 404 | 500);
 });
 
 // Multi-seat war-room threads. The LIST is grounded and instant -- composed from each

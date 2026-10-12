@@ -416,6 +416,7 @@ const candDetailsEl = $("#candidates-details");
 const candBoardEl = $("#cand-board");
 const candDisclaimerEl = $("#cand-disclaimer");
 const candMetaEl = $("#cand-meta");
+const candTallyEl = $("#cand-tally");
 let candidatesLoaded = false;
 
 function candCardHtml(c) {
@@ -445,8 +446,26 @@ function candCardHtml(c) {
 function renderCandidates(s) {
   if (candDisclaimerEl) candDisclaimerEl.textContent = s.disclaimer || "";
   const sum = s.summary || {};
-  if (candMetaEl) candMetaEl.innerHTML = `Snapshot ${esc(s.generatedAt || "")} from TESS sector(s) ${esc((s.sectors || []).join(", "))} &middot; ${sum.rawDetections ?? 0} raw detections &rarr; ${sum.planetPlausible ?? 0} planet-plausible &rarr; ${sum.independentEphemerides ?? 0} independent ephemerides (${sum.multiHostSystematicGroups ?? 0} collapsed as shared-host systematics, ${sum.corroboratedHosts ?? 0} corroborated across sectors).`;
   const list = s.candidates || [];
+  // Anti-misread tally: state the honest bottom line up front so a visitor cannot mistake a tentative
+  // candidate for a confirmed planet, even without reading each card's tier/flags.
+  if (candTallyEl) {
+    const nSys = list.filter((c) => c.suspectedCommonSystematic).length;
+    const nDeep = list.filter((c) => c.depthRegime === "deep-suspect").length;
+    const nCor = list.filter((c) => (c.corroboratedSectors ?? 0) >= 2).length;
+    if (list.length) {
+      candTallyEl.hidden = false;
+      candTallyEl.innerHTML =
+        `<b>Read this first:</b> none of these ${list.length} signals is a confirmed planet -- every one is an ` +
+        `<b>unconfirmed candidate</b>. Of them, ${nSys} look like a shared instrumental systematic (one artifact seen on several stars), ` +
+        `${nDeep} sit in the eclipsing-binary / blend depth band, and ${nCor} recur across independent sectors. ` +
+        `A high follow-up priority means "worth pointing a telescope at", <b>not</b> "likely a planet."`;
+    } else {
+      candTallyEl.hidden = true;
+      candTallyEl.textContent = "";
+    }
+  }
+  if (candMetaEl) candMetaEl.innerHTML = `Snapshot ${esc(s.generatedAt || "")} from TESS sector(s) ${esc((s.sectors || []).join(", "))} &middot; ${sum.rawDetections ?? 0} raw detections &rarr; ${sum.planetPlausible ?? 0} planet-plausible &rarr; ${sum.independentEphemerides ?? 0} independent ephemerides (${sum.multiHostSystematicGroups ?? 0} collapsed as shared-host systematics, ${sum.corroboratedHosts ?? 0} corroborated across sectors).`;
   if (!list.length) { candBoardEl.innerHTML = `<p class="empty">No surviving candidates in the current snapshot.</p>`; return; }
   candBoardEl.classList.remove("row-of-four");
   candBoardEl.innerHTML = list.map(candCardHtml).join("");

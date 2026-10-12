@@ -1147,6 +1147,11 @@ collaborators (still labelled candidate by the pipeline).
   `corroborateHosts` -- the cross-sector test that a real signal recurs on the SAME host across >=2 independent
   sectors while a single-sector systematic does not. Ranked surviving candidates are persisted to a local JSON
   research artifact under `out/` (git-ignored, NOT the production store); the script never surfaces or anchors.
-- Still ahead in Stage 4: only the explicit opt-in to PRESENT candidates on the live site -- a deploy + go, and
-  it must not touch the verified-planet re-check path, verdicts, bundle hashes, or the money path.
+- The candidate pipeline is now surfaced on the console behind an OPT-IN, collapsed "CANDIDATE BOARD" section
+  (`web/index.html` + `web/app.js`). It reads a static snapshot `web/candidates.json` published by p22 and
+  validated by `src/candidate/snapshot.ts`, which enforces the honesty invariant that no row can carry a
+  discovery claim. The board is a read-only static asset -- it touches no worker/DO code, no verdict, no bundle
+  hash and no money path, and is kept visually separate from the verified, on-chain results. Every row is
+  labelled CANDIDATE with its tier, depth regime, follow-up priority, next transit + observability, and any
+  shared-ephemeris / cross-sector flags, so a visitor sees exactly how tentative each signal is.
 

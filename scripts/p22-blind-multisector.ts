@@ -30,6 +30,7 @@ import type { CandidateRecord } from "../src/candidate/candidateRecord.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { collapseCoincident, corroborateHosts, type TaggedCandidate } from "../src/candidate/dedup.ts";
 import { prioritize, DEFAULT_SITE } from "../src/candidate/prioritize.ts";
+import { validateSnapshot, CANDIDATE_SCHEMA, CANDIDATE_DISCLAIMER, type CandidateRow, type CandidateSnapshot } from "../src/candidate/snapshot.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const UA = "Mozilla/5.0 (compatible; space-data-rig-ffi-multisector)";
@@ -150,28 +151,47 @@ async function main(): Promise<void> {
   console.log(`\n[p22] Stage-4 FP control: ${groups.length} independent ephemeris group(s); ${multiHostSystematic.length} span multiple hosts (sector-common systematic); ${corroborated.length} host(s) corroborated across >=2 sectors.`);
   for (const c of corroborated) console.log(`[p22]   CORROBORATED: TIC ${c.tic} P=${c.bestPeriodDays.toFixed(4)} d recurs in ${c.distinctSectors} sectors.`);
 
-  // Persist a JSON research artifact (out/ is git-ignored; this is NOT the production DO/R2 store).
+  // Build a validated CANDIDATE SNAPSHOT. The validator enforces the honesty invariant (every row
+  // discoveryClaim===false, sane numbers); if it fails we DO NOT write, so a misleading file can never be
+  // published. --out defaults to a local research artifact; --out=web/candidates.json publishes it as the
+  // static asset the console's (opt-in) Candidate Board reads.
   const nowBjd = Date.now() / 86400000 + 2440587.5;
-  const queue = groups
-    .map((g) => ({ record: g.representative, p: prioritize(g.representative, nowBjd), distinctHosts: g.distinctHosts, systematic: g.suspectedCommonSystematic }))
-    .sort((a, b) => b.p.priorityScore - a.p.priorityScore);
-  const artifact = {
+  const corrobByTic = new Map(corrob.map((c) => [c.tic, c]));
+  const rows: CandidateRow[] = groups
+    .map((g) => ({ g, record: g.representative, p: prioritize(g.representative, nowBjd) }))
+    .sort((a, b) => b.p.priorityScore - a.p.priorityScore)
+    .map(({ g, record, p }): CandidateRow => ({
+      tic: record.host.tic, ra: record.host.ra, dec: record.host.dec, tmag: record.host.tmag,
+      periodDays: record.detection.periodDays, epochBjd: record.detection.epochBjd, depthPpm: record.detection.depthPpm, snr: record.detection.snr,
+      tier: record.tier, depthRegime: record.vetting?.depth?.regime ?? "unknown",
+      priorityBand: p.priorityBand, priorityScore: p.priorityScore,
+      nextTransitBjd: Number.isFinite(p.nextTransitBjd) ? p.nextTransitBjd : null,
+      daysUntilNext: Number.isFinite(p.daysUntilNext) ? p.daysUntilNext : null,
+      altitudeDeg: p.altitudeAtMidTransitDeg, observable: p.observableFromSite, siteName: DEFAULT_SITE.name,
+      distinctHostsSharingEphemeris: g.distinctHosts, suspectedCommonSystematic: g.suspectedCommonSystematic,
+      corroboratedSectors: corrobByTic.get(record.host.tic)?.distinctSectors ?? 1,
+      discoveryClaim: false,
+    }));
+  const snapshot: CandidateSnapshot = {
+    schema: CANDIDATE_SCHEMA,
     generatedAt: asOfUtc,
     sectors,
-    calibrationNote: "depth screen per src/candidate/falsePositive.ts (npm run p21:depth-calibrate)",
+    referenceSite: DEFAULT_SITE.name,
+    disclaimer: CANDIDATE_DISCLAIMER,
+    calibrationNote: "depth screen per src/candidate/falsePositive.ts (npm run p21:depth-calibrate): hard ceiling 200000 ppm, deep-suspect 40000 ppm, from n=4207 confirmed transit depths",
     summary: { rawDetections: blips.length, planetPlausible: planetBand.length, independentEphemerides: groups.length, multiHostSystematicGroups: multiHostSystematic.length, corroboratedHosts: corroborated.length },
-    corroborated: corroborated.map((c) => ({ tic: c.tic, periodDays: c.bestPeriodDays, distinctSectors: c.distinctSectors })),
-    candidates: queue.map(({ record, p, distinctHosts, systematic }) => ({
-      tic: record.host.tic, tier: record.tier, priorityBand: p.priorityBand, priorityScore: p.priorityScore,
-      periodDays: record.detection.periodDays, epochBjd: record.detection.epochBjd, depthPpm: record.detection.depthPpm, snr: record.detection.snr,
-      distinctHostsSharingEphemeris: distinctHosts, suspectedCommonSystematic: systematic,
-      nextTransitBjd: Number.isFinite(p.nextTransitBjd) ? p.nextTransitBjd : null,
-      discoveryClaim: false,
-    })),
+    candidates: rows,
   };
-  writeFileSync(outPath, JSON.stringify(artifact, null, 2), "utf8");
-  console.log(`\n[p22] wrote ${queue.length} ranked candidate row(s) to ${outPath} (local research artifact, git-ignored; NOT surfaced or anchored).`);
-  console.log(`[p22] every row is a CANDIDATE at tier '${queue[0]?.record.tier ?? "low"}' or below; observability is from ${DEFAULT_SITE.name}; discoveryClaim is structurally false.`);
+  const v = validateSnapshot(snapshot);
+  if (!v.ok) {
+    console.error("\n[p22] snapshot FAILED validation -- refusing to write a misleading file:");
+    for (const e of v.errors) console.error(`  - ${e}`);
+    console.log(`\nVERDICT: SNAPSHOT-INVALID`);
+    return;
+  }
+  writeFileSync(outPath, JSON.stringify(snapshot, null, 2), "utf8");
+  console.log(`\n[p22] wrote ${rows.length} validated candidate row(s) to ${outPath} (schema ${CANDIDATE_SCHEMA}; discoveryClaim structurally false for every row).`);
+  console.log(`[p22] this file is a research snapshot; publishing it to web/candidates.json is what the opt-in Candidate Board reads. Nothing here is surfaced or anchored automatically.`);
   console.log(`\nVERDICT: MULTI-SECTOR-RAN`);
 }
 

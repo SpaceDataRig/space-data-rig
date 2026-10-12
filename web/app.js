@@ -407,6 +407,65 @@ async function loadAll() {
 
 async function loadLedger() { try { const r = await fetchJSON("/api/ledger"); renderLedger(r.ledger); } catch { /* best effort */ } }
 
+// ---- candidate board (opt-in, research only) -------------------------------
+// Lazy-loads web/candidates.json (a static snapshot the offline p22 pipeline publishes) ONLY when a
+// visitor expands the section. Kept strictly separate from the verified findings above: every row is a
+// CANDIDATE with discoveryClaim structurally false, most are expected false positives, and nothing here is
+// anchored or fed to the money path. It is a read-only static asset -- no worker/DO code is involved.
+const candDetailsEl = $("#candidates-details");
+const candBoardEl = $("#cand-board");
+const candDisclaimerEl = $("#cand-disclaimer");
+const candMetaEl = $("#cand-meta");
+let candidatesLoaded = false;
+
+function candCardHtml(c) {
+  const flags = [];
+  if (c.suspectedCommonSystematic) flags.push(`<span class="cand-flag bad">shared ephemeris &times;${c.distinctHostsSharingEphemeris} hosts &rarr; likely one systematic, not ${c.distinctHostsSharingEphemeris} planets</span>`);
+  if (c.corroboratedSectors >= 2) flags.push(`<span class="cand-flag good">recurs in ${c.corroboratedSectors} sectors</span>`);
+  if (c.depthRegime === "deep-suspect") flags.push(`<span class="cand-flag warn">depth in the EB / blend band</span>`);
+  const next = c.nextTransitBjd != null ? `${c.nextTransitBjd.toFixed(3)} BJD${c.daysUntilNext != null ? ` (in ${c.daysUntilNext.toFixed(1)} d)` : ""}` : "unpredictable";
+  const place = c.altitudeDeg != null ? `${c.altitudeDeg.toFixed(1)}&deg; at mid-transit &middot; ${c.observable ? "well placed" : "below 20&deg;"} from ${esc(c.siteName)}` : "position unavailable";
+  const cells = [
+    ["Period", `${c.periodDays.toFixed(3)} d`],
+    ["Depth", `${Math.round(c.depthPpm)} ppm`],
+    ["SNR", c.snr != null ? c.snr.toFixed(1) : "n/a"],
+    ["Tmag", c.tmag != null ? c.tmag.toFixed(2) : "n/a"],
+    ["Priority", `${esc(c.priorityBand)} (${c.priorityScore.toFixed(2)})`],
+    ["Next transit", next],
+  ];
+  return `<div class="card tone-cand">
+    <div class="card-top"><span class="card-target">TIC ${esc(String(c.tic))}</span><span class="card-side"><span class="badge cand">CANDIDATE</span></span></div>
+    <div class="metrics">${cells.map(([k, v]) => `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("")}</div>
+    <div class="cand-place">${place}</div>
+    ${flags.length ? `<div class="cand-flags">${flags.join("")}</div>` : ""}
+    <div class="prov"><span><b>tier</b> ${esc(c.tier)} &middot; ${esc(c.depthRegime)}</span><span><b>RA/Dec</b> ${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}</span></div>
+  </div>`;
+}
+
+function renderCandidates(s) {
+  if (candDisclaimerEl) candDisclaimerEl.textContent = s.disclaimer || "";
+  const sum = s.summary || {};
+  if (candMetaEl) candMetaEl.innerHTML = `Snapshot ${esc(s.generatedAt || "")} from TESS sector(s) ${esc((s.sectors || []).join(", "))} &middot; ${sum.rawDetections ?? 0} raw detections &rarr; ${sum.planetPlausible ?? 0} planet-plausible &rarr; ${sum.independentEphemerides ?? 0} independent ephemerides (${sum.multiHostSystematicGroups ?? 0} collapsed as shared-host systematics, ${sum.corroboratedHosts ?? 0} corroborated across sectors).`;
+  const list = s.candidates || [];
+  if (!list.length) { candBoardEl.innerHTML = `<p class="empty">No surviving candidates in the current snapshot.</p>`; return; }
+  candBoardEl.classList.remove("row-of-four");
+  candBoardEl.innerHTML = list.map(candCardHtml).join("");
+}
+
+async function loadCandidates() {
+  if (candidatesLoaded) return;
+  candBoardEl.innerHTML = `<p class="empty">Loading the latest candidate snapshot&hellip;</p>`;
+  try {
+    const s = await fetchJSON("/candidates.json");
+    renderCandidates(s);
+    candidatesLoaded = true;
+  } catch (e) {
+    candBoardEl.innerHTML = `<p class="empty">Candidate snapshot unavailable (${esc(e.message)}).</p>`;
+  }
+}
+
+if (candDetailsEl) candDetailsEl.addEventListener("toggle", () => { if (candDetailsEl.open) loadCandidates(); });
+
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the
 // grounded seed already shown simply stays. Never throws into the boot path.

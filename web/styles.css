@@ -242,6 +242,18 @@ a:hover { text-decoration: underline; }
 .plots figcaption { font: 600 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
 .plots img { width: 100%; border-radius: 10px; border: 1px solid var(--edge); background: #06101f; }
 
+/* ---- candidate board (research only, opt-in) ---- */
+.card.tone-cand { --tone: var(--gold); }
+.badge.cand { color: var(--gold); }
+.cand-place { font: 500 11px var(--mono); color: var(--ink-dim); margin-top: 10px; }
+.cand-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cand-flag { font: 600 10px var(--mono); letter-spacing: 0.04em; padding: 3px 8px; border-radius: 20px; border: 1px solid currentColor; }
+.cand-flag.good { color: var(--good); } .cand-flag.warn { color: var(--warn); } .cand-flag.bad { color: var(--bad); }
+.cand-disclaimer { font-size: 12.5px; color: var(--ink-dim); margin: 4px 0 8px; }
+.cand-meta { font: 500 11px var(--mono); color: var(--ink-faint); margin: 0 0 14px; }
+.cand-foot { font-size: 12px; color: var(--ink-dim); margin-top: 16px; }
+.cand-foot b { color: #cfe0f7; }
+
 /* ---- controls ---- */
 .control-panel { padding-bottom: 8px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--edge); }

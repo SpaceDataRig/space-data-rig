@@ -46,6 +46,9 @@ export interface CandidateSummary {
   planetPlausible: number;
   independentEphemerides: number;
   multiHostSystematicGroups: number;
+  systematicCollapsed: number; // L3: multi-host shared-ephemeris groups dropped as systematics (not emitted as rows)
+  emittedCandidates: number;   // candidate rows actually written (independent groups, unless --keep-systematic)
+  l3Applied: boolean;          // whether the L3 shared-ephemeris filter was ON for this snapshot
   corroboratedHosts: number;
 }
 
@@ -87,9 +90,10 @@ export function validateSnapshot(obj: unknown): SnapshotValidation {
 
   const sum = s.summary as Record<string, unknown> | undefined;
   if (!sum || typeof sum !== "object") errors.push("summary object missing");
-  else for (const k of ["rawDetections", "planetPlausible", "independentEphemerides", "multiHostSystematicGroups", "corroboratedHosts"]) {
+  else for (const k of ["rawDetections", "planetPlausible", "independentEphemerides", "multiHostSystematicGroups", "systematicCollapsed", "emittedCandidates", "corroboratedHosts"]) {
     if (!isNum(sum[k])) errors.push(`summary.${k} must be a finite number`);
   }
+  if (sum && typeof sum === "object" && typeof (sum as Record<string, unknown>).l3Applied !== "boolean") errors.push("summary.l3Applied must be a boolean");
 
   if (!Array.isArray(s.candidates)) errors.push("candidates must be an array");
   else {

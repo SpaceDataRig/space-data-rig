@@ -29,6 +29,7 @@ import { buildCandidateRecord } from "../src/candidate/candidateRecord.ts";
 import type { CandidateRecord } from "../src/candidate/candidateRecord.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { collapseCoincident, corroborateHosts, type TaggedCandidate } from "../src/candidate/dedup.ts";
+import { partitionBySystematic } from "../src/candidate/corroboration.ts";
 import { prioritize, DEFAULT_SITE } from "../src/candidate/prioritize.ts";
 import { validateSnapshot, CANDIDATE_SCHEMA, CANDIDATE_DISCLAIMER, type CandidateRow, type CandidateSnapshot } from "../src/candidate/snapshot.ts";
 
@@ -94,6 +95,10 @@ async function main(): Promise<void> {
   const limit = Math.max(1, parseInt(arg("limit", "6"), 10));
   const outPath = arg("out", "out/candidates-multisector.json");
   const wantNovelty = !hasFlag("no-novelty");
+  // L3 is now APPLIED by default: ephemerides shared by multiple hosts are sector-common systematics (p26 measured
+  // dropping them cuts the FAP-surviving false alarms ~52-63% at zero cost to single-host planets), so they are NOT
+  // emitted as candidate rows -- only counted. --keep-systematic restores the old flag-only behaviour.
+  const keepSystematic = hasFlag("keep-systematic");
   console.log(`[p22] multi-sector blind search: sectors=[${sectors.join(",")}], cap ${limit} curves each (token-free TGLC).`);
 
   const blips: Blip[] = [];
@@ -145,10 +150,13 @@ async function main(): Promise<void> {
   }
 
   const groups = collapseCoincident(tagged.map((t) => t.record));
+  const { independent, systematic } = partitionBySystematic(groups);
+  const emitGroups = keepSystematic ? groups : independent;
   const multiHostSystematic = groups.filter((g) => g.suspectedCommonSystematic);
   const corrob = corroborateHosts(tagged);
   const corroborated = corrob.filter((c) => c.corroborated);
   console.log(`\n[p22] Stage-4 FP control: ${groups.length} independent ephemeris group(s); ${multiHostSystematic.length} span multiple hosts (sector-common systematic); ${corroborated.length} host(s) corroborated across >=2 sectors.`);
+  console.log(`[p22] L3 ${keepSystematic ? "OFF (--keep-systematic): all groups emitted as rows" : "APPLIED (default): " + systematic.length + " multi-host shared-ephemeris group(s) collapsed as systematics and NOT emitted as candidates"}.`);
   for (const c of corroborated) console.log(`[p22]   CORROBORATED: TIC ${c.tic} P=${c.bestPeriodDays.toFixed(4)} d recurs in ${c.distinctSectors} sectors.`);
 
   // Build a validated CANDIDATE SNAPSHOT. The validator enforces the honesty invariant (every row
@@ -157,7 +165,7 @@ async function main(): Promise<void> {
   // static asset the console's (opt-in) Candidate Board reads.
   const nowBjd = Date.now() / 86400000 + 2440587.5;
   const corrobByTic = new Map(corrob.map((c) => [c.tic, c]));
-  const rows: CandidateRow[] = groups
+  const rows: CandidateRow[] = emitGroups
     .map((g) => ({ g, record: g.representative, p: prioritize(g.representative, nowBjd) }))
     .sort((a, b) => b.p.priorityScore - a.p.priorityScore)
     .map(({ g, record, p }): CandidateRow => ({
@@ -179,7 +187,7 @@ async function main(): Promise<void> {
     referenceSite: DEFAULT_SITE.name,
     disclaimer: CANDIDATE_DISCLAIMER,
     calibrationNote: "depth screen per src/candidate/falsePositive.ts (npm run p21:depth-calibrate): hard ceiling 200000 ppm, deep-suspect 40000 ppm, from n=4207 confirmed transit depths",
-    summary: { rawDetections: blips.length, planetPlausible: planetBand.length, independentEphemerides: groups.length, multiHostSystematicGroups: multiHostSystematic.length, corroboratedHosts: corroborated.length },
+    summary: { rawDetections: blips.length, planetPlausible: planetBand.length, independentEphemerides: groups.length, multiHostSystematicGroups: multiHostSystematic.length, systematicCollapsed: systematic.length, emittedCandidates: rows.length, l3Applied: !keepSystematic, corroboratedHosts: corroborated.length },
     candidates: rows,
   };
   const v = validateSnapshot(snapshot);

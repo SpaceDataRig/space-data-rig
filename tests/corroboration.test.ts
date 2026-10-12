@@ -6,7 +6,7 @@
 //   * the counts are monotone non-increasing across layers.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyLayerFilters, survivingHostsByLayer, type SectorDetection } from "../src/candidate/corroboration.ts";
+import { applyLayerFilters, survivingHostsByLayer, partitionBySystematic, type SectorDetection } from "../src/candidate/corroboration.ts";
 
 function det(tic: number, sector: number, periodDays: number, epochBjd: number, fapPassed = true): SectorDetection {
   return { tic, sector, periodDays, epochBjd, fapPassed };
@@ -87,4 +87,20 @@ test("counts are monotone non-increasing and survivingHostsByLayer agrees with t
   assert.deepEqual(s.l2, new Set([1, 2]));
   assert.equal(s.l3.size, 0);
   assert.equal(s.l4.size, 0);
+});
+
+test("partitionBySystematic routes multi-host shared ephemerides OUT of the emitted candidate set", () => {
+  const groups = [
+    { suspectedCommonSystematic: false, tag: "independent-a" },
+    { suspectedCommonSystematic: true, tag: "systematic-b" },
+    { suspectedCommonSystematic: false, tag: "independent-c" },
+    { suspectedCommonSystematic: true, tag: "systematic-d" },
+  ];
+  const { independent, systematic } = partitionBySystematic(groups);
+  assert.equal(independent.length, 2);
+  assert.equal(systematic.length, 2);
+  assert.deepEqual(independent.map((g) => g.tag), ["independent-a", "independent-c"]);
+  assert.deepEqual(systematic.map((g) => g.tag), ["systematic-b", "systematic-d"]);
+  // partition is lossless: nothing dropped, nothing duplicated
+  assert.equal(independent.length + systematic.length, groups.length);
 });

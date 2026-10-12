@@ -146,3 +146,20 @@ export function survivingHostsByLayer(
   }
   return { l1, l2, l3, l4 };
 }
+
+/**
+ * L3 as an ACTIONABLE filter (not just a count). Given ephemeris groups already clustered by coincidence, split
+ * them into INDEPENDENT candidates (a single host owns the ephemeris) versus SYSTEMATIC collapses (the same
+ * (period, epoch) spans >1 distinct host -> a sector-common artifact, per the p26 measurement that dropping these
+ * cuts the FAP-surviving false alarms ~52-63% at zero cost to single-host planets). The candidate chain emits the
+ * independent set as follow-up rows and reports the systematic set only as a count, so a shared glitch is never
+ * presented as a planet while the tally stays honest.
+ */
+export function partitionBySystematic<T extends { suspectedCommonSystematic: boolean }>(
+  groups: T[],
+): { independent: T[]; systematic: T[] } {
+  const independent: T[] = [];
+  const systematic: T[] = [];
+  for (const g of groups) (g.suspectedCommonSystematic ? systematic : independent).push(g);
+  return { independent, systematic };
+}

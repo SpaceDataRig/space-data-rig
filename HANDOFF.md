@@ -95,7 +95,8 @@ docker-compose, CULTURE.md).
 - src/sim/        exactTransit, transitModel, redNoise, injectInto, injectionRecovery, roc, confidence.
 - src/critic/     review.ts (mission-critic verdicts, centroid vetting gate).
 - src/candidate/  candidateRecord, dedup, falsePositive, prioritize, snapshot (blind-mode chain),
-                  corroboration (applyLayerFilters: the L1-L4 cross-sector FP layers; research-only).
+                  corroboration (applyLayerFilters L1-L4 + partitionBySystematic; p22 applies L3 by default,
+                  collapsing multi-host shared-ephemeris groups out of the emitted candidates; research-only).
 - src/review/     externalReview.ts -- reusable library to independently audit a THIRD-PARTY
                   candidate claim (research-only; never gates, accepts, or anchors).
 - src/ai/         llm.ts, discussion.ts, threads.ts, deliberation.ts (side-channel LLM layer).
@@ -282,7 +283,10 @@ the Actions web page when the anonymous API is rate-limited.
 - Production: wrangler version e43b9a5a-492b-4f82-a617-35b05a7fa483, spacedatarig.app.
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 233/233 green (added tests/corroboration.test.ts +6 and tests/shapeCoherence.test.ts +3).
+- Tests: 235/235 green (corroboration +6, shapeCoherence +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
+- L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
+  exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
+  summary carries systematicCollapsed/emittedCandidates/l3Applied. Still research-only, worker not imported, NOT deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

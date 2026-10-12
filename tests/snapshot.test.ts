@@ -25,7 +25,7 @@ function snap(over: Partial<CandidateSnapshot> = {}): CandidateSnapshot {
     referenceSite: "Maunakea (reference site)",
     disclaimer: CANDIDATE_DISCLAIMER,
     calibrationNote: "n=4207 confirmed depths",
-    summary: { rawDetections: 8, planetPlausible: 2, independentEphemerides: 2, multiHostSystematicGroups: 0, corroboratedHosts: 0 },
+    summary: { rawDetections: 8, planetPlausible: 2, independentEphemerides: 2, multiHostSystematicGroups: 1, systematicCollapsed: 1, emittedCandidates: 1, l3Applied: true, corroboratedHosts: 0 },
     candidates: [row()],
     ...over,
   };
@@ -74,4 +74,12 @@ test("null next-transit / altitude are allowed (unmeasurable, honestly null)", (
 test("a suspected common systematic row still validates (flagged, not hidden)", () => {
   const v = validateSnapshot(snap({ candidates: [row({ distinctHostsSharingEphemeris: 4, suspectedCommonSystematic: true })] }));
   assert.equal(v.ok, true);
+});
+
+test("a summary missing the L3 fields is rejected (boundary enforces the honest tally)", () => {
+  const bad = { ...snap(), summary: { rawDetections: 8, planetPlausible: 2, independentEphemerides: 2, multiHostSystematicGroups: 1, corroboratedHosts: 0 } };
+  const v = validateSnapshot(bad);
+  assert.equal(v.ok, false);
+  assert.ok((v as { errors: string[] }).errors.some((e) => /systematicCollapsed/.test(e)));
+  assert.ok((v as { errors: string[] }).errors.some((e) => /l3Applied/.test(e)));
 });

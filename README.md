@@ -1197,6 +1197,16 @@ remains data-gated toward Stage 5.**
   claimed; the candidate board already flags shared-ephemeris rows exactly as L3 sees them. Reproduce with
   `npm run p26:corroboration -- --sectors 1,2,3,4,5 --limit 12 --depths 1500,4000 --periods 2,4 --seed 13`.
 
+**L3 is now APPLIED, not just measured.** The blind-search aggregator (p22) now runs `partitionBySystematic`
+  (`src/candidate/corroboration.ts`) by default: multi-host shared-ephemeris groups are collapsed as systematics and
+  NOT emitted as candidate rows -- only counted in the snapshot summary (`systematicCollapsed`, `l3Applied`) -- while
+  single-host independent candidates pass through unchanged. The opt-in console's Candidate Board reads this and its
+  banner now states how many groups were collapsed rather than showing them as candidates; `--keep-systematic` restores
+  the old flag-only view. Regenerating the sectors 1-3 snapshot dropped 7 independent groups to 5 emitted candidates
+  (2 shared-ephemeris systematics collapsed), with every row still `discoveryClaim=false` under the snapshot validator.
+  This is still the research candidate chain only -- the worker does not import any of it, so no verdict, bundle hash,
+  or money path changes, and it is not deployed by this code change.
+
 **A tempting cheap shortcut that does NOT work: in-transit shape coherence (npm run p27:shape-coherence).** If the
   FP that survive the significance gate are one-point instrumental spikes, an in-box MEDIAN-vs-MEAN depth ratio
   (`src/detect/shapeCoherence.ts`, 3 offline cases) should read ~0 for a spike and ~1 for a transit that fills its

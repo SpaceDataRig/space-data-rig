@@ -32,6 +32,9 @@ class MemStore implements ArtifactStore {
   async exists(key: string): Promise<boolean> {
     return this.m.has(key);
   }
+  del(key: string): void {
+    this.m.delete(key);
+  }
 }
 
 const turns = (): DiscussionTurn[] => [
@@ -91,4 +94,15 @@ test("tampering with the stored receipt is detected on verify", async () => {
 test("verify throws for a finding that was never sealed", async () => {
   const store = new MemStore();
   await assert.rejects(() => verifyDeliberation(store, "F-missing"), /deliberation not found/);
+});
+
+test("verifyDeliberation FAILS when HASH.txt is deleted (no self-compare)", async () => {
+  const store = new MemStore();
+  const r = buildDeliberationReceipt({ findingId: "F-4", targetId: "STAR D", turns: turns() });
+  await persistDeliberation(store, r, await hashDeliberation(r));
+  store.del(`${deliberationKey("F-4")}/HASH.txt`);
+  const v = await verifyDeliberation(store, "F-4");
+  assert.equal(v.storedHash, null);
+  assert.equal(v.hashMatches, false);
+  assert.equal(v.ok, false, "a missing HASH.txt must never be treated as a pass");
 });

@@ -108,15 +108,28 @@ export function rpcCandidates(primary?: string): string[] {
 
 // ---- keypair (filesystem) ---------------------------------------------------
 
-/** Load a solana-style keypair (JSON byte array) or generate + persist one. */
+/**
+ * Load a solana-style keypair (JSON byte array). Generates + persists one ONLY when the file is
+ * genuinely absent. If the file EXISTS but cannot be read as a keypair, we REFUSE and throw rather
+ * than silently regenerating: overwriting a corrupt-but-funded wallet file with a fresh empty keypair
+ * would strand any balance on it with no signal. Corruption must be a loud error, not a quiet swap.
+ */
 export async function getOrCreateKeypair(path: string): Promise<Keypair> {
   const abs = resolve(path);
   if (existsSync(abs)) {
+    let raw: unknown;
     try {
-      const raw = JSON.parse(readFileSync(abs, "utf8")) as number[];
-      return await keypairFromSecretBytes(Uint8Array.from(raw));
-    } catch {
-      // fall through and regenerate
+      raw = JSON.parse(readFileSync(abs, "utf8"));
+    } catch (e) {
+      throw new Error(`keypair file exists but is not valid JSON -- refusing to overwrite (would strand any funds): ${abs} (${e instanceof Error ? e.message : e})`);
+    }
+    if (!Array.isArray(raw) || raw.length === 0) {
+      throw new Error(`keypair file exists but is not a non-empty JSON byte array -- refusing to overwrite: ${abs}`);
+    }
+    try {
+      return await keypairFromSecretBytes(Uint8Array.from(raw as number[]));
+    } catch (e) {
+      throw new Error(`keypair file exists but could not be parsed as a keypair -- refusing to overwrite: ${abs} (${e instanceof Error ? e.message : e})`);
     }
   }
   const kp = await Keypair.generate();

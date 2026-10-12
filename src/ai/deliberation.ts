@@ -99,10 +99,12 @@ export async function verifyDeliberation(store: ArtifactStore, findingId: string
   const recomputed = await hashDeliberation(receipt);
   const storedText = await store.getText(`${base}/HASH.txt`);
   const stored = storedText != null ? storedText.trim() : null;
-  // If HASH.txt is absent (should not happen), treat the recomputed hash as authoritative.
+  // A missing HASH.txt is a FAILURE, never a self-compared pass (mirrors verifyBundle): trusting the
+  // recomputed hash when the stored one is gone would let someone delete HASH.txt to "pass" a check.
+  const hashMatches = stored != null && stored === recomputed;
   return {
-    ok: stored == null || stored === recomputed,
-    hashMatches: stored === recomputed,
+    ok: hashMatches,
+    hashMatches,
     recomputedHash: recomputed,
     storedHash: stored,
     models: receipt.models ?? [],

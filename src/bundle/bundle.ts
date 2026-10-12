@@ -204,6 +204,8 @@ export async function persistBundle(
 export interface VerifyResult {
   ok: boolean;
   hashMatches: boolean;
+  /** True when HASH.txt is absent -- verification FAILS, it never self-compares. */
+  hashMissing: boolean;
   artifactsOk: boolean;
   missing: string[];
   mismatched: string[];
@@ -221,8 +223,13 @@ export async function verifyBundle(store: ArtifactStore, findingId: string): Pro
   const recomputed = await hashManifest(manifest);
 
   const storedText = await store.getText(`${base}/HASH.txt`);
-  const storedHash = storedText != null ? storedText.trim() : recomputed;
-  const hashMatches = storedHash === recomputed;
+  // A missing HASH.txt is a FAILURE, not a pass. The old code fell back to `storedHash = recomputed`,
+  // which made hashMatches trivially true -- so deleting HASH.txt (plus editing the manifest) would
+  // fool local verification. The on-chain anchor, not this file, is the real guarantee; here we only
+  // confirm the stored artifacts still reproduce the hash that was written alongside them.
+  const hashMissing = storedText == null;
+  const storedHash = hashMissing ? null : storedText!.trim();
+  const hashMatches = storedHash != null && storedHash === recomputed;
 
   const missing: string[] = [];
   const mismatched: string[] = [];
@@ -236,8 +243,9 @@ export async function verifyBundle(store: ArtifactStore, findingId: string): Pro
     if (sha256 !== a.sha256 || bytes.length !== a.bytes) mismatched.push(a.path);
   }
   return {
-    ok: hashMatches && missing.length === 0 && mismatched.length === 0,
+    ok: hashMatches && !hashMissing && missing.length === 0 && mismatched.length === 0,
     hashMatches,
+    hashMissing,
     artifactsOk: missing.length === 0 && mismatched.length === 0,
     missing,
     mismatched,

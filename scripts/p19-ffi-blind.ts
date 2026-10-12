@@ -28,6 +28,7 @@ import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { fetchTocCandidates } from "../src/data/toiArchive.ts";
 import { noveltyFromSets } from "../src/review/externalReview.ts";
 import { buildCandidateRecord, formatFollowupCard } from "../src/candidate/candidateRecord.ts";
+import { classifyDepthRegime, CALIBRATED_DEPTH } from "../src/candidate/falsePositive.ts";
 
 const S3_BASE = "https://stpubdata.s3.amazonaws.com";
 const UA = "Mozilla/5.0 (compatible; space-data-rig-ffi-blind)";
@@ -132,10 +133,14 @@ async function main(): Promise<void> {
   }
 
   const depths = hits.map((h) => h.depthPpm);
-  const ebLike = hits.filter((h) => h.depthPpm > 50000).length;
-  const planetBand = hits.filter((h) => h.depthPpm >= 200 && h.depthPpm <= 30000 && h.snr >= 7);
-  console.log(`\n[p19] summary: median depth ${median(depths).toFixed(0)} ppm; ${ebLike} deep(>5%, EB-like); ${planetBand.length} in the planet-depth band (200-30000 ppm, SNR>=7).`);
-  console.log(`[p19] NOTE: raw BLS peaks are CANDIDATES, not discoveries; FFI is EB-dominated and Stage 2 vetting + a novelty check decide what survives.`);
+  const assessed = hits.map((h) => ({ h, d: classifyDepthRegime(h.depthPpm) }));
+  const notPlanetary = assessed.filter((a) => !a.d.planetPlausible);
+  const deepSuspect = assessed.filter((a) => a.d.regime === "deep-suspect");
+  const planetBand = assessed.filter((a) => a.d.planetPlausible && a.h.depthPpm >= 200 && a.h.snr >= 7).map((a) => a.h);
+  console.log(`\n[p19] summary: median depth ${median(depths).toFixed(0)} ppm.`);
+  console.log(`[p19] Stage-2 depth screen (calibrated): ${notPlanetary.length} beyond the planetary ceiling (>200000 ppm -> eclipsing binary/blend, EXCLUDED); ${deepSuspect.length} deep-suspect (40000-200000 ppm: kept but capped below high); ${planetBand.length} planet-plausible candidates (>=200 ppm, SNR>=7).`);
+  console.log(`[p19] calibration source: ${CALIBRATED_DEPTH.source}`);
+  console.log(`[p19] NOTE: raw BLS peaks are CANDIDATES, not discoveries; FFI is EB-dominated and this depth screen + a novelty check decide what survives. Odd/even + secondary-eclipse are NOT gated (they mis-kill real planets on single-sector data).`);
 
   if (!wantNovelty) {
     console.log(`\n[p19] novelty pass skipped (--no-novelty).`);
@@ -194,7 +199,7 @@ async function main(): Promise<void> {
       detection: { periodDays: h.periodDays, epochBjd: h.epochBjd, durationHours: NaN, depthPpm: h.depthPpm, snr: h.snr, nSectors: 1, nPointsInTransit: NaN },
       novelty,
       significance: null, // not yet calibrated this pass -> contract downgrades to low, never high
-      vetting: {}, // no centroid/blend/geometry yet -> Stage 2 fills these
+      vetting: { depth: classifyDepthRegime(h.depthPpm) }, // Stage-2 calibrated depth screen; centroid/blend/geometry still pending
       nextTransitsBjd: [0, 1, 2, 3].map((k) => h.epochBjd + k * h.periodDays),
       dataTier: "real",
       catalogSource,

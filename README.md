@@ -1094,7 +1094,7 @@ collaborators (still labelled candidate by the pipeline).
 
 **Stage 0 status: complete.**
 - Candidate contract `src/candidate/candidateRecord.ts`: a conservative confidence tier
-  (high/moderate/low/sub-floor/not-novel) that DOWNGRADES on any undetermined axis, plus an
+  (high/moderate/low/sub-floor/not-novel/not-planetary) that DOWNGRADES on any undetermined axis, plus an
   executable `assertHonest()` that makes a discovery claim or an unjustified "high" impossible.
 - FFI feasibility probe `scripts/p17-ffi-feasibility.ts` (`npm run p17:ffi`): **measured FEASIBLE**
   -- token-free FFI-derived light curves (TGLC, QLP) are anonymously listable and downloadable from
@@ -1105,6 +1105,26 @@ collaborators (still labelled candidate by the pipeline).
   (`npm run p18:baseline`) and a golden test: locks the current closed-loop verdicts/periods so the
   FFI work cannot silently regress validated behaviour.
 
-**Next (Stage 1)**: map TGLC/QLP columns into the `LightCurve` type and run the existing blind
-detection chain on stars with no known planet, reporting only novel, above-floor signals as candidates.
+**Stage 1 status: complete.**
+- TGLC column mapping `src/data/tglc.ts` (selects a flux column by finite-value count, not by name -- some
+  psf_flux columns are entirely NaN; reads host TIC/RA/Dec/Tmag from the PRIMARY header) and the first
+  end-to-end blind search `scripts/p19-ffi-blind.ts` (`npm run p19:ffi-blind`): real sector FFI light curves
+  -> blind BLS -> a calibrated depth screen -> a NOVELTY gate against the live confirmed + TOI catalogs ->
+  an honest candidate record via the Stage 0 contract. Novelty is asserted only when BOTH catalogs come from
+  the live archive; on any fallback it refuses to emit (guards the silent-truncation over-claim).
+
+**Stage 2 status: complete (transit-depth false-positive screen).**
+- Depth is one of the few 1D measures safe to classify on single-sector FFI, but only once CALIBRATED.
+  `scripts/p21-depth-calibrate.ts` (`npm run p21:depth-calibrate`) measures the confirmed-planet depth
+  distribution (n=4207: p99 ~30589 ppm, observed max ~166590 ppm), which REFUTES a naive ">3% = EB" cut --
+  ~1% of real confirmed planets are deeper than 3%. `src/candidate/falsePositive.ts` encodes that as an
+  auditable regime: only a signal deeper than EVERY known planet (>200000 ppm) is rejected as
+  `not-planetary`; the sparse 40000-200000 ppm band is `deep-suspect` (kept, but capped below "high" until
+  a resolved blend / eclipsing-binary check corroborates it). p19 wires the screen into the candidate chain.
+- The odd/even depth and secondary-eclipse discriminators stay DIAGNOSTIC ONLY and are deliberately NOT
+  gated: real-data calibration showed they mis-kill true planets on single-sector photometry.
+
+**Next (Stage 3)**: prioritization -- rank surviving candidates by observability and emit the follow-up
+cards (`formatFollowupCard`), ideally fusing a second epoch / multi-sector coverage or a resolved blend
+measurement to lift `deep-suspect` and `moderate` records toward a genuinely corroborated candidate.
 

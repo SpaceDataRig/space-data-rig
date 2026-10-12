@@ -22,8 +22,9 @@
 // worker, and therefore cannot change any production verdict, bundle hash, or the money path.
 
 import type { BlendRisk, GeometryResult, Detectability, NoveltyResult } from "../review/externalReview.ts";
+import type { DepthAssessment } from "./falsePositive.ts";
 
-export type ConfidenceTier = "high" | "moderate" | "low" | "sub-floor" | "not-novel";
+export type ConfidenceTier = "high" | "moderate" | "low" | "sub-floor" | "not-novel" | "not-planetary";
 export type DataTier = "real" | "stand-in";
 
 /** The measured detection for one target (units: depth ppm, duration hours, period days). */
@@ -62,6 +63,7 @@ export interface CandidateVetting {
   oddEvenAsymmetryFrac?: number; // NaN = not measured
   secondaryEclipseDepthFrac?: number; // NaN = not measured
   detectability?: Detectability | null;
+  depth?: DepthAssessment | null; // Stage-2 astrophysical FP screen (calibrated transit-depth regime)
 }
 
 export interface Thresholds {
@@ -115,6 +117,15 @@ export function classifyConfidence(
     return { tier: "sub-floor", reasons, followupNeeds };
   }
 
+  // Stage-2 astrophysical FP screen. Rejecting on depth is honest ONLY above the calibrated hard ceiling
+  // (scripts/p21-depth-calibrate.ts): a signal deeper than every confirmed planet is an eclipsing binary or
+  // blend, not a candidate. Everything shallower is at most downgraded -- never deleted -- because a naive
+  // "deeper than 3%" cut would reject ~1% of real confirmed planets.
+  if (vetting.depth && !vetting.depth.planetPlausible) {
+    reasons.push(`not planetary: ${vetting.depth.reason}`);
+    return { tier: "not-planetary", reasons, followupNeeds: [] };
+  }
+
   const passSnr = detection.snr >= th.minSnr;
   const passFap = significance != null && isSet(significance.fap) && significance.fap <= th.maxFap;
   if (!passSnr) reasons.push(`SNR ${detection.snr.toFixed(1)} below the ${th.minSnr} gate.`);
@@ -123,7 +134,9 @@ export function classifyConfidence(
   const centroidOk = isSet(vetting.centroidOffsetArcsec) && vetting.centroidOffsetArcsec <= th.centroidHighMaxArcsec;
   const blendLow = vetting.blend?.tier === "low";
   const geomOk = vetting.geometry?.consistent === true;
-  const strongVetting = centroidOk && blendLow && geomOk;
+  // A deep-suspect or unmeasured depth is an unresolved false-positive axis: it can never grant "high".
+  const depthPlausible = !vetting.depth || vetting.depth.regime === "planet-plausible";
+  const strongVetting = centroidOk && blendLow && geomOk && depthPlausible;
 
   // Anything undetermined is listed as a concrete follow-up need (never silently passed).
   if (!isSet(vetting.centroidOffsetArcsec)) followupNeeds.push("target-pixel cutout photometry to measure the centroid offset and confirm the dip sits on the target star.");
@@ -133,6 +146,12 @@ export function classifyConfidence(
   if (!isSet(vetting.oddEvenAsymmetryFrac)) followupNeeds.push("additional sectors to fill in transit epochs for an odd/even depth-symmetry check.");
   if (!isSet(vetting.secondaryEclipseDepthFrac)) followupNeeds.push("out-of-eclipse photometry / a secondary-eclipse search to exclude an eclipsing-binary impostor.");
   if (!geomOk) followupNeeds.push("an independent radius/period measurement; the reported geometry is not self-consistent.");
+  if (vetting.depth?.regime === "deep-suspect") {
+    reasons.push(`deep-suspect: ${vetting.depth.reason}`);
+    followupNeeds.push("a resolved high-contrast / long-baseline blend and eclipsing-binary assessment: the depth sits in the brown-dwarf/EB-dominated band, so a planet cannot be believed without it.");
+  } else if (vetting.depth?.regime === "unknown") {
+    followupNeeds.push("a measured transit depth so the astrophysical (planet-vs-eclipsing-binary) plausibility screen can run.");
+  }
   // A genuine candidate ALWAYS needs corroboration -- this is the pipeline refusing to crown a planet.
   followupNeeds.push("at least one independently-scheduled transit observation (photometric or spectroscopic) to corroborate the ephemeris.");
 
@@ -218,6 +237,7 @@ export function assertHonest(r: CandidateRecord): void {
     if (r.novelty.inConfirmed || r.novelty.inToi) throw new Error("cannot grant high confidence to a non-novel signal");
     if (r.novelty.confirmedScanned < 0 || r.novelty.toiScanned < 0) throw new Error("cannot grant high confidence without an established novelty scan");
     if (r.vetting.detectability?.belowOurFloor) throw new Error("cannot grant high confidence to a sub-floor signal");
+    if (r.vetting.depth && r.vetting.depth.regime !== "planet-plausible") throw new Error("cannot grant high confidence to a deep-suspect or unmeasured-depth signal");
   }
 }
 
@@ -232,6 +252,7 @@ export function formatFollowupCard(r: CandidateRecord): string {
   lines.push(`Confidence tier: ${r.tier}   (candidate, not a discovery claim)`);
   lines.push(`Signal: P=${r.detection.periodDays.toFixed(6)} d  T0=${r.detection.epochBjd.toFixed(4)} BJD  depth=${r.detection.depthPpm.toFixed(0)} ppm  T14=${r.detection.durationHours.toFixed(2)} h  SNR=${r.detection.snr.toFixed(1)}  ${r.detection.nSectors} sector(s)`);
   if (r.significance) lines.push(`Calibrated significance: FAP=${r.significance.fap.toExponential(2)} (noise color rho=${r.significance.rho.toFixed(2)})`);
+  if (r.vetting.depth) lines.push(`Astrophysical FP screen (transit depth): ${r.vetting.depth.regime}${r.vetting.depth.planetPlausible ? "" : " -> NOT a planetary candidate"}`);
   lines.push(`Photometry tier: ${r.dataTier}`);
   if (r.nextTransitsBjd.length) lines.push(`Next predicted transits (BJD): ${r.nextTransitsBjd.slice(0, 6).map((t) => t.toFixed(3)).join(", ")}`);
   lines.push("Why this tier:");

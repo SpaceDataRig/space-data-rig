@@ -43,6 +43,7 @@ import { sectorsForCoord, fetchSpocLightCurve } from "../data/mastS3.ts";
 import { fetchSpocTargetPixels, centroidShift } from "../data/mastS3Pixels.ts";
 import { oddEvenRefined, secondaryEclipse } from "../detect/vetting.ts";
 import { calibratedFap } from "../detect/significance.ts";
+import { robustPerSectorDepth } from "../detect/perSectorRun.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
@@ -315,6 +316,27 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         await stub.updateTask(meta.taskId, { status: "analyzing" });
         await stub.emitEvent("anomaly-scout", "info", `Running Box-Least-Squares transit search on ${rec.lc.targetId} ...`);
         const det = scout(rec.lc);
+        // PER-SECTOR ROBUST DEPTH (env.PERSECTOR="1", real multi-sector SPOC only). OFF = this block
+        // never runs and det.candidate is byte-for-byte the single-fit scout result (bundle unchanged).
+        if (env.PERSECTOR === "1" && rec.spocSectors && rec.spocSectors.length > 1 && Number.isFinite(planet.st_rad) && (planet.st_rad ?? 0) > 0) {
+          const est = await robustPerSectorDepth({
+            tic: planet.tic!,
+            sectors: rec.spocSectors,
+            label: meta.name,
+            periodDays: det.candidate.periodDays,
+            epochBjd: det.candidate.epochBjd,
+            starRadiusRsun: planet.st_rad!,
+            fetchSector: (tic, s, label) => fetchSpocLightCurve(tic, [s], label),
+          });
+          if (est) det.candidate.depthFrac = est.medianDepthFrac;
+          await stub.emitEvent(
+            "anomaly-scout",
+            "info",
+            est
+              ? `Per-sector robust depth (flag PERSECTOR=1): ${(est.medianDepthFrac * 1e6).toFixed(0)}ppm from ${est.nUsable}/${est.nSectors} sectors.`
+              : `PERSECTOR=1 but <2 sectors characterisable; kept the single-fit depth.`,
+          );
+        }
         await putJson(store, `${key}/detect.json`, { detection: det } satisfies DetectRecord);
         const c = det.candidate;
         await stub.markSeatProcessed("anomaly-scout");

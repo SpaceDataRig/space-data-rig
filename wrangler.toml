@@ -90,6 +90,12 @@ MAST_S3 = "1"
 # ever REMOVES accepts). The residual cost is operational: each vetted target downloads a ~5MB
 # _tp.fits, so a full sweep runs slower. Set VET="0" to opt out.
 VET = "1"
+# Per-sector ROBUST depth for real multi-sector SPOC targets (characterise each sector, take the
+# median) instead of trusting one stitched long fold -- p12/p14 measured this beats the long fold for
+# long periods. OFF by default: with PERSECTOR unset or "0" the scout step and bundle hash are
+# byte-for-byte unchanged. Set "1" only in a safe deploy window: it changes reported depth for
+# long-period targets and therefore future run outputs.
+PERSECTOR = "0"
 # Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
 # cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and
 # accepted findings are sealed on Solana mainnet (AUTO_ANCHOR=live), bounded by

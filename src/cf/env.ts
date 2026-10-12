@@ -32,6 +32,15 @@ export interface Env {
    */
   VET?: string;
   /**
+   * "1" enables the per-sector ROBUST depth estimator for REAL multi-sector SPOC photometry: instead
+   * of trusting the single best-fit box depth, it characterises each sector locally and takes the
+   * robust MEDIAN depth (p12/p14 measured this beats a naive long fold for long periods). OFF by
+   * default: with it unset the scout step and the whole run path -- and the bundle hash -- are
+   * byte-for-byte unchanged. Enabling it changes reported depth for long-period targets, so it is a
+   * deliberate, deployed-in-a-safe-window decision, never flipped silently.
+   */
+  PERSECTOR?: string;
+  /**
    * "1" opts the critic into RECOVERY gating (benchmark self-test): the verdict is anchored on the
    * period error vs the known truth. DEFAULT off = BLIND, the honest protocol -- the verdict is
    * driven only by evidence and the truth period is a post-hoc, non-gating cross-check; a blind

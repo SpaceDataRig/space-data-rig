@@ -779,6 +779,22 @@ JSON NUMBER and many ids exceed 2^53, so `await r.json()` silently rounded 19813
 "no such star"). `src/data/gaiaDilution.ts` now asks ADQL for `cast(source_id as varchar)`, verified against the
 live endpoint, with a regression test that pins both the faithful path and the precision-loss trap.
 
+### Per-sector robust merge, wired in behind a default-off gate (`src/detect/perSector.ts`, `perSectorRun.ts`, `workflow.ts`)
+
+p12/p14 measured that long-period depth accuracy is limited by PHASE COHERENCE, not data volume: fitting
+each sector locally and taking the robust MEDIAN (24.9% median error) beats stitching all sectors and folding
+once over a ~1800-day baseline (34.7%), because a tiny period error smears the transits in the long fold. That
+statistic is now packaged as `combineSectorFits` (median + scaled-MAD over usable per-sector depths, dropping
+`!ok`/non-finite, NaN when nothing is usable) and wired into the production edge via `robustPerSectorDepth`
+(`src/detect/perSectorRun.ts`), which folds + exact-fits EACH sector and returns the robust median.
+
+It sits behind `env.PERSECTOR` and is **OFF by default**: the scout step only recomputes the depth when
+`PERSECTOR === "1"` AND the target is real multi-sector SPOC photometry AND >=2 sectors are characterisable,
+else it falls back to the single-fit depth. With the flag unset the whole run path -- and the bundle hash -- is
+byte-for-byte unchanged, so this wiring is inert until an operator deliberately (a) deploys it and (b) flips the
+flag in a safe window. `tests/perSectorRun.test.ts` validates the ON logic OFFLINE (median shrugs off a biased
+sector, null fallback below 2 sectors, a maxSectors fetch cap) via an injected fetcher -- no network, in CI.
+
 ### Cadence-aware search, opt-in only (`cadenceAwareOptions` in `src/detect/bls.ts`)
 
 A box narrower than the sampling cannot be resolved: `bls` defaults `minDurationHours` to 0.5, which at
@@ -788,19 +804,6 @@ trial box at least k samples wide (default k=3 -> 1.5 h at 30-min). It is delibe
 unchanged (no bundle/money-path effect) and only a coarse-cadence caller opts in. `tests/cadenceAware.test.ts`
 pins both the numeric mapping and the "default unchanged" invariant, plus that an opted-in search can never
 return a box thinner than the floor it asked for.
-
-### Per-sector robust merge, packaged ahead of the (still-gated) production wiring (`src/detect/perSector.ts`)
-
-p12/p14 measured that long-period depth accuracy is limited by PHASE COHERENCE, not data volume: fitting
-each sector locally and taking the robust MEDIAN (24.9% median error) beats stitching all sectors and folding
-once over a ~1800-day baseline (34.7%), because a tiny period error smears the transits in the long fold. We
-have now isolated that statistic -- `combineSectorFits` (median + scaled-MAD over usable per-sector depths,
-dropping `!ok`/non-finite and always reporting `nUsable`/`nSectors`) and the dependency-injected
-`perSectorDepthEstimate(lcs, fitSector)` -- as a pure, unit-tested primitive (`tests/perSector.test.ts`, including
-that the median shrugs off a single smeared outlier a mean would chase). It is NOT imported by the worker, so
-nothing about the production pipeline changes yet. The remaining step -- calling it from the edge `workflow.ts`
-so real runs use the robust estimator -- changes the worker bundle and needs a deploy, so it is deliberately
-left as an explicit, approved step, not done silently.
 
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
@@ -986,7 +989,8 @@ src/
                 significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary),
                 transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only),
                 ephemeris.ts (per-transit O-C timing -> refined period/epoch; offline only),
-                perSector.ts (robust per-sector median merge; offline only, not in the worker bundle)
+                perSector.ts (robust per-sector median merge, pure) + perSectorRun.ts (wired into the
+                edge scout step behind env.PERSECTOR, default OFF -> unchanged when off)
   sim/          transitModel.ts, exactTransit.ts (limb-darkened), injectionRecovery.ts, confidence.ts,
                 aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
                 injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)

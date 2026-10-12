@@ -1,8 +1,9 @@
 // Exact limb-darkened transit FIT: recover depth (Rp/Rs), shape (impact parameter b) and a
 // small timing offset from a folded light curve by least-squares fitting the physically exact
-// occultation model (./exactTransit.ts). Additive, pure and deterministic -- used only by the
-// depth cross-validation CLI (scripts/p9-exact-depth.ts) and its tests, NEVER in the runtime
-// pipeline or the synthetic injection path, so no bundle hash changes.
+// occultation model (./exactTransit.ts). Additive, pure and deterministic -- used by the depth
+// cross-validation CLIs (scripts/p9-exact-depth.ts, p11) and their tests, and now reachable in the
+// worker ONLY through perSectorRun behind env.PERSECTOR (default OFF). With that flag unset the
+// runtime never calls it, so the run path and its bundle hash are unchanged.
 //
 // Why fit the exact model instead of trusting the BLS box depth: the BLS best-fit box averages
 // over its window, so on real TESS cadences (2-min) a short transit is diluted by the partial

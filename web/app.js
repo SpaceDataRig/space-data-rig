@@ -488,6 +488,73 @@ if (candDetailsEl) candDetailsEl.addEventListener("toggle", () => { if (candDeta
 // visitor collapses and re-expands, loadCandidates() is guarded by candidatesLoaded and will not refetch.
 if (candDetailsEl && candDetailsEl.open) loadCandidates();
 
+// ---- name an observation (client-side commissioning PREVIEW) --------------
+// Lets a visitor compose a named observation and see, live, the exact sealed record + the sdr:observe:1 memo
+// that WOULD be anchored. Purely client-side: it computes a REAL SHA-256 via WebCrypto over the same canonical
+// {dedication, result} shape the server uses, but it does NOT run the pipeline, take any payment, or touch the
+// chain. Commissioning (burn + anchor) is a separate, gated step. Constants mirror src/observe/*.ts.
+const OBSERVE_MINT = "FvSE99EkoiTY8Wv34V2RpWVNxnrLe7o9gyKnd4HddtjQ";
+const OBSERVE_MEMO_PREFIX = "sdr:observe:1";
+const OBSERVE_MAX = 160;
+
+function observeSanitize(raw) {
+  const value = String(raw ?? "")
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, "")
+    .replace(/[\x00-\u001F\u007F-\u009F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const problems = [];
+  if (!value) problems.push("the dedication is empty");
+  if (/[<>]/.test(value)) problems.push("no angle brackets");
+  if (/(https?:\/\/|www\.|\b[\w-]+\.(com|net|org|io|app|xyz|dev|co|me|link|sol)\b)/i.test(value)) problems.push("no links or domains");
+  if (Array.from(value).length > OBSERVE_MAX) problems.push(`keep it to ${OBSERVE_MAX} characters or fewer`);
+  return { ok: problems.length === 0, value, problems };
+}
+
+async function observeSha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// canonical JSON with keys sorted (bundleHash < dedication), mirroring src/bundle/bundle.ts canonicalJson.
+function observeCanonical(dedication, bundleHash) {
+  return `{"bundleHash":${JSON.stringify(bundleHash)},"dedication":${JSON.stringify(dedication)}}`;
+}
+
+let observeRenderSeq = 0;
+async function renderObservePreview() {
+  const out = $("#observe-out");
+  if (!out) return;
+  const seq = ++observeRenderSeq;
+  const tic = ($("#obs-tic")?.value || "").trim();
+  if (!/^\d+$/.test(tic) || parseInt(tic, 10) <= 0) { out.hidden = true; out.innerHTML = ""; return; }
+  const ded = observeSanitize($("#obs-dedication")?.value);
+  out.hidden = false;
+  if (!ded.ok) {
+    out.innerHTML = `<div class="observe-chip bad">Dedication not allowed: ${esc(ded.problems.join("; "))}.</div>`;
+    return;
+  }
+  // A DRAFT envelope hash binds the dedication to the target now; the final hash also commits to the
+  // reproducible science result (including a "no transit" zero) once the observation actually runs.
+  const draft = await observeSha256(observeCanonical(ded.value, `pending:TIC:${tic}`));
+  if (seq !== observeRenderSeq) return; // a newer keystroke already superseded this one
+  const memo = `${OBSERVE_MEMO_PREFIX}|OBS-${esc(tic)}|${draft}`;
+  out.innerHTML =
+    `<div class="observe-record">` +
+      `<div class="observe-row"><span class="k">Target</span><span class="v">TIC ${esc(tic)}</span></div>` +
+      `<div class="observe-row"><span class="k">Dedication</span><span class="v">&ldquo;${esc(ded.value)}&rdquo;</span></div>` +
+      `<div class="observe-row"><span class="k">Cost</span><span class="v">burn 10,000 $SDR &middot; mint <code>${esc(OBSERVE_MINT)}</code></span></div>` +
+      `<div class="observe-row"><span class="k">Discovery claim</span><span class="v">false &mdash; structurally, always</span></div>` +
+      `<div class="observe-memo"><div class="k">Memo that would anchor on-chain (sdr:observe:1)</div><code>${esc(memo)}</code></div>` +
+      `<div class="observe-note">Draft binding shown for preview. The live record is produced by the same deterministic pipeline used for every target; paying cannot alter its verdict.</div>` +
+    `</div>`;
+}
+
+const obsTicEl = $("#obs-tic");
+const obsDedEl = $("#obs-dedication");
+if (obsTicEl) obsTicEl.addEventListener("input", renderObservePreview);
+if (obsDedEl) obsDedEl.addEventListener("input", renderObservePreview);
+
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the
 // grounded seed already shown simply stays. Never throws into the boot path.

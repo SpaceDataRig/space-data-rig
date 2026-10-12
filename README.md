@@ -716,6 +716,32 @@ baseline, higher SNR), not a cleverer fold of the same sparse ones. SAFETY BOUND
 `ephemeris.ts` is additive and offline-tested, the production path is unchanged, nothing is gated, and no
 planet is claimed.
 
+### Independent review of an external candidate claim (`npm run p15:review`)
+
+The same blind-re-detection + host-vetting stack doubles as an INDEPENDENT AUDIT of someone else's planet
+candidate. As a live test we reviewed P. Chopra's two Earth-sized TESS candidates (public repo + Zenodo,
+checked 2026-10-09): TIC 370612437 "Aakanksha" (P=3.5649 d, 210 ppm) and TIC 252721481 "Orbit"
+(P=4.9335 d, 279 ppm) -- FFI-cadence signals around nearby dwarfs that he asks the community to review.
+Our rig re-checks them independently, with his ephemeris withheld from our detector:
+
+```
+novelty   : neither TIC is in the Archive confirmed list (3243 scanned) or the TOI list (2103) -> "not on any NASA list" corroborated
+host star : Gaia distances 158 ly / 134 ly match his; RUWE 0.89 / 1.03 (clean astrometry, no strong close-binary signal)
+blend/EB  : dilution inside the 21" aperture only 1.8% / 0.4% (brightest neighbour 5.4 / 6.2 mag fainter) -> his EB worry is small, not zero
+geometry  : his (P, depth, Rp/R*, b) implies T14 = 1.51 h / 1.70 h vs his measured 1.44 / 1.59 h -> internally consistent
+blind BLS : our general box detector does NOT isolate either period (a ~1.5 h transit at 30-min cadence is ~3 points, 210-279 ppm shallow)
+```
+
+Honest verdict: every independent check we can run is CONSISTENT with two genuine, well-behaved small-planet
+candidates -- novel, correct host parameters and distance, clean astrometry, low dilution, self-consistent
+transit geometry. The one thing we could NOT reproduce is a from-scratch blind detection with our UNTUNED box
+BLS at 30-min cadence; that is a limit of our general detector (his tuned multi-season SDE ~10-11 is more
+sensitive), NOT evidence against him -- and it echoes our own p12/p14 finding that naive multi-season folding
+is fragile. So we neither confirm nor refute: we corroborate plausibility and echo his own "tentative, pending
+follow-up" status. The decisive test is his preregistered 2027 transits plus ground-based neighbour clearing /
+TRICERATOPS (which he notes is not yet done). This is a review of ANOTHER PARTY'S candidate, not our discovery;
+nothing is anchored or claimed.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -924,6 +950,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 p12-multisector.ts (long-period: single vs long-fold vs per-sector depth estimators),
                 p13-ld-fit.ts (tests whether fitting limb darkening beats the fixed law -- it does not),
                 p14-longperiod-coherence.ts (per-transit ephemeris refit vs the long fold -- honest negative),
+                p15-external-review.ts (independent audit of an external planet-candidate claim),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -932,7 +959,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `p14:coherence`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `p14:coherence`, `p15:review`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

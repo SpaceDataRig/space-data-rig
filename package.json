@@ -29,6 +29,7 @@
     "p12:multisector": "tsx scripts/p12-multisector.ts",
     "p13:ld-fit": "tsx scripts/p13-ld-fit.ts",
     "p14:coherence": "tsx scripts/p14-longperiod-coherence.ts",
+    "p15:review": "tsx scripts/p15-external-review.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

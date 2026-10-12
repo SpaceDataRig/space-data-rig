@@ -288,6 +288,9 @@ a:hover { text-decoration: underline; }
 .observe-grid .k { display: block; color: var(--ink-dim); font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
 .observe-grid .v { color: var(--ink); font-size: 14px; }
 .observe-src { font: 500 11px var(--mono); color: var(--ink-faint); line-height: 1.5; margin: 4px 0; }
+.observe-pick { margin-bottom: 12px; }
+.observe-field-wide { flex: 1 1 100%; }
+.observe-field select { font: 500 14px var(--sans); color: var(--ink); background: rgba(20,28,48,0.9); border: 1px solid rgba(255,255,255,.14); border-radius: 9px; padding: 10px 12px; }
 
 /* ---- controls ---- */
 .control-panel { padding-bottom: 8px; }

@@ -576,6 +576,31 @@ const obsRunEl = $("#obs-run");
 if (obsDedEl) obsDedEl.addEventListener("input", () => { const d = observeSanitize(obsDedEl.value); observeHint(d.ok ? "" : "Dedication: " + d.problems.join("; "), !d.ok); });
 if (obsRunEl) obsRunEl.addEventListener("click", runObservation);
 
+// Populate the "pick a verified star" dropdown from the static observe-stars.json (one-click targets that are
+// confirmed to have downloadable SPOC). Selecting one fills the TIC + sector inputs. Manual entry always works
+// regardless; if this fetch fails the dropdown simply stays empty.
+async function loadObserveStars() {
+  const sel = $("#obs-pick");
+  if (!sel) return;
+  try {
+    const j = await fetchJSON("/observe-stars.json");
+    (j.stars || []).forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = `${s.tic}:${s.sector}`;
+      opt.textContent = `TIC ${s.tic} (sector ${s.sector}) \u2014 ${s.name}`;
+      sel.appendChild(opt);
+    });
+  } catch { /* optional convenience list */ }
+}
+if ($("#obs-pick")) $("#obs-pick").addEventListener("change", (e) => {
+  const v = e.target.value;
+  if (!v) return;
+  const [tic, sector] = v.split(":");
+  if ($("#obs-tic")) $("#obs-tic").value = tic;
+  if ($("#obs-sector")) $("#obs-sector").value = sector;
+});
+loadObserveStars();
+
 // Pull the on-demand thread (with the live DeepSeek/Grok cross-examination) for one finding
 // and re-render the transcript with it. Best-effort: if the model is slow or absent, the
 // grounded seed already shown simply stays. Never throws into the boot path.

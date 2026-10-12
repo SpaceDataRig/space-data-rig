@@ -1,0 +1,10 @@
+{
+  "schema": "sdr-observe-stars/1",
+  "note": "Real TESS-SPOC targets verified to have downloadable photometry, for one-click observation preview. The list is a convenience; any TIC with a known sector can be entered manually. Names are informal labels, not official star names.",
+  "stars": [
+    { "tic": 25155310, "sector": 4, "name": "a bright transit host (shows a detected signal)" },
+    { "tic": 370612437, "sector": 16, "name": "Aakanksha candidate (an honest no-transit zero)" },
+    { "tic": 252721481, "sector": 16, "name": "Orbit candidate (an honest no-transit zero)" },
+    { "tic": 370612437, "sector": 17, "name": "same star, a different sector (near the gate)" }
+  ]
+}

@@ -102,6 +102,9 @@
         <summary class="panel-head"><h2>NAME AN OBSERVATION</h2><span class="hint">dedicate a blind, deterministic search of any star TESS actually saw &mdash; sealed and anchored on-chain</span></summary>
         <div class="observe-body">
           <p class="observe-lede">You cannot buy a planet. You can <b>name the search</b>: pick any star (any TIC), give the observation a name &mdash; a person you miss, a date, a promise &mdash; and the rig points at that star and runs the <b>same blind, deterministic pipeline it runs for everyone</b>. Whatever it finds, or does not find, is hash-sealed and anchored on Solana, and the words you asked for are written into the sealed record. Sometimes the most honest result is zero: <i>we honestly watched your father&rsquo;s star for 27 days. No transit was detected. Verified. Sealed on-chain, forever.</i></p>
+          <div class="observe-pick">
+            <label class="observe-field observe-field-wide"><span>Pick a verified star</span><select id="obs-pick"><option value="">-- or enter a TIC + sector below --</option></select></label>
+          </div>
           <div class="observe-form">
             <label class="observe-field"><span>TIC (target star)</span><input id="obs-tic" type="number" inputmode="numeric" min="1" placeholder="e.g. 25155310"></label>
             <label class="observe-field"><span>Sector (optional)</span><input id="obs-sector" type="number" inputmode="numeric" min="1" placeholder="auto"></label>

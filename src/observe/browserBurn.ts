@@ -33,11 +33,53 @@ function u64Le(n: number): Uint8Array {
   return out;
 }
 
+const B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+/**
+ * Base58-encode bytes (bitcoin/Solana alphabet). Inlined instead of pulling a bs58 package into the browser
+ * bundle: keeps solana-burn.js at exactly one dependency. Pure integer arithmetic on values < 2^31 per step,
+ * so no BigInt and double-safe for transaction-sized inputs.
+ */
+function bs58Encode(bytes: Uint8Array): string {
+  let zeros = 0;
+  while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+  const digits: number[] = [];
+  for (let i = zeros; i < bytes.length; i++) {
+    let carry = bytes[i];
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    while (carry > 0) {
+      digits.push(carry % 58);
+      carry = (carry / 58) | 0;
+    }
+  }
+  let out = "";
+  for (let i = 0; i < zeros; i++) out += B58_ALPHABET[0];
+  for (let j = digits.length - 1; j >= 0; j--) out += B58_ALPHABET[digits[j]];
+  return out;
+}
+
+/** Wrap a thrown wallet error so the UI shows the provider's numeric code -- Phantom codes like -32603 or the
+ * undocumented 8100002 distinguish "you declined" from "send/simulate failed" from a version mismatch. */
+function walletError(e: unknown): Error {
+  const err = e as { code?: number | string; message?: string };
+  const code = err && err.code !== undefined ? ` (wallet error code ${err.code})` : "";
+  const msg = err && err.message ? err.message : String(e);
+  if (/reject|denied|cancel|abort/i.test(msg)) {
+    return new Error("you declined the burn in your wallet - nothing was spent");
+  }
+  return new Error("wallet could not sign and send the burn" + code + ": " + msg + " - if this transaction did not land on-chain, nothing was burned");
+}
+
 interface WalletProvider {
   isPhantom?: boolean;
   publicKey?: { toBase58(): string } | null;
   connect(opts?: unknown): Promise<{ publicKey: { toBase58(): string } | null } | undefined>;
-  signAndSendTransaction(tx: Transaction, opts?: unknown): Promise<{ signature: string } | string>;
+  request?(req: { method: string; params: unknown }): Promise<{ signature?: string } | string>;
+  signAndSendTransaction?(tx: Transaction, opts?: unknown): Promise<{ signature: string } | string>;
 }
 
 /** Resolve the injected Solana provider (Phantom preferred), or null if none is present. */
@@ -116,8 +158,27 @@ export async function burnForObservation(rpcUrl: string): Promise<BurnResult> {
   tx.feePayer = owner;
   tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
 
-  const sent = await provider.signAndSendTransaction(tx, { skipPreflight: false });
-  const signature = typeof sent === "string" ? sent : sent.signature;
+  // Send path matters more than it looks. This bundle builds a web3.js v3 Transaction, whose sign()/serialize()
+  // are ASYNC; Phantom's object-based signAndSendTransaction was written against v1's synchronous contract and
+  // chokes on a v3 object (surfaces as a generic wallet error, e.g. Phantom #8100002). The documented low-level
+  // string path avoids the mismatch entirely: serializeMessage() is still SYNC in v3, so we base58 the message
+  // ourselves and the wallet deserializes, signs and submits it with its own v1 copy of web3.js.
+  const message = tx.serializeMessage();
+  let signature: string | undefined;
+  try {
+    if (typeof provider.request === "function") {
+      const sent = await provider.request({ method: "signAndSendTransaction", params: { message: bs58Encode(message) } });
+      signature = typeof sent === "string" ? sent : sent.signature;
+    } else if (typeof provider.signAndSendTransaction === "function") {
+      const sent = await provider.signAndSendTransaction(tx, { skipPreflight: false });
+      signature = typeof sent === "string" ? sent : sent.signature;
+    } else {
+      throw new Error("the detected wallet does not expose signAndSendTransaction or a request() interface");
+    }
+  } catch (e) {
+    throw walletError(e);
+  }
+  if (!signature) throw new Error("the wallet reported success but returned no transaction signature");
   await conn.confirmTransaction(signature, "finalized");
 
   return { signature, payer: ownerB58, ata: ata.toBase58() };

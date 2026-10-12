@@ -92,10 +92,11 @@ MAST_S3 = "1"
 VET = "1"
 # Per-sector ROBUST depth for real multi-sector SPOC targets (characterise each sector, take the
 # median) instead of trusting one stitched long fold -- p12/p14 measured this beats the long fold for
-# long periods. OFF by default: with PERSECTOR unset or "0" the scout step and bundle hash are
-# byte-for-byte unchanged. Set "1" only in a safe deploy window: it changes reported depth for
-# long-period targets and therefore future run outputs.
-PERSECTOR = "0"
+# long periods (24.9% vs 34.7% median depth error). With PERSECTOR unset or "0" the scout step and
+# bundle hash are byte-for-byte unchanged; the code path falls back to the single-fit depth whenever
+# fewer than 2 sectors are characterisable, so it can never fabricate a number. ENABLED ("1") by
+# operator decision on 2026-10-12 for real long-period targets; set back to "0" + redeploy to disable.
+PERSECTOR = "1"
 # Autonomous-research switches. THIS DEPLOYMENT IS OPTED IN (aggressive tier): the
 # cron launches an autonomous run EVERY HOUR (AUTO_RESEARCH=1, 8 targets) and
 # accepted findings are sealed on Solana mainnet (AUTO_ANCHOR=live), bounded by

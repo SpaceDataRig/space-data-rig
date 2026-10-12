@@ -795,6 +795,9 @@ byte-for-byte unchanged, so this wiring is inert until an operator deliberately 
 flag in a safe window. `tests/perSectorRun.test.ts` validates the ON logic OFFLINE (median shrugs off a biased
 sector, null fallback below 2 sectors, a maxSectors fetch cap) via an injected fetcher -- no network, in CI.
 
+STATUS: enabled (`wrangler.toml PERSECTOR="1"`) and deployed by operator decision on 2026-10-12, so live
+runs on real multi-sector SPOC targets use the robust per-sector depth; set `PERSECTOR="0"` + redeploy to revert.
+
 ### Cadence-aware search, opt-in only (`cadenceAwareOptions` in `src/detect/bls.ts`)
 
 A box narrower than the sampling cannot be resolved: `bls` defaults `minDurationHours` to 0.5, which at

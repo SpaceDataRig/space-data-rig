@@ -742,6 +742,43 @@ follow-up" status. The decisive test is his preregistered 2027 transits plus gro
 TRICERATOPS (which he notes is not yet done). This is a review of ANOTHER PARTY'S candidate, not our discovery;
 nothing is anchored or claimed.
 
+### The review, promoted to a reusable library + a detection-floor table (`src/review/externalReview.ts`, `npm run p16:review`)
+
+"Independently auditing someone else's claim" is arguably the most valuable thing this rig does -- yet p15 was a
+throwaway script. We factored the durable parts into a dependency-injectable library so the audit is a
+reproducible primitive, not prose:
+
+- `impliedGeometry` (Kepler-III transit-duration self-consistency), `periodPowerRank` (where the claimed period
+  sits in OUR blind full-grid power), `blendRiskTier` (Gaia dilution -> low/moderate/high/undetermined EB risk,
+  always a diagnostic, never a reject), `detectabilityFloor` (an honest statement of when WE are blind),
+  `makeCatalogStamp` (binds scanned counts + an as-of UTC stamp to every number, so a re-run can be checked for
+  catalog drift), and `reviewExternalCandidate(claim, deps)` (the orchestrator).
+- All pure functions + the orchestrator are unit-tested OFFLINE via fake channels (`tests/externalReview.test.ts`);
+  the worker does not import this module, so the production bundle and money path are untouched.
+
+`p16:review` drives the library on LIVE public data and adds a piece p15 never made explicit -- the DETECTION FLOOR:
+for each claimed planet it prints whether our untuned box-BLS could even resolve that dip shape across sampling
+regimes. Measured (2026-10-12, the SPOC product for these targets arrived at ~3-min, not 30-min, cadence):
+
+```
+Aakanksha  210ppm / 1.44h  ->  2min:43pts  5min:17pts  10min:8.6pts/BLIND  20min:BLIND  30min:BLIND  60min:BLIND
+Orbit      279ppm / 1.59h  ->  2min:48pts  5min:19pts  10min:9.5pts/ok  20min:BLIND  30min:BLIND  60min:BLIND
+novelty/host/blend/geometry all reproduce p15 exactly (3243+2103 scanned; 158/134 ly; RUWE 0.89/1.03;
+1.8%/0.4% contamination -> LOW; T14 1.51/1.70h consistent); our blind BLS still ranks his period #2455/#6596
+of 20001 -> corroborated = NO on both.
+```
+
+The floor proxy is honest about its own limits: it captures SAMPLE-STARVATION (a dip shorter than ~2 samples is
+unresolvable regardless of depth) and DEPTH, but NOT the multiple-trials penalty of a ~20k-period blind search or
+per-star red noise -- which is exactly why, even at ~3-min cadence where the proxy says "not sample-starved", the
+blind grid still loses his ~200 ppm signal to noise+trials. "We did not detect it" is therefore always printed next
+to the quantified reason it is OUR limit, not a statement about the planet.
+
+Related fix: the audit surfaced a real correctness bug now closed at the source -- Gaia returns `source_id` as a
+JSON NUMBER and many ids exceed 2^53, so `await r.json()` silently rounded 1981360227180249088 -> ...249000 (a false
+"no such star"). `src/data/gaiaDilution.ts` now asks ADQL for `cast(source_id as varchar)`, verified against the
+live endpoint, with a regression test that pins both the faithful path and the precision-loss trap.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -930,6 +967,8 @@ src/
                 aliasResolver.ts, redNoise.ts (AR(1) + estimateRho), roc.ts (completeness/purity),
                 injectInto.ts (inject into real curves), uncertainty.ts (block bootstrap)
   critic/       review.ts (cross-match + verdict + score)
+  review/       externalReview.ts (independent audit of a third-party claim as a reusable library +
+                detection-floor model; DI-testable offline, NOT imported by the worker -> no bundle change)
   reporter/     narrate.ts (plain-English narration)
   bundle/       bundle.ts (canonical JSON + SHA-256 manifest + verify)
   ai/           llm.ts (multi-provider client), discussion.ts (two-round cross-examination),
@@ -951,6 +990,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 p13-ld-fit.ts (tests whether fitting limb darkening beats the fixed law -- it does not),
                 p14-longperiod-coherence.ts (per-transit ephemeris refit vs the long fold -- honest negative),
                 p15-external-review.ts (independent audit of an external planet-candidate claim),
+                p16-review-library.ts (the audit as a reusable library + a detection-floor table),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -959,7 +999,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `p14:coherence`, `p15:review`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `p14:coherence`, `p15:review`, `p16:review`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

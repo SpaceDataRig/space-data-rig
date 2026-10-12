@@ -259,7 +259,7 @@ function cardHtml(f) {
       <button class="btn tiny" data-action="anchor">${f.solanaTx ? "Re-anchor" : "Anchor"}</button>
       <span class="verify-out" data-status></span>
     </div>
-    <div class="plots open" data-plots data-loaded="1">${plotsHtml(f.id)}</div>
+    <div class="plots" data-plots data-loaded="0"></div>
   </div>`;
 }
 

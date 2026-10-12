@@ -246,6 +246,12 @@ a:hover { text-decoration: underline; }
 .control-panel { padding-bottom: 8px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--edge); }
 .panel-head h2 { font-size: 13px; letter-spacing: 0.16em; color: #dbe7ff; }
+/* collapsible info panels (mission brief / honesty guards / real-sky checks): collapsed by default */
+details.collapse > summary.panel-head { cursor: pointer; list-style: none; justify-content: flex-start; }
+details.collapse > summary.panel-head::-webkit-details-marker { display: none; }
+details.collapse > summary.panel-head .hint { margin-left: auto; }
+details.collapse > summary.panel-head::after { content: "+"; margin-left: 14px; font: 700 18px var(--mono); color: var(--accent); line-height: 1; }
+details.collapse[open] > summary.panel-head::after { content: "\2212"; }
 .run-form { padding: 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field span { font: 600 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }

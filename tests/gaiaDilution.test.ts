@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { parseColumnarGaia, dilutionFromNeighbors, angularSepArcsec, type GaiaSource } from "../src/data/gaiaDilution.ts";
+import { parseColumnarGaia, dilutionFromNeighbors, angularSepArcsec, gaiaConeAdql, gaiaByIdAdql, distancePcFromParallax, type GaiaSource } from "../src/data/gaiaDilution.ts";
 
 // A real-shaped Gaia TAP JSON payload: FORMAT=json returns COLUMNAR {metadata:[{name}],data:[[..]]}.
 const FIXTURE = {
@@ -58,6 +58,51 @@ assert.deepEqual(parseColumnarGaia(null), [], "null -> empty");
   assert.equal(r.nInAperture, 1, "the bright distant source must be excluded");
   assert.ok(r.dilutionFactor > 0.99 && r.dilutionFactor < 1, `5-mag fainter neighbour -> near-clean, got ${r.dilutionFactor}`);
   assert.ok(r.brightestContrastMag > 4.9, "recorded contrast is the faint neighbour");
+}
+
+// 6. source_id is a 64-bit int; MANY exceed 2^53. The ADQL must CAST it to varchar so the JSON
+//    arrives as a STRING and survives JSON.parse (the fix for a silently-rounded "no such star").
+{
+  const cone = gaiaConeAdql(328.6977, 52.7841, 0.0028);
+  assert.ok(/cast\(source_id as varchar\) as source_id/.test(cone), `cone ADQL must cast source_id, got: ${cone}`);
+  const by = gaiaByIdAdql("1981360227180249088");
+  assert.ok(/cast\(source_id as varchar\) as source_id/.test(by), "by-id ADQL must cast source_id");
+  assert.ok(by.includes("1981360227180249088"), "by-id ADQL embeds the full 19-digit id verbatim");
+  assert.throws(() => gaiaByIdAdql("1; drop table"), "non-digit id rejected");
+}
+
+// 7. The fix, end-to-end through JSON.parse: a quoted (varchar-cast) id keeps all 19 digits.
+{
+  const raw = '{"metadata":[{"name":"source_id"},{"name":"ra"},{"name":"dec"},{"name":"phot_g_mean_mag"}],'
+    + '"data":[["1981360227180249088",328.6977,52.7841,10.52]]}';
+  const rows = parseColumnarGaia(JSON.parse(raw));
+  assert.equal(rows[0].sourceId, "1981360227180249088", "varchar-cast id survives JSON.parse exactly");
+}
+
+// 8. The trap pinned as a regression: the SAME id as a bare JSON NUMBER is silently rounded by
+//    JSON.parse -> this is precisely what the cast avoids, so we document it with an assertion.
+{
+  const raw = '{"metadata":[{"name":"source_id"},{"name":"ra"},{"name":"dec"},{"name":"phot_g_mean_mag"}],'
+    + '"data":[[1981360227180249088,328.6977,52.7841,10.52]]}';
+  const rows = parseColumnarGaia(JSON.parse(raw));
+  assert.notEqual(rows[0].sourceId, "1981360227180249088", "bare-number id loses precision (why we cast)");
+}
+
+// 9. dilutionFromNeighbors excludes the host by EXACT big-int string id (no magnitude guess).
+{
+  const hostId = "1981360227180249088";
+  const host: GaiaSource = { sourceId: hostId, ra: 10, dec: 20, gmag: 10.5, bpmag: 10.6, rpmag: 10.4, ruwe: 0.9, parallax: 20.684 };
+  const nb: GaiaSource = { sourceId: "1991778271640247808", ra: 10.00003, dec: 20, gmag: 16, bpmag: 16, rpmag: 16, ruwe: 1.1, parallax: 24 };
+  const r = dilutionFromNeighbors(10.5, 10, 20, [host, nb], 21, hostId);
+  assert.equal(r.nInAperture, 1, "only the neighbour counts; the host is excluded by exact id");
+  assert.ok(r.contaminationPct > 0 && r.contaminationPct < 1, `a 5.5-mag fainter neighbour dilutes <1%, got ${r.contaminationPct}`);
+}
+
+// 10. distance from parallax (mas -> pc) is NaN-safe.
+{
+  const d = distancePcFromParallax(20.684);
+  assert.ok(Math.abs(d - 48.35) < 0.1, `20.684 mas ~ 48.3 pc, got ${d}`);
+  assert.ok(Number.isNaN(distancePcFromParallax(0)) && Number.isNaN(distancePcFromParallax(NaN)));
 }
 
 console.log("gaiaDilution.test.ts OK");

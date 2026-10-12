@@ -22,6 +22,12 @@
 const GAIA_TAP = "https://gea.esac.esa.int/tap-server/tap/sync";
 const UA = "Mozilla/5.0 (compatible; space-data-rig)";
 
+// source_id is a 64-bit integer and MANY Gaia ids exceed 2^53 (Number.MAX_SAFE_INTEGER). Gaia's
+// FORMAT=json emits such columns as JSON NUMBERS, so a plain `await r.json()` SILENTLY rounds
+// 1981360227180249088 -> 1981360227180249000 and the host-vs-neighbour id match then fails. We ask
+// ADQL for `cast(source_id as varchar)`: Gaia then returns a JSON STRING and the 19 digits survive
+// JSON.parse intact (verified against the live anonymous endpoint). parallax is selected so callers
+// can derive distance without a second round-trip.
 export interface GaiaSource {
   sourceId: string;
   ra: number;
@@ -30,6 +36,8 @@ export interface GaiaSource {
   bpmag: number;
   rpmag: number;
   ruwe: number;
+  /** Gaia DR3 parallax in milliarcseconds (NaN if absent); distance = 1000/parallax pc. */
+  parallax: number;
 }
 
 export interface DilutionResult {
@@ -57,6 +65,27 @@ export function angularSepArcsec(ra1: number, dec1: number, ra2: number, dec2: n
   const c2 = Math.cos(dec2 * d2r);
   const cosD = Math.min(1, Math.max(-1, s1 * s2 + c1 * c2 * Math.cos((ra1 - ra2) * d2r)));
   return Math.acos(cosD) * (180 / Math.PI) * 3600;
+}
+
+/** Distance in parsecs from a Gaia parallax in milliarcsec (NaN-safe; parallax<=0 -> NaN). */
+export function distancePcFromParallax(parallaxMas: number): number {
+  return Number.isFinite(parallaxMas) && parallaxMas > 0 ? 1000 / parallaxMas : NaN;
+}
+
+const GAIA_COLS = "cast(source_id as varchar) as source_id, ra, dec, phot_g_mean_mag, phot_bp_mean_mag, phot_rp_mean_mag, ruwe, parallax";
+
+/** ADQL for a cone search. source_id is CAST to varchar so >2^53 ids survive JSON.parse (see GaiaSource). */
+export function gaiaConeAdql(ra: number, dec: number, radiusDeg: number): string {
+  return (
+    `select TOP 50 ${GAIA_COLS} from gaiadr3.gaia_source ` +
+    `where CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra},${dec},${radiusDeg}))=1`
+  );
+}
+
+/** ADQL for one star by its (string) source_id. Digits-only guard; the id is NEVER passed as a Number. */
+export function gaiaByIdAdql(sourceId: string): string {
+  if (!/^[0-9]{1,20}$/.test(sourceId)) throw new Error(`invalid Gaia source_id: ${sourceId}`);
+  return `select TOP 1 ${GAIA_COLS} from gaiadr3.gaia_source where source_id=${sourceId}`;
 }
 
 /** Convert Gaia's COLUMNAR TAP-JSON ({metadata,data}) into typed rows. Pure + unit-testable. */
@@ -89,6 +118,7 @@ export function parseColumnarGaia(obj: unknown): GaiaSource[] {
       bpmag: toNum(row, "phot_bp_mean_mag"),
       rpmag: toNum(row, "phot_rp_mean_mag"),
       ruwe: toNum(row, "ruwe"),
+      parallax: toNum(row, "parallax"),
     };
     if (Number.isFinite(src.ra) && Number.isFinite(src.dec) && Number.isFinite(src.gmag)) out.push(src);
   }
@@ -135,19 +165,11 @@ export interface GaiaQueryOptions {
   timeoutMs?: number;
 }
 
-/** Fetch Gaia sources within radiusDeg of (ra,dec) from the anonymous TAP sync endpoint. */
-export async function fetchGaiaNeighborhood(ra: number, dec: number, opts: GaiaQueryOptions = {}): Promise<GaiaSource[]> {
-  const radius = opts.radiusDeg ?? 0.0028;
-  // NOTE: `distance` is reserved in Gaia ADQL (causes a 400 parse error) and is intentionally absent.
-  // Null-magnitude filtering is done client-side (parseColumnarGaia) rather than with a SQL
-  // `is not null`, matching the discipline used for the exoplanet-archive WAF and keeping the ADQL simple.
-  const adql =
-    `select TOP 50 source_id, ra, dec, phot_g_mean_mag, phot_bp_mean_mag, phot_rp_mean_mag, ruwe ` +
-    `from gaiadr3.gaia_source ` +
-    `where CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra},${dec},${radius}))=1`;
+/** Run one ADQL query against the anonymous Gaia sync endpoint and parse the columnar JSON. */
+async function runGaiaSync(adql: string, timeoutMs = 45000): Promise<GaiaSource[]> {
   const url = `${GAIA_TAP}?REQUEST=doQuery&LANG=ADQL&FORMAT=json&PHASE=RUN&QUERY=${encodeURIComponent(adql)}`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 45000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const r = await fetch(url, { signal: controller.signal, headers: { "User-Agent": UA, Accept: "application/json" } });
     if (!r.ok) throw new Error(`Gaia TAP HTTP ${r.status}`);
@@ -155,6 +177,20 @@ export async function fetchGaiaNeighborhood(ra: number, dec: number, opts: GaiaQ
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Fetch Gaia sources within radiusDeg of (ra,dec) from the anonymous TAP sync endpoint. */
+export async function fetchGaiaNeighborhood(ra: number, dec: number, opts: GaiaQueryOptions = {}): Promise<GaiaSource[]> {
+  const radius = opts.radiusDeg ?? 0.0028;
+  // NOTE: `distance` is reserved in Gaia ADQL (causes a 400 parse error) and is intentionally absent.
+  // source_id is CAST to varchar so big (>2^53) ids survive JSON.parse; see GaiaSource.
+  return runGaiaSync(gaiaConeAdql(ra, dec, radius), opts.timeoutMs ?? 45000);
+}
+
+/** Fetch the single Gaia row for one source_id (pass the id as a STRING, never a Number). */
+export async function fetchGaiaBySourceId(sourceId: string, opts: { timeoutMs?: number } = {}): Promise<GaiaSource | null> {
+  const rows = await runGaiaSync(gaiaByIdAdql(sourceId), opts.timeoutMs ?? 45000);
+  return rows.length ? rows[0] : null;
 }
 
 /** Convenience: neighborhood + dilution relative to the target's own G magnitude. */

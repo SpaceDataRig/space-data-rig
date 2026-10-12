@@ -41,6 +41,29 @@ const DEFAULTS: Required<BLSOptions> = {
   refineHarmonics: false,
 };
 
+/**
+ * CADENCE-AWARE search options (roadmap item 9, OPT-IN). A box narrower than the sampling cannot
+ * be resolved: at TESS 30-min FFI a default minDurationHours of 0.5 makes a trial box that spans a
+ * single sample, which wastes the duration grid and can smear a shallow dip. This returns options
+ * that keep the smallest trial box at least `minSamplesInBox` samples wide for the given cadence.
+ *
+ * IMPORTANT: it does NOT change bls()'s or detectTransit()'s DEFAULT behaviour -- the certified
+ * real-photometry path calls them with no opts and is byte-for-byte unchanged (so the worker bundle
+ * is untouched). A coarse-cadence caller opts in by spreading the result into its BLSOptions.
+ */
+export function cadenceAwareOptions(
+  cadenceSec: number,
+  o: { minSamplesInBox?: number; minDurationFloorHours?: number; maxDurationCeilHours?: number; oversample?: number } = {},
+): BLSOptions {
+  const k = Math.max(2, o.minSamplesInBox ?? 3);
+  const raw = Number.isFinite(cadenceSec) && cadenceSec > 0 ? (k * cadenceSec) / 3600 : 0.5;
+  const floorH = o.minDurationFloorHours ?? 0.5;
+  const ceilH = o.maxDurationCeilHours ?? 15;
+  const out: BLSOptions = { minDurationHours: Math.min(ceilH, Math.max(floorH, raw)) };
+  if (o.oversample != null) out.oversample = o.oversample;
+  return out;
+}
+
 function logSpace(a: number, b: number, n: number): number[] {
   if (n <= 1) return [a];
   const out: number[] = [];

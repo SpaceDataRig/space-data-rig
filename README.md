@@ -779,6 +779,16 @@ JSON NUMBER and many ids exceed 2^53, so `await r.json()` silently rounded 19813
 "no such star"). `src/data/gaiaDilution.ts` now asks ADQL for `cast(source_id as varchar)`, verified against the
 live endpoint, with a regression test that pins both the faithful path and the precision-loss trap.
 
+### Cadence-aware search, opt-in only (`cadenceAwareOptions` in `src/detect/bls.ts`)
+
+A box narrower than the sampling cannot be resolved: `bls` defaults `minDurationHours` to 0.5, which at
+TESS 30-min FFI is a ~1-sample box. `cadenceAwareOptions(cadenceSec)` returns options keeping the smallest
+trial box at least k samples wide (default k=3 -> 1.5 h at 30-min). It is deliberately OPT-IN: `bls()` and
+`detectTransit()` keep their certified defaults, so the worker's real-photometry path is byte-for-byte
+unchanged (no bundle/money-path effect) and only a coarse-cadence caller opts in. `tests/cadenceAware.test.ts`
+pins both the numeric mapping and the "default unchanged" invariant, plus that an opted-in search can never
+return a box thinner than the floor it asked for.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -959,7 +969,7 @@ src/
                 mastCurated.ts (curated real-product registry), mastDiscover.ts (best-effort CAOM),
                 mastS3.ts + mastS3Pixels.ts (token-free SPOC photometry + target-pixel cube),
                 toiArchive.ts (blind unconfirmed-TOI source), gaiaDilution.ts (blend diagnostic)
-  detect/       bls.ts, detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
+  detect/       bls.ts (+ cadenceAwareOptions opt-in), detrend.ts, pipeline.ts, svgPlot.ts, fap.ts (phase-scramble null),
                 significance.ts (per-candidate calibrated FAP), vetting.ts (odd/even + secondary),
                 transitFit.ts (exact limb-darkened depth/shape least-squares fit; offline only),
                 ephemeris.ts (per-transit O-C timing -> refined period/epoch; offline only)

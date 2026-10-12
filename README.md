@@ -663,6 +663,33 @@ data-volume problem, and points the next iteration at per-transit-epoch refittin
 additive `stitchLightCurves` helper in `mastS3.ts`, the production detection path is untouched, nothing
 is gated, and no planet is claimed.
 
+### Testing, not asserting, the limb-darkening floor: fit u1 to the data (`npm run p13:ld-fit`)
+
+p9 found the depth-accuracy floor is set by each star's UNKNOWN limb darkening, and chose to carry a single
+fixed solar-like law (u1=0.4, u2=0.1) rather than fit u1,u2 per host, CLAIMING the extra freedom would just be
+absorbed by a degeneracy on one-sector cadences. p13 puts that claim to the TEST instead of asserting it: on
+the 15 brightest, best-sampled confirmed planets (deep >= 3000 ppm, P < 13 d -- the high-SNR regime where limb
+darkening is MOST fittable), it profiles the exact-model fit over u1 (u2 tied to u1) and keeps the data's
+preferred value, then scores the resulting depth against the catalog.
+
+```
+median depth |err|, FIXED solar LD : 7.0%
+median depth |err|, u1 FIT to data : 7.0%   (identical)
+u1-fit lowers the fitted rms on 14/15 planets, yet beats the fixed law on only 9/15 (6 are worse)
+fitted u1* : median 0.50, range 0.15-0.75 (solar assumed 0.4)
+```
+
+That pattern is the textbook signature of a degeneracy, and it is the honest verdict: letting one more
+parameter chase the scatter drops the rms almost everywhere (as any added freedom does) but leaves the
+physically-meaningful error -- the depth against the catalog -- COMPLETELY unchanged, with per-planet shifts
+scattered both ways. The extra limb-darkening freedom is absorbed by the radius-ratio / impact-parameter / LD
+covariance and buys nothing real. This CONFIRMS, with data rather than argument, the fixed-law choice p9 had
+only asserted: the LD floor is not removable by fitting the light curve alone -- it needs external, per-star
+limb-darkening knowledge (spectroscopy or TESS-band stellar models), which is out of scope for a pixel-only
+rig. (Note the bright-planet fixed error is 7.0%, tighter than the 12% full-sample floor -- brighter and
+better-sampled stars are simply better constrained.) SAFETY BOUNDARY: research probe only -- `transitFit` is
+untouched, the production path is unchanged, nothing is gated, and no planet is claimed.
+
 ### BLS cross-validation against astropy (`npm run p2:bls-astropy`, dev-only)
 
 Our BLS is a self-contained, deterministic implementation of the same box-least-squares statistic
@@ -868,6 +895,7 @@ scripts/        p0-*.ts, p1-{roc,rho,fap-calibrate,real-completeness,uncertainty
                 p10-figure.ts (renders web/transit-example.svg from a real transit),
                 p11-candidate-size.ts (blind-recovered candidates: independent depth + radius),
                 p12-multisector.ts (long-period: single vs long-fold vs per-sector depth estimators),
+                p13-ld-fit.ts (tests whether fitting limb darkening beats the fixed law -- it does not),
                 validate-curated.ts (npm run mast:validate)
 web/            index.html, styles.css, app.js, live.js, transit-example.svg (the dashboard)
 openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
@@ -876,7 +904,7 @@ openrig/        rig.yaml, CULTURE.md, Dockerfile, docker-compose.yaml, agents/*
 npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archive`,
 `p0:detect`, `p0:mast`, `p1:roc`, `p1:rho`, `p1:fap-calibrate`, `p1:real-completeness`,
 `p1:uncertainty`, `p2:vet-calibrate`, `p2:bls-astropy`, `p3:discover`, `p3:gaia`,
-`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
+`p4:autonomous`, `p5:blind`, `p6:survey`, `p7:toi-survey`, `p8:noise-acf`, `p9:exact-depth`, `p10:figure`, `p11:candidate-size`, `p12:multisector`, `p13:ld-fit`, `mast:validate`, `cf:dev`, `cf:deploy`, `test`,
 `typecheck`, `typecheck:worker`, `typecheck:all`.
 
 ---

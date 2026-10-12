@@ -27,6 +27,7 @@
     "p10:figure": "tsx scripts/p10-figure.ts",
     "p11:candidate-size": "tsx scripts/p11-candidate-size.ts",
     "p12:multisector": "tsx scripts/p12-multisector.ts",
+    "p13:ld-fit": "tsx scripts/p13-ld-fit.ts",
     "p3:gaia": "tsx scripts/p3-gaia-dilution.ts",
     "mast:validate": "tsx scripts/validate-curated.ts",
     "orchestrator": "tsx src/orchestrator/run.ts",

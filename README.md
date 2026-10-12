@@ -1069,3 +1069,42 @@ npm scripts: `orchestrator`, `api`/`start`, `anchor`, `p0:benchmark`, `p0:archiv
 - **English-only code.** All source, comments, docs, and config are ASCII English with no
   non-Latin characters, so they render identically in the terminal, the JSON bundle, the
   browser, and on-chain.
+
+## Discovery roadmap (in progress)
+
+The rig currently re-verifies planets we already know about. The roadmap turns it into a
+production-grade **high-confidence candidate engine**: it blind-searches data nobody has searched,
+rejects false positives to a validated level, ranks what is worth following up, and packages
+reproducible candidates for the real confirmation ecosystem. Two honest boundaries are fixed: the
+engine emits **candidates, never discovery claims**, and turning a candidate into a confirmed planet
+requires **independent follow-up** (other instruments, ground-based time, human vetting) that this
+pipeline hands off to rather than performs.
+
+The two hard pivots this requires:
+- **Seed source**: from the confirmed-planet catalog (which can only re-find the known) to stars with
+  **no known planet**, with the novelty check turned inward to filter our own detections.
+- **Data entry**: from curated/TESS-SPOC light curves to **full-frame-image (FFI) photometry** that
+  covers the un-targeted sky.
+
+Stages: **0** foundation (candidate contract, FFI feasibility, regression baseline) -> **1** real
+blind search on planet-free stars via FFI photometry -> **2** validation-grade false-positive
+rejection with completeness/purity measured on real data -> **3** prioritization + follow-up
+observability cards -> **4** production scale + ops -> **5** independent corroboration with
+collaborators (still labelled candidate by the pipeline).
+
+**Stage 0 status: complete.**
+- Candidate contract `src/candidate/candidateRecord.ts`: a conservative confidence tier
+  (high/moderate/low/sub-floor/not-novel) that DOWNGRADES on any undetermined axis, plus an
+  executable `assertHonest()` that makes a discovery claim or an unjustified "high" impossible.
+- FFI feasibility probe `scripts/p17-ffi-feasibility.ts` (`npm run p17:ffi`): **measured FEASIBLE**
+  -- token-free FFI-derived light curves (TGLC, QLP) are anonymously listable and downloadable from
+  the public `stpubdata` S3 bucket, sharded by Gaia DR3 source_id; no photometry pipeline needs to be
+  built. The remaining gap is a TGLC column map (its TIME/psf_flux columns differ from SPOC PDCSAP),
+  which is a Stage 1 task.
+- Offline regression baseline `src/orchestrator/regressionBaseline.ts` + `scripts/p18-regression-baseline.ts`
+  (`npm run p18:baseline`) and a golden test: locks the current closed-loop verdicts/periods so the
+  FFI work cannot silently regress validated behaviour.
+
+**Next (Stage 1)**: map TGLC/QLP columns into the `LightCurve` type and run the existing blind
+detection chain on stars with no known planet, reporting only novel, above-floor signals as candidates.
+

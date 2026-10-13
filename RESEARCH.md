@@ -20,6 +20,12 @@ disprove itself. This report is what the self-criticism measured:
 - A source-level **common-mode filter** cuts the coherent instrumental false-alarm rate by **35-42%** and raises
   candidate purity from **~66% to ~80%** on real full-frame-image data - the first lever we found to move the
   false-alarm number materially.
+- The false positives that *survive* that filter are dominated by **coherent instrumental systematics** - a dip or
+  spike shared across many stars at one cadence, which no single-star noise null can represent. Putting the measured
+  common-mode template **into** the null and bounding the ensemble with Benjamini-Hochberg FDR cuts the real-data
+  false-positive rate from **72.5% to 17.5% (-76%)** at N=40 (P39) while a positive control shows the corrected
+  pipeline still recovers **100%** of injected planets at **0% extra cost**; a dedicated safety calibration (P40)
+  measures the new gate declining **0 of 40** real detections before it is ever offered to production.
 - We **measured** the compute cost of scaling: detector time grows as **~(number of points)^2.94**, so a
   20,000-star, 2-sector catalog is ~22 CPU-hours - embarrassingly parallel, ~0.3 h wall-clock on a 64-way matrix.
 
@@ -201,10 +207,81 @@ Reproduce: `npm run p34:cost-model` (artifacts `reports/p34-cost-model.{md,json}
 
 ---
 
-## 8. Honest limitations
+## 8. Root-causing the surviving false positives (P39 / P40)
+
+The common-mode filter (Section 5) moves the false-alarm number, but a residual stuck: even after subtraction a
+large ensemble sat near ~28-30% false positives and blind purity ~51%. Two reasons, now identified and attacked.
+
+**The surviving FPs are coherent, not noise.** A per-star noise-only FAP null (Section 4) resamples one star's own
+scatter. It therefore calls *significant* any dip that a real instrument produces across the whole detector at once
+- scattered light, a thermal settle, a reaction/momentum dump, a CCD artifact - because those events show up at the
+same cadence in many stars. The fix is to make the null coherent too: `src/detect/instrumentalNull.ts`
+`systematicsAwareFap` takes the measured common-mode template T (the robust per-cadence median across the
+ensemble) and adds it - onto the candidate's own time grid, on top of that star's AR(1) noise - inside every
+phase-scrambled realization. A genuine planet is star-specific and gets diluted out of T, so it is **not** in the
+null and keeps a low FAP (it survives); a coherent artifact *is* essentially T, so the null reproduces it and the
+FAP goes high (it is rejected).
+
+**Per-trial FAP lets expected false positives scale with N.** A threshold that floors at ~1/(nNull+1) lets the
+expected FP count grow roughly as alpha x N, which is exactly why a big ensemble drifted back toward ~28-30%. We
+bound the *ensemble* false-discovery rate directly with a Benjamini-Hochberg step-up at a chosen q, independent of
+how many candidates are scanned.
+
+**Measured (P39, N=40 curves, sector 1, seed 7).** Across four stacked gates - SNR/depth/planetary-plausibility,
+then noise-FAP, then systematics-FAP, then +FDR - the false-positive rate on real curves falls **72.5% -> 17.5%
+(-76%)** once the coherent template enters the null, while the noise-only gate alone barely moves (it reproduces
+the P23/P31 result). Under the intended subtract-then-gate posture the corrected pipeline recovers **100%** of
+injected planets at **0% extra FP cost**, with a residual coherent template of only RMS 40 ppm / peak 197 ppm.
+
+**Safety-certified before enablement (P40, measure-before-gate, N=80).** A reject-style gate may only touch the
+money path once real samples prove it does not kill true positives. Over a 6x5 period x depth matrix, a star-specific
+transit injected onto a *real* corrected curve that the production gate accepts is then asked whether the
+systematics-aware gate would decline it: it declined **0 of 40** real detections (100% survival) -> **VERDICT
+SAFE-TO-WIRE**.
+
+**Production posture (honest).** The critic (`src/critic/review.ts`) and the candidate contract
+(`src/candidate/candidateRecord.ts`) now *accept* an optional `systematicsFap` and will decline a coherent artifact
+when it is supplied - but it is populated only when a caller has a same-cadence ensemble to build the null. The live
+per-target SPOC path has no shared-cadence ensemble, so the field stays absent and the anchored verdict is
+byte-for-byte unchanged. **Nothing is deployed and no live verdict changes**; wiring a real ensemble into the
+edge/Node callers (and deploying) is a separate, parity-gated, operator-authorized step.
+
+Reproduce: `npm run p39:instrumental-fp`, `npm run p40:fp-safety` (module `src/detect/instrumentalNull.ts`). The
+`instrumental-fp` CI workflow re-runs P39 at ~200-curve scale and publishes the measured report back.
+
+---
+
+## 9. Is a longer baseline the completeness lever? (P41, measured both ways)
+
+The roadmap attributes the shallow-signal completeness ceiling to the single-sector baseline, and the obvious lever
+is to watch the same star longer by stitching its sectors. P41 tests that lever directly: for each of 29 seeded
+confirmed hosts with a public SPOC curve (25 with >= 2 sectors), it runs an *identical* injection-recovery depth
+grid on (a) the host's longest single sector and (b) its naively stitched multi-sector baseline - only the baseline
+differs.
+
+The honest result is a **negative**: for a period already resolved inside one sector (inject P = 3 d), the longer
+stitched baseline does **not** raise completeness and slightly **lowers** it - 300 ppm 51.7% -> 37.9%, 1500 ppm
+82.8% -> 75.9%, 3000 ppm 89.7% -> 79.3%, flat at 500-800 ppm (mean 2.69 sectors/host).
+
+**Why.** Stitching buys baseline *length*, not coherent signal-to-noise on a short period. Each added sector brings
+its own red noise plus a cross-sector normalization step and gaps, which dilute a fixed-period fold. This echoes
+P12, where naive long-baseline folding made long-period *characterization* worse, not better. So the completeness
+ceiling is not simply "too few points": for short periods it is per-sector noise depth, and the baseline lever pays
+off mainly in **period resolution for long-period signals** - and only if the fold stays phase-coherent across
+sectors. Longer baselines remain the right direction for genuine long-period detections, but they are not a free
+completeness multiplier.
+
+Reproduce: `npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7`.
+
+---
+
+## 10. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
+- **A longer baseline is not a free completeness lever.** P41 measures that naively stitching extra sectors does not
+  raise - and for short, already-resolved periods slightly lowers - injection-recovery completeness; baseline length
+  buys period *resolution*, not short-period SNR, unless the cross-sector fold stays phase-coherent.
 - **Purity is a floor, not a ceiling.** Unconfirmed planets count as false positives, so reported purity understates
   reality by an unknown amount.
 - **The cross-pipeline fixtures are subsampled** (<= 2500 points) so their completeness is not 1:1 comparable with
@@ -212,23 +289,27 @@ Reproduce: `npm run p34:cost-model` (artifacts `reports/p34-cost-model.{md,json}
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 9. Reproducibility
+## 11. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 260 unit tests
+npm test                     # 276 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
+npm run p39:instrumental-fp  # systematics-aware FP null + FDR -> reports/p39-*
+npm run p40:fp-safety        # measure-before-gate safety cert -> reports/p40-*
+npm run p41:longbaseline     # single vs stitched-baseline completeness -> reports/p41-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 
 The Python cross-pipeline harness runs in the `crosscheck-python` CI workflow and publishes its measured report back
 into `reports/crosscheck/`. A `scale-roc` CI workflow re-runs the completeness/purity sweep at a larger sample and
-publishes the report back, so the numbers in this document can be regenerated by anyone.
+publishes the report back, and an `instrumental-fp` CI workflow re-runs the systematics-aware FP / FDR measurement
+(P39) at ~200-curve scale, so the numbers in this document can be regenerated by anyone.
 
 ---
 

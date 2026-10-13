@@ -3,6 +3,29 @@
 All notable changes to Space Data Rig are documented here. This project aims to follow
 Keep a Changelog and adheres to Semantic Versioning.
 
+## Unreleased
+
+### Science -- false-positive control (root cause)
+- A systematics-inclusive null (`src/detect/instrumentalNull.ts`): the measured coherent common-mode template is
+  injected into the phase-scrambled null, plus a Benjamini-Hochberg ensemble FDR. On 200 real TGLC curves (P39,
+  CI-measured) it cuts raw false positives 61% -> 16% while the noise-only gate barely moves; under subtract-then-
+  gate it keeps 100% of injected planets.
+- Measure-before-gate safety certification (P40): over a 6x5 period-by-depth matrix the gate declined 0 of 40 real
+  detections -> SAFE-TO-WIRE. The critic and the candidate contract accept an optional systematicsFap, but it is
+  opt-in and inert (no live caller supplies a same-cadence ensemble), so the anchored verdict is byte-for-byte
+  unchanged and nothing was enabled on the money path.
+- P42 scales the control across 3 sectors (450 curves) with a threshold-free Mann-Whitney AUC and reports the
+  honest bound: after common-mode subtraction the coherent null adds ~0 further discrimination (0.554 vs 0.550) --
+  a zero-cost safety net, not a second win.
+- P43 builds the sampling-window alias primitive (`src/detect/windowAlias.ts`) and measures it on 450 real curves:
+  the 1 cycle/day spectral window is essentially closed on near-continuous TESS (median power 0.012), retiring a
+  suspected false-positive driver with a clean negative result.
+
+### Platform
+- The public research dashboard (spacedatarig.app) now reports the false-positive control and its limits, not just
+  wins; deployed and verified end-to-end (worker version swap; verdict/money-path logic unchanged).
+- New CI publish-back workflow (`fp-scale`) re-runs P42 at scale; `instrumental-fp` re-runs P39. Test suite 285.
+
 ## v0.1.0
 
 First tagged release of the reproducible exoplanet transit research rig.

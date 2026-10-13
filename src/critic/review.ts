@@ -82,6 +82,17 @@ export interface ReviewVetting {
   /** FAP above which the peak is deemed not significant against the null (default 0.05, calibrated on real planets and kept above the ensemble resolution floor 1/(nNull+1)). */
   fapThreshold?: number;
   /**
+   * Coherent-systematics false-alarm probability of the BLS peak (src/detect/instrumentalNull.ts
+   * systematicsAwareFap -- a null that includes the ensemble-common instrumental systematic, not just this
+   * star's own noise). Populated ONLY when the caller has a same-cadence ensemble to build that null; when
+   * absent the review is byte-for-byte the noise-only path. It attacks the FP class the per-star noise FAP
+   * is blind to (a dip/spike shared across many stars at one cadence). Safety-certified before enabling:
+   * scripts/p40-fp-safety.ts measures it declines ~0% of real detections under subtract-then-gate.
+   */
+  systematicsFap?: number;
+  /** systematics-aware FAP above which the peak is deemed explainable by the coherent systematic (default 0.05, above the resolution floor). */
+  systematicsFapThreshold?: number;
+  /**
    * Odd/even transit depth asymmetry, normalized (|odd-even| / mean depth). A true single
    * planet is symmetric (~0); a half-period alias or blend shows unequal odd/even depths.
    * NOTE: the pipeline does NOT populate this for gating yet -- calibration showed single-
@@ -311,6 +322,18 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
         detail: `BLS false-alarm probability ${v.fap.toPrecision(2)} (need <= ${fapThr})`,
       });
       if (!ok) failReasons.push(`false-alarm probability ${v.fap.toPrecision(2)} is not significant against the phase-scrambled null`);
+    }
+
+    const sysFapThr = v.systematicsFapThreshold ?? 0.05;
+    if (v.systematicsFap != null && isFinite(v.systematicsFap)) {
+      anyVetting = true;
+      const ok = v.systematicsFap <= sysFapThr;
+      checks.push({
+        name: "systematics-fap",
+        pass: ok,
+        detail: `coherent-systematics false-alarm probability ${v.systematicsFap.toPrecision(2)} (need <= ${sysFapThr})`,
+      });
+      if (!ok) failReasons.push(`false-alarm probability ${v.systematicsFap.toPrecision(2)} is within what the ensemble-common instrumental systematic alone produces -- a coherent artifact, not a planet`);
     }
 
     const oddEvenThr = v.oddEvenDiffThreshold ?? 0.5;

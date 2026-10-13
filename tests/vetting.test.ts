@@ -79,6 +79,22 @@ test("a significant FAP plus a clean shift reinforces the accept (bounded bonus)
   assert.ok(vetted.score >= plain.score && vetted.score <= plain.score + 5, "passing vetting adds at most +5");
 });
 
+test("a high systematics-aware FAP (coherent artifact) downgrades to rejected", () => {
+  const r = reviewCandidate({ ...baseInput, vetting: { systematicsFap: 0.5 } });
+  assert.equal(r.verdict, "rejected");
+  assert.match(r.reason, /ensemble-common instrumental systematic/);
+  assert.ok(r.checks.some((x) => x.name === "systematics-fap" && x.pass === false));
+});
+
+test("a low systematics-aware FAP keeps the accept and adds a passing check", () => {
+  const plain = reviewCandidate(baseInput);
+  const r = reviewCandidate({ ...baseInput, vetting: { systematicsFap: 1e-4 } });
+  assert.equal(r.verdict, "accepted");
+  const c = r.checks.find((x) => x.name === "systematics-fap");
+  assert.ok(c && c.pass === true, "systematics-fap check should pass for a low FAP");
+  assert.ok(r.score >= plain.score && r.score <= plain.score + 5, "passing vetting adds at most +5");
+});
+
 test("vetting can reject an otherwise-accepted recovery-gated candidate (override is absolute)", () => {
   const rec: ReviewInput = {
     ...baseInput,

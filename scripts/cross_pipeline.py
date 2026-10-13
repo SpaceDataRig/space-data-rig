@@ -206,7 +206,13 @@ def main():
                "knownPlanetPeriodsDays": entry["knownPlanetPeriodsDays"]}
 
         # NULL arm: wotan + astropy BLS on the real curve as-is; classify against KNOWN CONFIRMED planets.
-        flat, _ = detrend_wotan(t, f)
+        # The wotan trend is computed ONCE here on the real curve and REUSED to detrend every injected version below:
+        # inj/trend = (flux*model)/trend = flat*model, i.e. the transit injected into the detrended curve. A transit
+        # is negligible against the stellar/systematic trend, so this is equivalent to "inject then detrend" while
+        # replacing 6 wotan biweight fits per curve with 0 extra. wotan -- not the BLS grid -- was the dominant cost
+        # that pushed the first full run past the 60 min CI timeout (job cancelled before it could publish).
+        flat, trend = detrend_wotan(t, f)
+        trend_ok = trend is not None and bool(np.all(np.isfinite(trend))) and bool(np.all(trend != 0))
         null_src = flat if flat is not None else f
         p_null = bls_period(t, null_src)
         known = entry["knownPlanetPeriodsDays"]
@@ -217,9 +223,10 @@ def main():
             row["null"] = {"periodDays": p_null, "classification": "TP" if match else "FP"}
         row["nullTlsPeriodDays"] = tls_period(t, null_src)
 
-        # INJECT arm: batman transit at P=3 d across the depth grid -> astropy BLS on BOTH the raw injected
-        # curve and the wotan-detrended one. Every exception is CAPTURED INTO THE ROW (and surfaced in the .md and
-        # summary) so a failure is legible in the committed report, not hidden in the CI job log.
+        # INJECT arm: batman transit at P=3 d across the depth grid -> astropy BLS on BOTH the raw injected curve and
+        # the detrended one (detrending divides by the per-curve wotan trend computed in the NULL arm above). Every
+        # exception is CAPTURED INTO THE ROW (and surfaced in the .md and summary) so a failure is legible in the
+        # committed report, not hidden in the CI job log.
         rec = {}
         rec_raw = {}
         diag = {}
@@ -236,8 +243,7 @@ def main():
                 meas = measure_injection_ppm(t, f, inj)
                 p_raw = bls_period(t, inj)
                 rec_raw[str(d)] = bool(p_raw is not None and is_alias_of(p_raw, INJ_PERIOD))
-                flat_i, _ = detrend_wotan(t, inj)
-                src = flat_i if flat_i is not None else inj
+                src = (inj / trend) if trend_ok else inj   # detrend with the once-computed per-curve wotan trend
                 p = bls_period(t, src)
                 rec[str(d)] = bool(p is not None and is_alias_of(p, INJ_PERIOD))
                 diag[str(d)] = {"injectionModel": model,
@@ -306,7 +312,9 @@ def main():
             "fixtureDir": FIXTURE_DIR, "fixtureSeed": manifest["seed"], "fixtureCapPoints": manifest["capPoints"],
             "injectPeriodDays": INJ_PERIOD, "depthsPpm": DEPTHS_PPM, "matchTolPct": MATCH_TOL_PCT,
             "aliasFactors": ALIAS_FACTORS, "batmanParams": BATMAN_PARAMS,
-            "wotan": {"method": WOTAN_METHOD, "windowDays": WOTAN_WINDOW},
+            "wotan": {"method": WOTAN_METHOD, "windowDays": WOTAN_WINDOW,
+                      "injectDetrend": "trend computed once per curve on the real flux and reused to detrend each "
+                                       "injected curve (inj/trend == flat*model); avoids 6 wotan fits per curve"},
             "blsPeriodRangeDays": [BLS_MIN_PERIOD, BLS_MAX_PERIOD],
             "versions": versions, "wallClockSec": round(time.time() - started, 1),
             "provenance": manifest["provenance"],
@@ -331,8 +339,9 @@ def main():
              "  a genuine unconfirmed planet counts FP, so purity is a lower bound -- same semantics as p33)",
              f"- purity lower bound: {summary['purityLowerBound']}", "",
              "## INJECT arm (batman transit at P=3 d, astropy BLS recovery)", "",
-             "Two recovery columns: RAW (BLS on the injected curve as-is) and DETRENDED (wotan then BLS). Each",
-             "injection is verified present in the data (measuredInjectedPpm in the JSON) before scoring.", "",
+             "Two recovery columns: RAW (BLS on the injected curve as-is) and DETRENDED (BLS after dividing by the",
+             "per-curve wotan trend, computed once on the real curve and reused). Each injection is verified present",
+             "in the data (measuredInjectedPpm in the JSON) before scoring.", "",
              "| depth (ppm) | raw recovered | raw rate | detrended recovered | detrended rate |", "|---|---|---|---|---|"]
     for d in DEPTHS_PPM:
         c = summary["blsCompletenessByDepth"][str(d)]

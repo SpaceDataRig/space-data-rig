@@ -32,9 +32,11 @@ jobs:
       - name: Install pinned Python stack
         run: |
           python -m pip install --upgrade pip
-          # Pinned for reproducibility; transitls is optional (the harness degrades gracefully if it breaks).
-          pip install numpy==1.26.4 astropy==5.3.4 batman-inference==2.4.9 wotan==1.9
-          pip install transitls==1.0.1 || echo "transitls unavailable; harness will report TLS cells as MISSING"
+          # Pinned for reproducibility; every version below was verified to exist on PyPI before pinning.
+          # NOTE: batman's PyPI distribution name is batman-package (the import name is batman); TLS ships as
+          # transitleastsquares. transitleastsquares is optional (the harness degrades gracefully if it breaks).
+          pip install numpy==1.26.4 astropy==5.3.4 batman-package==2.4.9 wotan==1.9
+          pip install transitleastsquares==2.0.1 || echo "transitleastsquares unavailable; harness will report TLS cells as MISSING"
 
       - name: Run cross-pipeline harness
         run: python scripts/cross_pipeline.py

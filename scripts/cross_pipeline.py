@@ -6,9 +6,9 @@ WHY. Problem 3 of the roadmap asks for independent third-party validation. p35 a
 level (PDM vs the box-fit family, both in TypeScript). This harness adds independence at the IMPLEMENTATION level:
 the SAME real TESS-SPOC photometry, re-analyzed by completely different software -- batman (transit injection,
 Kreidberg 2015) + wotan (detrending, Hippke et al. 2019) + astropy.timeseries.BoxLeastSquares (Kovacs et al. 2002
-reference implementation) and, when importable, the Transit Least Squares algorithm (transitls; Hippke & Heller
-2019). None of these share any code with this repository's TypeScript detectors, so agreement is corroboration
-across implementations, not a tautology.
+reference implementation) and, when importable, the Transit Least Squares algorithm (transitleastsquares; Hippke &
+Heller 2019). None of these share any code with this repository's TypeScript detectors, so agreement is
+corroboration across implementations, not a tautology.
 
 DESIGN (mirrors p33/p35, measure-before-gate, deterministic):
   * INJECT arm: for each fixture curve and each depth in the grid, multiply in a batman quadratic-limb-darkened
@@ -124,14 +124,14 @@ def bls_period(t, flux):
 
 def tls_period(t, flux):
     """Transit Least Squares (optional; different algorithm AND implementation from astropy BLS). Returns best
-    period (days) or None when transitls is unavailable or fails."""
+    period (days) or None when transitleastsquares is unavailable or fails."""
     try:
-        from tls.TLS import transitls
+        from transitleastsquares import transitleastsquares as tls
     except Exception:
         return None
     try:
-        lc = transitls(t, flux)
-        res = lc.search(minperiod=BLS_MIN_PERIOD, maxperiod=BLS_MAX_PERIOD)
+        lc = tls(t, flux)
+        res = lc.search(period_min=BLS_MIN_PERIOD, period_max=BLS_MAX_PERIOD, show_progress_bar=False)
         p = float(res["period"])
         return p if np.isfinite(p) else None
     except Exception as exc:  # noqa: BLE001
@@ -150,7 +150,7 @@ def main():
           f"{BLS_MAX_PERIOD}] d; optional TLS. Alias tol {MATCH_TOL_PCT}%.\n")
 
     versions = {"numpy": np.__version__, "python": sys.version.split()[0]}
-    for pkg in ("astropy", "batman", "wotan", "tls"):
+    for pkg in ("astropy", "batman", "wotan", "transitleastsquares"):
         try:
             mod = __import__(pkg)
             versions[pkg] = getattr(mod, "__version__", "imported")
@@ -236,7 +236,7 @@ def main():
 
     lines = ["# Cross-pipeline validation: Python stack on the committed real-curve fixtures", "",
              f"Stack: batman + wotan {WOTAN_METHOD} + astropy BLS"
-             + (" + TLS" if any(v is not None for v in summary["tlsNullPeriods"].values()) else " (transitls unavailable: MISSING above)"),
+             + (" + TLS" if any(v is not None for v in summary["tlsNullPeriods"].values()) else " (transitleastsquares unavailable: MISSING above)"),
              f"Fixtures: {n} real public TESS-SPOC curves (seed {manifest['seed']}, cap {manifest['capPoints']} pts), "
              "byte-identical input each run.",
              f"Versions: {json.dumps(versions)}", "",

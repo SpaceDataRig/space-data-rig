@@ -1357,7 +1357,7 @@ remains data-gated toward Stage 5.**
   p35 added independence at the algorithm level; this adds it at the IMPLEMENTATION level: the same real photometry
   re-analyzed by a completely different software stack that shares no code with this repository -- batman transit
   injection (Kreidberg 2015), wotan biweight detrending (Hippke et al. 2019), astropy.timeseries.BoxLeastSquares
-  (the Kovacs et al. 2002 reference implementation), and optional transitls (Hippke & Heller 2019). Because the dev
+  (the Kovacs et al. 2002 reference implementation), and optional transitleastsquares (Hippke & Heller 2019). Because the dev
   environment has no Python interpreter, the harness is split deliberately: `p36:export-fixtures` downloads real
   public TESS-SPOC curves for the same seeded host sample as p33/p35 (first 16 catalog hosts, seed 7 -> 12 usable
   curves, 4 coverage misses), deterministically subsamples to <=2500 points (uniform stride, recorded in the

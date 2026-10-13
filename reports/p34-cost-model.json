@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "generatedBy": "p34-cost-model",
+    "source": "reports/p33-catalog.json",
+    "sampleN": 33,
+    "refSectors": 2,
+    "runsPerCurve": 7
+  },
+  "fit": {
+    "p": 2.936437697567511,
+    "k": 8.567072253757234e-7,
+    "r2": 0.8366052738431159,
+    "n": 33
+  },
+  "measured": {
+    "meanPerCurveMs": 27856.666666666668,
+    "meanSingleDetSeconds": 3.9795238095238097,
+    "meanPoints": 2899.121212121212
+  },
+  "doublingCostFactor": 7.65518741084978,
+  "cpuHours": [
+    {
+      "stars": 1000,
+      "bySectors": [
+        {
+          "sectors": 1,
+          "cpuHours": 0.14440185734140906
+        },
+        {
+          "sectors": 2,
+          "cpuHours": 1.1054232804232804
+        },
+        {
+          "sectors": 4,
+          "cpuHours": 8.462222379956563
+        }
+      ]
+    },
+    {
+      "stars": 5000,
+      "bySectors": [
+        {
+          "sectors": 1,
+          "cpuHours": 0.7220092867070455
+        },
+        {
+          "sectors": 2,
+          "cpuHours": 5.527116402116403
+        },
+        {
+          "sectors": 4,
+          "cpuHours": 42.311111899782816
+        }
+      ]
+    },
+    {
+      "stars": 20000,
+      "bySectors": [
+        {
+          "sectors": 1,
+          "cpuHours": 2.888037146828182
+        },
+        {
+          "sectors": 2,
+          "cpuHours": 22.10846560846561
+        },
+        {
+          "sectors": 4,
+          "cpuHours": 169.24444759913126
+        }
+      ]
+    }
+  ]
+}

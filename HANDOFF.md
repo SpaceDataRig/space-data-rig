@@ -283,8 +283,8 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: at time of writing HEAD == origin/main == 288e01a (Track B: iterative detector + p32 two-phase measurement);
-  the Track-C p33 commit that carries this handoff update lands immediately after it (see git log for its exact hash).
+- Git: at time of writing HEAD == origin/main == 0e00e95 (Track C: p33 large-scale completeness/purity ROC);
+  the p34 compute/cost-model commit that carries this handoff update lands immediately after it (see git log).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
@@ -359,6 +359,15 @@ the Actions web page when the anonymous API is rate-limited.
   real planet outranked the injected one, so deep injections were scored as misses and null FPs undercounted); the fix
   keeps ALL gated signals (maxSignals=3) and matches the injection with ANY of them. Measure-only, nothing
   gated/anchored/claimed/deployed.
+- p34 measured compute/cost model (research script scripts/p34-cost-model.ts + artifacts reports/p34-cost-model.md
+  and .json; no new src/ module so no new unit tests): re-fits a power law from the committed p33 catalog each run
+  (nothing hardcoded). Detector cost ~ k * nPoints^p with p = 2.94 (near-cubic, R^2 = 0.84, N = 33) -- BLS on a fine
+  period grid is superlinear and iterative mask-and-refind re-runs it per signal. Practical upshot for Track C: the
+  completeness lever (deeper baselines => more points) is priced ~nPoints^2.94, so doubling the baseline costs ~7.7x.
+  Detection-only CPU-hours (download/parse excluded, flagged as the other bottleneck): a 20000-star 2-sector catalog
+  ~22 CPU-h, 4-sector ~169 CPU-h; embarrassingly parallel across stars, so a 64-way CI matrix gives ~0.3 h / ~2.6 h
+  wall-clock. Quotes CPU-h only, invents no provider price. This is the compute spec Problem 3 asked for and the
+  sizing basis for the thousands-star scale-out. Measure-only, nothing gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

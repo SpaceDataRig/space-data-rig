@@ -1324,3 +1324,15 @@ remains data-gated toward Stage 5.**
   and reports/p33-catalog.json (per-star recovery rows). Measure-only; nothing gated, anchored, claimed, or deployed.
   Reproduce with `npm run p33:scale-roc -- --stars 40 --maxsectors 2 --period 3 --seed 7`.
 
+**Compute / cost model for scaling, MEASURED (npm run p34:cost-model).** p33 meters per-curve detector wall-clock;
+  p34 turns those 33 real measurements into a reproducible scaling model (re-fit from reports/p33-catalog.json each
+  run, nothing hardcoded). Detector cost is a power law in the point count, perCurveMs ~ k * nPoints^p with p = 2.94
+  (near-cubic; R^2 = 0.84 on N = 33) -- BLS over a fine period grid is superlinear and the iterative mask-and-refind
+  re-runs it per signal. The consequence for Track C is exact: the lever that raises completeness (deeper baselines =>
+  more sectors => more points) is priced ~nPoints^2.94, so doubling the baseline costs ~7.7x. Detection-only CPU-hours
+  (download/parse excluded and flagged separately): a 20000-star, 2-sector public catalog is ~22 CPU-h, and ~169 CPU-h
+  at 4 sectors; detection is embarrassingly parallel across stars, so on a 64-way CI matrix 20000x2 is ~0.3 h and
+  20000x4 is ~2.6 h wall-clock. Dollar cost maps directly from any provider's vCPU-h price (the report quotes CPU-h and
+  invents no price). Artifacts: reports/p34-cost-model.md + reports/p34-cost-model.json. Measure-only; nothing gated,
+  anchored, claimed, or deployed. Reproduce with `npm run p34:cost-model -- --sectors 1,2,4 --stars 1000,5000,20000`.
+

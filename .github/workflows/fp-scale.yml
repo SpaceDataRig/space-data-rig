@@ -1,0 +1,80 @@
+name: fp-scale (systematics-aware FP across sectors + AUC)
+
+# Problem 1 + Problem 3 (Track A/C): p42 runs the coherent-systematics false-positive control ACROSS several TGLC
+# sectors at scale and computes a THRESHOLD-FREE discrimination metric (Mann-Whitney AUC of the systematics-aware
+# FAP vs the per-star noise FAP) on a labelled pool (injected planets vs quiet-curve A-gate survivors). This
+# deepens the p39 single-sector pilot into a multi-sector, statistically auditable result. The workflow re-runs it
+# on a reproducible seeded sample and PUBLISHES the measured report back into the repository (reports/p42-fp-scale.*)
+# so the numbers are publicly readable without artifact authentication and regenerable by anyone. Nothing here
+# gates, anchors, claims, or deploys -- it measures and reports.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sectors:
+        description: "comma-separated TGLC sectors to sweep"
+        required: true
+        default: "1,2,3,4"
+      limit:
+        description: "real TGLC curves per sector to sample"
+        required: true
+        default: "200"
+      inject:
+        description: "injected-planet completeness trials per sector"
+        required: true
+        default: "60"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p42-fp-scale.ts
+      - src/detect/instrumentalNull.ts
+      - .github/workflows/fp-scale.yml
+
+permissions:
+  contents: write
+
+# One sweep at a time; never cancel a running sweep (its published report is the artifact we want).
+concurrency:
+  group: fp-scale
+  cancel-in-progress: false
+
+jobs:
+  fp-scale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run systematics-aware FP control across sectors + AUC at scale
+        env:
+          SECTORS: ${{ github.event.inputs.sectors || '1,2,3,4' }}
+          LIMIT: ${{ github.event.inputs.limit || '200' }}
+          INJECT: ${{ github.event.inputs.inject || '60' }}
+        run: npm run p42:fp-scale -- --sectors "$SECTORS" --limit "$LIMIT" --nNull 60 --inject "$INJECT" --seed 7
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/p42-fp-scale.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p42-fp-scale.md reports/p42-fp-scale.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Track A/C: publish multi-sector FP + AUC report (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "report not produced; nothing to publish"
+          fi

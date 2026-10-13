@@ -182,3 +182,29 @@ test("templateOnTimes: empty bins -> all zeros", () => {
   assert.equal(out[0], 0);
   assert.equal(out[1], 0);
 });
+
+test("systematicsAwareFap: a too-short curve degrades honestly to an uninformative FAP (1)", () => {
+  const short: LightCurve = {
+    targetId: "short", mission: "synthetic", cadenceSec: CADENCE * 86400,
+    points: times().slice(0, 10).map((t) => ({ time: t, flux: 1, fluxErr: 0.0002 })), source: "test",
+  };
+  const sig = systematicsAwareFap(short, 9, 5, [short], { seed: 7, nNull: 40 });
+  assert.equal(sig.fapSys, 1, "a curve too short to model must not claim significance");
+  assert.equal(sig.nNull, 0);
+  assert.ok(!sig.templateApplied, "and must flag the noise-only / no-model fallback");
+});
+
+test("benjaminiHochberg: non-finite p-values are never rejected and do not crash", () => {
+  const pvals = [0.001, NaN, 0.002, Infinity, undefined as unknown as number];
+  const r = benjaminiHochberg(pvals, 0.1);
+  assert.ok(r.rejected[0] === true && r.rejected[2] === true, "the two genuinely small p-values reject");
+  assert.ok(r.rejected[1] === false && r.rejected[3] === false && r.rejected[4] === false, "NaN/Infinity/undefined never reject");
+  assert.equal(r.nRejected, 2);
+});
+
+test("benjaminiHochberg: rejects everything when all p are tiny at q=0.1", () => {
+  const pvals = [1e-6, 2e-6, 3e-6, 4e-6];
+  const r = benjaminiHochberg(pvals, 0.1);
+  assert.equal(r.nRejected, pvals.length);
+  assert.ok(r.rejected.every(Boolean));
+});

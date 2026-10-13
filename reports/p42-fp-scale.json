@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "sectors": [
+      1,
+      2,
+      3
+    ],
+    "limit": 150,
+    "nNull": 50,
+    "nInject": 50,
+    "seed": 7,
+    "fapThr": 0.05,
+    "bhQ": 0.1,
+    "injPeriod": 3,
+    "injDepth": 8000
+  },
+  "aggregate": {
+    "n": 450,
+    "fpA": 111,
+    "fpB": 102,
+    "fpC": 104,
+    "fpD": 111,
+    "tp": 49,
+    "tpSys": 49
+  },
+  "auc": {
+    "noise": 0.5540540540540541,
+    "sys": 0.5495495495495496
+  },
+  "pool": {
+    "pos": 49,
+    "neg": 111
+  },
+  "rows": [
+    {
+      "sector": 1,
+      "n": 150,
+      "fpA": 78,
+      "fpB": 77,
+      "fpC": 77,
+      "fpD": 78,
+      "tp": 12,
+      "tpSys": 12,
+      "tmplRms": 45,
+      "tmplPeak": 300
+    },
+    {
+      "sector": 2,
+      "n": 150,
+      "fpA": 13,
+      "fpB": 8,
+      "fpC": 11,
+      "fpD": 13,
+      "tp": 18,
+      "tpSys": 18,
+      "tmplRms": 36,
+      "tmplPeak": 231
+    },
+    {
+      "sector": 3,
+      "n": 150,
+      "fpA": 20,
+      "fpB": 17,
+      "fpC": 16,
+      "fpD": 20,
+      "tp": 19,
+      "tpSys": 19,
+      "tmplRms": 29,
+      "tmplPeak": 213
+    }
+  ]
+}

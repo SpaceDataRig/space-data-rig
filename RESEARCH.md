@@ -246,8 +246,18 @@ per-target SPOC path has no shared-cadence ensemble, so the field stays absent a
 byte-for-byte unchanged. **Nothing is deployed and no live verdict changes**; wiring a real ensemble into the
 edge/Node callers (and deploying) is a separate, parity-gated, operator-authorized step.
 
-Reproduce: `npm run p39:instrumental-fp`, `npm run p40:fp-safety` (module `src/detect/instrumentalNull.ts`). The
-`instrumental-fp` CI workflow re-runs P39 at ~200-curve scale and publishes the measured report back.
+**At scale, across sectors, and honestly bounded (P42).** P42 re-runs the control across three TGLC sectors (450
+curves) in the production subtract-then-gate posture and adds a threshold-free metric: a Mann-Whitney AUC of the
+systematics-aware FAP vs the per-star noise FAP over a labelled pool (injected planets vs quiet-curve survivors). The
+honest result tempers the P39 headline: once subtraction has removed the coherent bulk, the systematics-aware null
+adds **almost nothing further** (FP 111 -> 104; AUC 0.554 noise vs 0.550 sys, a gain of -0.005) while keeping **100%
+(49/49)** of injected planets. The 61% -> 16% win belongs to the *un-subtracted* data. So the coherent null is a
+certified-safe **complement and safety net**, not a second independent lever: subtraction is the primary fix, and the
+residual FP after it is each star's own variability -- the single-sector purity ceiling (P31/P33).
+
+Reproduce: `npm run p39:instrumental-fp`, `npm run p40:fp-safety`, `npm run p42:fp-scale` (module
+`src/detect/instrumentalNull.ts`). The `instrumental-fp` and `fp-scale` CI workflows re-run P39/P42 at scale and
+publish the measured reports back.
 
 ---
 
@@ -275,13 +285,36 @@ Reproduce: `npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --s
 
 ---
 
-## 10. Honest limitations
+## 10. Are window aliases the problem? Measured -- no, not here (P43)
+
+The roadmap also flagged "window aliases unsuppressed": observing gaps copy a signal to a neighbouring period
+(+/- 1 cycle/day) so BLS can lock the wrong one. The odd/even resolver handles the P/2 alias but not this classical
+one, so we built the missing primitive (`src/detect/windowAlias.ts`: the spectral window |sum exp(2 pi i f t)|/N, its
+dominant sidelobe, the +/- n c/d alias periods, and an ambiguity score) and MEASURED whether it bites on real TESS
+data.
+
+It does not. Across 450 TGLC curves (3 sectors) the spectral-window power at 1 cycle/day is median **0.012** (p95
+0.013, max 0.019) -- three orders of magnitude below the daily-alias regime -- because TESS full-frame sampling is
+near-continuous. **0 of 125** quiet-curve survivors and **0 of 53** injected planets are alias-ambiguous, and a
+window-aware veto removes 0% of false positives at 0% completeness cost. A clean negative that retires a suspected
+problem: the residual FP here is coherent systematics (P39) and per-star variability (P31/P33), not window aliasing.
+The primitive still matters for sparse-cadence or ground-based follow-up, where the daily window reopens.
+
+Reproduce: `npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 --seed 7`.
+
+---
+
+## 11. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
 - **A longer baseline is not a free completeness lever.** P41 measures that naively stitching extra sectors does not
   raise - and for short, already-resolved periods slightly lowers - injection-recovery completeness; baseline length
   buys period *resolution*, not short-period SNR, unless the cross-sector fold stays phase-coherent.
+- **The coherent-systematics null is a complement, not a second win.** P42 shows that after common-mode subtraction
+  it adds ~0 discrimination (AUC gain -0.005) at 100% planet safety; its large FP cut is on un-subtracted data.
+- **Window aliasing is not a driver on TESS FFI.** P43 measures the 1 c/d spectral window at ~0.012 (essentially
+  closed); the residual false positives are systematics and stellar variability, not daily aliases.
 - **Purity is a floor, not a ceiling.** Unconfirmed planets count as false positives, so reported purity understates
   reality by an unknown amount.
 - **The cross-pipeline fixtures are subsampled** (<= 2500 points) so their completeness is not 1:1 comparable with
@@ -289,27 +322,30 @@ Reproduce: `npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --s
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 11. Reproducibility
+## 12. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 276 unit tests
+npm test                     # 285 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
 npm run p39:instrumental-fp  # systematics-aware FP null + FDR -> reports/p39-*
 npm run p40:fp-safety        # measure-before-gate safety cert -> reports/p40-*
 npm run p41:longbaseline     # single vs stitched-baseline completeness -> reports/p41-*
+npm run p42:fp-scale         # multi-sector FP + AUC at scale -> reports/p42-*
+npm run p43:window-alias     # window-alias risk on real curves -> reports/p43-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 
 The Python cross-pipeline harness runs in the `crosscheck-python` CI workflow and publishes its measured report back
 into `reports/crosscheck/`. A `scale-roc` CI workflow re-runs the completeness/purity sweep at a larger sample and
 publishes the report back, and an `instrumental-fp` CI workflow re-runs the systematics-aware FP / FDR measurement
-(P39) at ~200-curve scale, so the numbers in this document can be regenerated by anyone.
+(P39) at ~200-curve scale, and an `fp-scale` CI workflow re-runs the multi-sector FP + AUC measurement (P42) and
+publishes its report back, so the numbers in this document can be regenerated by anyone.
 
 ---
 

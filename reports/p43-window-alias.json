@@ -1,0 +1,700 @@
+{
+  "meta": {
+    "sectors": [
+      1,
+      2,
+      3
+    ],
+    "limit": 150,
+    "nInject": 60,
+    "seed": 7,
+    "injPeriod": 3,
+    "injDepth": 8000,
+    "curvesUsed": 450
+  },
+  "window": {
+    "dailyMedian": 0.012,
+    "dailyP95": 0.013,
+    "dailyMax": 0.019,
+    "fracDailyGt03": 0,
+    "fracDailyGt05": 0
+  },
+  "counts": {
+    "fp": 125,
+    "tp": 53
+  },
+  "veto": [
+    {
+      "thr": 0.15,
+      "fpRemoved": 0,
+      "fpPct": 0,
+      "tpKept": 53,
+      "tpPct": 100
+    },
+    {
+      "thr": 0.25,
+      "fpRemoved": 0,
+      "fpPct": 0,
+      "tpKept": 53,
+      "tpPct": 100
+    },
+    {
+      "thr": 0.35,
+      "fpRemoved": 0,
+      "fpPct": 0,
+      "tpKept": 53,
+      "tpPct": 100
+    },
+    {
+      "thr": 0.5,
+      "fpRemoved": 0,
+      "fpPct": 0,
+      "tpKept": 53,
+      "tpPct": 100
+    }
+  ],
+  "fpSample": [
+    {
+      "snr": 26,
+      "period": 9.6824,
+      "ambiguity": 0.337,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.026
+    },
+    {
+      "snr": 15.7,
+      "period": 11.1669,
+      "ambiguity": 0.529,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.04
+    },
+    {
+      "snr": 14.7,
+      "period": 9.2715,
+      "ambiguity": 0.374,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 64.8,
+      "period": 10.1238,
+      "ambiguity": 0.405,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.031
+    },
+    {
+      "snr": 46.9,
+      "period": 10.1313,
+      "ambiguity": 0.37,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 11.4,
+      "period": 10.1313,
+      "ambiguity": 0.52,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.039
+    },
+    {
+      "snr": 21.2,
+      "period": 15,
+      "ambiguity": 0.531,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.04
+    },
+    {
+      "snr": 17.8,
+      "period": 11.1582,
+      "ambiguity": 0.519,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.039
+    },
+    {
+      "snr": 24.4,
+      "period": 10.1313,
+      "ambiguity": 0.419,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.032
+    },
+    {
+      "snr": 66.4,
+      "period": 9.6745,
+      "ambiguity": 0.334,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.025
+    },
+    {
+      "snr": 12.3,
+      "period": 14.0329,
+      "ambiguity": 0.748,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.057
+    },
+    {
+      "snr": 9.6,
+      "period": 9.6824,
+      "ambiguity": 0.475,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.036
+    },
+    {
+      "snr": 7.7,
+      "period": 9.6824,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 20.1,
+      "period": 10.1313,
+      "ambiguity": 0.487,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.037
+    },
+    {
+      "snr": 9.4,
+      "period": 4.7951,
+      "ambiguity": 0.924,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.07
+    },
+    {
+      "snr": 42.8,
+      "period": 9.6824,
+      "ambiguity": 0.372,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 9.5,
+      "period": 10.1313,
+      "ambiguity": 0.573,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.043
+    },
+    {
+      "snr": 31.3,
+      "period": 10.1313,
+      "ambiguity": 0.399,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.03
+    },
+    {
+      "snr": 32.1,
+      "period": 10.1313,
+      "ambiguity": 0.404,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.031
+    },
+    {
+      "snr": 18.5,
+      "period": 9.2715,
+      "ambiguity": 0.304,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.023
+    },
+    {
+      "snr": 32.9,
+      "period": 9.6824,
+      "ambiguity": 0.373,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 11.3,
+      "period": 9.6824,
+      "ambiguity": 0.451,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.034
+    },
+    {
+      "snr": 18.9,
+      "period": 11.1582,
+      "ambiguity": 0.515,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.039
+    },
+    {
+      "snr": 327.6,
+      "period": 10.1313,
+      "ambiguity": 0.398,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.03
+    },
+    {
+      "snr": 38.6,
+      "period": 10.1313,
+      "ambiguity": 0.377,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.029
+    },
+    {
+      "snr": 16.2,
+      "period": 8.8886,
+      "ambiguity": 0.342,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.026
+    },
+    {
+      "snr": 15.6,
+      "period": 9.2688,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 20.5,
+      "period": 9.2661,
+      "ambiguity": 0.263,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.02
+    },
+    {
+      "snr": 16.3,
+      "period": 10.1313,
+      "ambiguity": 0.466,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.035
+    },
+    {
+      "snr": 8,
+      "period": 9.2715,
+      "ambiguity": 0.43,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.033
+    },
+    {
+      "snr": 15.5,
+      "period": 10.1313,
+      "ambiguity": 0.387,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.029
+    },
+    {
+      "snr": 108.3,
+      "period": 9.6824,
+      "ambiguity": 0.356,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.027
+    },
+    {
+      "snr": 105.1,
+      "period": 10.1313,
+      "ambiguity": 0.343,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.026
+    },
+    {
+      "snr": 36,
+      "period": 8.5462,
+      "ambiguity": 0.266,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.02
+    },
+    {
+      "snr": 53.5,
+      "period": 10.1313,
+      "ambiguity": 0.371,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 9.4,
+      "period": 9.2715,
+      "ambiguity": 0.738,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.056
+    },
+    {
+      "snr": 20.4,
+      "period": 9.2715,
+      "ambiguity": 0.289,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.022
+    },
+    {
+      "snr": 12.1,
+      "period": 9.6824,
+      "ambiguity": 0.384,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.029
+    },
+    {
+      "snr": 13.7,
+      "period": 10.1313,
+      "ambiguity": 0.469,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.036
+    },
+    {
+      "snr": 13.2,
+      "period": 10.1313,
+      "ambiguity": 0.489,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.037
+    }
+  ],
+  "tpSample": [
+    {
+      "snr": 14.5,
+      "period": 8.8941,
+      "ambiguity": 0.372,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.028
+    },
+    {
+      "snr": 47.9,
+      "period": 3.011,
+      "ambiguity": 0.63,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.048
+    },
+    {
+      "snr": 18.5,
+      "period": 9.2715,
+      "ambiguity": 0.308,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.023
+    },
+    {
+      "snr": 17.2,
+      "period": 3.011,
+      "ambiguity": 0.745,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.056
+    },
+    {
+      "snr": 16.1,
+      "period": 8.8886,
+      "ambiguity": 0.351,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.027
+    },
+    {
+      "snr": 15.7,
+      "period": 9.2688,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 20.3,
+      "period": 9.2661,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 7.6,
+      "period": 1.501,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 7,
+      "period": 9.2715,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0
+    },
+    {
+      "snr": 7.9,
+      "period": 8.8941,
+      "ambiguity": 0.544,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.041
+    },
+    {
+      "snr": 29.8,
+      "period": 9.2715,
+      "ambiguity": 0.239,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.018
+    },
+    {
+      "snr": 35.2,
+      "period": 9.2715,
+      "ambiguity": 0.268,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.02
+    },
+    {
+      "snr": 9.5,
+      "period": 9.2715,
+      "ambiguity": 0.735,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.056
+    },
+    {
+      "snr": 20.3,
+      "period": 9.2715,
+      "ambiguity": 0.297,
+      "daily": 0.012,
+      "sidelobe": 0.076,
+      "risk": 0.022
+    },
+    {
+      "snr": 8.8,
+      "period": 2.9929,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.058,
+      "risk": 0
+    },
+    {
+      "snr": 26.3,
+      "period": 2.9949,
+      "ambiguity": 0.809,
+      "daily": 0.011,
+      "sidelobe": 0.058,
+      "risk": 0.047
+    },
+    {
+      "snr": 12.8,
+      "period": 2.9949,
+      "ambiguity": 1,
+      "daily": 0.011,
+      "sidelobe": 0.058,
+      "risk": 0.058
+    },
+    {
+      "snr": 9,
+      "period": 2.9929,
+      "ambiguity": 1,
+      "daily": 0.013,
+      "sidelobe": 0.06,
+      "risk": 0.06
+    },
+    {
+      "snr": 9.2,
+      "period": 2.9949,
+      "ambiguity": 0,
+      "daily": 0.012,
+      "sidelobe": 0.06,
+      "risk": 0
+    },
+    {
+      "snr": 8.1,
+      "period": 2.9949,
+      "ambiguity": 0,
+      "daily": 0.013,
+      "sidelobe": 0.061,
+      "risk": 0
+    },
+    {
+      "snr": 39.6,
+      "period": 2.9929,
+      "ambiguity": 0.924,
+      "daily": 0.013,
+      "sidelobe": 0.06,
+      "risk": 0.055
+    },
+    {
+      "snr": 16.9,
+      "period": 2.9949,
+      "ambiguity": 0,
+      "daily": 0.013,
+      "sidelobe": 0.061,
+      "risk": 0
+    },
+    {
+      "snr": 10.6,
+      "period": 2.9949,
+      "ambiguity": 1,
+      "daily": 0.014,
+      "sidelobe": 0.062,
+      "risk": 0.062
+    },
+    {
+      "snr": 26.8,
+      "period": 2.9949,
+      "ambiguity": 0.917,
+      "daily": 0.016,
+      "sidelobe": 0.065,
+      "risk": 0.06
+    },
+    {
+      "snr": 12.8,
+      "period": 2.9949,
+      "ambiguity": 1,
+      "daily": 0.014,
+      "sidelobe": 0.062,
+      "risk": 0.062
+    },
+    {
+      "snr": 24.3,
+      "period": 2.9949,
+      "ambiguity": 0.93,
+      "daily": 0.014,
+      "sidelobe": 0.062,
+      "risk": 0.058
+    },
+    {
+      "snr": 16.4,
+      "period": 2.997,
+      "ambiguity": 0.84,
+      "daily": 0.018,
+      "sidelobe": 0.072,
+      "risk": 0.06
+    },
+    {
+      "snr": 18.8,
+      "period": 2.997,
+      "ambiguity": 1,
+      "daily": 0.019,
+      "sidelobe": 0.077,
+      "risk": 0.077
+    },
+    {
+      "snr": 16.5,
+      "period": 2.997,
+      "ambiguity": 1,
+      "daily": 0.016,
+      "sidelobe": 0.084,
+      "risk": 0.084
+    },
+    {
+      "snr": 41.1,
+      "period": 2.997,
+      "ambiguity": 0,
+      "daily": 0.018,
+      "sidelobe": 0.079,
+      "risk": 0
+    },
+    {
+      "snr": 9.7,
+      "period": 2.997,
+      "ambiguity": 1,
+      "daily": 0.016,
+      "sidelobe": 0.084,
+      "risk": 0.084
+    },
+    {
+      "snr": 14,
+      "period": 2.9949,
+      "ambiguity": 1,
+      "daily": 0.017,
+      "sidelobe": 0.067,
+      "risk": 0.067
+    },
+    {
+      "snr": 16.5,
+      "period": 2.997,
+      "ambiguity": 0.798,
+      "daily": 0.018,
+      "sidelobe": 0.072,
+      "risk": 0.057
+    },
+    {
+      "snr": 24.4,
+      "period": 3.0115,
+      "ambiguity": 0.731,
+      "daily": 0.011,
+      "sidelobe": 0.08,
+      "risk": 0.058
+    },
+    {
+      "snr": 14.5,
+      "period": 3.0115,
+      "ambiguity": 0.629,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0.048
+    },
+    {
+      "snr": 10.5,
+      "period": 3.0115,
+      "ambiguity": 0.833,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0.064
+    },
+    {
+      "snr": 27.9,
+      "period": 3.0115,
+      "ambiguity": 0.789,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0.06
+    },
+    {
+      "snr": 8,
+      "period": 3.0115,
+      "ambiguity": 0.6,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0.046
+    },
+    {
+      "snr": 20.5,
+      "period": 3.0115,
+      "ambiguity": 0.574,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0.044
+    },
+    {
+      "snr": 8.8,
+      "period": 3.0115,
+      "ambiguity": 0,
+      "daily": 0.008,
+      "sidelobe": 0.076,
+      "risk": 0
+    }
+  ]
+}

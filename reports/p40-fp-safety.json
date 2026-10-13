@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "sector": 1,
+    "limit": 80,
+    "nNull": 40,
+    "seed": 7,
+    "residualTemplateRmsPpm": 44,
+    "residualTemplatePeakPpm": 268,
+    "generatedBy": "p40-fp-safety"
+  },
+  "detected": 40,
+  "declined": 0,
+  "safetyRatePct": 100,
+  "verdict": "SAFE-TO-WIRE"
+}

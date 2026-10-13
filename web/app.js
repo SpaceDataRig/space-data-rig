@@ -1025,7 +1025,7 @@ async function loadResearch() {
 function renderResearch(r) {
   const el = $("#research-body");
   if (!el) return;
-  const s = r.survey, cv = r.crossValidation, cm = r.compute;
+  const s = r.survey, cv = r.crossValidation, cm = r.compute, fpc = r.falsePositiveControl;
   const depths = s.depthsPpm || [];
   const rows = depths.map((d, i) => {
     const ts = s.completeness[i], pdm = cv.pdm.completeness[i], py = cv.python.completeness[i];
@@ -1051,6 +1051,12 @@ function renderResearch(r) {
         `<div class="rc-metric"><span class="k">scaling exponent</span><span class="v">~${cm.exponentP.toFixed(2)} (R&sup2; ${cm.r2.toFixed(2)})</span></div>` +
         `<div class="rc-metric"><span class="k">per-star detection</span><span class="v">${cm.singleStarDetectionSeconds.toFixed(1)} s</span></div>` +
         `<table class="rc-table"><thead><tr><th>survey</th><th>2 sectors</th></tr></thead><tbody>${cpu}</tbody></table></div>` +
+      (fpc && fpc.coherentNull ? `<div class="research-card"><h3>False-positive control</h3>` +
+        `<div class="rc-metric"><span class="k">coherent-null FP (raw)</span><span class="v">${pct(fpc.coherentNull.rawFpRateByGate.snr)} &rarr; ${pct(fpc.coherentNull.rawFpRateByGate.sysFap)}</span></div>` +
+        `<div class="rc-metric"><span class="k">measure-before-gate safety</span><span class="v">${fpc.safetyCert.declined}/${fpc.safetyCert.detected} declined (${esc(fpc.safetyCert.verdict)})</span></div>` +
+        `<div class="rc-metric"><span class="k">multi-sector AUC (noise / sys)</span><span class="v">${fpc.scaleMultiSector.aucNoise.toFixed(2)} / ${fpc.scaleMultiSector.aucSys.toFixed(2)}</span></div>` +
+        `<div class="rc-metric"><span class="k">1 c/d window power (median)</span><span class="v">${fpc.windowAlias.dailyWindowMedian}</span></div>` +
+        `<p class="rc-note">A coherent-systematics null cuts raw FP ${pct(fpc.coherentNull.rawFpRateByGate.snr)}&rarr;${pct(fpc.coherentNull.rawFpRateByGate.sysFap)}; after common-mode subtraction it stays a zero-cost safety net (AUC gain ~0, ${esc(fpc.scaleMultiSector.injectedKeptCount)} planets kept). Window aliasing is closed on TESS (median ${fpc.windowAlias.dailyWindowMedian}).</p></div>` : ``) +
     `</div>` +
     `<h3 class="research-sub">Completeness vs injected depth (three independent estimators)</h3>` +
     `<table class="research-table"><thead><tr><th>depth</th><th>TypeScript BLS</th><th>PDM</th><th>Python astropy BLS</th></tr></thead><tbody>${rows}</tbody></table>` +
@@ -1064,6 +1070,8 @@ function seedResearchFeed(r) {
   const cv = r.crossValidation;
   addFeedItem({ key: "res-pdm", kind: "research", text: `Independent PDM agrees with the detector on ${cv.pdm.agreement.agree}/${cv.pdm.agreement.comparable} real curves.` });
   addFeedItem({ key: "res-py", kind: "research", text: `A separate Python stack (wotan + astropy BLS) reproduces purity ${pct(cv.python.purity)} on ${cv.python.curves} shared curves.` });
+  const fpc = r.falsePositiveControl;
+  if (fpc && fpc.coherentNull) addFeedItem({ key: "res-fp", kind: "research", text: `A coherent-systematics null cuts raw false positives ${pct(fpc.coherentNull.rawFpRateByGate.snr)} to ${pct(fpc.coherentNull.rawFpRateByGate.sysFap)} on ${fpc.coherentNull.curves} real curves, and is certified to decline ${fpc.safetyCert.declined} of ${fpc.safetyCert.detected} real planets.` });
 }
 
 // ---- build the initial feed from persisted state (so the page is never empty) ----

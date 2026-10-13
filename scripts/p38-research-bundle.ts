@@ -26,6 +26,10 @@ const p33 = load("reports/p33-catalog.json");
 const p35 = load("reports/p35-pdm-crosscheck.json");
 const xc = load("reports/crosscheck/cross-pipeline.json");
 const p34 = load("reports/p34-cost-model.json");
+const p39 = load("reports/p39-candidates.json");
+const p40 = load("reports/p40-fp-safety.json");
+const p42 = load("reports/p42-fp-scale.json");
+const p43 = load("reports/p43-window-alias.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -76,6 +80,42 @@ const compute = {
   cpuHours: p34.cpuHours,
 };
 
+// false-positive control: the coherent-systematics null (P39), its scale + threshold-free AUC (P42), the
+// measure-before-gate safety cert (P40), and the window-alias negative result (P43). All re-derived from the
+// committed report JSON -- no new analysis, no hardcoded numbers.
+const falsePositiveControl = {
+  coherentNull: {
+    curves: p39.raw.n,
+    seed: p39.meta.seed,
+    rawTemplatePeakPpm: p39.meta.rawTemplatePeakPpm,
+    residualTemplateRmsPpm: p39.meta.residualTemplateRmsPpm,
+    rawFpRateByGate: { snr: p39.raw.fpA / p39.raw.n, noiseFap: p39.raw.fpB / p39.raw.n, sysFap: p39.raw.fpC / p39.raw.n },
+    correctedCompletenessKept: p39.corrected.tpA ? p39.corrected.tpC / p39.corrected.tpA : null,
+  },
+  scaleMultiSector: {
+    curves: p42.aggregate.n,
+    sectors: (p42.meta.sectors || []).length,
+    aucNoise: p42.auc.noise,
+    aucSys: p42.auc.sys,
+    injectedKept: p42.aggregate.tp ? p42.aggregate.tpSys / p42.aggregate.tp : null,
+    injectedKeptCount: `${p42.aggregate.tpSys}/${p42.aggregate.tp}`,
+  },
+  safetyCert: {
+    detected: p40.detected,
+    declined: p40.declined,
+    safetyRatePct: p40.safetyRatePct,
+    verdict: p40.verdict,
+  },
+  windowAlias: {
+    curves: p43.meta.curvesUsed,
+    dailyWindowMedian: p43.window.dailyMedian,
+    dailyWindowMax: p43.window.dailyMax,
+    fracCurvesWithOpenWindow: p43.window.fracDailyGt03,
+    fpCount: p43.counts.fp,
+    tpCount: p43.counts.tp,
+  },
+};
+
 const payload = {
   schema: "sdr-research/1",
   generatedAt: new Date().toISOString(),
@@ -100,6 +140,7 @@ const payload = {
     pdm: { label: "PDM period finder (independent algorithm)", stars: N35, agreement: pdmAgreement, completeness: completenessPDM },
     python: { label: "wotan + astropy BLS (independent stack)", ...pythonValidation },
   },
+  falsePositiveControl,
   compute,
 };
 
@@ -108,5 +149,6 @@ console.log(`wrote web/research.json`);
 console.log(`  survey: ${N33} stars, purity ${tsDets ? (100 * tsTP / tsDets).toFixed(1) : "?"}% (${tsTP}TP/${tsFP}FP)`);
 console.log(`  completeness TS: ${completenessTS.map((c) => (c.rate * 100).toFixed(0) + "%").join(" ")}`);
 console.log(`  PDM agreement: ${pdmAgreement.agree}/${pdmAgreement.comparable}; Python purity ${pythonValidation.purity}`);
+console.log(`  FP control: raw FP ${(falsePositiveControl.coherentNull.rawFpRateByGate.snr * 100).toFixed(0)}% -> ${(falsePositiveControl.coherentNull.rawFpRateByGate.sysFap * 100).toFixed(0)}% (sysFAP); AUC ${falsePositiveControl.scaleMultiSector.aucNoise.toFixed(3)} noise vs ${falsePositiveControl.scaleMultiSector.aucSys.toFixed(3)} sys; safety ${falsePositiveControl.safetyCert.declined}/${falsePositiveControl.safetyCert.detected} declined; window median ${falsePositiveControl.windowAlias.dailyWindowMedian}`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

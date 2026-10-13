@@ -151,7 +151,11 @@ async function main(): Promise<void> {
   L.push("(see p39); the production posture is therefore subtract-then-gate. Nothing here gates, anchors, claims");
   L.push("or deploys; wiring into the money path additionally requires explicit operator go-ahead.");
   writeFileSync("reports/p40-fp-safety.md", L.join("\n"));
-  console.log(`[p40] wrote reports/p40-fp-safety.md`);
+  writeFileSync("reports/p40-fp-safety.json", JSON.stringify({
+    meta: { sector: +sector, limit, nNull, seed, residualTemplateRmsPpm: Math.round(residualTemplate.rmsPpm), residualTemplatePeakPpm: Math.round(residualTemplate.maxAbsPpm), generatedBy: "p40-fp-safety" },
+    detected: totDet, declined: totLost, safetyRatePct: Number.isFinite(safetyRate) ? +safetyRate.toFixed(1) : null, verdict,
+  }, null, 2));
+  console.log(`[p40] wrote reports/p40-fp-safety.md and reports/p40-fp-safety.json`);
 }
 
 main().catch((e) => { console.error(`[p40] error: ${e instanceof Error ? e.stack ?? e.message : e}`); console.log("VERDICT: INCONCLUSIVE"); });

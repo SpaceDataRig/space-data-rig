@@ -1,12 +1,12 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-13T12:12:38.940Z",
+  "generatedAt": "2026-10-13T16:35:42.466Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
     "label": "TypeScript iterative detector (box-fit BLS)",
-    "stars": 33,
-    "coverageMiss": 7,
+    "stars": 204,
+    "coverageMiss": 46,
     "injPeriodDays": 3,
     "seed": 7,
     "depthsPpm": [
@@ -20,39 +20,39 @@
     "completeness": [
       {
         "depthPpm": 300,
-        "recovered": 14,
-        "rate": 0.42424242424242425
+        "recovered": 73,
+        "rate": 0.35784313725490197
       },
       {
         "depthPpm": 500,
-        "recovered": 18,
-        "rate": 0.5454545454545454
+        "recovered": 109,
+        "rate": 0.5343137254901961
       },
       {
         "depthPpm": 1000,
-        "recovered": 23,
-        "rate": 0.696969696969697
+        "recovered": 144,
+        "rate": 0.7058823529411765
       },
       {
         "depthPpm": 2000,
-        "recovered": 26,
-        "rate": 0.7878787878787878
+        "recovered": 166,
+        "rate": 0.8137254901960784
       },
       {
         "depthPpm": 4000,
-        "recovered": 27,
-        "rate": 0.8181818181818182
+        "recovered": 181,
+        "rate": 0.8872549019607843
       },
       {
         "depthPpm": 8000,
-        "recovered": 27,
-        "rate": 0.8181818181818182
+        "recovered": 190,
+        "rate": 0.9313725490196079
       }
     ],
-    "purity": 0.41379310344827586,
-    "nullTP": 12,
-    "nullFP": 17,
-    "blindDetections": 29
+    "purity": 0.5315315315315315,
+    "nullTP": 118,
+    "nullFP": 104,
+    "blindDetections": 222
   },
   "crossValidation": {
     "pdm": {
@@ -142,6 +142,42 @@
           "rate": 1
         }
       ]
+    }
+  },
+  "falsePositiveControl": {
+    "coherentNull": {
+      "curves": 200,
+      "seed": 7,
+      "rawTemplatePeakPpm": 104010,
+      "residualTemplateRmsPpm": 46,
+      "rawFpRateByGate": {
+        "snr": 0.61,
+        "noiseFap": 0.61,
+        "sysFap": 0.16
+      },
+      "correctedCompletenessKept": 1
+    },
+    "scaleMultiSector": {
+      "curves": 450,
+      "sectors": 3,
+      "aucNoise": 0.5540540540540541,
+      "aucSys": 0.5495495495495496,
+      "injectedKept": 1,
+      "injectedKeptCount": "49/49"
+    },
+    "safetyCert": {
+      "detected": 40,
+      "declined": 0,
+      "safetyRatePct": 100,
+      "verdict": "SAFE-TO-WIRE"
+    },
+    "windowAlias": {
+      "curves": 450,
+      "dailyWindowMedian": 0.012,
+      "dailyWindowMax": 0.019,
+      "fracCurvesWithOpenWindow": 0,
+      "fpCount": 125,
+      "tpCount": 53
     }
   },
   "compute": {

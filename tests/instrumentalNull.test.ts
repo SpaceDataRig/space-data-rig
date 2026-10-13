@@ -121,6 +121,18 @@ test("systematicsAwareFap: deterministic (same input bytes -> same output)", () 
   assert.equal(a.nNull, b.nNull);
 });
 
+test("systematicsAwareFap: a prebuilt template gives an identical result to building it internally", () => {
+  const ensemble: LightCurve[] = [];
+  for (let i = 0; i < 15; i++) ensemble.push(mkCurve(coherentDip, 4000 + i));
+  const cand = ensemble[0]!;
+  const snr = bls(preprocess(cand, 0.5), { minPeriodDays: 4, maxPeriodDays: 6, oversample: 6, nDurations: 8 }).snr;
+  const internal = systematicsAwareFap(cand, snr, 5, ensemble, { seed: 7, nNull: 60 });
+  const reused = systematicsAwareFap(cand, snr, 5, [], { seed: 7, nNull: 60, template: commonModeTemplate(ensemble) });
+  assert.equal(reused.fapSys, internal.fapSys);
+  assert.equal(reused.exceedances, internal.exceedances);
+  assert.equal(reused.templateApplied, internal.templateApplied);
+});
+
 test("benjaminiHochberg: [0.001,0.002,0.5,0.6,0.9] q=0.1 rejects first 2", () => {
   const pvals = [0.001, 0.002, 0.5, 0.6, 0.9];
   const r = benjaminiHochberg(pvals, 0.1);

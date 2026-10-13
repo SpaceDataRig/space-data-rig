@@ -21,7 +21,7 @@ import { bls } from "../src/detect/bls.ts";
 import { preprocess } from "../src/detect/detrend.ts";
 import { calibratedFap } from "../src/detect/significance.ts";
 import { systematicsAwareFap, benjaminiHochberg } from "../src/detect/instrumentalNull.ts";
-import { removeCommonMode, commonModeTemplate } from "../src/detect/commonMode.ts";
+import { removeCommonMode, commonModeTemplate, type CommonModeTemplate } from "../src/detect/commonMode.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { injectTransitInto, periodMatched } from "../src/sim/injectInto.ts";
 import { tglcBytesToLightCurve, tglcHeaderMeta } from "../src/data/tglc.ts";
@@ -83,7 +83,7 @@ async function main(): Promise<void> {
 
   // one measurement pass over a curve set (null-arm FP + injected-arm completeness), gated A/B/C/D.
   interface Stats { label: string; n: number; fpA: number; fpB: number; fpC: number; fpD: number; inj: number; tpA: number; tpC: number; cand: { snr: number; period: number; fapNoise: number; fapSys: number }[] }
-  function measure(label: string, cs: LightCurve[], ens: LightCurve[]): Stats {
+  function measure(label: string, cs: LightCurve[], ens: LightCurve[], template: CommonModeTemplate): Stats {
     let fpA = 0, fpB = 0, fpC = 0;
     const fapSysValues: number[] = [];
     const cand: { snr: number; period: number; fapNoise: number; fapSys: number }[] = [];
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
         fpA++;
         const sig = calibratedFap(lc, r.snr, r.periodDays, { nNull, seed, maxPoints: 2500 });
         if (sig.fap <= fapThr) fpB++;
-        const sys = systematicsAwareFap(lc, r.snr, r.periodDays, ens, { nNull, seed });
+        const sys = systematicsAwareFap(lc, r.snr, r.periodDays, ens, { nNull, seed, template });
         fapSysValues.push(sys.fapSys);
         cand.push({ snr: +r.snr.toFixed(2), period: +r.periodDays.toFixed(4), fapNoise: +sig.fap.toFixed(4), fapSys: +sys.fapSys.toFixed(4) });
         if (sys.fapSys <= fapThr) fpC++;
@@ -121,7 +121,7 @@ async function main(): Promise<void> {
         if (r.snr < 7 || r.depth * 1e6 < 200) continue;
         if (!periodMatched(r.periodDays, injPeriod, 5)) continue;
         tpA++;
-        const sys = systematicsAwareFap(withPlanet, r.snr, r.periodDays, ens, { nNull, seed });
+        const sys = systematicsAwareFap(withPlanet, r.snr, r.periodDays, ens, { nNull, seed, template });
         if (sys.fapSys <= fapThr) tpC++;
         inj++;
       } catch { /* degenerate */ }
@@ -131,9 +131,9 @@ async function main(): Promise<void> {
   }
 
   // PASS 1: raw curves, null from the raw ensemble (systematic NOT subtracted).
-  const rawStats = measure("RAW (systematic not subtracted)", curves, curves);
+  const rawStats = measure("RAW (systematic not subtracted)", curves, curves, tmpl);
   // PASS 2: common-mode-subtracted curves, null from the residual (SUBTRACT-then-GATE -- the intended pipeline).
-  const corrStats = measure("CORRECTED (subtract-then-gate)", corrected, corrected);
+  const corrStats = measure("CORRECTED (subtract-then-gate)", corrected, corrected, ctmpl);
 
   // auditable artifacts (reproduce the full figures at scale in CI)
   mkdirSync("reports", { recursive: true });

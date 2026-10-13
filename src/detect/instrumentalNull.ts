@@ -34,7 +34,7 @@ import { preprocess, median, madSigma } from "./detrend.ts";
 import { bls } from "./bls.ts";
 import { estimateRho, ar1Series, detrendMovingMedian } from "../sim/redNoise.ts";
 import { empiricalFap } from "../sim/roc.ts";
-import { commonModeTemplate, type CommonModeBin } from "./commonMode.ts";
+import { commonModeTemplate, type CommonModeBin, type CommonModeTemplate } from "./commonMode.ts";
 
 /** Local deterministic PRNG (mulberry32) so the module owns its randomness; identical seeds -> identical stream. */
 function mulberry32(seed: number): () => number {
@@ -68,6 +68,13 @@ export interface InstrumentalNullOptions {
   gridNDurations?: number; // BLS trial durations for the null grid (default 8)
   minPeriodDays?: number; // null-grid lower bound (default max(0.5, 0.7*period))
   maxPeriodDays?: number; // null-grid upper bound (default 1.5*period)
+  /**
+   * A PRE-BUILT coherent template to reuse across many candidates from the SAME ensemble. commonModeTemplate
+   * is O(ensemble points) and building it per candidate makes an ensemble sweep quadratic; a caller that
+   * scores many stars against one sector ensemble builds the template ONCE and passes it here (the `ensemble`
+   * argument is then ignored). Identical result to building it internally from the same curves.
+   */
+  template?: CommonModeTemplate;
 }
 
 export interface InstrumentalSignificance {
@@ -185,7 +192,7 @@ export function systematicsAwareFap(
   const rho = Number.isFinite(rhoRaw) ? Math.max(0, Math.min(0.9, rhoRaw)) : 0;
   const noisePpm = residualScatterPpm(flux);
 
-  const tmpl = commonModeTemplate(ensemble, {
+  const tmpl = opts.template ?? commonModeTemplate(ensemble, {
     minStars: opts.minStars ?? 8,
     minStarsPerBin: opts.minStarsPerBin ?? 5,
     timeTolDays: tol,

@@ -95,8 +95,9 @@ docker-compose, CULTURE.md).
 - src/sim/        exactTransit, transitModel, redNoise, injectInto, injectionRecovery, roc, confidence.
 - src/critic/     review.ts (mission-critic verdicts, centroid vetting gate).
 - src/candidate/  candidateRecord, dedup, falsePositive, prioritize, snapshot (blind-mode chain),
-                  corroboration (applyLayerFilters L1-L4 + partitionBySystematic; p22 applies L3 by default,
-                  collapsing multi-host shared-ephemeris groups out of the emitted candidates; research-only).
+                  corroboration (applyLayerFilters L1-L4 + partitionBySystematic + corroborateByPeriod;
+                  p22 applies L3 by default, collapsing multi-host shared-ephemeris groups out of the
+                  emitted candidates; research-only).
 - src/review/     externalReview.ts -- reusable library to independently audit a THIRD-PARTY
                   candidate claim (research-only; never gates, accepts, or anchors).
 - src/ai/         llm.ts, discussion.ts, threads.ts, deliberation.ts (side-channel LLM layer).
@@ -114,8 +115,10 @@ docker-compose, CULTURE.md).
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
-- scripts/        p0..p27 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
-                  measure the Stage-4 FP lever on real FFI) + verify-observe.ts + p2-anchor.ts
+- scripts/        p0..p28 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
+                  measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
+                  KNOWN planets showing the blind per-sector path is under-powered for a real discovery)
+                  + verify-observe.ts + p2-anchor.ts
                   + wallet-import.ts + validate-curated.ts + bls_astropy_check.py (dev-only).
 - tests/          43 test files, run via `npm test` (node --import tsx --test, explicit list in
                   package.json -- NEW TEST FILES MUST BE ADDED TO THAT LIST).
@@ -279,14 +282,22 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: HEAD == origin/main == fa8f9c6 (working tree clean apart from this handoff update).
-- Production: wrangler version e43b9a5a-492b-4f82-a617-35b05a7fa483, spacedatarig.app.
+- Git: HEAD == origin/main == b7a4fb3 (working tree clean apart from this handoff update).
+- Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 235/235 green (corroboration +6, shapeCoherence +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
+- Tests: 238/238 green (corroboration +6 then +3 period-only, shapeCoherence +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
-  summary carries systematicCollapsed/emittedCandidates/l3Applied. Still research-only, worker not imported, NOT deployed.
+  summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
+  regenerated static snapshot + board banner WERE deployed (user-authorized) as version 9ff60199; board serves 5 rows,
+  l3Applied true, discoveryClaim-true count 0 (verified by cache-busting probe).
+- p28 corroboration-proof (positive control on 10 KNOWN planets, up to 4 real SPOC sectors each, blind per-sector BLS):
+  STRICT cross-sector corroboration fired 0/10 (single-sector period resolution too coarse to match epochs) -> the
+  board's L4 flag is inert for blind detections; period-only fired 3/10 but matched truth 1/3; only 3/10 known planets
+  got >=2 significant blind hits. Honest finding: the blind per-sector public-FFI path is UNDER-POWERED for a real
+  discovery (often cannot re-find known planets); a genuine claim needs a JOINT multi-sector coherent period search
+  + deeper/longer data. Measure-only, nothing gated/anchored/claimed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

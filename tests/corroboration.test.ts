@@ -6,7 +6,7 @@
 //   * the counts are monotone non-increasing across layers.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyLayerFilters, survivingHostsByLayer, partitionBySystematic, type SectorDetection } from "../src/candidate/corroboration.ts";
+import { applyLayerFilters, survivingHostsByLayer, partitionBySystematic, corroborateByPeriod, type SectorDetection } from "../src/candidate/corroboration.ts";
 
 function det(tic: number, sector: number, periodDays: number, epochBjd: number, fapPassed = true): SectorDetection {
   return { tic, sector, periodDays, epochBjd, fapPassed };
@@ -103,4 +103,37 @@ test("partitionBySystematic routes multi-host shared ephemerides OUT of the emit
   assert.deepEqual(systematic.map((g) => g.tag), ["systematic-b", "systematic-d"]);
   // partition is lossless: nothing dropped, nothing duplicated
   assert.equal(independent.length + systematic.length, groups.length);
+});
+
+test("corroborateByPeriod: same host, same period in >=2 sectors is corroborated (no epoch needed)", () => {
+  const res = corroborateByPeriod([
+    { tic: 100, sector: 1, periodDays: 5.0 },
+    { tic: 100, sector: 2, periodDays: 5.05 }, // within 2% of 5.0 -> same cluster, new sector
+    { tic: 100, sector: 3, periodDays: 5.02 },
+  ]);
+  assert.equal(res.length, 1);
+  assert.equal(res[0].corroborated, true);
+  assert.equal(res[0].distinctSectors, 3);
+});
+
+test("corroborateByPeriod: a different period in another sector does NOT corroborate", () => {
+  const res = corroborateByPeriod([
+    { tic: 200, sector: 1, periodDays: 5.0 },
+    { tic: 200, sector: 2, periodDays: 8.3 }, // far period -> separate cluster, only 1 sector each
+  ]);
+  assert.equal(res[0].corroborated, false);
+  assert.equal(res[0].distinctSectors, 1);
+});
+
+test("corroborateByPeriod: hosts are never merged, garbage periods are skipped", () => {
+  const res = corroborateByPeriod([
+    { tic: 300, sector: 1, periodDays: 4.0 },
+    { tic: 301, sector: 2, periodDays: 4.0 }, // same period, DIFFERENT host -> each 1 sector
+    { tic: 302, sector: 1, periodDays: NaN },
+    { tic: 302, sector: 2, periodDays: -1 },
+  ]);
+  const byTic = new Map(res.map((r) => [r.tic, r]));
+  assert.equal(byTic.get(300)!.corroborated, false);
+  assert.equal(byTic.get(301)!.corroborated, false);
+  assert.equal(byTic.has(302), false); // all detections garbage -> host dropped
 });

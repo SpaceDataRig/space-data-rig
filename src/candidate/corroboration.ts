@@ -163,3 +163,54 @@ export function partitionBySystematic<T extends { suspectedCommonSystematic: boo
   for (const g of groups) (g.suspectedCommonSystematic ? systematic : independent).push(g);
   return { independent, systematic };
 }
+
+/**
+ * PERIOD-ONLY cross-sector corroboration -- the robust sibling of dedup.corroborateHosts for BLIND
+ * per-sector detections. corroborateHosts demands the full ephemeris coincide (period AND a folded epoch
+ * within t0TolDays). That is the right test when the ephemeris is precise, but a single ~27-day sector
+ * resolves a period only to roughly P^2/(oversample*baseline), so the SAME real planet can be recovered at
+ * slightly different periods in two sectors and its extrapolated epoch then fails a tight t0 window -- the
+ * strict test can miss a genuine recurrence. A planet's PERIOD is an intrinsic property, so the same period
+ * turning up significantly on the same host in >=2 independent baselines is itself strong corroboration that
+ * a one-sector spike cannot fake. We cluster each host's per-sector periods by relative agreement (no epoch
+ * required) and count the distinct sectors behind the largest cluster. Pure; never mutates; no claims.
+ */
+export interface PeriodDetection {
+  tic: number;
+  sector: number;
+  periodDays: number;
+}
+
+export interface PeriodCorroboration {
+  tic: number;
+  bestPeriodDays: number; // representative period of the strongest cross-sector cluster
+  distinctSectors: number; // how many different sectors contributed a coincident-period detection
+  corroborated: boolean; // >= 2 distinct sectors -> the period recurs across independent baselines
+}
+
+export function corroborateByPeriod(items: PeriodDetection[], periodTolPct = 2): PeriodCorroboration[] {
+  const byHost = new Map<number, PeriodDetection[]>();
+  for (const it of items) {
+    if (!Number.isFinite(it.tic) || !Number.isFinite(it.periodDays) || it.periodDays <= 0) continue;
+    const arr = byHost.get(it.tic) ?? [];
+    arr.push(it);
+    byHost.set(it.tic, arr);
+  }
+  const out: PeriodCorroboration[] = [];
+  for (const [tic, list] of byHost) {
+    // greedy clusters of mutually period-coincident detections (relative tolerance), tracking sectors
+    const clusters: { rep: number; sectors: Set<number> }[] = [];
+    for (const it of list) {
+      const hit = clusters.find((c) => Math.abs(c.rep - it.periodDays) / Math.min(c.rep, it.periodDays) <= periodTolPct / 100);
+      if (hit) hit.sectors.add(it.sector);
+      else clusters.push({ rep: it.periodDays, sectors: new Set([it.sector]) });
+    }
+    let best = { periodDays: NaN, sectors: 0 };
+    for (const c of clusters) {
+      if (c.sectors.size > best.sectors) best = { periodDays: c.rep, sectors: c.sectors.size };
+    }
+    out.push({ tic, bestPeriodDays: best.periodDays, distinctSectors: best.sectors, corroborated: best.sectors >= 2 });
+  }
+  out.sort((a, b) => b.distinctSectors - a.distinctSectors || a.tic - b.tic);
+  return out;
+}

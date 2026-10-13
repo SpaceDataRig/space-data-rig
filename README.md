@@ -1220,3 +1220,22 @@ remains data-gated toward Stage 5.**
   exactly why validation-grade needs the deeper multi-sector coverage deferred to Stage 5. Measure-only, nothing
   gated. Reproduce with `npm run p27:shape-coherence`.
 
+**Can the pipeline actually corroborate a REAL planet across sectors? A positive control says not yet
+  (npm run p28:corroboration-proof).** Before pointing the search at novel targets we tested the strongest
+  FP lever -- cross-sector corroboration -- on data where the answer is known: 10 confirmed planets, each
+  pulled from up to 4 real TESS-SPOC sectors covering it, run through a BLIND per-sector BLS (the catalog
+  period is never shown to the detector). We added a period-only corroborator (`corroborateByPeriod`,
+  `src/candidate/corroboration.ts`, 3 offline cases) alongside the strict `corroborateHosts` (period AND
+  folded epoch must coincide). Measured result: the STRICT test fired on **0/10** real planets -- a single
+  27-day sector resolves a period too coarsely for the extrapolated epoch to match across sectors, so the
+  board's L4 flag is effectively inert for blind detections. The PERIOD-ONLY test fired on 3/10 but matched
+  catalog truth on only 1/3 (the other two were aliases landing on one shared period). And only 3/10 known
+  planets even produced >=2 significant blind hits -- most confirmed planets are too shallow to re-detect
+  sector-by-sector at SNR>=7. Honest conclusion, stated as a limitation of OUR detector not of the sky: a
+  blind per-sector pass over public FFI is currently UNDER-POWERED for a defensible new-planet claim -- it
+  often cannot even re-find planets we already know. A genuine discovery needs a JOINT multi-sector coherent
+  period search (fold the long baseline together, not independent per-sector hits) plus deeper/longer data, and
+  any surviving signal must still clear novelty + calibrated structural vetting + independent follow-up before
+  anyone may say "planet." Measure-only; nothing gated, anchored, or claimed. Reproduce with
+  `npm run p28:corroboration-proof -- --targets 10 --maxsectors 4`.
+

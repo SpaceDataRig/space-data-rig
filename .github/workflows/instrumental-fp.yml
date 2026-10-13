@@ -1,0 +1,82 @@
+name: instrumental-fp (systematics-aware FP + FDR)
+
+# Problem 1 (Track A): the per-candidate noise-FAP gate barely moves the blind FP rate because the surviving
+# false positives are COHERENT INSTRUMENTAL SYSTEMATICS (a dip/spike shared across many stars at one cadence),
+# which a per-star noise null cannot represent. src/detect/instrumentalNull.ts puts the measured coherent
+# common-mode template INTO the null and adds Benjamini-Hochberg FDR to bound FP by construction. p39 measures
+# that on real TGLC full-frame curves across four gates (raw / noise-FAP / systematics-FAP / +FDR) with an
+# injected-planet completeness positive control. This workflow runs the SAME script at scale (hundreds of
+# curves, larger null ensemble and inject count) on a reproducible seeded sample and publishes the measured
+# report back into the repository so it is publicly readable without artifact authentication. Nothing here
+# gates, anchors, claims, or deploys -- it measures and reports.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "number of real TGLC curves per sector to sample"
+        required: true
+        default: "200"
+      inject:
+        description: "number of injected-planet completeness trials"
+        required: true
+        default: "80"
+      sector:
+        description: "TESS sector to pull TGLC curves from"
+        required: true
+        default: "1"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p39-instrumental-fp.ts
+      - src/detect/instrumentalNull.ts
+      - .github/workflows/instrumental-fp.yml
+
+permissions:
+  contents: write
+
+# One sweep at a time; never cancel a running sweep (its published report is the artifact we want).
+concurrency:
+  group: instrumental-fp
+  cancel-in-progress: false
+
+jobs:
+  instrumental-fp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run systematics-aware FP / FDR measurement at scale
+        env:
+          LIMIT: ${{ github.event.inputs.limit || '200' }}
+          INJECT: ${{ github.event.inputs.inject || '80' }}
+          SECTOR: ${{ github.event.inputs.sector || '1' }}
+        run: npm run p39:instrumental-fp -- --sector "$SECTOR" --limit "$LIMIT" --nNull 80 --inject "$INJECT" --seed 7
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/p39-instrumental-fp.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p39-instrumental-fp.md reports/p39-candidates.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Track A: publish systematics-aware FP / FDR report (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "report not produced; nothing to publish"
+          fi

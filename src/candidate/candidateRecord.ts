@@ -41,6 +41,17 @@ export interface CandidateDetection {
 export interface CandidateSignificance {
   fap: number; // empirical false-alarm probability calibrated to this star's own noise color
   rho: number; // measured lag-1 noise color the FAP was calibrated against
+  /**
+   * Coherent-systematics false-alarm probability (src/detect/instrumentalNull.ts systematicsAwareFap): a null
+   * that includes the ensemble-common instrumental systematic, not just this star's own noise. Populated ONLY
+   * when the caller has a same-cadence ensemble to build that null; when absent the record is byte-for-byte the
+   * noise-only contract. It attacks the FP class the per-star FAP is blind to (a dip/spike shared across many
+   * stars at one cadence). Safety-certified before enabling: scripts/p40-fp-safety.ts measures it declines ~0%
+   * of real detections under subtract-then-gate.
+   */
+  systematicsFap?: number;
+  /** systematics-aware FAP above which the signal is deemed explainable by the coherent systematic (default = th.maxFap). */
+  systematicsFapThreshold?: number;
 }
 
 /** Host identity; ra/dec/tmag let a follow-up team point at it, gaiaSourceId links the astrometry. */
@@ -131,6 +142,14 @@ export function classifyConfidence(
   if (!passSnr) reasons.push(`SNR ${detection.snr.toFixed(1)} below the ${th.minSnr} gate.`);
   if (!passFap) reasons.push(significance == null ? "no calibrated significance supplied; cannot certify false-alarm probability." : `calibrated FAP ${significance.fap.toExponential(2)} exceeds ${th.maxFap}.`);
 
+  // Coherent-systematics FP gate (opt-in). Only meaningful when a same-cadence ensemble supplied a
+  // systematics-aware FAP: absent -> neutral, the noise-only contract is byte-for-byte unchanged. Present and
+  // high -> the peak is within what the ensemble-common instrumental systematic alone produces, so it cannot
+  // be believed as a candidate and is downgraded to low. This is the FP class the per-star noise FAP is blind to.
+  const sysThr = significance?.systematicsFapThreshold ?? th.maxFap;
+  const sysFapSupplied = significance != null && isSet(significance.systematicsFap);
+  const passSysFap = !sysFapSupplied || significance!.systematicsFap! <= sysThr;
+
   const centroidOk = isSet(vetting.centroidOffsetArcsec) && vetting.centroidOffsetArcsec <= th.centroidHighMaxArcsec;
   const blendLow = vetting.blend?.tier === "low";
   const geomOk = vetting.geometry?.consistent === true;
@@ -159,6 +178,10 @@ export function classifyConfidence(
   if (!passSnr || !passFap) {
     tier = "low";
     reasons.push("passes novelty but not the SNR/FAP gates -> low confidence.");
+  } else if (!passSysFap) {
+    tier = "low";
+    reasons.push("passes the SNR/FAP gates but a coherent ensemble instrumental systematic can produce this peak -> low confidence (systematics-aware FAP).");
+    followupNeeds.push("a same-cadence ensemble to recompute the coherent-systematics FAP after common-mode subtraction; if the dip stays significant there its instrumental-artifact explanation weakens.");
   } else if (strongVetting && catalogEstablished) {
     tier = "high";
     reasons.push("novel + SNR/FAP gates passed + centroid on-target + low blend risk + geometry self-consistent -> high-confidence CANDIDATE (still requires independent follow-up).");
@@ -252,6 +275,7 @@ export function formatFollowupCard(r: CandidateRecord): string {
   lines.push(`Confidence tier: ${r.tier}   (candidate, not a discovery claim)`);
   lines.push(`Signal: P=${r.detection.periodDays.toFixed(6)} d  T0=${r.detection.epochBjd.toFixed(4)} BJD  depth=${r.detection.depthPpm.toFixed(0)} ppm  T14=${r.detection.durationHours.toFixed(2)} h  SNR=${r.detection.snr.toFixed(1)}  ${r.detection.nSectors} sector(s)`);
   if (r.significance) lines.push(`Calibrated significance: FAP=${r.significance.fap.toExponential(2)} (noise color rho=${r.significance.rho.toFixed(2)})`);
+  if (r.significance && isSet(r.significance.systematicsFap)) lines.push(`Coherent-systematics significance: systematics-aware FAP=${r.significance.systematicsFap!.toExponential(2)} (ensemble null including the instrumental systematic)`);
   if (r.vetting.depth) lines.push(`Astrophysical FP screen (transit depth): ${r.vetting.depth.regime}${r.vetting.depth.planetPlausible ? "" : " -> NOT a planetary candidate"}`);
   lines.push(`Photometry tier: ${r.dataTier}`);
   if (r.nextTransitsBjd.length) lines.push(`Next predicted transits (BJD): ${r.nextTransitsBjd.slice(0, 6).map((t) => t.toFixed(3)).join(", ")}`);

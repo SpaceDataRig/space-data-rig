@@ -93,6 +93,29 @@ test("low: calibrated FAP above the gate", () => {
   assert.equal(r.tier, "low");
 });
 
+test("systematicsFap absent leaves an otherwise-high classification byte-identical (opt-in invariant)", () => {
+  const without = buildCandidateRecord(baseInput());
+  const withFieldUndefined = buildCandidateRecord(baseInput({ significance: { ...sig, systematicsFap: undefined } }));
+  assert.equal(withFieldUndefined.tier, without.tier);
+  assert.deepEqual(withFieldUndefined.reasons, without.reasons, "an undefined systematicsFap must not alter reasons");
+  assert.deepEqual(withFieldUndefined.followupNeeds, without.followupNeeds, "an undefined systematicsFap must not alter followupNeeds");
+  assert.equal(without.tier, "high");
+});
+
+test("a high systematicsFap (coherent ensemble artifact) downgrades a high candidate to low", () => {
+  const r = buildCandidateRecord(baseInput({ significance: { ...sig, systematicsFap: 0.62 } }));
+  assert.equal(r.tier, "low");
+  assert.ok(r.reasons.some((x) => /coherent ensemble instrumental systematic/.test(x)));
+  assert.ok(r.followupNeeds.some((x) => /same-cadence ensemble/.test(x)));
+});
+
+test("a low systematicsFap keeps the high tier and is printed on the card", () => {
+  const r = buildCandidateRecord(baseInput({ significance: { ...sig, systematicsFap: 1e-4 } }));
+  assert.equal(r.tier, "high");
+  const card = formatFollowupCard(r);
+  assert.match(card, /Coherent-systematics significance/);
+});
+
 test("assertHonest rejects a fabricated high-confidence claim on a non-novel signal", () => {
   const bad: CandidateRecord = { ...buildCandidateRecord(baseInput()), tier: "high", novelty: novel({ inConfirmed: true }) };
   assert.throws(() => assertHonest(bad), /non-novel/);

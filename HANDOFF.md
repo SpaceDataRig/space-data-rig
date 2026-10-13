@@ -116,7 +116,7 @@ docker-compose, CULTURE.md).
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
-- scripts/        p0..p29 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
+- scripts/        p0..p30 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
                   measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
                   KNOWN planets showing the blind per-sector path is under-powered for a real discovery)
                   + verify-observe.ts + p2-anchor.ts
@@ -283,11 +283,11 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: HEAD == origin/main == b7a4fb3 (working tree clean apart from this handoff update).
+- Git: HEAD == origin/main == 081c9d6 (working tree clean apart from this handoff update).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 241/241 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, L3 partition +1, snapshot L3-fields +1 vs the old 224).
+- Tests: 244/244 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
@@ -306,6 +306,14 @@ the Actions web page when the anonymous API is rate-limited.
   different planet in multi-planet systems; sometimes a P/2 or 2P alias), so naive per-queried-planet match is 1/10.
   Next lever before a novel hunt: alias/harmonic disambiguation (src/sim odd-even resolver) + per-planet scoring.
   Measure-only, nothing gated/anchored/claimed.
+- p30 joint-alias (did p29's to-do: resolvePeriodAlias on the stitched curve + score PER HOST SYSTEM; added 3
+  offline aliasResolver cases): OVERTURNS p29's optimism. Resolver changed period 0/10 (stitched BLS peaks are
+  not clean odd/even P/2 aliases; sector gaps leave too few epochs); even per-system the recovered period matched
+  a known planet of the host on only 2/10, system-corroboration 1/10; most raw periods 12-100% off. Since p12
+  shows the planets ARE in the data, the failure is that single blind BLS on a stitched baseline locks the WRONG
+  period. CONVERGENT conclusion p26-p30: this public-data blind pipeline is NOT discovery-grade (cannot reliably
+  re-find known planets); a real claim needs a stronger detector (iterative multi-signature / TLS / bright-shallow
+  selection) -- nothing less earns relaxing the honesty guardrails. Measure-only, nothing gated/anchored/claimed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

@@ -1255,3 +1255,19 @@ remains data-gated toward Stage 5.**
   resolver in `src/sim/`) and score per-planet, not per-system. Measure-only; nothing gated, anchored, or claimed.
   Reproduce with `npm run p29:joint-search -- --targets 10 --maxsectors 5`.
 
+**p30 tested that to-do and it OVERTURNS the optimistic read of p29: the real bottleneck is detection purity,
+  not corroboration or aliasing (npm run p30:joint-alias).** We did exactly what p29 named -- run the production
+  odd/even alias resolver (`resolvePeriodAlias`, now with 3 dedicated offline cases) on the stitched curve, and
+  score PER HOST SYSTEM (credit recovering ANY planet orbit of that star, since a multi-planet star lighting on
+  its strongest signal is a success). On 10 host systems the honest result is sobering: the resolver changed the
+  period on 0/10 (the stitched BLS peaks are not clean odd/even-fixable P/2 aliases -- sector gaps leave too few
+  usable epochs), and even scoring per-system the recovered period matched a known planet of that host on only
+  2/10, with system-corroboration (match AND >=2 sectors confirming) at 1/10. Most raw periods were 12-100% off.
+  Since p12 already showed these planets ARE in the data (folding at the KNOWN catalog period yields real depths),
+  the failure is that a single blind BLS on a stitched multi-sector baseline frequently locks the WRONG period.
+  Convergent conclusion across p26/p27/p28/p29/p30: this public-data blind pipeline is NOT yet discovery-grade --
+  it cannot reliably re-detect planets we already know -- so a genuine, defensible new-planet claim needs a
+  stronger detector (iterative multi-signature extraction, TLS, targeted bright/shallow-first selection), and
+  NOTHING short of that earns relaxing the honesty guardrails. Measure-only; nothing gated, anchored, or claimed.
+  Reproduce with `npm run p30:joint-alias -- --hosts 10 --maxsectors 5`.
+

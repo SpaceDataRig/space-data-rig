@@ -86,3 +86,40 @@ export function shapeCoherence(lc: LightCurve, r: BLSResult): CoherenceResult {
   const ratio = meanDepth > 0 ? medianDepth / meanDepth : NaN;
   return { medianDepth, meanDepth, ratio, nInTransit: nIn, nOutTransit: nOut };
 }
+
+export interface BoxDepth {
+  depth: number; // out-of-box mean minus in-box mean; POSITIVE for a dip, NaN if not measurable
+  nIn: number; // cadences inside the transit box
+  nOut: number; // cadences used for the out-of-box baseline
+}
+
+/**
+ * Mean in-transit depth when folding a light curve at a FIXED ephemeris (period, epoch, duration) that is
+ * NOT derived from this curve. This is the per-sector confirmation step of a JOINT multi-sector search:
+ * once a precise period is fit on the long stitched baseline, a real planet must show a positive dip in
+ * EACH independent sector at that same ephemeris, whereas a single-sector artifact will not recur where it
+ * was not generated. Guards mirror shapeCoherence: non-finite/incoherent ephemeris or too few samples ->
+ * NaN (the statistic refuses to fabricate an answer). Pure, deterministic, research-only.
+ */
+export function foldedBoxDepth(lc: LightCurve, periodDays: number, epochBjd: number, durationDays: number): BoxDepth {
+  if (
+    !Number.isFinite(periodDays) || periodDays <= 0 ||
+    !Number.isFinite(epochBjd) ||
+    !Number.isFinite(durationDays) || durationDays <= 0 || durationDays >= periodDays
+  ) {
+    return { depth: NaN, nIn: 0, nOut: 0 };
+  }
+  const half = durationDays / 2;
+  const inF: number[] = [];
+  const outF: number[] = [];
+  for (const p of lc.points) {
+    if (!Number.isFinite(p.time) || !Number.isFinite(p.flux)) continue;
+    const ph = frac((p.time - epochBjd) / periodDays + 0.5);
+    const dDays = Math.abs(ph - 0.5) * periodDays;
+    if (dDays <= half) inF.push(p.flux);
+    else outF.push(p.flux);
+  }
+  if (inF.length < 3 || outF.length < 10) return { depth: NaN, nIn: inF.length, nOut: outF.length };
+  const mean = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
+  return { depth: mean(outF) - mean(inF), nIn: inF.length, nOut: outF.length };
+}

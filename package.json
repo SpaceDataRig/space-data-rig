@@ -41,6 +41,7 @@
     "p26:corroboration": "tsx scripts/p26-corroboration-roc.ts",
     "p27:shape-coherence": "tsx scripts/p27-shape-coherence.ts",
         "p28:corroboration-proof": "tsx scripts/p28-corroboration-proof.ts",
+                "p29:joint-search": "tsx scripts/p29-joint-search.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",
     "verify:observe": "tsx scripts/verify-observe.ts",

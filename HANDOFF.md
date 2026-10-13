@@ -91,7 +91,8 @@ docker-compose, CULTURE.md).
 - src/data/       catalog TAP, MAST tiers, FITS parsers, TGLC, TOI archive, Gaia dilution, synthetic.
 - src/detect/     detrend, BLS, alias resolver hooks, transit fit (exact limb-darkened), ephemeris,
                   per-sector robust depth, significance/calibrated FAP, vetting discriminators,
-                  shapeCoherence (in-transit median-vs-mean spike test; research-only, never gates), SVG plots.
+                  shapeCoherence (in-transit median-vs-mean spike test + foldedBoxDepth per-sector joint-confirm;
+                  research-only, never gates), SVG plots.
 - src/sim/        exactTransit, transitModel, redNoise, injectInto, injectionRecovery, roc, confidence.
 - src/critic/     review.ts (mission-critic verdicts, centroid vetting gate).
 - src/candidate/  candidateRecord, dedup, falsePositive, prioritize, snapshot (blind-mode chain),
@@ -115,7 +116,7 @@ docker-compose, CULTURE.md).
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
-- scripts/        p0..p28 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
+- scripts/        p0..p29 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
                   measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
                   KNOWN planets showing the blind per-sector path is under-powered for a real discovery)
                   + verify-observe.ts + p2-anchor.ts
@@ -286,7 +287,7 @@ the Actions web page when the anonymous API is rate-limited.
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 238/238 green (corroboration +6 then +3 period-only, shapeCoherence +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
+- Tests: 241/241 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, L3 partition +1, snapshot L3-fields +1 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
@@ -298,6 +299,13 @@ the Actions web page when the anonymous API is rate-limited.
   got >=2 significant blind hits. Honest finding: the blind per-sector public-FFI path is UNDER-POWERED for a real
   discovery (often cannot re-find known planets); a genuine claim needs a JOINT multi-sector coherent period search
   + deeper/longer data. Measure-only, nothing gated/anchored/claimed.
+- p29 joint-search (positive control for the JOINT method p28 called for: stitch sectors -> one BLS period ->
+  per-sector foldedBoxDepth confirmation): the joint fit recovers the true period to 0.01-0.05% and >=2 sectors
+  confirm a matching dip for 7/10 known planets -- the corroboration ENGINE is now PROVEN on ground truth. Remaining
+  bottleneck is period SELECTION not sensitivity: stitched BLS picks the system's strongest signal (a real but
+  different planet in multi-planet systems; sometimes a P/2 or 2P alias), so naive per-queried-planet match is 1/10.
+  Next lever before a novel hunt: alias/harmonic disambiguation (src/sim odd-even resolver) + per-planet scoring.
+  Measure-only, nothing gated/anchored/claimed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

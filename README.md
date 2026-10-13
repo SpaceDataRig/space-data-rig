@@ -1239,3 +1239,19 @@ remains data-gated toward Stage 5.**
   anyone may say "planet." Measure-only; nothing gated, anchored, or claimed. Reproduce with
   `npm run p28:corroboration-proof -- --targets 10 --maxsectors 4`.
 
+**The joint multi-sector search fixes the resolution problem and proves the corroboration engine works
+  (npm run p29:joint-search).** p28 said the blocker was single-sector period resolution, so we built the joint
+  method it called for: stitch a host's sectors into one long baseline, fit ONE period with BLS, then require a
+  positive, planet-plausible dip in EACH independent sector at that ephemeris (`foldedBoxDepth`,
+  `src/detect/shapeCoherence.ts`, 3 offline cases). On the same 10 confirmed planets the joint fit nails the
+  PERIOD when it locks the true one -- 0.01-0.05% error (e.g. HR 858 b recovered at 3.5857 d vs catalog 3.585 d)
+  -- and >=2 sectors confirmed a matching dip for **7/10** planets, versus p28's per-sector method which barely
+  produced two significant hits at all. So the corroboration LOGIC is now proven on ground truth. The next
+  bottleneck is period SELECTION, not sensitivity: stitched BLS reports the system's strongest periodicity, which
+  in a multi-planet system is a real but DIFFERENT planet (HD 63433's three planets collapse onto the dominant
+  ~3.19 d signal) and can land on a half/double alias (pi Men -> 3.135 d = P/2; HD 25463 -> 14.1 d = 2P). That is
+  why a naive "did it match the one planet we queried" scores only 1/10 even though the engine is corroborating
+  real signals. The honest to-do before a novel-target hunt: add alias / harmonic disambiguation (the odd-even
+  resolver in `src/sim/`) and score per-planet, not per-system. Measure-only; nothing gated, anchored, or claimed.
+  Reproduce with `npm run p29:joint-search -- --targets 10 --maxsectors 5`.
+

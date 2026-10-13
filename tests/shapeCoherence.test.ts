@@ -4,7 +4,7 @@
 // gates cannot touch (it is coherent, not random), so the statistic must be validated to actually separate.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { shapeCoherence } from "../src/detect/shapeCoherence.ts";
+import { shapeCoherence, foldedBoxDepth } from "../src/detect/shapeCoherence.ts";
 import type { BLSResult } from "../src/detect/bls.ts";
 import type { LightCurve } from "../src/core/types.ts";
 
@@ -52,4 +52,36 @@ test("guards: duration >= period or too few in-box samples return NaN (never fab
   const narrow = shapeCoherence(flat, res(50.0, 100.0, 0.01, 0.01));
   assert.ok(Number.isNaN(narrow.ratio));
   assert.ok(narrow.nInTransit < 3);
+});
+
+test("foldedBoxDepth: a real transit recurring at the fixed ephemeris gives a positive dip", () => {
+  const P = 2.0;
+  const epoch = 10.0;
+  const halfDur = 0.1;
+  const pts: { time: number; flux: number }[] = [];
+  for (let i = 0; i < 400; i++) {
+    const t = epoch + i * 0.05;
+    const ph = (((t - epoch) % P) + P) % P; // 0 at transit center
+    const dCenter = Math.min(ph, P - ph);
+    pts.push({ time: t, flux: dCenter <= halfDur ? 0.99 : 1.0 });
+  }
+  const d = foldedBoxDepth(lc(pts), P, epoch, 2 * halfDur);
+  assert.ok(Number.isFinite(d.depth), "depth must be finite");
+  assert.ok(d.depth > 0.005 && d.depth < 0.015, `expected ~0.01 dip, got ${d.depth}`);
+});
+
+test("foldedBoxDepth: folding a FLAT curve at any ephemeris gives ~no dip (not a positive signal)", () => {
+  const flat = lc(Array.from({ length: 200 }, (_, i) => ({ time: i * 0.1, flux: 1.0 })));
+  const d = foldedBoxDepth(flat, 3.0, 5.0, 0.4);
+  assert.ok(Number.isFinite(d.depth));
+  assert.ok(Math.abs(d.depth) < 1e-9, `flat curve must give zero depth, got ${d.depth}`);
+});
+
+test("foldedBoxDepth: guards return NaN (incoherent ephemeris / too few in-box samples)", () => {
+  const pts = Array.from({ length: 100 }, (_, i) => ({ time: i * 0.05, flux: 1.0 }));
+  assert.ok(Number.isNaN(foldedBoxDepth(lc(pts), 1.0, 0.0, 1.5).depth)); // duration >= period
+  assert.ok(Number.isNaN(foldedBoxDepth(lc(pts), NaN, 0.0, 0.1).depth)); // bad period
+  const narrow = foldedBoxDepth(lc(pts), 50.0, 100.0, 0.01); // box holds <3 samples
+  assert.ok(Number.isNaN(narrow.depth));
+  assert.ok(narrow.nIn < 3);
 });

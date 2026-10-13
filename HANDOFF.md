@@ -283,11 +283,11 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: HEAD == origin/main == 081c9d6 (working tree clean apart from this handoff update).
+- Git: HEAD == origin/main == 83c2328 (working tree clean apart from this handoff update).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 244/244 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1 vs the old 224).
+- Tests: 250/250 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
@@ -314,6 +314,23 @@ the Actions web page when the anonymous API is rate-limited.
   period. CONVERGENT conclusion p26-p30: this public-data blind pipeline is NOT discovery-grade (cannot reliably
   re-find known planets); a real claim needs a stronger detector (iterative multi-signature / TLS / bright-shallow
   selection) -- nothing less earns relaxing the honesty guardrails. Measure-only, nothing gated/anchored/claimed.
+- p31 common-mode (the source-level FP attack the p23/p26 chain pointed to but never built): within each sector,
+  subtract the robust per-cadence median fractional deviation across the whole stellar ensemble BEFORE BLS
+  (src/detect/commonMode.ts, research-only, worker not imported). Targets the COHERENT instrumental systematics
+  that calibratedFap's per-star null cannot touch and that L3 only clusters AFTER detection. MEASURED on real
+  TGLC sector-1 FFI quiet stars (null arm) + injected planets (seed 7), across ensemble size N (FULL subtraction):
+    N=40 : false-alarm 42.5% -> 27.5% (-35%); injected completeness 8.3% -> 6.7% (DROPS); purity 70.2% -> 74.4%
+    N=120: false-alarm 51.7% -> 30.0% (-42%); completeness 8.5% -> 10.1% (RISES); purity 66.3% -> 80.2%
+    N=240: false-alarm 47.5% -> 28.2% (-41%); completeness 7.7% ->  9.7% (RISES); purity 66.2% -> 80.5%
+  Honest reading: the FP cut is robust at every N (-35 to -42%) and is the FIRST lever here to move the false-alarm
+  number materially (vs the empirical-FAP gate's 25% -> 23%). Completeness crosses over between N=40 and N=120
+  exactly as template-estimation noise SE ~ sigma/sqrt(N) predicts: a too-small ensemble stamps its own estimation
+  noise onto every star, a large one both cleans the coherent systematics AND unmasks shallow dips (10000 ppm
+  recovery 5.7% -> 9.8% at N=240; long 8 d periods 3.8% -> 6.2%). At N>=120 FULL dominates a spike-gated variant
+  on all three axes, so the default runs a >=120-star per-sector ensemble. This does NOT overturn the p26-p30
+  "not discovery-grade" verdict (that is a period-SELECTION / single-baseline limit, orthogonal to systematics
+  removal); it is a real, measured gain in candidate PURITY (~66% -> ~80%) and shallow-signal completeness.
+  Measure-only, nothing gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

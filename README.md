@@ -1271,3 +1271,22 @@ remains data-gated toward Stage 5.**
   NOTHING short of that earns relaxing the honesty guardrails. Measure-only; nothing gated, anchored, or claimed.
   Reproduce with `npm run p30:joint-alias -- --hosts 10 --maxsectors 5`.
 
+**The source-level false-positive lever, MEASURED (npm run p31:common-mode-fp).** p23/p26 established that the
+  surviving false alarms are COHERENT instrumental systematics -- a dip or spike shared by many unrelated stars at
+  the same cadence -- which a per-star empirical-FAP null cannot touch (it only cut 25% -> 23%) and which L3 only
+  clusters AFTER detection. p31 attacks them at their SOURCE, in the photometry: within each sector we build a
+  common-mode template (the robust median fractional deviation across the whole stellar ensemble at every cadence)
+  and subtract it from each star BEFORE BLS (`src/detect/commonMode.ts`, research-only, worker not imported). A
+  shared artifact is removed; a lone transit is a minority signal the median leaves intact (proven offline in
+  `tests/commonMode.test.ts`). Measured on real TGLC sector-1 FFI quiet stars plus injected planets (seed 7), the
+  false-alarm cut is robust at every ensemble size N -- 42.5% -> 27.5% at N=40, 51.7% -> 30.0% at N=120,
+  47.5% -> 28.2% at N=240 (-35 to -42%) -- the first lever here to move the false-alarm number materially.
+  Completeness depends on N exactly as template-estimation noise (SE ~ sigma/sqrt(N)) predicts: it DROPS at N=40
+  (8.3% -> 6.7%, a small ensemble stamps its own noise on every star) but RISES at N>=120 (8.5% -> 10.1% at 120,
+  7.7% -> 9.7% at 240), lifting purity from ~66% to ~80% and nearly doubling 10000 ppm recovery (5.7% -> 9.8% at
+  N=240). At N>=120 the full subtraction dominates a spike-gated variant on all three axes, so the default runs a
+  >=120-star per-sector ensemble. This is a real gain in candidate purity and shallow-signal completeness; it does
+  NOT overturn the p26-p30 "not discovery-grade" verdict, which is a period-SELECTION / single-baseline limit
+  orthogonal to systematics removal. Measure-only; nothing gated, anchored, claimed, or deployed. Reproduce with
+  `npm run p31:common-mode-fp -- --sectors 1 --limit 240 --seed 7`.
+

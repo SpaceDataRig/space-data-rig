@@ -1,0 +1,3 @@
+# Keep the cross-pipeline fixtures byte-identical on every checkout (the Python harness in CI re-analyzes
+# exactly these bytes; CRLF conversion would break that guarantee).
+tests/fixtures/spoc-curves/* text eol=lf

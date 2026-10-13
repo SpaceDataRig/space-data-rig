@@ -283,8 +283,8 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: at time of writing HEAD == origin/main == 8d06a7a (Track C: p34 measured compute/cost model);
-  the p35 PDM independent cross-check commit that carries this handoff update lands immediately after it (see git log).
+- Git: at time of writing HEAD == origin/main == 148ff2c (Track C: p35 PDM independent cross-check);
+  the p36 cross-pipeline harness commit that carries this handoff update lands immediately after it (see git log).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
@@ -382,6 +382,21 @@ the Actions web page when the anonymous API is rate-limited.
   cases (e.g. KELT-9: PDM 1.48 d theta 0.12 vs gated BLS 1.48 d) show two independent estimators converge on strong
   real signals. Wording note: docs now say "the iterative detector under the production gate" for iterativeBls
   (research-only module; "production" refers to the gate thresholds, not worker wiring). Measure-only, nothing
+  gated/anchored/claimed/deployed.
+- p36 cross-pipeline harness (Track C c1b; scripts/p36-export-fixtures.ts + scripts/cross_pipeline.py +
+  .github/workflows/crosscheck-python.yml + committed fixtures tests/fixtures/spoc-curves/): independence at the
+  IMPLEMENTATION level -- the same real photometry re-analyzed by a pure-Python stack sharing no code with this
+  repo (batman injection + wotan biweight detrend + astropy BoxLeastSquares, optional transitls). The dev
+  environment has NO Python interpreter, so the split is deliberate: TS exports byte-identical CSV fixtures
+  (first 16 seeded hosts of the p33/p35 sample -> 12 usable real TESS-SPOC curves, 4 coverage misses, uniform
+  stride subsample to <=2500 pts, manifest carries known CONFIRMED periods), and the pinned CI workflow runs the
+  Python harness on push-touching-paths / workflow_dispatch, uploading reports/crosscheck/ as an artifact. NULL
+  arm (wotan+BLS TP/FP vs known planets, p33's lower-bound purity semantics) + INJECT arm (batman P=3 d across
+  [300..8000] ppm -> wotan -> astropy BLS). Every method independently guarded: a missing/failed package degrades
+  only that cell. Honest boundary: the cross-pipeline NUMBERS are produced in CI and read from the workflow
+  artifact (measure-before-gate -- never asserted in docs before the run); fixtures are subsampled so they are not
+  1:1 comparable with p33's full-resolution completeness. The Python script could NOT be executed locally (no
+  interpreter); its first real execution is the CI run of the commit that adds it. Measure-only, nothing
   gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->

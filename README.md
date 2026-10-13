@@ -1353,3 +1353,25 @@ remains data-gated toward Stage 5.**
   strong real signals. Artifacts: reports/p35-pdm-crosscheck.md + reports/p35-pdm-crosscheck.json. Measure-only;
   nothing gated, anchored, claimed, or deployed. Reproduce with `npm run p35:pdm-crosscheck -- --stars 40 --maxsectors 2 --seed 7`.
 
+**Cross-pipeline validation harness, INDEPENDENT PYTHON STACK (npm run p36:export-fixtures + .github/workflows/crosscheck-python.yml).**
+  p35 added independence at the algorithm level; this adds it at the IMPLEMENTATION level: the same real photometry
+  re-analyzed by a completely different software stack that shares no code with this repository -- batman transit
+  injection (Kreidberg 2015), wotan biweight detrending (Hippke et al. 2019), astropy.timeseries.BoxLeastSquares
+  (the Kovacs et al. 2002 reference implementation), and optional transitls (Hippke & Heller 2019). Because the dev
+  environment has no Python interpreter, the harness is split deliberately: `p36:export-fixtures` downloads real
+  public TESS-SPOC curves for the same seeded host sample as p33/p35 (first 16 catalog hosts, seed 7 -> 12 usable
+  curves, 4 coverage misses), deterministically subsamples to <=2500 points (uniform stride, recorded in the
+  manifest) and commits them as byte-identical CSV fixtures under tests/fixtures/spoc-curves/ (host, TIC, sectors,
+  known CONFIRMED planet periods). The CI workflow crosscheck-python.yml (pinned Python 3.11 + pinned package
+  versions; triggered by workflow_dispatch and by pushes touching the harness/fixtures) then runs
+  scripts/cross_pipeline.py: NULL arm (wotan + astropy BLS on each real curve, alias-tolerant TP/FP against the
+  manifest's known planets, same lower-bound purity semantics as p33) and INJECT arm (batman P=3 d transit across
+  the depth grid [300..8000] ppm -> wotan -> astropy BLS recovery), uploading reports/crosscheck/ as a workflow
+  artifact. Every method is independently guarded (a missing/failed package degrades that cell to MISSING/error,
+  the rest still runs). Honest boundary: the cross-pipeline numbers are produced in CI (measure-before-gate: they
+  are read from the workflow artifact, never asserted here); fixtures are subsampled, so completeness is not
+  directly comparable to p33's full-resolution numbers and differences in detrending (wotan here vs raw stitched
+  curve in the p33 inject arm) are flagged in the report itself. Research tooling; nothing gated, anchored,
+  claimed, or deployed. Reproduce: `npm run p36:export-fixtures -- --stars 16 --maxsectors 2 --cap 2500`, commit,
+  then dispatch the cross-pipeline-python workflow.
+

@@ -1,0 +1,197 @@
+{
+  "generatedBy": "p36-export-fixtures",
+  "seed": 7,
+  "maxSectors": 2,
+  "capPoints": 2500,
+  "tmagCap": 12,
+  "periodRangeDays": [
+    1,
+    13
+  ],
+  "fluxUnits": "relative flux (PDCSAP, ~1.0)",
+  "timeUnits": "BJD (TDB)",
+  "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing.",
+  "curves": [
+    {
+      "file": "hd-39091.csv",
+      "host": "HD 39091",
+      "tic": 261136679,
+      "sectors": [
+        1,
+        4
+      ],
+      "nPointsRaw": 2082,
+      "nPoints": 2082,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        6.2678399
+      ]
+    },
+    {
+      "file": "hr-858.csv",
+      "host": "HR 858",
+      "tic": 178155732,
+      "sectors": [
+        3,
+        4
+      ],
+      "nPointsRaw": 1735,
+      "nPoints": 1735,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        3.585287,
+        5.973865,
+        11.230511
+      ]
+    },
+    {
+      "file": "hd-63433.csv",
+      "host": "HD 63433",
+      "tic": 130181866,
+      "sectors": [
+        20
+      ],
+      "nPointsRaw": 1096,
+      "nPoints": 1096,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        4.209075,
+        7.1079475
+      ]
+    },
+    {
+      "file": "hd-25463.csv",
+      "host": "HD 25463",
+      "tic": 407966340,
+      "sectors": [
+        5,
+        32
+      ],
+      "nPointsRaw": 4598,
+      "nPoints": 2299,
+      "stride": 2,
+      "knownPlanetPeriodsDays": [
+        3.04405,
+        7.0491423
+      ]
+    },
+    {
+      "file": "au-mic.csv",
+      "host": "AU Mic",
+      "tic": 441420236,
+      "sectors": [
+        1,
+        27
+      ],
+      "nPointsRaw": 4470,
+      "nPoints": 2235,
+      "stride": 2,
+      "knownPlanetPeriodsDays": [
+        8.463446
+      ]
+    },
+    {
+      "file": "toi-480.csv",
+      "host": "TOI-480",
+      "tic": 317548889,
+      "sectors": [
+        6,
+        33
+      ],
+      "nPointsRaw": 4455,
+      "nPoints": 2228,
+      "stride": 2,
+      "knownPlanetPeriodsDays": [
+        6.866196
+      ]
+    },
+    {
+      "file": "gj-143.csv",
+      "host": "GJ 143",
+      "tic": 279741379,
+      "sectors": [
+        1,
+        2
+      ],
+      "nPointsRaw": 2367,
+      "nPoints": 2367,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        7.78993
+      ]
+    },
+    {
+      "file": "hd-1397.csv",
+      "host": "HD 1397",
+      "tic": 394137592,
+      "sectors": [
+        1,
+        2
+      ],
+      "nPointsRaw": 2372,
+      "nPoints": 2372,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        11.53533
+      ]
+    },
+    {
+      "file": "toi-5739.csv",
+      "host": "TOI-5739",
+      "tic": 328934980,
+      "sectors": [
+        23
+      ],
+      "nPointsRaw": 838,
+      "nPoints": 838,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        8.430524
+      ]
+    },
+    {
+      "file": "kelt-11.csv",
+      "host": "KELT-11",
+      "tic": 55092869,
+      "sectors": [
+        9
+      ],
+      "nPointsRaw": 1028,
+      "nPoints": 1028,
+      "stride": 1,
+      "knownPlanetPeriodsDays": [
+        4.73620865
+      ]
+    },
+    {
+      "file": "hd-86226.csv",
+      "host": "HD 86226",
+      "tic": 22221375,
+      "sectors": [
+        9,
+        35
+      ],
+      "nPointsRaw": 3757,
+      "nPoints": 1879,
+      "stride": 2,
+      "knownPlanetPeriodsDays": [
+        3.98442
+      ]
+    },
+    {
+      "file": "hd-207496.csv",
+      "host": "HD 207496",
+      "tic": 290348383,
+      "sectors": [
+        13,
+        27
+      ],
+      "nPointsRaw": 4483,
+      "nPoints": 2242,
+      "stride": 2,
+      "knownPlanetPeriodsDays": [
+        6.441008
+      ]
+    }
+  ]
+}

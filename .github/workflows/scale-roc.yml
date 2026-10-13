@@ -1,0 +1,70 @@
+name: scale-roc (large-scale completeness / purity)
+
+# Problem 3 (Track C / c2a): scale the p33 two-arm injection-recovery ROC from a few dozen to HUNDREDS of real
+# host stars on deterministic, reproducible input, and publish the measured completeness / purity report back into
+# the repository so it is publicly readable without artifact authentication (committed files are public; artifact /
+# job-log download needs auth). The heavy part is downloading real TESS-SPOC photometry from the public MAST S3
+# bucket and running the gated detector per star (tens of seconds each, measured in-report); a CI runner does this
+# reproducibly and off the dev machine, where a thousands-star sweep would be network- and time-bound. This runs
+# the SAME script and defaults as `npm run p33:scale-roc`; only the sample size is raised. Nothing here gates,
+# anchors, claims, or deploys -- it measures and reports; discoveryClaim stays structurally false in the catalog.
+
+on:
+  workflow_dispatch:
+    inputs:
+      stars:
+        description: "number of seeded host stars to sample (deterministic catalog order)"
+        required: true
+        default: "250"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p33-scale-roc.ts
+      - .github/workflows/scale-roc.yml
+
+permissions:
+  contents: write
+
+# One scale sweep at a time; never cancel a running sweep (it is the artifact we want to publish).
+concurrency:
+  group: scale-roc
+  cancel-in-progress: false
+
+jobs:
+  scale-roc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run large-scale completeness / purity ROC
+        env:
+          STARS: ${{ github.event.inputs.stars || '250' }}
+        run: npm run p33:scale-roc -- --stars "$STARS" --maxsectors 2 --period 3 --seed 7
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/p33-scale-roc.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p33-scale-roc.md reports/p33-catalog.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Track C: publish large-scale completeness/purity report (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "no report produced; nothing to publish"
+          fi

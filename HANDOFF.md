@@ -283,8 +283,8 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: at time of writing HEAD == origin/main == f050429; the Track-B commit that carries this handoff update
-  lands immediately after it (see git log for its exact hash).
+- Git: at time of writing HEAD == origin/main == 288e01a (Track B: iterative detector + p32 two-phase measurement);
+  the Track-C p33 commit that carries this handoff update lands immediately after it (see git log for its exact hash).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
@@ -344,6 +344,21 @@ the Actions web page when the anonymous API is rate-limited.
   star (5/12) -- mask-and-refind is sound on REAL noise, confirming Phase 1's null is a data-power limit.
   Converges with p26-p31: not discovery-grade on public few-sector data; deeper baselines / more compute (Track C)
   is the lever. Measure-only, nothing gated/anchored/claimed/deployed.
+- p33 large-scale reproducible completeness/purity ROC (Track C first increment; research script + published artifacts
+  reports/p33-scale-roc.md and reports/p33-catalog.json; no new src/ module so no new unit tests -- it imports the
+  already-tested iterative.ts + injectInto.ts): scales the two-arm injection-recovery design to a seeded sample of real
+  hosts and METERS compute. NULL arm (detector on the real curve as-is, every gated signal classified against the
+  CONFIRMED catalog) over 33 usable public TESS-SPOC curves (7 coverage misses of 40 sampled, counted honestly): 29
+  gated detections, 12 TP / 17 FP, blind FP rate 51.5%, purity 41.4%. Purity is a LOWER bound (the null arm matches
+  only CONFIRMED planets, so a genuine unconfirmed planet/TOI counts FP) but it is the FIRST scale measurement of
+  Problem 1's blind FP rate on real curves. INJECT arm (P=3 d injected across a depth grid on the same real noise):
+  completeness 42.4% @300 ppm -> 54.5% @500 -> 69.7% @1000 -> 78.8% @2000 -> 81.8% @4000, plateauing at ~82% (honest
+  ~18% of curves never recover even a deep injection: the host's own signal or the sector-gap window function
+  dominates). Compute MEASURED: mean 27.86 s/curve (null+6 injects) => ~3.98 s/single-star detection => ~1.11 CPU-h per
+  1000 stars (detection only, excl. download). Method note: an earlier maxSignals=1 variant was BIASED (a host's own
+  real planet outranked the injected one, so deep injections were scored as misses and null FPs undercounted); the fix
+  keeps ALL gated signals (maxSignals=3) and matches the injection with ANY of them. Measure-only, nothing
+  gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

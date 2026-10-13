@@ -1,0 +1,548 @@
+{
+  "meta": {
+    "stars": 33,
+    "coverageMiss": 7,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "injPeriod": 3,
+    "seed": 7,
+    "matchTolPct": 2,
+    "generatedBy": "p33-scale-roc"
+  },
+  "rows": [
+    {
+      "host": "HD 39091",
+      "nPoints": 2082,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 6916
+    },
+    {
+      "host": "HR 858",
+      "nPoints": 1735,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 2003
+    },
+    {
+      "host": "HD 63433",
+      "nPoints": 1096,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 354
+    },
+    {
+      "host": "HD 25463",
+      "nPoints": 4598,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 86216
+    },
+    {
+      "host": "AU Mic",
+      "nPoints": 4470,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 30194
+    },
+    {
+      "host": "TOI-480",
+      "nPoints": 4455,
+      "nullDets": 1,
+      "nullTP": 0,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 72864
+    },
+    {
+      "host": "GJ 143",
+      "nPoints": 2367,
+      "nullDets": 1,
+      "nullTP": 0,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 3929
+    },
+    {
+      "host": "HD 1397",
+      "nPoints": 2372,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 4202
+    },
+    {
+      "host": "TOI-5739",
+      "nPoints": 838,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 555
+    },
+    {
+      "host": "KELT-11",
+      "nPoints": 1028,
+      "nullDets": 2,
+      "nullTP": 1,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 882
+    },
+    {
+      "host": "HD 86226",
+      "nPoints": 3757,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 65601
+    },
+    {
+      "host": "HD 207496",
+      "nPoints": 4483,
+      "nullDets": 3,
+      "nullTP": 0,
+      "nullFP": 3,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 46542
+    },
+    {
+      "host": "HD 213885",
+      "nPoints": 4534,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 56833
+    },
+    {
+      "host": "TOI-6054",
+      "nPoints": 1109,
+      "nullDets": 2,
+      "nullTP": 1,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 994
+    },
+    {
+      "host": "KELT-20",
+      "nPoints": 4698,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 85941
+    },
+    {
+      "host": "KELT-9",
+      "nPoints": 1766,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 2800
+    },
+    {
+      "host": "TOI-1776",
+      "nPoints": 1233,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 761
+    },
+    {
+      "host": "HD 110067",
+      "nPoints": 828,
+      "nullDets": 1,
+      "nullTP": 0,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 515
+    },
+    {
+      "host": "GJ 341",
+      "nPoints": 2040,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 1861
+    },
+    {
+      "host": "K2-167",
+      "nPoints": 3962,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 64762
+    },
+    {
+      "host": "HD 22946",
+      "nPoints": 1750,
+      "nullDets": 1,
+      "nullTP": 0,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 2913
+    },
+    {
+      "host": "HIP 94235",
+      "nPoints": 3298,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 960
+    },
+    {
+      "host": "Kepler-21",
+      "nPoints": 4698,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 60691
+    },
+    {
+      "host": "TOI-1860",
+      "nPoints": 2006,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 1235
+    },
+    {
+      "host": "TOI-2134",
+      "nPoints": 5050,
+      "nullDets": 3,
+      "nullTP": 1,
+      "nullFP": 2,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 51968
+    },
+    {
+      "host": "TOI-1431",
+      "nPoints": 2130,
+      "nullDets": 2,
+      "nullTP": 1,
+      "nullFP": 1,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 3889
+    },
+    {
+      "host": "DS Tuc A",
+      "nPoints": 4525,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 29186
+    },
+    {
+      "host": "HD 202772 A",
+      "nPoints": 3932,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 80914
+    },
+    {
+      "host": "WASP-33",
+      "nPoints": 966,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 720
+    },
+    {
+      "host": "TOI-4443",
+      "nPoints": 5052,
+      "nullDets": 0,
+      "nullTP": 0,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 40356
+    },
+    {
+      "host": "KELT-24",
+      "nPoints": 2384,
+      "nullDets": 1,
+      "nullTP": 1,
+      "nullFP": 0,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 12408
+    },
+    {
+      "host": "HD 63935",
+      "nPoints": 4440,
+      "nullDets": 3,
+      "nullTP": 1,
+      "nullFP": 2,
+      "recByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 86457
+    },
+    {
+      "host": "TOI-128",
+      "nPoints": 1989,
+      "nullDets": 3,
+      "nullTP": 0,
+      "nullFP": 3,
+      "recByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 12848
+    }
+  ]
+}

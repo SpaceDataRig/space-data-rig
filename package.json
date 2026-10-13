@@ -45,6 +45,7 @@
                         "p30:joint-alias": "tsx scripts/p30-joint-alias.ts",
     "p31:common-mode-fp": "tsx scripts/p31-common-mode-fp.ts",
     "p32:iterative": "tsx scripts/p32-iterative-detect.ts",
+    "p33:scale-roc": "tsx scripts/p33-scale-roc.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",
     "verify:observe": "tsx scripts/verify-observe.ts",

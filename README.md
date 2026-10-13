@@ -1306,3 +1306,21 @@ remains data-gated toward Stage 5.**
   limit. Consistent with p26-p30; motivates deeper baselines / more compute. Measure-only; nothing gated,
   anchored, claimed, or deployed. Reproduce with `npm run p32:iterative -- --hosts 12 --maxsectors 2`.
 
+**Large-scale reproducible completeness / purity ROC, MEASURED (npm run p33:scale-roc).** Problems 1 and 3 of the
+  roadmap ask for the blind false-positive rate and the completeness curve to be measured at SCALE on real data and
+  published as a reproducible artifact, not as an anecdote on a handful of stars. p33 runs the production detector
+  (iterativeBls, maxSignals=3, gate SNR>=7 & depth>=200 ppm & depth-regime screen) over a seeded sample of real host
+  stars in two arms. NULL arm (real curve as-is): every gated signal is classified against the CONFIRMED catalog --
+  over 33 usable public TESS-SPOC curves (7 coverage misses of 40 sampled, counted honestly) it fires 29 gated
+  detections, 12 true-positive / 17 false-positive, a blind false-positive rate of 51.5% and a purity of 41.4%.
+  Because the null arm only matches CONFIRMED planets, a genuine but still-unconfirmed planet/TOI counts as a false
+  positive, so 41.4% is a LOWER bound on true purity -- but it is the first scale measurement of the blind FP rate on
+  real curves (Problem 1 quantified, not asserted). INJECT arm (one transit at P=3 d injected multiplicatively across
+  a depth grid on the SAME real noise): completeness rises 42.4% @300 ppm -> 54.5% @500 -> 69.7% @1000 -> 78.8% @2000
+  -> 81.8% @4000, then PLATEAUS at ~82% (an honest ~18% of real curves never recover even a deep injection, where the
+  host's own signal or the sector-gap window function dominates). Per-curve wall-clock is metered so the cost of going
+  bigger is MEASURED: mean 27.86 s per curve (null + 6 injections) => ~3.98 s per single-star detection => ~1.11 CPU-h
+  per 1000 stars (detection only, excl. download). Public reproducible artifacts: reports/p33-scale-roc.md (metrics)
+  and reports/p33-catalog.json (per-star recovery rows). Measure-only; nothing gated, anchored, claimed, or deployed.
+  Reproduce with `npm run p33:scale-roc -- --stars 40 --maxsectors 2 --period 3 --seed 7`.
+

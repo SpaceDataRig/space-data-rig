@@ -1,0 +1,382 @@
+{
+  "meta": {
+    "generatedBy": "scripts/cross_pipeline.py (CI workflow crosscheck-python.yml)",
+    "fixtureDir": "tests/fixtures/spoc-curves",
+    "fixtureSeed": 7,
+    "fixtureCapPoints": 2500,
+    "injectPeriodDays": 3.0,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "matchTolPct": 2.0,
+    "aliasFactors": [
+      1.0,
+      0.5,
+      2.0,
+      0.3333333333333333,
+      3.0,
+      0.6666666666666666,
+      1.5,
+      1.5
+    ],
+    "batmanParams": {
+      "t0": 1.0,
+      "per": 3.0,
+      "a": 12.0,
+      "inc": 88.53,
+      "ecc": 0.0,
+      "w": 90.0,
+      "u": [
+        0.4,
+        0.2
+      ],
+      "limb_dark": "quadratic"
+    },
+    "wotan": {
+      "method": "biweight",
+      "windowDays": 0.5
+    },
+    "blsPeriodRangeDays": [
+      1.0,
+      13.0
+    ],
+    "versions": {
+      "numpy": "1.26.4",
+      "python": "3.11.17",
+      "astropy": "5.3.4",
+      "batman": "2.4.8",
+      "wotan": "imported",
+      "transitleastsquares": "2.0.1"
+    },
+    "wallClockSec": 234.6,
+    "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing."
+  },
+  "summary": {
+    "curves": 12,
+    "nullDetections": 12,
+    "nullTP": 8,
+    "nullFP": 4,
+    "purityLowerBound": 0.667,
+    "blsCompletenessByDepth": {
+      "300": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      },
+      "500": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      },
+      "1000": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      },
+      "2000": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      },
+      "4000": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      },
+      "8000": {
+        "recovered": 0,
+        "errors": 12,
+        "rate": 0.0
+      }
+    },
+    "tlsNullPeriods": {
+      "HD 39091": null,
+      "HR 858": null,
+      "HD 63433": null,
+      "HD 25463": null,
+      "AU Mic": null,
+      "TOI-480": null,
+      "GJ 143": null,
+      "HD 1397": null,
+      "TOI-5739": null,
+      "KELT-11": null,
+      "HD 86226": null,
+      "HD 207496": null
+    }
+  },
+  "rows": [
+    {
+      "host": "HD 39091",
+      "file": "hd-39091.csv",
+      "nPoints": 2082,
+      "knownPlanetPeriodsDays": [
+        6.2678399
+      ],
+      "null": {
+        "periodDays": 6.267527594627856,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 7.85
+    },
+    {
+      "host": "HR 858",
+      "file": "hr-858.csv",
+      "nPoints": 1735,
+      "knownPlanetPeriodsDays": [
+        3.585287,
+        5.973865,
+        11.230511
+      ],
+      "null": {
+        "periodDays": 3.585747502359946,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.23
+    },
+    {
+      "host": "HD 63433",
+      "file": "hd-63433.csv",
+      "nPoints": 1096,
+      "knownPlanetPeriodsDays": [
+        4.209075,
+        7.1079475
+      ],
+      "null": {
+        "periodDays": 6.9546654331399305,
+        "classification": "FP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.06
+    },
+    {
+      "host": "HD 25463",
+      "file": "hd-25463.csv",
+      "nPoints": 2299,
+      "knownPlanetPeriodsDays": [
+        3.04405,
+        7.0491423
+      ],
+      "null": {
+        "periodDays": 7.049075362573019,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 55.17
+    },
+    {
+      "host": "AU Mic",
+      "file": "au-mic.csv",
+      "nPoints": 2235,
+      "knownPlanetPeriodsDays": [
+        8.463446
+      ],
+      "null": {
+        "periodDays": 4.836200655644856,
+        "classification": "FP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 47.04
+    },
+    {
+      "host": "TOI-480",
+      "file": "toi-480.csv",
+      "nPoints": 2228,
+      "knownPlanetPeriodsDays": [
+        6.866196
+      ],
+      "null": {
+        "periodDays": 6.865762896371721,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 55.98
+    },
+    {
+      "host": "GJ 143",
+      "file": "gj-143.csv",
+      "nPoints": 2367,
+      "knownPlanetPeriodsDays": [
+        7.78993
+      ],
+      "null": {
+        "periodDays": 12.488973161092428,
+        "classification": "FP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.3
+    },
+    {
+      "host": "HD 1397",
+      "file": "hd-1397.csv",
+      "nPoints": 2372,
+      "knownPlanetPeriodsDays": [
+        11.53533
+      ],
+      "null": {
+        "periodDays": 11.561284204402412,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.3
+    },
+    {
+      "host": "TOI-5739",
+      "file": "toi-5739.csv",
+      "nPoints": 838,
+      "knownPlanetPeriodsDays": [
+        8.430524
+      ],
+      "null": {
+        "periodDays": 5.080669365529911,
+        "classification": "FP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.05
+    },
+    {
+      "host": "KELT-11",
+      "file": "kelt-11.csv",
+      "nPoints": 1028,
+      "knownPlanetPeriodsDays": [
+        4.73620865
+      ],
+      "null": {
+        "periodDays": 4.727361585122145,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 0.04
+    },
+    {
+      "host": "HD 86226",
+      "file": "hd-86226.csv",
+      "nPoints": 1879,
+      "knownPlanetPeriodsDays": [
+        3.98442
+      ],
+      "null": {
+        "periodDays": 3.984645277291434,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 50.02
+    },
+    {
+      "host": "HD 207496",
+      "file": "hd-207496.csv",
+      "nPoints": 2242,
+      "knownPlanetPeriodsDays": [
+        6.441008
+      ],
+      "null": {
+        "periodDays": 6.4409456621997,
+        "classification": "TP"
+      },
+      "nullTlsPeriodDays": null,
+      "blsRecByDepth": {
+        "300": "error",
+        "500": "error",
+        "1000": "error",
+        "2000": "error",
+        "4000": "error",
+        "8000": "error"
+      },
+      "perCurveSec": 15.33
+    }
+  ]
+}

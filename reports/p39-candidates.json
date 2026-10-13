@@ -1,0 +1,1427 @@
+{
+  "meta": {
+    "sector": 1,
+    "limit": 200,
+    "nNull": 80,
+    "nInject": 80,
+    "seed": 7,
+    "fapThr": 0.05,
+    "bhQ": 0.1,
+    "rawTemplateRmsPpm": 5387,
+    "rawTemplatePeakPpm": 104010,
+    "residualTemplateRmsPpm": 46,
+    "generatedBy": "p39-instrumental-fp"
+  },
+  "raw": {
+    "label": "RAW (systematic not subtracted)",
+    "n": 200,
+    "fpA": 122,
+    "fpB": 122,
+    "fpC": 32,
+    "fpD": 30,
+    "inj": 17,
+    "tpA": 17,
+    "tpC": 3,
+    "cand": [
+      {
+        "snr": 26.05,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.963
+      },
+      {
+        "snr": 15.69,
+        "period": 11.1669,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 14.69,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 64.84,
+        "period": 10.1238,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 46.93,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.37,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 21.16,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 0.2963
+      },
+      {
+        "snr": 17.77,
+        "period": 11.1582,
+        "fapNoise": 0.0123,
+        "fapSys": 0.963
+      },
+      {
+        "snr": 24.39,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 66.35,
+        "period": 9.6745,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.27,
+        "period": 14.0329,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 9.58,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 7.66,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 20.13,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.4691
+      },
+      {
+        "snr": 9.42,
+        "period": 4.7951,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 42.77,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 9.55,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 31.34,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 32.11,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 18.48,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.8765
+      },
+      {
+        "snr": 32.9,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.5556
+      },
+      {
+        "snr": 11.29,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 18.89,
+        "period": 11.1582,
+        "fapNoise": 0.0123,
+        "fapSys": 0.8272
+      },
+      {
+        "snr": 327.58,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 38.6,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.17,
+        "period": 8.8886,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 15.6,
+        "period": 9.2688,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 20.53,
+        "period": 9.2661,
+        "fapNoise": 0.0123,
+        "fapSys": 0.7284
+      },
+      {
+        "snr": 16.29,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 7.95,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 15.47,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 108.29,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 105.12,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 35.99,
+        "period": 8.5462,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 53.5,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 9.41,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 20.43,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.358
+      },
+      {
+        "snr": 12.07,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.69,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.17,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.38,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.89,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 47.3,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.1975
+      },
+      {
+        "snr": 19.79,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.5432
+      },
+      {
+        "snr": 23.36,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 28.75,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.79,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.94,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 7.35,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 39.75,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.65,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 21.35,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.5679
+      },
+      {
+        "snr": 47.21,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.77,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.88,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 14.77,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 44.24,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.2963
+      },
+      {
+        "snr": 10.43,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 31.5,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 15.06,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 16.62,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 12.99,
+        "period": 10.624,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 28.54,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0494
+      },
+      {
+        "snr": 12.48,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 25.19,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.58,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 9.63,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 14.87,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 22.21,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0617
+      },
+      {
+        "snr": 38.94,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.33,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 91.22,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 24.47,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.26,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 20.95,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.2469
+      },
+      {
+        "snr": 24.97,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 17.07,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 16.04,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 39.22,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 8.03,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 22.67,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0494
+      },
+      {
+        "snr": 11.27,
+        "period": 8.8775,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 14.37,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 12.38,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 24.61,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.12,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 16.51,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 8.19,
+        "period": 10.624,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 7.35,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.03,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 9.87,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13.96,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 16.12,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 52.91,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 21.35,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.1605
+      },
+      {
+        "snr": 27.91,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.93,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 27.48,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 25.49,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 23.5,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.5556
+      },
+      {
+        "snr": 15.72,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.29,
+        "period": 14.0364,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 13,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 30.82,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.52,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 8.85,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 33.8,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 12.13,
+        "period": 0.5348,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 52.89,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 75.78,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.75,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11.02,
+        "period": 0.6832,
+        "fapNoise": 0.0123,
+        "fapSys": 0.1728
+      },
+      {
+        "snr": 12.53,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 11,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 25.23,
+        "period": 10.1213,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 26.37,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 127.66,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 48,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      },
+      {
+        "snr": 115.43,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 23.94,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.9877
+      },
+      {
+        "snr": 30.78,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.93,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 1
+      }
+    ]
+  },
+  "corrected": {
+    "label": "CORRECTED (subtract-then-gate)",
+    "n": 200,
+    "fpA": 109,
+    "fpB": 109,
+    "fpC": 108,
+    "fpD": 109,
+    "inj": 23,
+    "tpA": 23,
+    "tpC": 23,
+    "cand": [
+      {
+        "snr": 7.37,
+        "period": 5.0153,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.13,
+        "period": 11.1669,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.62,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 42.21,
+        "period": 10.1238,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 20.39,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 20.68,
+        "period": 11.156,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 18.25,
+        "period": 11.1582,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.42,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 40.86,
+        "period": 10.1238,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.21,
+        "period": 14.0329,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.45,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.97,
+        "period": 4.7951,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 26.08,
+        "period": 0.5726,
+        "fapNoise": 0.0247,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.62,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.04,
+        "period": 14.0364,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.18,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 17.29,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.85,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 19.04,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.38,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 19.6,
+        "period": 11.1582,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 189.27,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 22.39,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 20.83,
+        "period": 9.6771,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 19.12,
+        "period": 9.6798,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 23.19,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.22,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 81.98,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 77.29,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 25.85,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.22,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.3,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.76,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.15,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.39,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.13,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.45,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.28,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 18.54,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 86.74,
+        "period": 10.1213,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.26,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 20.8,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.09,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.25,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.61,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 37.85,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 31.32,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 69.46,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.94,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.62,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.12,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.64,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.11,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.18,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.96,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 15.9,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 36.45,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.03,
+        "period": 10.624,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.5,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.95,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.53,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.39,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.3,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 201.79,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.1,
+        "period": 5.9753,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.03,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.66,
+        "period": 9.6666,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.58,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.06,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 18.08,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.43,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.23,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 78.63,
+        "period": 10.1188,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.25,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.24,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.7,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 9.41,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.92,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 29.46,
+        "period": 8.5462,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.7,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 15.13,
+        "period": 8.8941,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 22.03,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.57,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 19.01,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 15.71,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.13,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 15.49,
+        "period": 7.6487,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 18.14,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 8.33,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.28,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 21.69,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 12.11,
+        "period": 0.5348,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0741
+      },
+      {
+        "snr": 21.47,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 28.55,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.09,
+        "period": 0.6832,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0247
+      },
+      {
+        "snr": 10.15,
+        "period": 6.1434,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 45.06,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 7.72,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.66,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.33,
+        "period": 9.6719,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.01,
+        "period": 10.1213,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 13.37,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 218.52,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 11.92,
+        "period": 15,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 31.67,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 14.83,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 62.74,
+        "period": 10.1313,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 10.27,
+        "period": 9.2715,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      },
+      {
+        "snr": 16.03,
+        "period": 9.6824,
+        "fapNoise": 0.0123,
+        "fapSys": 0.0123
+      }
+    ]
+  }
+}

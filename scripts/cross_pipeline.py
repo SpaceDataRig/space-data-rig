@@ -21,10 +21,12 @@ DESIGN (mirrors p33/p35, measure-before-gate, deterministic):
     lower-bound semantics as p33 (a genuine but unconfirmed planet counts as FP).
 
 Runs in CI only (the dev environment has no Python); the workflow crosscheck-python.yml pins the interpreter and
-package versions and uploads the JSON/markdown outputs as artifacts. Every method is independently guarded: if an
-optional package fails to import or a fit fails on one curve, that cell is marked "error" and the rest still runs.
-Honest boundary: this script measures and reports; it claims nothing, gates nothing, and touches no production
-path.
+package versions, uploads the JSON/markdown outputs as artifacts, AND publishes them back into the repository at
+reports/crosscheck/ (artifact/log download needs GitHub auth; committed files are publicly readable). Every method is
+independently guarded: a missing optional package degrades that cell to MISSING, a failed injection degrades to a
+LABELLED box transit, and a failed fit is marked "error" -- in every case the reason is captured into the report and
+the rest still runs. Honest boundary: this script measures and reports; it claims nothing, gates nothing, and
+touches no production path.
 """
 
 import json
@@ -43,6 +45,11 @@ MATCH_TOL_PCT = 2.0       # same tolerance as the TS pipeline
 ALIAS_FACTORS = [1.0, 0.5, 2.0, 1.0 / 3.0, 3.0, 2.0 / 3.0, 1.5, 3.0 / 2.0]  # same set as isAliasOf
 BLS_MIN_PERIOD = 1.0
 BLS_MAX_PERIOD = 13.0
+BLS_FREQ_FACTOR = 5.0     # astropy autopower frequency-grid oversampling (astropy's own default is 1.0). The grid
+                          # step is ~1/(factor*T); for a single-sector baseline T~27 d, factor 5.0 gives ~0.0074 d^-1,
+                          # i.e. a worst-case half-step period error of ~1.1% at P=3 d -- inside the 2% alias-match
+                          # tolerance -- while roughly halving BLS cost vs the first run's 10.0 (which drove a ~54 min
+                          # run once the INJECT arm stopped erroring and actually executed 12 BLS fits per curve).
 BATMAN_PARAMS = {         # fixed injection geometry (recorded in the output)
     "t0": 1.0, "per": INJ_PERIOD, "a": 12.0, "inc": 88.53, "ecc": 0.0, "w": 90.0,
     "u": [0.4, 0.2], "limb_dark": "quadratic",
@@ -50,12 +57,14 @@ BATMAN_PARAMS = {         # fixed injection geometry (recorded in the output)
 WOTAN_METHOD = "biweight"
 WOTAN_WINDOW = 1.0        # days. Widened from the first run's 0.5 d as good practice (a local filter window should
                           # exceed the transit duration, ~0.12 d at P=3 d / a-R*=12, so it removes systematics rather
-                          # than the transit). NOTE: the first CI run's INJECT arm did NOT return zero-recovery -- it
-                          # ERRORED on every cell (see summary.injectErrors), and the exception text only reached the
-                          # CI job log, which cannot be downloaded without auth. This revision therefore (a) captures
-                          # and PUBLISHES the exception text into the committed report, (b) splits RAW vs DETRENDED
-                          # recovery so any detrend-induced loss is measurable, and (c) verifies each injection is
-                          # present in the data before scoring.
+                          # than the transit). HISTORY: the first CI run's INJECT arm ERRORED on every cell -- the .md
+                          # rendered that as "0/12", masking an exception as a null result, and the text only reached
+                          # the un-downloadable CI job log. The harness now (a) captures and PUBLISHES every exception
+                          # into the committed report (summary.injectErrors + a .md section), (b) splits RAW vs
+                          # DETRENDED recovery, (c) verifies each injection is present before scoring, and (d) falls
+                          # back to a LABELLED pure-numpy box transit so a tool failure never silently reads as zero.
+                          # Root cause of that first error was a batman API misuse in inject_batman (light_curve() was
+                          # called with an extra t); it is fixed there, so the box fallback should now be unused.
 
 
 def is_alias_of(candidate: float, truth: float, tol_pct: float = MATCH_TOL_PCT) -> bool:
@@ -97,8 +106,9 @@ def inject_batman(t, flux, depth_ppm):
     params.w = BATMAN_PARAMS["w"]
     params.u = BATMAN_PARAMS["u"]
     params.limb_dark = BATMAN_PARAMS["limb_dark"]
-    m = batman.TransitModel(params, t)
-    return flux * m.light_curve(params, t)
+    m = batman.TransitModel(params, t)   # the time array is baked into the model at construction, so...
+    return flux * m.light_curve(params)  # ...light_curve() takes ONLY params. Passing t as well raised TypeError in
+                                         # the first CI run (captured + published in reports/crosscheck/).
 
 
 def inject_box(t, flux, depth_ppm, period=INJ_PERIOD, t0=BATMAN_PARAMS["t0"], dur_days=0.12):
@@ -131,7 +141,7 @@ def bls_period(t, flux):
         bls = BoxLeastSquares(t, flux)
         r = bls.autopower(
             minimum_period=BLS_MIN_PERIOD, maximum_period=BLS_MAX_PERIOD,
-            frequency_factor=10.0, duration=np.linspace(0.05, 0.40, 15),
+            frequency_factor=BLS_FREQ_FACTOR, duration=np.linspace(0.05, 0.40, 15),
         )
         p = float(r.period[np.argmax(r.power)])
         return p if np.isfinite(p) else None

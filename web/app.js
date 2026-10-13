@@ -215,6 +215,7 @@ function renderStats(stats) {
   $("#stat-rejected").textContent = stats.findingsRejected ?? 0;
   $("#stat-anchored").textContent = stats.bundlesAnchored ?? 0;
   $("#stat-done").textContent = stats.tasksDone ?? 0;
+  renderFeedTicker(researchData, stats);
 }
 
 function metricsHtml(f) {
@@ -469,10 +470,44 @@ function renderCandidates(s) {
     }
   }
   if (candMetaEl) candMetaEl.innerHTML = `Snapshot ${esc(s.generatedAt || "")} from TESS sector(s) ${esc((s.sectors || []).join(", "))} &middot; ${sum.rawDetections ?? 0} raw detections &rarr; ${sum.planetPlausible ?? 0} planet-plausible &rarr; ${sum.independentEphemerides ?? 0} independent ephemerides (${sum.multiHostSystematicGroups ?? 0} shared-host systematics, ${sum.corroboratedHosts ?? 0} corroborated across sectors) &middot; L3 ${sum.l3Applied === true ? "applied" : "off"}: ${sum.emittedCandidates ?? (s.candidates || []).length} candidate(s) emitted.`;
-  if (!list.length) { candBoardEl.innerHTML = `<p class="empty">No surviving candidates in the current snapshot.</p>`; return; }
+  candidatesRaw = list;
+  applyCandidateView();
+}
+
+// ---- candidate catalog: search / sort / filter (item 3) --------------------
+let candidatesRaw = [];
+function candSortVal(c, key) {
+  switch (key) {
+    case "period": return c.periodDays;
+    case "depth": return c.depthPpm;
+    case "snr": return c.snr ?? 0;
+    case "soon": return c.daysUntilNext ?? 1e9;
+    default: return c.priorityScore ?? 0;
+  }
+}
+function applyCandidateView() {
+  const toolbar = $("#cand-toolbar");
+  if (toolbar) toolbar.hidden = false;
+  const q = ($("#cand-search")?.value || "").trim().toLowerCase();
+  const sortby = $("#cand-sortby")?.value || "priority";
+  const hideSys = $("#cand-hide-sys")?.checked ?? true;
+  const onlyObs = $("#cand-only-obs")?.checked ?? false;
+  let list = candidatesRaw.slice();
+  if (hideSys) list = list.filter((c) => !c.suspectedCommonSystematic);
+  if (onlyObs) list = list.filter((c) => c.observable);
+  if (q) list = list.filter((c) => (`tic ${c.tic} ${c.priorityBand} ${c.periodDays.toFixed(3)} ${Math.round(c.depthPpm)}`).toLowerCase().includes(q));
+  const dir = sortby === "soon" ? 1 : -1;
+  list.sort((a, b) => (candSortVal(a, sortby) - candSortVal(b, sortby)) * dir);
+  const cnt = $("#cand-count");
+  if (cnt) cnt.textContent = `${list.length} of ${candidatesRaw.length} shown`;
+  if (!list.length) { candBoardEl.innerHTML = `<p class="empty">No candidates match the current filter.</p>`; return; }
   candBoardEl.classList.remove("row-of-four");
   candBoardEl.innerHTML = list.map(candCardHtml).join("");
 }
+["cand-search", "cand-sortby", "cand-hide-sys", "cand-only-obs"].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(id === "cand-search" ? "input" : "change", () => applyCandidateView());
+});
 
 async function loadCandidates() {
   if (candidatesLoaded) return;
@@ -800,6 +835,9 @@ function openSSE() {
     if (!ev.seat) return;
     addRow({ seat: ev.seat, ts: ev.ts, tone: toneForLevel(ev.level), text: ev.message });
     takeFloor(ev.seat, ev.message);
+    if (ev.level === "result" || ev.level === "error" || (ev.seat === "reporter" && /anchor|seal|complete/i.test(ev.message || ""))) {
+      addFeedItem({ key: "live-" + ev.ts, ts: ev.ts, kind: ev.level === "error" ? "bad" : "run", text: ev.message });
+    }
     if (ev.seat === "reporter" && ev.level === "result" && ev.data?.findingId) {
       fetchJSON(`/api/findings/${encodeURIComponent(ev.data.findingId)}`)
         .then((f) => {
@@ -906,6 +944,151 @@ boardEl.addEventListener("click", async (e) => {
   }
 });
 
+// ---- live science output feed (item 1) -------------------------------------
+const feedListEl = $("#feed-list");
+const feedTickerEl = $("#feed-ticker");
+const feedStatusEl = $("#feed-status-text");
+const feedSeen = new Set();
+
+function fmtAgo(iso) {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const s = Math.max(0, (Date.now() - t) / 1000);
+  if (s < 60) return "now";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return (s / 3600).toFixed(1) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+}
+function addFeedItem({ key, ts, kind, text, href }) {
+  if (!feedListEl) return;
+  const id = key || (ts + "|" + text);
+  if (feedSeen.has(id)) return;
+  feedSeen.add(id);
+  const row = document.createElement("div");
+  row.className = "feed-row feed-" + (kind || "info");
+  const time = ts ? `<span class="feed-time">${esc(fmtAgo(ts))}</span>` : "";
+  const body = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(text)}</a>` : esc(text);
+  row.innerHTML = `<span class="feed-dot"></span>${time}<span class="feed-text">${body}</span>`;
+  feedListEl.prepend(row);
+  while (feedListEl.childElementCount > 60) feedListEl.removeChild(feedListEl.lastElementChild);
+}
+function renderFeedTicker(research, stats) {
+  if (!feedTickerEl) return;
+  const chips = [];
+  if (research && research.survey) {
+    const s = research.survey;
+    chips.push(["real stars surveyed", s.stars]);
+    if (s.purity != null) chips.push(["blind purity", Math.round(s.purity * 100) + "%"]);
+    const c = s.completeness || [];
+    const at4000 = c.find((x) => x.depthPpm === 4000) || c[c.length - 1];
+    if (at4000) chips.push(["completeness @4000ppm", Math.round(at4000.rate * 100) + "%"]);
+  }
+  if (research && research.crossValidation) {
+    const cv = research.crossValidation;
+    if (cv.pdm && cv.pdm.agreement.rate != null) chips.push(["PDM agreement", Math.round(cv.pdm.agreement.rate * 100) + "%"]);
+    if (cv.python && cv.python.purity != null) chips.push(["independent-stack purity", Math.round(cv.python.purity * 100) + "%"]);
+  }
+  if (stats) {
+    chips.push(["targets analyzed", stats.tasksDone ?? 0]);
+    chips.push(["results sealed on-chain", stats.bundlesAnchored ?? 0]);
+  }
+  feedTickerEl.innerHTML = chips.map(([k, v]) => `<span class="ticker-chip"><b>${esc(String(v))}</b> ${esc(k)}</span>`).join("");
+}
+
+// next autonomous survey boundary: the edge cron runs every 15 minutes
+function nextSurveyIn() {
+  const now = new Date();
+  const secInto = (now.getMinutes() % 15) * 60 + now.getSeconds();
+  return Math.max(1, Math.ceil((15 * 60 - secInto) / 60));
+}
+function startFeedPulse() {
+  const tick = () => {
+    const m = nextSurveyIn();
+    if (feedStatusEl) feedStatusEl.textContent = m <= 0 ? "autonomous survey starting now" : `autonomous survey: next run in ~${m}m`;
+  };
+  tick();
+  setInterval(tick, 30000);
+}
+
+// ---- research results dashboard (item 4) -----------------------------------
+let researchData = null;
+function pct(x) { return x == null ? "n/a" : (x * 100).toFixed(1) + "%"; }
+async function loadResearch() {
+  try {
+    const r = await fetchJSON("/research.json");
+    researchData = r;
+    renderResearch(r);
+    renderFeedTicker(r, null);
+    seedResearchFeed(r);
+  } catch { const b = $("#research-body"); if (b) b.innerHTML = `<p class="empty">Research bundle unavailable.</p>`; }
+}
+function renderResearch(r) {
+  const el = $("#research-body");
+  if (!el) return;
+  const s = r.survey, cv = r.crossValidation, cm = r.compute;
+  const depths = s.depthsPpm || [];
+  const rows = depths.map((d, i) => {
+    const ts = s.completeness[i], pdm = cv.pdm.completeness[i], py = cv.python.completeness[i];
+    return `<tr><td>${d} ppm</td><td>${ts ? pct(ts.rate) : "-"}</td><td>${pdm ? pct(pdm.rate) : "-"}</td><td>${py ? pct(py.rate) : "-"}</td></tr>`;
+  }).join("");
+  const cpu = (cm.cpuHours || []).map((row) => {
+    const two = (row.bySectors || []).find((b) => b.sectors === 2);
+    return `<tr><td>${row.stars.toLocaleString()} stars</td><td>${two ? two.cpuHours.toFixed(1) : "-"} CPU-h</td></tr>`;
+  }).join("");
+  el.innerHTML =
+    `<figure class="research-figure"><img loading="lazy" src="/results-figure.svg" alt="Completeness vs depth for three independent estimators, and blind purity as true/false positive counts." /></figure>` +
+    `<div class="research-grid">` +
+      `<div class="research-card"><h3>Search operating point</h3>` +
+        `<div class="rc-metric"><span class="k">real host stars</span><span class="v">${s.stars}</span></div>` +
+        `<div class="rc-metric"><span class="k">blind purity (lower bound)</span><span class="v">${pct(s.purity)}</span></div>` +
+        `<div class="rc-metric"><span class="k">TP / FP on real curves</span><span class="v">${s.nullTP} / ${s.nullFP}</span></div>` +
+        `<p class="rc-note">Iterative box-fit BLS under the production gate, on real TESS-SPOC photometry (seed ${s.seed}, injected P=${s.injPeriodDays} d).</p></div>` +
+      `<div class="research-card"><h3>Independent cross-checks</h3>` +
+        `<div class="rc-metric"><span class="k">PDM period agreement</span><span class="v">${cv.pdm.agreement.agree}/${cv.pdm.agreement.comparable} (${pct(cv.pdm.agreement.rate)})</span></div>` +
+        `<div class="rc-metric"><span class="k">Python-stack purity</span><span class="v">${pct(cv.python.purity)} (${cv.python.nullTP}/${cv.python.nullFP})</span></div>` +
+        `<p class="rc-note">A different algorithm (PDM) and a different codebase (wotan + astropy BLS) re-analyze the same real data; agreement corroborates, disagreement is explained.</p></div>` +
+      `<div class="research-card"><h3>Measured compute cost</h3>` +
+        `<div class="rc-metric"><span class="k">scaling exponent</span><span class="v">~${cm.exponentP.toFixed(2)} (R&sup2; ${cm.r2.toFixed(2)})</span></div>` +
+        `<div class="rc-metric"><span class="k">per-star detection</span><span class="v">${cm.singleStarDetectionSeconds.toFixed(1)} s</span></div>` +
+        `<table class="rc-table"><thead><tr><th>survey</th><th>2 sectors</th></tr></thead><tbody>${cpu}</tbody></table></div>` +
+    `</div>` +
+    `<h3 class="research-sub">Completeness vs injected depth (three independent estimators)</h3>` +
+    `<table class="research-table"><thead><tr><th>depth</th><th>TypeScript BLS</th><th>PDM</th><th>Python astropy BLS</th></tr></thead><tbody>${rows}</tbody></table>` +
+    `<p class="research-note">${esc(r.note)}</p>`;
+}
+function seedResearchFeed(r) {
+  const s = r.survey;
+  addFeedItem({ key: "res-purity", kind: "research", text: `Blind purity measured at ${pct(s.purity)} (${s.nullTP} true / ${s.nullFP} false) on ${s.stars} real stars - a lower bound.` });
+  const at4000 = (s.completeness || []).find((x) => x.depthPpm === 4000);
+  if (at4000) addFeedItem({ key: "res-comp", kind: "research", text: `Completeness ${pct(at4000.rate)} at 4000 ppm injected on real TESS noise.` });
+  const cv = r.crossValidation;
+  addFeedItem({ key: "res-pdm", kind: "research", text: `Independent PDM agrees with the detector on ${cv.pdm.agreement.agree}/${cv.pdm.agreement.comparable} real curves.` });
+  addFeedItem({ key: "res-py", kind: "research", text: `A separate Python stack (wotan + astropy BLS) reproduces purity ${pct(cv.python.purity)} on ${cv.python.curves} shared curves.` });
+}
+
+// ---- build the initial feed from persisted state (so the page is never empty) ----
+async function buildInitialFeed() {
+  try {
+    const s = await fetchJSON("/api/state");
+    renderFeedTicker(researchData, s.stats);
+    const events = (s.events || []).slice(-40).reverse();
+    for (const ev of events) {
+      if (ev.level === "result" || ev.level === "error" || (ev.seat === "reporter" && /anchor|run|seal/i.test(ev.message || ""))) {
+        addFeedItem({ key: "ev-" + ev.ts + "-" + ev.message, ts: ev.ts, kind: ev.level === "error" ? "bad" : "run", text: ev.message });
+      }
+    }
+    const led = await fetchJSON("/api/ledger").catch(() => ({ ledger: [] }));
+    for (const e of (led.ledger || []).slice(0, 20)) {
+      if (e.signature) addFeedItem({ key: "led-" + e.signature, ts: e.anchoredAt, kind: "chain", text: `Sealed on-chain: ${e.findingId}`, href: e.explorerUrl || explorerUrl(e.signature) });
+    }
+  } catch { /* the live feed still fills from SSE/WS events */ }
+}
+function wireLiveExtras() {
+  loadResearch();
+  buildInitialFeed();
+  startFeedPulse();
+}
+
 // ---- boot ------------------------------------------------------------------
 setConn("connecting");
 const roomOk = MissionRoom.init($("#room"));
@@ -924,3 +1107,4 @@ if (roomOk) {
 // indicator reflects the WebSocket/SSE state within ~0.5s instead of waiting on /api/discussion.
 openSSE();
 loadAll();
+wireLiveExtras();

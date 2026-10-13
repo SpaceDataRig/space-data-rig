@@ -1,0 +1,207 @@
+{
+  "schema": "sdr-research/1",
+  "generatedAt": "2026-10-13T12:12:38.940Z",
+  "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
+  "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
+  "survey": {
+    "label": "TypeScript iterative detector (box-fit BLS)",
+    "stars": 33,
+    "coverageMiss": 7,
+    "injPeriodDays": 3,
+    "seed": 7,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "completeness": [
+      {
+        "depthPpm": 300,
+        "recovered": 14,
+        "rate": 0.42424242424242425
+      },
+      {
+        "depthPpm": 500,
+        "recovered": 18,
+        "rate": 0.5454545454545454
+      },
+      {
+        "depthPpm": 1000,
+        "recovered": 23,
+        "rate": 0.696969696969697
+      },
+      {
+        "depthPpm": 2000,
+        "recovered": 26,
+        "rate": 0.7878787878787878
+      },
+      {
+        "depthPpm": 4000,
+        "recovered": 27,
+        "rate": 0.8181818181818182
+      },
+      {
+        "depthPpm": 8000,
+        "recovered": 27,
+        "rate": 0.8181818181818182
+      }
+    ],
+    "purity": 0.41379310344827586,
+    "nullTP": 12,
+    "nullFP": 17,
+    "blindDetections": 29
+  },
+  "crossValidation": {
+    "pdm": {
+      "label": "PDM period finder (independent algorithm)",
+      "stars": 33,
+      "agreement": {
+        "comparable": 18,
+        "agree": 9,
+        "rate": 0.5
+      },
+      "completeness": [
+        {
+          "depthPpm": 300,
+          "recovered": 8,
+          "rate": 0.24242424242424243
+        },
+        {
+          "depthPpm": 500,
+          "recovered": 12,
+          "rate": 0.36363636363636365
+        },
+        {
+          "depthPpm": 1000,
+          "recovered": 17,
+          "rate": 0.5151515151515151
+        },
+        {
+          "depthPpm": 2000,
+          "recovered": 20,
+          "rate": 0.6060606060606061
+        },
+        {
+          "depthPpm": 4000,
+          "recovered": 25,
+          "rate": 0.7575757575757576
+        },
+        {
+          "depthPpm": 8000,
+          "recovered": 26,
+          "rate": 0.7878787878787878
+        }
+      ]
+    },
+    "python": {
+      "label": "wotan + astropy BLS (independent stack)",
+      "curves": 12,
+      "nullTP": 7,
+      "nullFP": 5,
+      "purity": 0.583,
+      "versions": {
+        "numpy": "1.26.4",
+        "python": "3.11.17",
+        "astropy": "5.3.4",
+        "batman": "2.4.8",
+        "wotan": "imported",
+        "transitleastsquares": "2.0.1"
+      },
+      "completeness": [
+        {
+          "depthPpm": 300,
+          "recovered": 6,
+          "rate": 0.5
+        },
+        {
+          "depthPpm": 500,
+          "recovered": 7,
+          "rate": 0.5833333333333334
+        },
+        {
+          "depthPpm": 1000,
+          "recovered": 8,
+          "rate": 0.6666666666666666
+        },
+        {
+          "depthPpm": 2000,
+          "recovered": 10,
+          "rate": 0.8333333333333334
+        },
+        {
+          "depthPpm": 4000,
+          "recovered": 12,
+          "rate": 1
+        },
+        {
+          "depthPpm": 8000,
+          "recovered": 12,
+          "rate": 1
+        }
+      ]
+    }
+  },
+  "compute": {
+    "exponentP": 2.936437697567511,
+    "r2": 0.8366052738431159,
+    "sampleN": 33,
+    "singleStarDetectionSeconds": 3.9795238095238097,
+    "meanPointsPerStar": 2899.121212121212,
+    "cpuHours": [
+      {
+        "stars": 1000,
+        "bySectors": [
+          {
+            "sectors": 1,
+            "cpuHours": 0.14440185734140906
+          },
+          {
+            "sectors": 2,
+            "cpuHours": 1.1054232804232804
+          },
+          {
+            "sectors": 4,
+            "cpuHours": 8.462222379956563
+          }
+        ]
+      },
+      {
+        "stars": 5000,
+        "bySectors": [
+          {
+            "sectors": 1,
+            "cpuHours": 0.7220092867070455
+          },
+          {
+            "sectors": 2,
+            "cpuHours": 5.527116402116403
+          },
+          {
+            "sectors": 4,
+            "cpuHours": 42.311111899782816
+          }
+        ]
+      },
+      {
+        "stars": 20000,
+        "bySectors": [
+          {
+            "sectors": 1,
+            "cpuHours": 2.888037146828182
+          },
+          {
+            "sectors": 2,
+            "cpuHours": 22.10846560846561
+          },
+          {
+            "sectors": 4,
+            "cpuHours": 169.24444759913126
+          }
+        ]
+      }
+    ]
+  }
+}

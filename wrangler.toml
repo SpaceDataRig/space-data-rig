@@ -70,8 +70,11 @@ name = "rig-run"
 # "1"; on-chain spending is gated separately by AUTO_ANCHOR + the daily cap.
 # This deployment opts IN (see [vars] below). To pause autonomous spending without
 # a redeploy of code, set AUTO_ANCHOR = "off" (or AUTO_RESEARCH = "0") and deploy.
+# Cadence is every 15 minutes so the dashboard's LIVE SCIENCE OUTPUT feed has
+# continuous motion; AUTO_ANCHOR_DAILY_CAP (below) still bounds SOL spend per day,
+# so a faster survey cannot overspend the chain -- it only surfaces more results.
 [triggers]
-crons = ["0 * * * *"]
+crons = ["*/15 * * * *"]
 
 # ---- plain-text variables (non-secret) -------------------------------------
 [vars]

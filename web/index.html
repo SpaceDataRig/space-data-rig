@@ -79,6 +79,20 @@
     </div>
   </section>
 
+  <!-- ============ live science output feed (real results, continuously surfaced) ============ -->
+  <section class="section feed-section">
+    <div class="glass feed">
+      <div class="panel-head">
+        <h2>LIVE SCIENCE OUTPUT</h2>
+        <span class="feed-status" title="The rig runs an autonomous survey on a schedule and seals accepted results on-chain">
+          <span class="pulse-dot"></span><span id="feed-status-text">booting feed&hellip;</span>
+        </span>
+      </div>
+      <div class="feed-ticker" id="feed-ticker"></div>
+      <div class="feed-list" id="feed-list" role="log" aria-live="polite"></div>
+    </div>
+  </section>
+
   <!-- ============ candidate board: blind-search output (research only, not discoveries) ============ -->
   <section class="section candidates-section">
     <div class="glass candidates">
@@ -88,9 +102,34 @@
         <p class="cand-disclaimer" id="cand-disclaimer"></p>
         <div class="cand-tally" id="cand-tally" hidden></div>
         <p class="cand-meta" id="cand-meta"></p>
+        <div class="cand-toolbar" id="cand-toolbar" hidden>
+          <input id="cand-search" class="cand-search" type="search" placeholder="filter by TIC / period / priority band&hellip;" aria-label="Filter candidates" />
+          <label class="cand-sort"><span>sort</span>
+            <select id="cand-sortby">
+              <option value="priority">follow-up priority</option>
+              <option value="period">period</option>
+              <option value="depth">depth</option>
+              <option value="snr">signal (SNR)</option>
+              <option value="soon">next transit (soonest)</option>
+            </select>
+          </label>
+          <label class="check inline"><input type="checkbox" id="cand-hide-sys" checked /> <span>hide shared systematics</span></label>
+          <label class="check inline"><input type="checkbox" id="cand-only-obs" /> <span>observable only</span></label>
+          <span class="cand-count" id="cand-count"></span>
+        </div>
         <div class="board" id="cand-board"><p class="empty">Loading the latest candidate snapshot&hellip;</p></div>
         <p class="cand-foot">Candidates are ordered by <b>follow-up worth</b> (evidence, how soon the next transit is, and how high it sits from a reference site), not by how likely each is to be a planet. A row flagged as a shared ephemeris is almost certainly one instrumental artifact seen on several stars, not several worlds. This board is separate from the verified, on-chain results below and anchors nothing.</p>
       </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ research results dashboard (measured on real data) ============ -->
+  <section class="section research-section">
+    <div class="glass research">
+      <details class="collapse" id="research-details" open>
+        <summary class="panel-head"><h2>RESEARCH RESULTS</h2><span class="hint">how good the search is, measured on real public TESS data and cross-checked by independent code</span></summary>
+        <div class="research-body" id="research-body"><p class="empty">Loading the research bundle&hellip;</p></div>
       </details>
     </div>
   </section>

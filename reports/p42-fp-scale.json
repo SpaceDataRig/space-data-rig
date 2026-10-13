@@ -3,11 +3,12 @@
     "sectors": [
       1,
       2,
-      3
+      3,
+      4
     ],
-    "limit": 150,
-    "nNull": 50,
-    "nInject": 50,
+    "limit": 200,
+    "nNull": 60,
+    "nInject": 60,
     "seed": 7,
     "fapThr": 0.05,
     "bhQ": 0.1,
@@ -15,58 +16,70 @@
     "injDepth": 8000
   },
   "aggregate": {
-    "n": 450,
-    "fpA": 111,
-    "fpB": 102,
-    "fpC": 104,
-    "fpD": 111,
-    "tp": 49,
-    "tpSys": 49
+    "n": 800,
+    "fpA": 199,
+    "fpB": 190,
+    "fpC": 196,
+    "fpD": 199,
+    "tp": 79,
+    "tpSys": 79
   },
   "auc": {
-    "noise": 0.5540540540540541,
-    "sys": 0.5495495495495496
+    "noise": 0.5477386934673367,
+    "sys": 0.5477386934673367
   },
   "pool": {
-    "pos": 49,
-    "neg": 111
+    "pos": 79,
+    "neg": 199
   },
   "rows": [
     {
       "sector": 1,
-      "n": 150,
-      "fpA": 78,
-      "fpB": 77,
-      "fpC": 77,
-      "fpD": 78,
-      "tp": 12,
-      "tpSys": 12,
-      "tmplRms": 45,
-      "tmplPeak": 300
+      "n": 200,
+      "fpA": 109,
+      "fpB": 109,
+      "fpC": 108,
+      "fpD": 109,
+      "tp": 16,
+      "tpSys": 16,
+      "tmplRms": 46,
+      "tmplPeak": 295
     },
     {
       "sector": 2,
-      "n": 150,
-      "fpA": 13,
-      "fpB": 8,
-      "fpC": 11,
-      "fpD": 13,
-      "tp": 18,
-      "tpSys": 18,
-      "tmplRms": 36,
-      "tmplPeak": 231
+      "n": 200,
+      "fpA": 15,
+      "fpB": 11,
+      "fpC": 14,
+      "fpD": 15,
+      "tp": 20,
+      "tpSys": 20,
+      "tmplRms": 34,
+      "tmplPeak": 148
     },
     {
       "sector": 3,
-      "n": 150,
-      "fpA": 20,
-      "fpB": 17,
-      "fpC": 16,
-      "fpD": 20,
-      "tp": 19,
-      "tpSys": 19,
-      "tmplRms": 29,
-      "tmplPeak": 213
+      "n": 200,
+      "fpA": 24,
+      "fpB": 20,
+      "fpC": 24,
+      "fpD": 24,
+      "tp": 22,
+      "tpSys": 22,
+      "tmplRms": 28,
+      "tmplPeak": 163
+    },
+    {
+      "sector": 4,
+      "n": 200,
+      "fpA": 51,
+      "fpB": 50,
+      "fpC": 50,
+      "fpD": 51,
+      "tp": 21,
+      "tpSys": 21,
+      "tmplRms": 31,
+      "tmplPeak": 206
     }
   ]
 }

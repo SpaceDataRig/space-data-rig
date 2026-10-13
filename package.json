@@ -49,6 +49,7 @@
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",
     "p36:export-fixtures": "tsx scripts/p36-export-fixtures.ts",
+    "p37:figure": "tsx scripts/p37-results-figure.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",
     "verify:observe": "tsx scripts/verify-observe.ts",

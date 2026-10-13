@@ -1290,3 +1290,19 @@ remains data-gated toward Stage 5.**
   orthogonal to systematics removal. Measure-only; nothing gated, anchored, claimed, or deployed. Reproduce with
   `npm run p31:common-mode-fp -- --sectors 1 --limit 240 --seed 7`.
 
+**Iterative multi-signal extraction, MEASURED (npm run p32:iterative).** p30 ended by naming the detector upgrade a
+  real survey needs: a single blind BLS pass on a stitched baseline reports ONE period, so in a multi-planet system
+  it can recover at most one co-orbiting planet (p30 per-system recovery 2/10). `src/detect/iterative.ts`
+  (research-only, worker not imported) implements the standard fix -- find the strongest transit, resolve its
+  half/third-period alias, refine the period on a dense local grid, MASK its in-transit cadences, re-run BLS on the
+  residual, repeat -- and p32 scores it per host system against the single-pass baseline on REAL photometry.
+  Phase 1 (catalog positive control, 12 multi-planet hosts, 29 known in-range planets, stitched public SPOC
+  sectors, production gate SNR>=7 & depth>=200 ppm): single-pass 1/29, iterative 1/29, delta +0, 0/12 hosts
+  improved -- on underpowered public few-sector curves the second, shallower/longer-period planet falls below the
+  gate, so the limit is DATA POWER, not the algorithm. Phase 2 (real-noise injection positive control on the same
+  curves, two floor-clearing transits injected multiplicatively at 3.3 d@2500 ppm + 8.1 d@1800 ppm): iterative
+  recovers BOTH on 5/6 curves and 10/12 injected transits overall, while single-pass is capped at one period per
+  star (5/12) -- the mask-and-refind algorithm is sound on REAL noise, confirming Phase 1's null is a data-power
+  limit. Consistent with p26-p30; motivates deeper baselines / more compute. Measure-only; nothing gated,
+  anchored, claimed, or deployed. Reproduce with `npm run p32:iterative -- --hosts 12 --maxsectors 2`.
+

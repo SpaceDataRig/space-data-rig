@@ -283,11 +283,12 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: HEAD == origin/main == 83c2328 (working tree clean apart from this handoff update).
+- Git: at time of writing HEAD == origin/main == f050429; the Track-B commit that carries this handoff update
+  lands immediately after it (see git log for its exact hash).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 250/250 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6 vs the old 224).
+- Tests: 255/255 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6, iterative +5 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
@@ -331,6 +332,18 @@ the Actions web page when the anonymous API is rate-limited.
   "not discovery-grade" verdict (that is a period-SELECTION / single-baseline limit, orthogonal to systematics
   removal); it is a real, measured gain in candidate PURITY (~66% -> ~80%) and shallow-signal completeness.
   Measure-only, nothing gated/anchored/claimed/deployed.
+- p32 iterative multi-signal extraction (the p30-named detector upgrade, src/detect/iterative.ts, research-only,
+  worker not imported): find the strongest transit, resolve its half/third-period alias, refine the period on a
+  dense local grid (the coarse BLS grid smears narrow transits and under-states their depth), MASK its in-transit
+  cadences, re-run BLS on the residual, repeat. Phase 1 (catalog positive control: 12 multi-planet hosts, 29 known
+  in-range planets, real stitched public SPOC sectors, production gate SNR>=7 & depth>=200 ppm): single-pass 1/29
+  vs iterative 1/29, delta +0, 0/12 hosts improved -- the second, shallower/longer-period planet falls below the
+  gate on underpowered public few-sector curves, so the limit is DATA POWER, not the algorithm. Phase 2 (real-noise
+  injection positive control on those same curves: 3.3 d@2500 ppm + 8.1 d@1800 ppm injected multiplicatively):
+  iterative recovers BOTH on 5/6 curves (10/12 injected transits) while single-pass is capped at one period per
+  star (5/12) -- mask-and-refind is sound on REAL noise, confirming Phase 1's null is a data-power limit.
+  Converges with p26-p31: not discovery-grade on public few-sector data; deeper baselines / more compute (Track C)
+  is the lever. Measure-only, nothing gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,
@@ -347,7 +360,7 @@ the Actions web page when the anonymous API is rate-limited.
 ## 14. Suggested onboarding order for the successor
 
 1. Read this file, then README.md (full science narrative), then wrangler.toml comments.
-2. npm ci; npm run typecheck:all; npm test -- confirm 233 green locally.
+2. npm ci; npm run typecheck:all; npm test -- confirm 255 green locally.
 3. npm start; open the dashboard; watch one run stream.
 4. npm run verify:observe; skim src/observe/*.ts in the order listed in section 5.
 5. Only then consider deploys -- and never without explicit operator go-ahead.

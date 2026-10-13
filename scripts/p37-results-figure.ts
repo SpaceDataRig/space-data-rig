@@ -46,11 +46,11 @@ const tsPurity = (100 * tsTP / (tsTP + tsFP)).toFixed(1);
 const pyPurity = (100 * pyTP / (pyTP + pyFP)).toFixed(1);
 
 // ---- SVG geometry ----
-const W = 960, H = 380;
+const W = 960, H = 410;
 const C = { bg: "#0b1220", teal: "#5ad1a8", blue: "#8fc6ff", amber: "#e0a458", axis: "#3b4a63", text: "#9fb4d4", title: "#e7f0ff", fp: "#d9776f", grid: "#1c2740" };
 
 // Panel A plot box
-const aL = 66, aR = 470, aT = 58, aB = 300;
+const aL = 66, aR = 470, aT = 84, aB = 322;
 const aX = (i: number) => aL + (i / (depths.length - 1)) * (aR - aL);
 const aY = (f: number) => aB - f * (aB - aT);
 function series(vals: number[], color: string): string {
@@ -66,9 +66,10 @@ for (const g of [0, 0.25, 0.5, 0.75, 1.0]) {
 let aXLabels = depths.map((d, i) => `<text x="${aX(i).toFixed(1)}" y="${aB + 18}" fill="${C.text}" font-size="11" text-anchor="middle">${d}</text>`).join("");
 
 // Panel B bars: two groups (TS, Python), each TP + FP
-const bL = 560, bR = 910, bT = 58, bB = 300;
+const bL = 560, bR = 910, bT = 84, bB = 322;
 const maxCount = Math.max(tsTP + tsFP, pyTP + pyFP);
-const bY = (n: number) => bB - (n / maxCount) * (bB - bT);
+const bMax = maxCount * 1.15;   // pad headroom so the tallest bar's purity label clears the panel header
+const bY = (n: number) => bB - (n / bMax) * (bB - bT);
 const barW = 42;
 const groups = [
   { name: "TypeScript", x0: bL + 30, tp: tsTP, fp: tsFP, purity: tsPurity, tpColor: C.teal },
@@ -93,7 +94,7 @@ for (const g of [0, 10, 20, 30]) {
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" font-family="ui-sans-serif, system-ui, Segoe UI, Arial, sans-serif">
   <rect x="0" y="0" width="${W}" height="${H}" fill="${C.bg}"/>
   <text x="${aL}" y="26" fill="${C.title}" font-size="16" font-weight="700">Independent transit-detection validation on real TESS photometry</text>
-  <text x="${aL}" y="44" fill="${C.text}" font-size="11">Three estimators sharing no code, run on the same seeded real host stars (injection-recovery at P = 3 d; seed 7).</text>
+  <text x="${aL}" y="42" fill="${C.text}" font-size="11">Three independent estimators, no shared code, on the same seeded real stars (P = 3 d; seed 7).</text>
 
   <text x="${aL}" y="${aT - 12}" fill="${C.title}" font-size="13" font-weight="600">A. Completeness vs injected depth</text>
   ${aGrid}

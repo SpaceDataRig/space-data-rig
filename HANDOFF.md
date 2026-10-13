@@ -398,6 +398,13 @@ the Actions web page when the anonymous API is rate-limited.
   1:1 comparable with p33's full-resolution completeness. The Python script could NOT be executed locally (no
   interpreter); its first real execution is the CI run of the commit that adds it. Measure-only, nothing
   gated/anchored/claimed/deployed.
+  Follow-ups already landed: (a) the first CI run of the harness FAILED at pip install -- the pins used non-existent
+  PyPI distribution names; fixed in eb0693f after verifying every version against the PyPI JSON API (batman's dist
+  name is batman-package, TLS ships as transitleastsquares; the re-run of eb0693f completed SUCCESS, the Python
+  stack really executed). (b) Anonymous artifact/log download requires auth (401/403), so the workflow now also
+  PUBLISHES reports/crosscheck/ back into the repo via GITHUB_TOKEN (contents:write, same mechanism release.yml
+  already uses); the publish commit cannot re-trigger the workflow (paths filter excludes reports/). NOTE FOR
+  SUCCESSORS: after a publish-back commit lands, `git pull --rebase` locally before the next push.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,

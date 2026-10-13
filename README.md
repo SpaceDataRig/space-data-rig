@@ -1367,11 +1367,14 @@ remains data-gated toward Stage 5.**
   scripts/cross_pipeline.py: NULL arm (wotan + astropy BLS on each real curve, alias-tolerant TP/FP against the
   manifest's known planets, same lower-bound purity semantics as p33) and INJECT arm (batman P=3 d transit across
   the depth grid [300..8000] ppm -> wotan -> astropy BLS recovery), uploading reports/crosscheck/ as a workflow
-  artifact. Every method is independently guarded (a missing/failed package degrades that cell to MISSING/error,
-  the rest still runs). Honest boundary: the cross-pipeline numbers are produced in CI (measure-before-gate: they
-  are read from the workflow artifact, never asserted here); fixtures are subsampled, so completeness is not
-  directly comparable to p33's full-resolution numbers and differences in detrending (wotan here vs raw stitched
-  curve in the p33 inject arm) are flagged in the report itself. Research tooling; nothing gated, anchored,
+  artifact and publishing it back into the repository at the same path (artifact/log download requires GitHub auth;
+  committed files are publicly readable -- the publish commit cannot re-trigger the workflow because its paths
+  filter excludes reports/, so there is no loop). Every method is independently guarded (a missing/failed package
+  degrades that cell to MISSING/error, the rest still runs). Honest boundary: the cross-pipeline numbers are
+  produced in CI (measure-before-gate: they are read from the published report, never asserted here); fixtures are
+  subsampled, so completeness is not directly comparable to p33's full-resolution numbers and differences in
+  detrending (wotan here vs raw stitched curve in the p33 inject arm) are flagged in the report itself. Research
+  tooling; nothing gated, anchored,
   claimed, or deployed. Reproduce: `npm run p36:export-fixtures -- --stars 16 --maxsectors 2 --cap 2500`, commit,
   then dispatch the cross-pipeline-python workflow.
 

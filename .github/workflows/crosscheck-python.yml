@@ -7,7 +7,10 @@ name: cross-pipeline-python
 # byte-identical input and the numbers are reproducible without network access to MAST.
 #
 # Triggers: manual dispatch, and pushes that touch the harness/fixtures (the main CI workflow covers everything
-# else). Results are uploaded as artifacts; nothing here gates, anchors, claims, or deploys.
+# else). Results are uploaded as artifacts AND published back into the repository (reports/crosscheck/) so the
+# measured numbers are publicly readable without artifact authentication -- artifact/log download requires auth,
+# committed files do not. The publish step cannot re-trigger this workflow (its paths filter excludes reports/),
+# so there is no loop. Nothing here gates, anchors, claims, or deploys.
 
 on:
   workflow_dispatch:
@@ -17,6 +20,9 @@ on:
       - scripts/cross_pipeline.py
       - .github/workflows/crosscheck-python.yml
       - tests/fixtures/spoc-curves/**
+
+permissions:
+  contents: write
 
 jobs:
   cross-pipeline:
@@ -48,3 +54,22 @@ jobs:
           name: cross-pipeline-report
           path: reports/crosscheck/
           if-no-files-found: warn
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/crosscheck/cross-pipeline.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/crosscheck
+            if ! git diff --cached --quiet; then
+              git commit -m "Track C: publish cross-pipeline report (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "no report produced; nothing to publish"
+          fi

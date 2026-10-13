@@ -283,12 +283,12 @@ the Actions web page when the anonymous API is rate-limited.
 
 ## 13. Current state (as of 2026-10-13)
 
-- Git: at time of writing HEAD == origin/main == 0e00e95 (Track C: p33 large-scale completeness/purity ROC);
-  the p34 compute/cost-model commit that carries this handoff update lands immediately after it (see git log).
+- Git: at time of writing HEAD == origin/main == 8d06a7a (Track C: p34 measured compute/cost model);
+  the p35 PDM independent cross-check commit that carries this handoff update lands immediately after it (see git log).
 - Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
 - Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
   AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 255/255 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6, iterative +5 vs the old 224).
+- Tests: 260/260 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6, iterative +5, pdm +5 vs the old 224).
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the
@@ -368,6 +368,21 @@ the Actions web page when the anonymous API is rate-limited.
   ~22 CPU-h, 4-sector ~169 CPU-h; embarrassingly parallel across stars, so a 64-way CI matrix gives ~0.3 h / ~2.6 h
   wall-clock. Quotes CPU-h only, invents no provider price. This is the compute spec Problem 3 asked for and the
   sizing basis for the thousands-star scale-out. Measure-only, nothing gated/anchored/claimed/deployed.
+- p35 PDM independent cross-check (src/detect/pdm.ts, research-only, worker not imported; +5 offline unit tests;
+  research script scripts/p35-pdm-crosscheck.ts + artifacts reports/p35-pdm-crosscheck.md and .json): Problem 3's
+  "independent validation" attacked at the METHOD level -- Phase Dispersion Minimization (Stellingwerf 1978) is a
+  non-parametric period finder sharing NO machinery with the box-fit family (minimizes the within-bin variance theta
+  of the phase fold; never fits a box or a transit model). Run on the SAME seeded 33 real TESS-SPOC curves as p33:
+  NULL cross-check: 18 curves had both a gated BLS period and a finite PDM minimum; agreement (same period or
+  harmonic, tol 2%) 9/18 = 50.0%. Where they differ, PDM's global theta minimum usually locks the dominant stellar
+  rotation/activity period -- the expected behavior of a general period finder on a real variable star. INDEPENDENT
+  completeness (PDM alone recovers a P=3 d injection, same depth grid/seed): 24.2% @300 ppm -> 51.5% @1000 -> 78.8%
+  @8000, uniformly BELOW the detrended box-fit detector's 42.4/69.7/81.8% on the same stars. The gap is the honest
+  finding: it quantifies why transit pipelines use a detrended box-fit search rather than raw PDM, while agreement
+  cases (e.g. KELT-9: PDM 1.48 d theta 0.12 vs gated BLS 1.48 d) show two independent estimators converge on strong
+  real signals. Wording note: docs now say "the iterative detector under the production gate" for iterativeBls
+  (research-only module; "production" refers to the gate thresholds, not worker wiring). Measure-only, nothing
+  gated/anchored/claimed/deployed.
 - Recent Stage-4 commits: 65d4b8d (p26 corroboration-ROC: multi-host coincidence collapse L3 cuts the
   coherent FP ~63% at zero planet cost; same-host cross-sector L4 is gated by multi-sector coverage) ->
   fa8f9c6 (p27 shape-coherence: honest NEGATIVE, per-curve median-vs-mean spike test gives no separation,
@@ -384,7 +399,7 @@ the Actions web page when the anonymous API is rate-limited.
 ## 14. Suggested onboarding order for the successor
 
 1. Read this file, then README.md (full science narrative), then wrangler.toml comments.
-2. npm ci; npm run typecheck:all; npm test -- confirm 255 green locally.
+2. npm ci; npm run typecheck:all; npm test -- confirm 260 green locally.
 3. npm start; open the dashboard; watch one run stream.
 4. npm run verify:observe; skim src/observe/*.ts in the order listed in section 5.
 5. Only then consider deploys -- and never without explicit operator go-ahead.

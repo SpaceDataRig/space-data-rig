@@ -1,0 +1,634 @@
+{
+  "meta": {
+    "stars": 33,
+    "coverageMiss": 7,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "injPeriod": 3,
+    "seed": 7,
+    "matchTolPct": 2,
+    "pdmBins": 12,
+    "pdmOversample": 10,
+    "generatedBy": "p35-pdm-crosscheck"
+  },
+  "agreement": {
+    "comparable": 18,
+    "agree": 9
+  },
+  "rows": [
+    {
+      "host": "HD 39091",
+      "nPoints": 2082,
+      "blsPeriods": [],
+      "pdmPeriod": 8.783724864017547,
+      "pdmTheta": 0.9103054455340178,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 613
+    },
+    {
+      "host": "HR 858",
+      "nPoints": 1735,
+      "blsPeriods": [],
+      "pdmPeriod": 1.7904837321070082,
+      "pdmTheta": 0.9340905523968519,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 254
+    },
+    {
+      "host": "HD 63433",
+      "nPoints": 1096,
+      "blsPeriods": [],
+      "pdmPeriod": 8.415578308762441,
+      "pdmTheta": 0.5197282453971852,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 91
+    },
+    {
+      "host": "HD 25463",
+      "nPoints": 4598,
+      "blsPeriods": [
+        7.046857680559823
+      ],
+      "pdmPeriod": 11.387565746965505,
+      "pdmTheta": 0.9176856028438205,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 11926
+    },
+    {
+      "host": "AU Mic",
+      "nPoints": 4470,
+      "blsPeriods": [],
+      "pdmPeriod": 4.836105691078796,
+      "pdmTheta": 0.3170972605106198,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 7484
+    },
+    {
+      "host": "TOI-480",
+      "nPoints": 4455,
+      "blsPeriods": [
+        8.419800926947852
+      ],
+      "pdmPeriod": 8.05970272986876,
+      "pdmTheta": 0.6626101563296388,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 11264
+    },
+    {
+      "host": "GJ 143",
+      "nPoints": 2367,
+      "blsPeriods": [
+        14.538868917342725
+      ],
+      "pdmPeriod": 10.758170725231736,
+      "pdmTheta": 0.7864637847807189,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 571
+    },
+    {
+      "host": "HD 1397",
+      "nPoints": 2372,
+      "blsPeriods": [
+        11.533996422206727
+      ],
+      "pdmPeriod": 3.866049870728826,
+      "pdmTheta": 0.8186133179470115,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 577
+    },
+    {
+      "host": "TOI-5739",
+      "nPoints": 838,
+      "blsPeriods": [],
+      "pdmPeriod": 3.926187816594998,
+      "pdmTheta": 0.7915534018882328,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 64
+    },
+    {
+      "host": "KELT-11",
+      "nPoints": 1028,
+      "blsPeriods": [
+        4.733196560593344,
+        14.934533447062904
+      ],
+      "pdmPeriod": 4.745585914615113,
+      "pdmTheta": 0.3912041678778592,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 147
+    },
+    {
+      "host": "HD 86226",
+      "nPoints": 3757,
+      "blsPeriods": [],
+      "pdmPeriod": 10.304288634120674,
+      "pdmTheta": 0.8907751199386738,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 6032
+    },
+    {
+      "host": "HD 207496",
+      "nPoints": 4483,
+      "blsPeriods": [
+        11.567824390419554,
+        13.233529333252239,
+        12.34241473723639
+      ],
+      "pdmPeriod": 12.362871307274794,
+      "pdmTheta": 0.10146425116106224,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 8222
+    },
+    {
+      "host": "HD 213885",
+      "nPoints": 4534,
+      "blsPeriods": [],
+      "pdmPeriod": 8.514172367305658,
+      "pdmTheta": 0.9442151082935067,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 7820
+    },
+    {
+      "host": "TOI-6054",
+      "nPoints": 1109,
+      "blsPeriods": [
+        11.32101692655126,
+        9.031555087599259
+      ],
+      "pdmPeriod": 8.555028673253728,
+      "pdmTheta": 0.8959020046576116,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 168
+    },
+    {
+      "host": "KELT-20",
+      "nPoints": 4698,
+      "blsPeriods": [
+        3.4737012307973054
+      ],
+      "pdmPeriod": 1.7363308140028013,
+      "pdmTheta": 0.6648018832188328,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 15873
+    },
+    {
+      "host": "KELT-9",
+      "nPoints": 1766,
+      "blsPeriods": [
+        1.481359146667186
+      ],
+      "pdmPeriod": 1.481035232881873,
+      "pdmTheta": 0.12169080747408617,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 414
+    },
+    {
+      "host": "TOI-1776",
+      "nPoints": 1233,
+      "blsPeriods": [],
+      "pdmPeriod": 10.110471719339813,
+      "pdmTheta": 0.9320258199650048,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 90
+    },
+    {
+      "host": "HD 110067",
+      "nPoints": 828,
+      "blsPeriods": [
+        8.539582539346341
+      ],
+      "pdmPeriod": 12.345478105863661,
+      "pdmTheta": 0.4321090364873964,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 94
+    },
+    {
+      "host": "GJ 341",
+      "nPoints": 2040,
+      "blsPeriods": [],
+      "pdmPeriod": 13,
+      "pdmTheta": 0.7847669631900471,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 270
+    },
+    {
+      "host": "K2-167",
+      "nPoints": 3962,
+      "blsPeriods": [],
+      "pdmPeriod": 11.764869287650365,
+      "pdmTheta": 0.982118535489193,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 6509
+    },
+    {
+      "host": "HD 22946",
+      "nPoints": 1750,
+      "blsPeriods": [
+        15.10002371213698
+      ],
+      "pdmPeriod": 3.6111242226738645,
+      "pdmTheta": 0.902706383702125,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 401
+    },
+    {
+      "host": "HIP 94235",
+      "nPoints": 3298,
+      "blsPeriods": [],
+      "pdmPeriod": 2.251486228256552,
+      "pdmTheta": 0.32614671674579787,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 234
+    },
+    {
+      "host": "Kepler-21",
+      "nPoints": 4698,
+      "blsPeriods": [],
+      "pdmPeriod": 12.32466657969681,
+      "pdmTheta": 0.8496002355050514,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 7643
+    },
+    {
+      "host": "TOI-1860",
+      "nPoints": 2006,
+      "blsPeriods": [],
+      "pdmPeriod": 4.413737165871873,
+      "pdmTheta": 0.3650875575678797,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 293
+    },
+    {
+      "host": "TOI-2134",
+      "nPoints": 5050,
+      "blsPeriods": [
+        13.67644852799342,
+        14.176711671798031,
+        14.795501237894426
+      ],
+      "pdmPeriod": 10.181433903129365,
+      "pdmTheta": 0.7109734966630114,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 9307
+    },
+    {
+      "host": "TOI-1431",
+      "nPoints": 2130,
+      "blsPeriods": [
+        2.650401683390077,
+        12.647202988302384
+      ],
+      "pdmPeriod": 2.653070774905229,
+      "pdmTheta": 0.639882302432322,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 673
+    },
+    {
+      "host": "DS Tuc A",
+      "nPoints": 4525,
+      "blsPeriods": [],
+      "pdmPeriod": 11.198318234949713,
+      "pdmTheta": 0.45153572535683173,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 7488
+    },
+    {
+      "host": "HD 202772 A",
+      "nPoints": 3932,
+      "blsPeriods": [
+        3.3091735545646284
+      ],
+      "pdmPeriod": 3.3392713894331214,
+      "pdmTheta": 0.5721620864820538,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 14377
+    },
+    {
+      "host": "WASP-33",
+      "nPoints": 966,
+      "blsPeriods": [
+        1.219845642562413
+      ],
+      "pdmPeriod": 1.2264035087499396,
+      "pdmTheta": 0.540359740908416,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": false
+      },
+      "perCurveMs": 120
+    },
+    {
+      "host": "TOI-4443",
+      "nPoints": 5052,
+      "blsPeriods": [],
+      "pdmPeriod": 8.632494581001056,
+      "pdmTheta": 0.8935807787049929,
+      "agree": null,
+      "pdmRecByDepth": {
+        "300": true,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 4513
+    },
+    {
+      "host": "KELT-24",
+      "nPoints": 2384,
+      "blsPeriods": [
+        5.550505126294937
+      ],
+      "pdmPeriod": 5.541083404336418,
+      "pdmTheta": 0.7242206396836653,
+      "agree": true,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": false,
+        "8000": true
+      },
+      "perCurveMs": 2288
+    },
+    {
+      "host": "HD 63935",
+      "nPoints": 4440,
+      "blsPeriods": [
+        7.12210984699121,
+        9.058315617491694,
+        15.33841947693356
+      ],
+      "pdmPeriod": 12.696900667626327,
+      "pdmTheta": 0.8729372569687833,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": true,
+        "1000": true,
+        "2000": true,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 15503
+    },
+    {
+      "host": "TOI-128",
+      "nPoints": 1989,
+      "blsPeriods": [
+        6.949275754902912,
+        8.813556137702577,
+        9.481443461646752
+      ],
+      "pdmPeriod": 8.541082839851272,
+      "pdmTheta": 0.6590028109363459,
+      "agree": false,
+      "pdmRecByDepth": {
+        "300": false,
+        "500": false,
+        "1000": false,
+        "2000": false,
+        "4000": true,
+        "8000": true
+      },
+      "perCurveMs": 2204
+    }
+  ]
+}

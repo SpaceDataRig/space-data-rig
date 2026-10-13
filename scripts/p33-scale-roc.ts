@@ -8,12 +8,12 @@
 // of going bigger is MEASURED, not guessed.
 //
 // DESIGN (two arms per real curve, measure-before-gate, fully seeded => reproducible):
-//   * NULL arm  : run the production detector (iterativeBls, maxSignals=3, SNR>=7 & depth>=200 ppm &
-//                 depth-regime screen) on the REAL curve as-is and keep EVERY gated signal. A gated
-//                 detection that matches a known catalog planet of that host (period within tol,
-//                 aliases/harmonics allowed) is a TRUE positive; a gated detection matching nothing
-//                 known is a FALSE positive. Over many null curves this yields the blind FP rate and
-//                 the detection PURITY = TP/(TP+FP).
+//   * NULL arm  : run the iterative detector under the production gate (iterativeBls, maxSignals=3,
+//                 SNR>=7 & depth>=200 ppm & depth-regime screen) on the REAL curve as-is and keep EVERY
+//                 gated signal. A gated detection that matches a known catalog planet of that host
+//                 (period within tol, aliases/harmonics allowed) is a TRUE positive; a gated detection
+//                 matching nothing known is a FALSE positive. Over many null curves this yields the blind
+//                 FP rate and the detection PURITY = TP/(TP+FP).
 //   * INJECT arm: multiplicatively inject one transit at a fixed period across a depth grid into the SAME
 //                 real curve (real noise / cadence / gaps preserved) and ask whether the gated detector
 //                 recovers the injected period. Completeness(depth) = recovered / trials on REAL noise.
@@ -72,7 +72,7 @@ async function collectSpocCurves(tic: number, name: string, maxCurves: number, s
   return out;
 }
 
-/** The production detector's gated signal periods, strongest first. */
+/** The gated box-fit detector's signal periods, strongest first (iterativeBls under the production gate). */
 function detectSignals(lc: LightCurve, maxSignals: number): number[] {
   try {
     const it = iterativeBls(lc, { minPeriodDays: minPeriod, maxPeriodDays: maxPeriod + 2, maxSignals });

@@ -1308,9 +1308,10 @@ remains data-gated toward Stage 5.**
 
 **Large-scale reproducible completeness / purity ROC, MEASURED (npm run p33:scale-roc).** Problems 1 and 3 of the
   roadmap ask for the blind false-positive rate and the completeness curve to be measured at SCALE on real data and
-  published as a reproducible artifact, not as an anecdote on a handful of stars. p33 runs the production detector
-  (iterativeBls, maxSignals=3, gate SNR>=7 & depth>=200 ppm & depth-regime screen) over a seeded sample of real host
-  stars in two arms. NULL arm (real curve as-is): every gated signal is classified against the CONFIRMED catalog --
+  published as a reproducible artifact, not as an anecdote on a handful of stars. p33 runs the iterative detector
+  under the production gate (iterativeBls, maxSignals=3, gate SNR>=7 & depth>=200 ppm & depth-regime screen) over a
+  seeded sample of real host stars in two arms. NULL arm (real curve as-is): every gated signal is classified
+  against the CONFIRMED catalog --
   over 33 usable public TESS-SPOC curves (7 coverage misses of 40 sampled, counted honestly) it fires 29 gated
   detections, 12 true-positive / 17 false-positive, a blind false-positive rate of 51.5% and a purity of 41.4%.
   Because the null arm only matches CONFIRMED planets, a genuine but still-unconfirmed planet/TOI counts as a false
@@ -1335,4 +1336,20 @@ remains data-gated toward Stage 5.**
   20000x4 is ~2.6 h wall-clock. Dollar cost maps directly from any provider's vCPU-h price (the report quotes CPU-h and
   invents no price). Artifacts: reports/p34-cost-model.md + reports/p34-cost-model.json. Measure-only; nothing gated,
   anchored, claimed, or deployed. Reproduce with `npm run p34:cost-model -- --sectors 1,2,4 --stars 1000,5000,20000`.
+
+**Independent algorithmic cross-check, MEASURED (npm run p35:pdm-crosscheck).** Problem 3 asks for independent
+  validation; the cheapest real independence is a DIFFERENT ALGORITHM on the SAME data. src/detect/pdm.ts implements
+  Phase Dispersion Minimization (Stellingwerf 1978): a non-parametric period finder that shares no machinery with the
+  box-fit family (it never fits a box -- it minimizes the within-bin variance theta of the phase fold). p35 runs both
+  estimators over the same seeded sample as p33. NULL cross-check: of 33 real curves, 18 had BOTH a gated BLS period
+  and a finite PDM minimum; PDM's global theta minimum lands on the same period (or a low-order harmonic, tol 2%) for
+  9/18 (50.0%) -- corroboration where they agree, and where they differ PDM usually locks the dominant stellar
+  rotation/activity period instead, exactly as expected of a general period finder on a real variable star.
+  INDEPENDENT completeness (PDM alone recovers a P=3 d injection on the same real noise, same depth grid): 24.2%
+  @300 ppm -> 36.4% @500 -> 51.5% @1000 -> 60.6% @2000 -> 75.8% @4000 -> 78.8% @8000, i.e. uniformly BELOW the
+  detrended box-fit detector's 42.4/54.5/69.7/78.8/81.8/81.8% on the same 33 stars. That gap is the honest finding,
+  not a defect: it quantifies why transit pipelines use a detrended box-fit search rather than raw PDM, and agreement
+  cases like KELT-9 (PDM 1.48 d, theta 0.12 vs gated BLS 1.48 d) show the two independent estimators converge on
+  strong real signals. Artifacts: reports/p35-pdm-crosscheck.md + reports/p35-pdm-crosscheck.json. Measure-only;
+  nothing gated, anchored, claimed, or deployed. Reproduce with `npm run p35:pdm-crosscheck -- --stars 40 --maxsectors 2 --seed 7`.
 

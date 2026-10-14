@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T12:08:22.972Z",
+  "generatedAt": "2026-10-14T15:09:28.037Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -326,6 +326,83 @@
       "auc": 0.7875000000000001
     },
     "caveat": "FP/EB labels mix off-target blends (catchable by localization) with on-target eclipsing binaries (not catchable), so the all-negatives power is a lower bound until the resolved-companion subset; a single known-planet false kill disqualifies the gate.",
+    "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "llmHypothesisLoop": {
+    "label": "LLM-chosen tests scored as a 2x2 on ground-truth classes (P61 closed loop)",
+    "positiveSource": "TOI-table confirmed planets (KP)",
+    "negativeSource": "TOI-table FP/EB dispositions (labelled blends)",
+    "nPositives": 24,
+    "nNegatives": 18,
+    "deepActive": true,
+    "models": [],
+    "tests": [
+      {
+        "id": "bls-snr",
+        "catchRate": 0,
+        "catchCI": [
+          0,
+          0.1758845505823749
+        ],
+        "falseVetoRate": 0,
+        "safeToGate": false
+      },
+      {
+        "id": "odd-even-depth",
+        "catchRate": 0.4444444444444444,
+        "catchCI": [
+          0.24559231101389126,
+          0.6628393057174837
+        ],
+        "falseVetoRate": 0.20833333333333334,
+        "safeToGate": false
+      },
+      {
+        "id": "secondary-eclipse",
+        "catchRate": 0.2777777777777778,
+        "catchCI": [
+          0.12499569146355474,
+          0.5087307754619452
+        ],
+        "falseVetoRate": 0.041666666666666664,
+        "safeToGate": false
+      },
+      {
+        "id": "shape-coherence",
+        "catchRate": 0,
+        "catchCI": [
+          0,
+          0.1758845505823749
+        ],
+        "falseVetoRate": 0.041666666666666664,
+        "safeToGate": false
+      },
+      {
+        "id": "psf-localize",
+        "catchRate": 0.1111111111111111,
+        "catchCI": [
+          0.031018868453582787,
+          0.3280024486660421
+        ],
+        "falseVetoRate": 0.041666666666666664,
+        "safeToGate": false
+      },
+      {
+        "id": "gaia-dilution",
+        "catchRate": 0.5,
+        "catchCI": [
+          0.2903070395897999,
+          0.7096929604102
+        ],
+        "falseVetoRate": 0.4583333333333333,
+        "safeToGate": false
+      }
+    ],
+    "gateableViaLoop": false,
+    "llmProposals": null,
+    "llmMatched": null,
+    "caveat": "small-sample snapshot; the llm-hypothesis-loop CI workflow re-runs at larger N and publishes the authoritative numbers back. The models under-flag blends (they call several labelled blends planet). No test is gate-worthy: a gate needs zero false-vetoes AND power above chance.",
     "safeToGate": false,
     "discoveryClaim": false
   },

@@ -542,8 +542,9 @@ must be kept) plus each tool's decision (and an optional score for the ROC) and 
 matrix, veto power (catch rate) and false-veto rate with Wilson intervals, veto precision, ROC + AUC, and
 a `safeToGate` verdict that encodes measure-before-gate (any false veto disqualifies) and refuses to
 certify on a positives-only sample -- which is exactly our current state. It measures nothing itself, so it
-cannot over-claim: the moment an ExoFOP token supplies labelled blends, running P44/P45/P53 through it is
-one call. The scorer is ready; the measurement stays blocked on the token.
+cannot over-claim. P57 later found the labelled negative class IS reachable token-free -- the public
+ExoFOP TOI-table CSV export carries the FP/EB dispositions (the P52 "token-gated" conclusion came from
+probing only the api/planets/ REST path, not this export) -- and ran the first real 2x2; see section 22.
 
 ---
 
@@ -611,7 +612,40 @@ fields the confirmed catalogue under-represents. Still a measured denominator, n
 
 ---
 
-## 22. Honest limitations
+## 22. The real true-veto 2x2, finally measured token-free (P57)
+
+For all of P44/P51/P52/P53 the pixel veto tools could only be measured against POSITIVES (confirmed planets):
+their over-kill rate, never their catch-rate, because the labelled negative class was believed token-gated.
+P57 corrects that. The PUBLIC ExoFOP TOI-table export (`src/data/toiDispositions.ts`, download_toi.php,
+anonymous, ~8151 rows) carries two disposition columns -- `TESS Disposition` (EB ...) and `TFOPWG Disposition`
+(FP ...) -- plus a full ephemeris and observing sector on every row. Taking known planets (KP) as the positive
+class and false-positives / eclipsing-binaries (FP/EB) as the negative class, `scripts/p57-true-veto.ts` drives
+each labelled case's real TESS-SPOC target-pixel cube through the PSF double-difference (and the naive
+centroid) and feeds the labelled decisions into the acceptance scorer (the P0 protocol).
+
+On the brightest-first sample, **25** cases yielded a usable cube (**11** negatives / **14** positives):
+
+- **PSF veto -- the true 2x2:** caught 2 blends, missed 9, **false-killed 1 planet**, kept 13. Veto power
+  0.18 [0.05, 0.48], false-veto rate 0.07 [0.01, 0.31], ROC AUC 0.60.
+- **Naive centroid:** false-veto rate **0.50** (it kills half the known planets -- P44's NOT-SAFE verdict
+  reconfirmed on an independent labelled sample), AUC 0.54.
+
+Verdict `safeToGate = false`: one known planet wrongly vetoed disqualifies the gate (measure-before-gate).
+**Honest caveat baked into the result:** the FP/EB label does not separate an *off-target blend* (light from a
+neighbour -- which a localization veto CAN catch) from an *on-target eclipsing binary* (the dip really is at
+the star -- which localization legitimately cannot reject; that needs a shape / odd-even discriminator). So the
+0.18 catch-rate is a **lower bound** for the localization tool, not its true sensitivity; the exact,
+disqualifying number is the false-veto rate, and even that is an upper bound because a known planet whose
+catalog epoch has drifted off the single-sector baseline can mislocalize (the one false kill sat at a 43"
+offset consistent with such a timing artifact). This is the project's FIRST real 2x2 acceptance measurement --
+it closes the reviewer's standard as far as the data allow and still clears no individual candidate. Nothing
+gated / anchored / deployed; discoveryClaim false.
+
+Reproduce: `npm run p57:true-veto -- --neg 18 --pos 18 --tmag 11 --boot 120`.
+
+---
+
+## 23. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -632,10 +666,13 @@ fields the confirmed catalogue under-represents. Still a measured denominator, n
   false-alarm on bright uncrowded confirmed planets (0/16 above P(FP)=0.5); P51 re-tested it on a crowded, low-|b|
   sample (15/24 crowded, up to 34 neighbours) and P(FP) STILL sits at 0.020 with 0 above 0.5 -- crowding adds
   contaminant *count*, not discrimination. P(FP) ranks candidates, it does not validate them.
-- **A veto needs a labelled negative class to be accepted, and so far we only have positives.** P51 measures
-  crowded-field localization (naive difference-imaging still false-kills 4/8 confirmed planets) and confirms P(FP)
-  has no crowded-field discrimination; the true-veto power test needs real labelled blends, which ExoFOP-TESS gates
-  behind a token while VizieR EBs are reachable -- so the full 2x2 acceptance is unblocked but not yet run.
+- **A veto needs a labelled negative class to be accepted -- and P57 finally supplied one, token-free.** P51
+  measured crowded-field localization (naive difference-imaging still false-kills 4/8 confirmed planets) and
+  confirmed P(FP) has no crowded-field discrimination; the true-veto power test needs real labelled blends.
+  P52 concluded (from probing only the api/planets/ REST path) that ExoFOP gated them behind a token; P57 showed
+  the public TOI-table CSV export supplies them anonymously and ran the first real 2x2 (section 22): the PSF veto
+  false-killed 1 known planet (safeToGate=false) and the naive centroid false-killed half, reconfirming neither is
+  a safe gate.
 - **O-C coherence is not a period-selector on real data.** P46 measures that a multi-year linear-O-C coherence
   score recognises clean single signals (true-period median 0.74) but only clears 0.5 on 3/6 known planets, collapses
   on multi-planet systems, and does not beat the raw BLS peak at picking a known period (3/6 vs 4/6) because
@@ -647,14 +684,14 @@ fields the confirmed catalogue under-represents. Still a measured denominator, n
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 23. Reproducibility
+## 24. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 366 unit tests
+npm test                     # 381 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -676,6 +713,7 @@ npm run p53:psf-diff-imaging  # PSF-model double-difference vs the naive centroi
 npm run p54:selection-function # selection-function skeleton (geometry x dilution x completeness) on the P47 grid -> reports/p54-*
 npm run p55:replay-manifest    # publish a code-free third-party replay manifest -> web/replay-manifest.json
 npm run p56:real-selection     # per-target selection function on real Gaia dilution + Archive stellar params -> reports/p56-*
+npm run p57:true-veto           # first REAL true-veto 2x2 on token-free labelled TOI dispositions -> reports/p57-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p57-true-veto.ts",
+    "gateArcsec": 2,
+    "boot": 120,
+    "tmagCap": 11,
+    "labelSource": "public ExoFOP TOI table (token-free) TESS/TFOPWG Disposition",
+    "negativeClass": "FP (TFOPWG False Positive) or EB (TESS Eclipsing Binary)",
+    "positiveClass": "KP (known planet)",
+    "detector": "src/detect/psfDiffImaging.ts (PSF double-difference) + diffImaging.ts (naive)",
+    "scorer": "src/candidate/vetoAcceptance.ts",
+    "caveat": "FP/EB labels do not separate off-target blends (catchable by localization) from on-target eclipsing binaries (not catchable); veto power is therefore a LOWER bound, false-veto rate is exact."
+  },
+  "population": {
+    "tableRows": 8151,
+    "labelledNegatives": 1319,
+    "labelledPositives": 598,
+    "sampledNeg": 18,
+    "sampledPos": 18,
+    "usable": 25,
+    "usableNeg": 11,
+    "usablePos": 14,
+    "skippedNoCube": 11
+  },
+  "psf": {
+    "verdict": false,
+    "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
+    "cm": {
+      "trueVeto": 2,
+      "missedBlend": 9,
+      "falseVeto": 1,
+      "trueKeep": 13
+    },
+    "vetoPower": 0.18181818181818182,
+    "vetoPowerCI": [
+      0.051366600671000656,
+      0.4769861375782448
+    ],
+    "falseVetoRate": 0.07142857142857142,
+    "falseVetoCI": [
+      0.012721886112291636,
+      0.3146926955395781
+    ],
+    "vetoPrecision": 0.6666666666666666,
+    "auc": 0.6038961038961039
+  },
+  "naive": {
+    "verdict": false,
+    "reason": "7 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
+    "cm": {
+      "trueVeto": 3,
+      "missedBlend": 8,
+      "falseVeto": 7,
+      "trueKeep": 7
+    },
+    "vetoPower": 0.2727272727272727,
+    "falseVetoRate": 0.5,
+    "auc": 0.5389610389610389
+  },
+  "blendOffsetArcsec": {
+    "p50": 20.682601383771814,
+    "max": 106.21387742020879
+  },
+  "planetOffsetArcsec": {
+    "p50": 12.244998979175099,
+    "max": 53.212952841457216
+  },
+  "cases": [
+    {
+      "tic": 297967252,
+      "toi": "1025.01",
+      "label": "blend-or-fp",
+      "tessMag": 5.5324,
+      "sector": 9,
+      "psfOffsetArcsec": 29.25,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 16.762
+    },
+    {
+      "tic": 458856474,
+      "toi": "1978.01",
+      "label": "blend-or-fp",
+      "tessMag": 5.666,
+      "sector": 36,
+      "psfOffsetArcsec": 106.214,
+      "psfClassification": "off-target",
+      "naiveOffsetArcsec": 38.6
+    },
+    {
+      "tic": 412961700,
+      "toi": "589.01",
+      "label": "blend-or-fp",
+      "tessMag": 6.725,
+      "sector": 34,
+      "psfOffsetArcsec": 20.683,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 20.476
+    },
+    {
+      "tic": 20182165,
+      "toi": "1830.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.0166,
+      "sector": 23,
+      "psfOffsetArcsec": 4.2,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 4.343
+    },
+    {
+      "tic": 364107753,
+      "toi": "909.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.0514,
+      "sector": 12,
+      "psfOffsetArcsec": 27.308,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 20.543
+    },
+    {
+      "tic": 269450900,
+      "toi": "1127.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.3163,
+      "sector": 13,
+      "psfOffsetArcsec": 23.479,
+      "psfClassification": "off-target",
+      "naiveOffsetArcsec": 31.179
+    },
+    {
+      "tic": 138017750,
+      "toi": "1608.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.42812,
+      "sector": 18,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 9.652
+    },
+    {
+      "tic": 270238522,
+      "toi": "1514.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.5586,
+      "sector": 17,
+      "psfOffsetArcsec": 19.361,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 16.48
+    },
+    {
+      "tic": 97700520,
+      "toi": "1013.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.6095,
+      "sector": 34,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 8.94
+    },
+    {
+      "tic": 96246348,
+      "toi": "1014.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.678,
+      "sector": 33,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 11.6
+    },
+    {
+      "tic": 143350972,
+      "toi": "440.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.6818,
+      "sector": 5,
+      "psfOffsetArcsec": 46.957,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 10.646
+    },
+    {
+      "tic": 283722336,
+      "toi": "1469.01",
+      "label": "known-planet",
+      "tessMag": 4.6278,
+      "sector": 17,
+      "psfOffsetArcsec": 44.3,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 45.599
+    },
+    {
+      "tic": 332064670,
+      "toi": "1773.01",
+      "label": "known-planet",
+      "tessMag": 5.2058,
+      "sector": 21,
+      "psfOffsetArcsec": 53.213,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 37.403
+    },
+    {
+      "tic": 256364928,
+      "toi": "4470.01",
+      "label": "known-planet",
+      "tessMag": 6.8481,
+      "sector": 41,
+      "psfOffsetArcsec": 10.155,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 8.839
+    },
+    {
+      "tic": 82308728,
+      "toi": "1821.01",
+      "label": "known-planet",
+      "tessMag": 6.9859,
+      "sector": 22,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 11.171
+    },
+    {
+      "tic": 420814525,
+      "toi": "5972.01",
+      "label": "known-planet",
+      "tessMag": 7.1274,
+      "sector": 56,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 5.052
+    },
+    {
+      "tic": 286923464,
+      "toi": "1271.01",
+      "label": "known-planet",
+      "tessMag": 7.4556,
+      "sector": 15,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 12.596
+    },
+    {
+      "tic": 69679391,
+      "toi": "1151.01",
+      "label": "known-planet",
+      "tessMag": 7.55216,
+      "sector": 14,
+      "psfOffsetArcsec": 18.422,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 15.254
+    },
+    {
+      "tic": 16740101,
+      "toi": "1150.01",
+      "label": "known-planet",
+      "tessMag": 7.58204,
+      "sector": 14,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 6.577
+    },
+    {
+      "tic": 255930614,
+      "toi": "2024.01",
+      "label": "known-planet",
+      "tessMag": 7.6262,
+      "sector": 24,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 8.071
+    },
+    {
+      "tic": 302773669,
+      "toi": "1573.01",
+      "label": "known-planet",
+      "tessMag": 7.6353,
+      "sector": 18,
+      "psfOffsetArcsec": 43.265,
+      "psfClassification": "off-target",
+      "naiveOffsetArcsec": 27.455
+    },
+    {
+      "tic": 69747919,
+      "toi": "1407.01",
+      "label": "known-planet",
+      "tessMag": 7.7275,
+      "sector": 2,
+      "psfOffsetArcsec": 28.103,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 26.073
+    },
+    {
+      "tic": 129979528,
+      "toi": "1599.01",
+      "label": "known-planet",
+      "tessMag": 7.87611,
+      "sector": 18,
+      "psfOffsetArcsec": 18.065,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 12.75
+    },
+    {
+      "tic": 349827430,
+      "toi": "1148.01",
+      "label": "known-planet",
+      "tessMag": 7.9179,
+      "sector": 14,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "naiveOffsetArcsec": 11.533
+    },
+    {
+      "tic": 371443216,
+      "toi": "1924.01",
+      "label": "known-planet",
+      "tessMag": 8.0552,
+      "sector": 10,
+      "psfOffsetArcsec": 12.245,
+      "psfClassification": "inconclusive",
+      "naiveOffsetArcsec": 14.904
+    }
+  ],
+  "discoveryClaim": false,
+  "safeToGate": false
+}

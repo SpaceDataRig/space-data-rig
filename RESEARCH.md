@@ -393,7 +393,29 @@ Reproduce: `npm run p47:completeness-grid -- --targets 20 --tmag 11 --trials 2 -
 
 ---
 
-## 15. Honest limitations
+## 15. Have our board candidates been announced by anyone? A novelty check (P48)
+
+A natural question about any blind search is whether its surviving candidates are things nobody has seen
+before. `src/candidate/novelty.ts` (great-circle separation + same-TIC / in-radius / same-period matching,
+with a `disposition()` that reports `announced` / `novelLocation` / `samePeriodAnnounced` and structurally
+never a discovery) plus `scripts/p48-novelty-check.ts` answer it for the live board: for each candidate we
+query the NASA Exoplanet Archive `toi` table (announced candidate transits) and `pscomppars` (confirmed
+planets) within 30", after a **control query** against a known TOI field must pass (a 0-hit is only
+meaningful once the query path is proven live). Result: control PASS; **all 5** board candidates sit at a
+location with **no** announcement nearby (novelLocation 5/5, same-period 0/5).
+
+That is the honest fact -- and here is the honest reading, which is the opposite of a discovery claim. These
+candidates are deep (1965-9499 ppm, eclipsing-binary/blend-like), single-sector (`corroboratedSectors=1`,
+board `corroboratedHosts=0`), and the TESS pipeline itself flagged **no** TOI anywhere near them -- which is
+evidence *against* a credible planet at those positions, not for an undiscovered one. None of our vetting
+gates (P44/P45/P46) is safe to clear an individual candidate. So: **zero credible novel planet candidates**.
+This check covers the Archive `toi`/`pscomppars` tables only, not ExoFOP-TESS or the literature.
+
+Reproduce: `npm run p48:novelty-check`.
+
+---
+
+## 16. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -422,14 +444,14 @@ Reproduce: `npm run p47:completeness-grid -- --targets 20 --tmag 11 --trials 2 -
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 16. Reproducibility
+## 17. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 316 unit tests
+npm test                     # 326 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -442,6 +464,7 @@ npm run p44:diff-imaging     # difference-imaging localization calibration -> re
 npm run p45:fp-probability   # blended-EB false-positive probability characterisation -> reports/p45-*
 npm run p46:coherence        # multi-year O-C coherence on real known planets -> reports/p46-*
 npm run p47:completeness-grid # 2-D period x depth completeness map on real curves -> reports/p47-*
+npm run p48:novelty-check     # board-candidate novelty vs the NASA Exoplanet Archive -> reports/p48-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

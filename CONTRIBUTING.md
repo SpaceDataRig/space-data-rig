@@ -51,6 +51,59 @@ npm test                # core invariant test suite
 Keep runtime-specific code out of the shared core: the core must run on both
 Node and Workers, so no `node:fs`, no `process.env` reads at module scope.
 
+## From measurement to production: the certification gate
+
+Every new science idea enters as **research-only code** and stays there until it earns a gate.
+Nothing that changes a verdict, the bundle hash, or the money path (anchoring) is wired in
+without passing, in order:
+
+1. **Pure, tested module.** The logic lives in `src/detect/`, `src/sim/`, `src/candidate/` or
+   `src/data/` with offline unit tests added to the explicit list in `package.json` `"test"`.
+2. **Positive control on known planets -- zero false rejects.** Before a discriminator may
+   *reject* anything, calibrate it on confirmed planets (which by definition must be kept) and
+   show it wrongly kills NONE. See `scripts/p53-*`, `scripts/p2-vet-calibrate.ts`. A single
+   false reject disqualifies the gate ("measure before you gate").
+3. **Vetoes also need the labelled negative class.** A tool that *rejects* candidates must clear
+   the full 2x2 -- catch-rate on real blends/false positives AND a zero false-veto rate on known
+   planets -- via `src/candidate/vetoAcceptance.ts` (`acceptVetoTool`), fed labelled data
+   (`src/data/toiDispositions.ts`, token-free public ExoFOP dispositions; `scripts/p57-*`/`p58-*`/`p59-*`).
+   Being safe on positives alone is NOT enough to certify veto power.
+4. **Opt-in seam, inert by default.** When it graduates, wire it as *present-only*: it acts when
+   supplied, and when absent the output is byte-for-byte unchanged (it can only make a decision
+   stricter, never silently flip one). Keep it behind an env switch that defaults OFF.
+5. **Operator authorization to enable in production.** Flipping a calibrated discriminator into
+   the live critic / `AUTO_RESEARCH` / anchoring path -- and any `wrangler deploy` -- requires
+   explicit maintainer authorization and a fresh idle-window check; it is a separate, deliberate
+   act from landing the research code.
+
+If a step's measurement shows little or no gain (e.g. a discriminator whose AUC lift is ~0 after
+common-mode subtraction, `scripts/p42-*`), the honest outcome is to keep it inert and document
+that -- not to ship it as production FP control.
+
+## Adding a measurement (the `pXX` scripts)
+
+Measurements are how we check ourselves and how outside contributors add value without touching
+the pipeline. The pattern every `scripts/pNN-*.ts` follows:
+
+- **Public, token-free data only** where possible (NASA Archive, MAST, the token-free TESS-SPOC
+  S3 bucket, Gaia DR3, the public ExoFOP TOI table). Where a source genuinely needs a token,
+  read it from an env var and emit an honest `AWAITING-TOKEN`/skip, never a fabricated number.
+- **Register it**: add a `"pNN:name": "tsx scripts/pNN-*.ts"` entry to `package.json` scripts, and a
+  repro line to the inventory in [RESEARCH.md](RESEARCH.md) (section "Reproducibility").
+- **Write `reports/pNN-*.md` + `.json`** so the result is a committed, citable artifact; the report
+  text must be internally consistent with its own numbers (a headline that contradicts a table is
+  a bug). Distill public-facing numbers into `web/research.json` via `scripts/p38-research-bundle.ts`
+  (which re-derives ONLY committed report values -- it runs no new analysis).
+- **Independent cross-checks welcome**: a second algorithm (PDM, `scripts/p35-*`), a separate
+  stack (wotan + astropy BLS, `scripts/p36-*` / the `crosscheck-python` CI job), or a replay
+  manifest (`scripts/p55-*`) that lets anyone recompute a result without our code.
+- **Negative results are gold.** `p41`, `p44`, `p46`, `p52`, `p60` are all published "it does NOT
+  help / NOT safe to gate" measurements. Report what you measured, not what you hoped.
+
+Gate a measurement PR with the same checks CI runs: `npm run typecheck:all` (covers `scripts/`),
+`npm test` for any new pure module (add it to the explicit test list), byte-level ASCII-only, and a
+secret scan -- and confirm a research script changed no `src/cf/` / verdict / money-path file.
+
 ## Reporting issues
 
 Please include the exact command, the runtime (Node vs Workers), and the run id

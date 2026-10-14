@@ -346,6 +346,27 @@ details.collapse[open] > summary.panel-head::after { content: "\2212"; }
 /* ---- footer ---- */
 .footer { max-width: var(--wrap); margin: 30px auto 40px; padding: 0 clamp(16px, 3vw, 34px); font: 500 11.5px var(--mono); color: var(--ink-faint); letter-spacing: 0.04em; }
 
+/* ---- view router: one navigable section at a time, with a persistent section nav ---- */
+/* The 12 stacked sections are grouped into 6 views; only the active one is shown, so the page
+   no longer piles everything into one scroll. Layout only -- every element id is preserved. */
+.viewnav { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; gap: 8px;
+  max-width: var(--wrap); margin: 0 auto; padding: 10px clamp(16px, 3vw, 34px);
+  background: rgba(3, 5, 13, 0.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--edge); }
+.viewnav-link { font: 600 13px var(--sans); letter-spacing: 0.02em; color: var(--ink-dim);
+  padding: 7px 14px; border: 1px solid transparent; border-radius: 999px; text-decoration: none;
+  transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease; }
+.viewnav-link:hover { color: var(--ink); border-color: var(--edge); }
+.viewnav-link.is-active { color: #04121a; background: var(--accent); border-color: var(--accent); box-shadow: 0 0 16px -4px var(--accent); }
+.views { display: block; }
+.view { display: none; }
+.view.is-active { display: block; }
+/* the header scrolls away so the section nav is what stays pinned */
+.topbar { position: relative; }
+@media (prefers-reduced-motion: no-preference) {
+  .view.is-active { animation: viewfade 0.22s ease; }
+  @keyframes viewfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+
 /* ---- animations ---- */
 @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes spin { to { transform: rotate(360deg); } }

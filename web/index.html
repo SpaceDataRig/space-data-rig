@@ -36,6 +36,18 @@
     </div>
   </header>
 
+  <nav class="viewnav" aria-label="Dashboard sections">
+    <a class="viewnav-link" href="#/mission" data-goto="mission">Mission</a>
+    <a class="viewnav-link" href="#/candidates" data-goto="candidates">Candidates</a>
+    <a class="viewnav-link" href="#/research" data-goto="research">Research</a>
+    <a class="viewnav-link" href="#/observe" data-goto="observe">Observatory</a>
+    <a class="viewnav-link" href="#/findings" data-goto="findings">Findings &amp; Ledger</a>
+    <a class="viewnav-link" href="#/method" data-goto="method">Method</a>
+  </nav>
+
+  <main class="views">
+  <div class="view is-active" id="view-mission" data-view="mission">
+
   <!-- ============ HERO: the 3D round-table mission room ============ -->
   <section class="room-stage">
     <canvas id="room"></canvas>
@@ -93,6 +105,10 @@
     </div>
   </section>
 
+  </div><!-- /view-mission -->
+
+  <div class="view" id="view-candidates" data-view="candidates">
+
   <!-- ============ candidate board: blind-search output (research only, not discoveries) ============ -->
   <section class="section candidates-section">
     <div class="glass candidates">
@@ -124,6 +140,10 @@
     </div>
   </section>
 
+  </div><!-- /view-candidates -->
+
+  <div class="view" id="view-research" data-view="research">
+
   <!-- ============ research results dashboard (measured on real data) ============ -->
   <section class="section research-section">
     <div class="glass research">
@@ -133,6 +153,10 @@
       </details>
     </div>
   </section>
+
+  </div><!-- /view-research -->
+
+  <div class="view" id="view-observe" data-view="observe">
 
   <!-- ============ name an observation (commission a named, verifiable search) ============ -->
   <section class="section observe-section">
@@ -167,6 +191,10 @@
       </details>
     </div>
   </section>
+
+  </div><!-- /view-observe -->
+
+  <div class="view" id="view-findings" data-view="findings">
 
   <!-- ============ findings board ============ -->
   <section class="section">
@@ -216,6 +244,10 @@
       </details>
     </div>
   </section>
+
+  </div><!-- /view-findings -->
+
+  <div class="view" id="view-method" data-view="method">
 
   <!-- ============ mission brief: what this rig is ============ -->
   <section class="section about-section">
@@ -350,6 +382,9 @@
       </details>
     </div>
   </section>
+
+  </div><!-- /view-method -->
+  </main><!-- /views -->
 
   <footer class="footer">
     <span id="code-version">space-data-rig</span><span class="sep">|</span>

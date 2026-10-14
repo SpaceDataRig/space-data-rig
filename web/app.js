@@ -1131,3 +1131,27 @@ if (roomOk) {
 openSSE();
 loadAll();
 wireLiveExtras();
+
+// ---- view router: show one navigable section at a time (so the page stops piling up) ----
+// The stacked sections are grouped into 6 views in index.html; this toggles which is visible
+// and deep-links via location.hash. Every element id is preserved, so all renderers above keep
+// working whether or not their view is on screen. Layout only -- no data or pipeline change.
+const VIEWS = ["mission", "candidates", "research", "observe", "findings", "method"];
+const viewEls = Array.from(document.querySelectorAll(".view"));
+const navLinks = Array.from(document.querySelectorAll(".viewnav-link"));
+function currentView() {
+  const m = (location.hash || "").match(/^#\/(\w+)/);
+  return m && VIEWS.includes(m[1]) ? m[1] : "mission";
+}
+function showView(name) {
+  for (const el of viewEls) el.classList.toggle("is-active", el.dataset.view === name);
+  for (const a of navLinks) {
+    const on = a.dataset.goto === name;
+    a.classList.toggle("is-active", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  }
+  if (name === "mission" && roomOk) MissionRoom.resize(); // canvas was zero-width while hidden
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", () => showView(currentView()));
+showView(currentView());

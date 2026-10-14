@@ -106,6 +106,14 @@ export interface ReviewVetting {
   secondaryRatio?: number;
   /** secondary/primary ratio at or above which the source is deemed an EB (default 0.5). */
   secondaryRatioThreshold?: number;
+  /**
+   * Soft blend-likelihood in [0,1] (higher = more blend-like), a CONTINUOUS summary of the pixel / dilution
+   * vetting evidence rather than a binary veto. P57-P59 measured that those tools false-kill known planets, so
+   * this is ADVISORY ONLY: it adds a non-gating informational check and a BOUNDED downweight to the ranking
+   * score, and it can NEVER flip the verdict or enter the rejection reasons -- so the accepted-only money path
+   * (auto-anchor) is untouched. Absent (undefined) => the review output is byte-for-byte identical to before.
+   */
+  blendScore?: number;
 }
 
 export interface CrossmatchInfo {
@@ -367,6 +375,20 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
     } else if (anyVetting) {
       // every supplied vetting metric passed -> reinforce (bounded), never manufacture an accept
       score = Math.min(100, score + 5);
+    }
+
+    // --- soft blend-likelihood: an ADVISORY weight on the ranking score, never a gate ---
+    // The pixel/dilution tools are known to false-kill real planets (P57-P59), so we surface their continuous
+    // blend-likelihood as information + at most a 15% ranking downweight. This deliberately does NOT touch
+    // `verdict` or `failReasons`; the money-path auto-anchor keys off `verdict` (accepted-only) and is safe.
+    if (v.blendScore != null && isFinite(v.blendScore)) {
+      const bs = Math.min(1, Math.max(0, v.blendScore));
+      checks.push({
+        name: "blend-likelihood (soft, non-gating)",
+        pass: bs < 0.5,
+        detail: `soft blend-likelihood ${bs.toFixed(2)} -- informational ranking weight only; never a veto (these tools false-kill known planets, P57-P59)`,
+      });
+      score = Math.max(0, Math.round(score * (1 - 0.15 * bs)));
     }
   }
 

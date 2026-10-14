@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p63-soft-score.ts",
+    "source": "reports/p61-llm-hypothesis.json continuous metrics (offline re-derivation, no new data)",
+    "nScored": 28,
+    "nPositives": 16,
+    "nNegatives": 12,
+    "signals": "blendLikelihood over available per-target psf-localize offset (arcsec) + gaia-dilution factor from the P61 --deep run",
+    "note": "soft continuous blend-likelihood as an ADVISORY ranking weight; its false-kill rate published here; NOT a gate; nothing anchored or claimed."
+  },
+  "meanBlendLikelihood": {
+    "planets": 0.3867674186195358,
+    "blends": 0.49508826323703214
+  },
+  "operatingPoint": {
+    "threshold": 0.5,
+    "falseVetoRate": 0.5,
+    "falseKills": 8,
+    "nPlanets": 16,
+    "blendCatchRate": 0.75,
+    "caughtBlends": 9,
+    "nBlends": 12,
+    "blendCatchCI": [
+      0.46768966087934005,
+      0.9110599603710386
+    ]
+  },
+  "thresholdSweep": [
+    {
+      "threshold": 0.25,
+      "nPlanets": 16,
+      "falseKills": 11,
+      "falseVetoRate": 0.6875,
+      "nBlends": 12,
+      "caughtBlends": 9,
+      "blendCatchRate": 0.75,
+      "blendCatchCI": [
+        0.46768966087934005,
+        0.9110599603710386
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "nPlanets": 16,
+      "falseKills": 9,
+      "falseVetoRate": 0.5625,
+      "nBlends": 12,
+      "caughtBlends": 9,
+      "blendCatchRate": 0.75,
+      "blendCatchCI": [
+        0.46768966087934005,
+        0.9110599603710386
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "nPlanets": 16,
+      "falseKills": 8,
+      "falseVetoRate": 0.5,
+      "nBlends": 12,
+      "caughtBlends": 9,
+      "blendCatchRate": 0.75,
+      "blendCatchCI": [
+        0.46768966087934005,
+        0.9110599603710386
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "nPlanets": 16,
+      "falseKills": 2,
+      "falseVetoRate": 0.125,
+      "nBlends": 12,
+      "caughtBlends": 5,
+      "blendCatchRate": 0.4166666666666667,
+      "blendCatchCI": [
+        0.19325746190524654,
+        0.6804926643446272
+      ]
+    },
+    {
+      "threshold": 0.75,
+      "nPlanets": 16,
+      "falseKills": 2,
+      "falseVetoRate": 0.125,
+      "nBlends": 12,
+      "caughtBlends": 4,
+      "blendCatchRate": 0.3333333333333333,
+      "blendCatchCI": [
+        0.13811783989736132,
+        0.6093824126023861
+      ]
+    }
+  ],
+  "verdict": "ADVISORY-ONLY: at threshold 0.5, the continuous blend-likelihood flags 50% of KNOWN planets (8/16) and catches 75% of labelled blends. A non-zero false-kill rate is exactly why this is a score, not a gate.",
+  "safeToGate": false,
+  "discoveryClaim": false,
+  "targets": [
+    {
+      "name": "TIC 283722336 / 1469.01",
+      "tic": 283722336,
+      "isBlend": false,
+      "blendLikelihood": 0.5796,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.4204124023241892,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 283722336 / 1469.02",
+      "tic": 283722336,
+      "isBlend": false,
+      "blendLikelihood": 0.5796,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.4204124023241892,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 332064670 / 1773.01",
+      "tic": 332064670,
+      "isBlend": false,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 82308728 / 1821.01",
+      "tic": 82308728,
+      "isBlend": false,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 420814525 / 5972.01",
+      "tic": 420814525,
+      "isBlend": false,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 5.2755106611774845e-14,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 286923464 / 1271.01",
+      "tic": 286923464,
+      "isBlend": false,
+      "blendLikelihood": 0.4996,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": 0.0008785084481848705,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 69679391 / 1151.01",
+      "tic": 69679391,
+      "isBlend": false,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 16740101 / 1150.01",
+      "tic": 16740101,
+      "isBlend": false,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 255930614 / 2024.01",
+      "tic": 255930614,
+      "isBlend": false,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 302773669 / 1573.01",
+      "tic": 302773669,
+      "isBlend": false,
+      "blendLikelihood": 0.9998,
+      "psfOffsetArcsec": 43.26475354593465,
+      "dilutionFactor": 0.0004646994306281588,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 129979528 / 1599.01",
+      "tic": 129979528,
+      "isBlend": false,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 349827430 / 1148.01",
+      "tic": 349827430,
+      "isBlend": false,
+      "blendLikelihood": 0.285,
+      "psfOffsetArcsec": 5.2755106611774845e-14,
+      "dilutionFactor": 0.429988841606266,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 367366318 / 1682.01",
+      "tic": 367366318,
+      "isBlend": false,
+      "blendLikelihood": 0.9948,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.005230472696528804,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 97735908 / 4612.01",
+      "tic": 97735908,
+      "isBlend": false,
+      "blendLikelihood": 0.25,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": 0.5,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 39903405 / 2020.01",
+      "tic": 39903405,
+      "isBlend": false,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 349488688 / 2319.02",
+      "tic": 349488688,
+      "isBlend": false,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 297967252 / 1025.01",
+      "tic": 297967252,
+      "isBlend": true,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 458856474 / 1978.01",
+      "tic": 458856474,
+      "isBlend": true,
+      "blendLikelihood": 0.8458,
+      "psfOffsetArcsec": 106.21387742020879,
+      "dilutionFactor": 0.30832992175285445,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 20182165 / 1830.01",
+      "tic": 20182165,
+      "isBlend": true,
+      "blendLikelihood": 0.6352,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.3647538856149056,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 364107753 / 909.01",
+      "tic": 364107753,
+      "isBlend": true,
+      "blendLikelihood": 0.9288,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.07120573470746547,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 269450900 / 1127.01",
+      "tic": 269450900,
+      "isBlend": true,
+      "blendLikelihood": 0.75,
+      "psfOffsetArcsec": 23.478713763747773,
+      "dilutionFactor": 0.5,
+      "nSignals": 2
+    },
+    {
+      "name": "TIC 138017750 / 1608.01",
+      "tic": 138017750,
+      "isBlend": true,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 270238522 / 1514.01",
+      "tic": 270238522,
+      "isBlend": true,
+      "blendLikelihood": 0.7794,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.22059780830168813,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 451599528 / 1104.01",
+      "tic": 451599528,
+      "isBlend": true,
+      "blendLikelihood": 0.5018,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.4982184516551412,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 97700520 / 1013.01",
+      "tic": 97700520,
+      "isBlend": true,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 0,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 96246348 / 1014.01",
+      "tic": 96246348,
+      "isBlend": true,
+      "blendLikelihood": 0,
+      "psfOffsetArcsec": 5.2755106611774845e-14,
+      "dilutionFactor": null,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 447283466 / 1028.01",
+      "tic": 447283466,
+      "isBlend": true,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    },
+    {
+      "name": "TIC 9858404 / 394.01",
+      "tic": 9858404,
+      "isBlend": true,
+      "blendLikelihood": 0.5,
+      "psfOffsetArcsec": null,
+      "dilutionFactor": 0.5,
+      "nSignals": 1
+    }
+  ]
+}

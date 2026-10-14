@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p46-coherence.ts",
+    "tmag": 11,
+    "maxSectors": 3,
+    "matchTolPct": 2,
+    "data": "real TESS-SPOC multi-sector stitched curves of confirmed planets",
+    "module": "src/detect/multiYearCoherence.ts"
+  },
+  "n": 6,
+  "trueCoherenceMedian": 0.7376074926287418,
+  "trueCoherenceHighCount": 3,
+  "rawMatchCount": 4,
+  "coherenceRankMatchCount": 3,
+  "verdict": "P46-COHERENCE-NO-SELECTION-GAIN",
+  "safeToGate": false,
+  "discoveryClaim": false,
+  "rows": [
+    {
+      "host": "HD 39091",
+      "nSectors": 3,
+      "baselineDays": 216.64390968577936,
+      "rawPeriod": 6.267194087976409,
+      "rawCoherence": 0.464622989804759,
+      "rawMatched": true,
+      "truePeriod": 6.2678399,
+      "trueCoherence": 0.4664470865692497,
+      "bestCandidatePeriod": 6.267194087976409,
+      "bestCandidateCoherence": 0.464622989804759,
+      "coherenceRankMatched": true
+    },
+    {
+      "host": "HR 858",
+      "nSectors": 3,
+      "baselineDays": 755.506998357363,
+      "rawPeriod": 3.5849831583272294,
+      "rawCoherence": 0.97379673628101,
+      "rawMatched": true,
+      "truePeriod": 3.585287,
+      "trueCoherence": 0.9602864604792045,
+      "bestCandidatePeriod": 3.5849831583272294,
+      "bestCandidateCoherence": 0.97379673628101,
+      "coherenceRankMatched": true
+    },
+    {
+      "host": "HD 63433",
+      "nSectors": 3,
+      "baselineDays": 708.0679311575368,
+      "rawPeriod": 6.410492527650683,
+      "rawCoherence": 0.9947661472969034,
+      "rawMatched": false,
+      "truePeriod": 7.1079475,
+      "trueCoherence": 0.1435076374580543,
+      "bestCandidatePeriod": 3.2052462638253414,
+      "bestCandidateCoherence": 0.9956779478981723,
+      "coherenceRankMatched": false
+    },
+    {
+      "host": "HD 50554",
+      "nSectors": 3,
+      "baselineDays": 759.1689202641137,
+      "rawPeriod": 8.677578725404624,
+      "rawCoherence": 0.6069199572585231,
+      "rawMatched": false,
+      "truePeriod": 5.969362,
+      "trueCoherence": 0.9436389370523872,
+      "bestCandidatePeriod": 4.338789362702312,
+      "bestCandidateCoherence": 0.7153829993449722,
+      "coherenceRankMatched": false
+    },
+    {
+      "host": "HD 25463",
+      "nSectors": 2,
+      "baselineDays": 762.026942670811,
+      "rawPeriod": 7.04427353733558,
+      "rawCoherence": 0.013605477489920578,
+      "rawMatched": true,
+      "truePeriod": 7.0491423,
+      "trueCoherence": 0.7376074926287418,
+      "bestCandidatePeriod": 14.08854707467116,
+      "bestCandidateCoherence": 0.3844835314231726,
+      "coherenceRankMatched": false
+    },
+    {
+      "host": "TOI-5789",
+      "nSectors": 2,
+      "baselineDays": 763.2694277316332,
+      "rawPeriod": 12.934659087574046,
+      "rawCoherence": 0.17980831122848503,
+      "rawMatched": true,
+      "truePeriod": 12.927748,
+      "trueCoherence": 0.47944426166863446,
+      "bestCandidatePeriod": 12.934659087574046,
+      "bestCandidateCoherence": 0.17980831122848503,
+      "coherenceRankMatched": true
+    }
+  ]
+}

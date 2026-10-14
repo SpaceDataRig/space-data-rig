@@ -53,6 +53,7 @@
     "p43:window-alias": "tsx scripts/p43-window-alias.ts",
     "p44:diff-imaging": "tsx scripts/p44-diff-imaging-calibrate.ts",
     "p45:fp-probability": "tsx scripts/p45-fp-probability.ts",
+    "p46:coherence": "tsx scripts/p46-coherence.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",
     "p36:export-fixtures": "tsx scripts/p36-export-fixtures.ts",

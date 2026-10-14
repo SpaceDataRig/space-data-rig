@@ -39,6 +39,9 @@ const p49 = load("reports/p49-blind-test.json");
 const p50 = load("reports/p50-replay.json");
 const p51 = load("reports/p51-crowding-stratified.json");
 const p52 = load("reports/p52-negative-class.json");
+const p57 = load("reports/p57-true-veto.json");
+const p58 = load("reports/p58-veto-2x2.json");
+const p59 = load("reports/p59-offtarget-subset.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -233,6 +236,26 @@ const payload = {
     selectionFunction: p47.meta.selectionFunction,
     discoveryClaim: false,
   },
+  trueVetoAcceptance: {
+    label: "first real true-veto 2x2 on a token-free labelled negative class (P57/P58/P59)",
+    negativeSource: "public ExoFOP TOI-table FP/EB dispositions (no token)",
+    usableCases: p58.population.usable,
+    usableNegatives: p58.population.usableNeg,
+    usablePositives: p58.population.usablePos,
+    psfVeto: { cm: p58.psf.cm, vetoPower: p58.psf.vetoPower, vetoPowerCI: p58.psf.vetoPowerCI, falseVetoRate: p58.psf.falseVetoRate, auc: p58.psf.auc },
+    naiveVeto: { falseVetoRate: p58.naive.falseVetoRate, auc: p58.naive.auc },
+    addressable: {
+      negatives: p59.counts.addressableNegatives,
+      excludedOnTargetOnly: p59.counts.excludedOnTargetOnly,
+      caught: p59.counts.caughtOnAddressable,
+      vetoPower: p59.refined.vetoPower,
+      vetoPowerCI: p59.refined.vetoPowerCI,
+      auc: p59.refined.auc,
+    },
+    caveat: "FP/EB labels mix off-target blends (catchable by localization) with on-target eclipsing binaries (not catchable), so the all-negatives power is a lower bound until the resolved-companion subset; a single known-planet false kill disqualifies the gate.",
+    safeToGate: false,
+    discoveryClaim: false,
+  },
   blindTest: {
     label: "sealed-key blind test of the detector on real curves (P49)",
     curves: p49.curves,
@@ -259,5 +282,6 @@ console.log(`  PDM agreement: ${pdmAgreement.agree}/${pdmAgreement.comparable}; 
 console.log(`  FP control: raw FP ${(falsePositiveControl.coherentNull.rawFpRateByGate.snr * 100).toFixed(0)}% -> ${(falsePositiveControl.coherentNull.rawFpRateByGate.sysFap * 100).toFixed(0)}% (sysFAP); AUC ${falsePositiveControl.scaleMultiSector.aucNoise.toFixed(3)} noise vs ${falsePositiveControl.scaleMultiSector.aucSys.toFixed(3)} sys; safety ${falsePositiveControl.safetyCert.declined}/${falsePositiveControl.safetyCert.detected} declined; window median ${falsePositiveControl.windowAlias.dailyWindowMedian}`);
 console.log(`  pixel vetting (P44): diff-image offset median ${falsePositiveControl.pixelVetting.diffImageOffsetMedianArcsec}" on ${falsePositiveControl.pixelVetting.confirmedPlanets} confirmed planets, safeToGate=${falsePositiveControl.pixelVetting.safeToGate}`);
 console.log(`  PSF double-difference (P53): false-kills ${falsePositiveControl.psfDoubleDifference.psfFalseKillsAt2Arcsec}/${falsePositiveControl.psfDoubleDifference.confirmedPlanets} vs naive ${falsePositiveControl.psfDoubleDifference.naiveFalseKillsAt2Arcsec}, safeToGate=${falsePositiveControl.psfDoubleDifference.safeToGate}, powerUnproven=${falsePositiveControl.psfDoubleDifference.powerUnproven}`);
+console.log(`  true-veto 2x2 (P58/P59): ${payload.trueVetoAcceptance.usableCases} labelled cases; PSF false-killed ${payload.trueVetoAcceptance.psfVeto.cm.falseVeto} known planet (naive falseVeto ${(payload.trueVetoAcceptance.naiveVeto.falseVetoRate * 100).toFixed(0)}%), addressable catch ${payload.trueVetoAcceptance.addressable.caught}/${payload.trueVetoAcceptance.addressable.negatives}, addressable AUC ${payload.trueVetoAcceptance.addressable.auc.toFixed(3)}; safeToGate=false`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

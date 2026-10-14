@@ -536,6 +536,15 @@ Both veto tools stay `safeToGate: false`. Research-only; nothing gated/anchored/
 
 Reproduce: `npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --list-rows 3000`.
 
+The acceptance PROTOCOL itself is now implemented and unit-tested so that the labelled data is the only
+missing piece: `src/candidate/vetoAcceptance.ts` takes labelled cases (blend = should be vetoed, planet =
+must be kept) plus each tool's decision (and an optional score for the ROC) and returns the 2x2 confusion
+matrix, veto power (catch rate) and false-veto rate with Wilson intervals, veto precision, ROC + AUC, and
+a `safeToGate` verdict that encodes measure-before-gate (any false veto disqualifies) and refuses to
+certify on a positives-only sample -- which is exactly our current state. It measures nothing itself, so it
+cannot over-claim: the moment an ExoFOP token supplies labelled blends, running P44/P45/P53 through it is
+one call. The scorer is ready; the measurement stays blocked on the token.
+
 ---
 
 ## 20. Does a PSF-model double-difference fix the naive centroid? Measured: much closer, still not safe (P53)

@@ -327,7 +327,28 @@ Reproduce: `npm run p44:diff-imaging -- --targets 12 --tmag 10 --boot 200`.
 
 ---
 
-## 12. Honest limitations
+## 12. A Bayesian false-positive probability -- and its honest limits (P45)
+
+The other half of the vetting roadmap is a vespa / TRICERATOPS-style false-positive probability. We built a
+reduced, defensible version (`src/candidate/falsePositiveProbability.ts`): the dominant shallow-dip impostor is a
+**blended eclipsing binary** diluted by the target's light, and Gaia lets us evaluate that *per source* -- for each
+measured neighbour in the aperture we invert the dilution relation to ask what intrinsic EB eclipse depth it would
+need to reproduce the observed dip, and count it viable only if that depth is physically plausible. The on-target EB
+channel is kept as an explicit literature prior rather than a fabricated depth number.
+
+We then characterised it on **16 real confirmed planets** (P45), every one of which is a genuine planet. P(FP) came out
+low -- median **0.020**, max **0.042**, and **0/16** real planets pushed above 0.5 -- a clean no-false-alarm sanity
+check. But these are bright, uncrowded hosts: only 1/16 had a neighbour that could even be a blend, so the sample does
+not exercise the crowded-field regime where the impostor actually bites. The honest verdict is that this P(FP) is a
+**prior-dependent ranking / triage quantity, not a validation and not safe to gate** -- a neighbour existing does not
+mean it is an EB. A discovery-grade version needs a measured EB depth function and resolved-photometry contrast limits,
+not order-of-magnitude priors; the discriminating test on crowded blind candidates is future work.
+
+Reproduce: `npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21`.
+
+---
+
+## 13. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -342,6 +363,9 @@ Reproduce: `npm run p44:diff-imaging -- --targets 12 --tmag 10 --boot 200`.
   difference-image centroid mislocalizes confirmed planets by 11-45 arcsec on real SPOC pixels (a systematic, not just
   noise), so it is not safe to veto; the full-aperture centroid shift (<= 0.6") remains the pixel lever. A real gain
   would need PSF-model double-difference imaging.
+- **The false-positive probability is a prior, not a verdict.** P45 shows the measured-Gaia blend term does not
+  false-alarm on 16 bright, uncrowded confirmed planets (0/16 above P(FP)=0.5), but that sample never exercises the
+  crowded field where blends dominate; P(FP) ranks candidates, it does not validate them.
 - **Purity is a floor, not a ceiling.** Unconfirmed planets count as false positives, so reported purity understates
   reality by an unknown amount.
 - **The cross-pipeline fixtures are subsampled** (<= 2500 points) so their completeness is not 1:1 comparable with
@@ -349,14 +373,14 @@ Reproduce: `npm run p44:diff-imaging -- --targets 12 --tmag 10 --boot 200`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 13. Reproducibility
+## 14. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 293 unit tests
+npm test                     # 301 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -366,6 +390,7 @@ npm run p41:longbaseline     # single vs stitched-baseline completeness -> repor
 npm run p42:fp-scale         # multi-sector FP + AUC at scale -> reports/p42-*
 npm run p43:window-alias     # window-alias risk on real curves -> reports/p43-*
 npm run p44:diff-imaging     # difference-imaging localization calibration -> reports/p44-*
+npm run p45:fp-probability   # blended-EB false-positive probability characterisation -> reports/p45-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

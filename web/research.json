@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T01:21:07.760Z",
+  "generatedAt": "2026-10-14T01:34:10.433Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -187,6 +187,15 @@
       "diffImageSnrMedian": 1.7295888580567058,
       "falseKillsAt2Arcsec": 3,
       "centroidShiftMaxArcsec": 0.5690494545561231,
+      "safeToGate": false
+    },
+    "blendProbability": {
+      "label": "measured-Gaia blended-EB false-positive probability (P45)",
+      "confirmedPlanets": 16,
+      "pfpMedian": 0.020000000000000018,
+      "pfpMax": 0.042262529283898176,
+      "realPlanetsAboveHalf": 0,
+      "withViableBlend": 1,
       "safeToGate": false
     }
   },

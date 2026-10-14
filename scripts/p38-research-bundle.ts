@@ -31,6 +31,7 @@ const p40 = load("reports/p40-fp-safety.json");
 const p42 = load("reports/p42-fp-scale.json");
 const p43 = load("reports/p43-window-alias.json");
 const p44 = load("reports/p44-diff-imaging.json");
+const p45 = load("reports/p45-fp-probability.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -124,6 +125,15 @@ const falsePositiveControl = {
     falseKillsAt2Arcsec: (p44.thresholdSweep.find((s: any) => s.thresholdArcsec === 2.0) || { falseKills: null }).falseKills,
     centroidShiftMaxArcsec: p44.legacyShiftMaxArcsec,
     safeToGate: p44.safeToGate,
+  },
+  blendProbability: {
+    label: "measured-Gaia blended-EB false-positive probability (P45)",
+    confirmedPlanets: p45.n,
+    pfpMedian: p45.pFalsePositive.p50,
+    pfpMax: p45.pFalsePositive.max,
+    realPlanetsAboveHalf: p45.highFpCount,
+    withViableBlend: p45.withViableBlend,
+    safeToGate: p45.safeToGate,
   },
 };
 

@@ -1,13 +1,10 @@
 {
   "meta": {
     "generatedBy": "scripts/p61-llm-hypothesis-loop.ts",
-    "nPos": 5,
-    "nNeg": 3,
+    "nPos": 24,
+    "nNeg": 18,
     "deep": true,
-    "providers": [
-      "deepseek-chat",
-      "grok-4.7"
-    ],
+    "providers": [],
     "useLlm": true,
     "positiveSource": "TOI-table KP dispositions (confirmed planets)",
     "negativeSource": "TOI-table FP/EB dispositions (labelled blends)",
@@ -16,76 +13,74 @@
   },
   "perTest": {
     "bls-snr": {
-      "cases": 8,
+      "cases": 42,
       "power": 0,
       "powerCI": [
         0,
-        0.5615060804490177
+        0.1758845505823749
       ],
       "falseVetoRate": 0,
       "safeToGate": false,
       "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
     },
     "odd-even-depth": {
-      "cases": 8,
-      "power": 0.3333333333333333,
+      "cases": 42,
+      "power": 0.4444444444444444,
       "powerCI": [
-        0.061490315276160556,
-        0.792345044873512
+        0.24559231101389126,
+        0.6628393057174837
       ],
-      "falseVetoRate": 0.4,
+      "falseVetoRate": 0.20833333333333334,
       "safeToGate": false,
-      "reason": "2 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
+      "reason": "5 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "secondary-eclipse": {
-      "cases": 8,
-      "power": 0.3333333333333333,
+      "cases": 42,
+      "power": 0.2777777777777778,
       "powerCI": [
-        0.061490315276160556,
-        0.792345044873512
+        0.12499569146355474,
+        0.5087307754619452
       ],
-      "falseVetoRate": 0.2,
+      "falseVetoRate": 0.041666666666666664,
       "safeToGate": false,
       "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "shape-coherence": {
-      "cases": 8,
+      "cases": 42,
       "power": 0,
       "powerCI": [
         0,
-        0.5615060804490177
+        0.1758845505823749
       ],
-      "falseVetoRate": 0,
+      "falseVetoRate": 0.041666666666666664,
       "safeToGate": false,
-      "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
+      "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "psf-localize": {
-      "cases": 8,
-      "power": 0.3333333333333333,
+      "cases": 42,
+      "power": 0.1111111111111111,
       "powerCI": [
-        0.061490315276160556,
-        0.792345044873512
+        0.031018868453582787,
+        0.3280024486660421
       ],
-      "falseVetoRate": 0,
+      "falseVetoRate": 0.041666666666666664,
       "safeToGate": false,
-      "reason": "zero false vetoes but veto power 0.33 (95% low 0.06) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
+      "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "gaia-dilution": {
-      "cases": 8,
-      "power": 0.6666666666666666,
+      "cases": 42,
+      "power": 0.5,
       "powerCI": [
-        0.20765495512648796,
-        0.9385096847238394
+        0.2903070395897999,
+        0.7096929604102
       ],
-      "falseVetoRate": 0.6,
+      "falseVetoRate": 0.4583333333333333,
       "safeToGate": false,
-      "reason": "3 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
+      "reason": "11 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     }
   },
   "llmLoop": {
-    "proposals": 10,
-    "matchedPrediction": 4,
-    "diverged": 3
+    "off": true
   },
   "gateableViaLoop": false,
   "safeToGate": false,
@@ -147,18 +142,7 @@
           "detail": "host fraction of aperture light = 0.420 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 90 ppm, 0.88 h dip at 3.0929 d is a genuine planetary transit rather than a blend, eclipsing binary, spike, or ephemeris alias.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "blend",
-          "agreement": false,
-          "diverged": true,
-          "detail": "|odd-even|/mean depth = 1.32 (odd 0.0 ppt vs even 0.2 ppt)"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 283722336 / 1469.02",
@@ -216,18 +200,7 @@
           "detail": "host fraction of aperture light = 0.420 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 6.7650 d, 282 ppm, 1.42 h dip is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so it should repeat coherently at the claimed period with equal odd/even depths.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "blend",
-          "agreement": false,
-          "diverged": true,
-          "detail": "|odd-even|/mean depth = 0.35 (odd 0.4 ppt vs even 0.2 ppt)"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 136916387 / 2011.01",
@@ -285,18 +258,7 @@
           "detail": "no Gaia dilution supplied"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 474 ppm, 3.88 h dip at 11.5778 d is a genuine planetary transit rather than a blend, eclipsing binary, or ephemeris alias, so it should repeat coherently at the claimed period with equal odd/even depths.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "inconclusive",
-          "agreement": false,
-          "diverged": false,
-          "detail": "too few transits on one side to judge"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 136916387 / 2011.02",
@@ -354,28 +316,7 @@
           "detail": "no Gaia dilution supplied"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 474 ppm, 3.27 h dip at 27.5921 d is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits will have equal depths.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "inconclusive",
-          "agreement": false,
-          "diverged": false,
-          "detail": "too few transits on one side to judge"
-        },
-        {
-          "model": "grok-4.7",
-          "hypothesis": "The 474 ppm, 3.27 h signal at 27.5921 d is a coherent multi-cadence transit, not a single-point spike masquerading as one.",
-          "test": "shape-coherence",
-          "prediction": "planet",
-          "dataOutcome": "planet",
-          "agreement": true,
-          "diverged": false,
-          "detail": "median/mean depth = 0.99 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 332064670 / 1773.01",
@@ -433,18 +374,1109 @@
           "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 0.7365 d, 316 ppm dip is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits should have equal depths.",
+      "llm": []
+    },
+    {
+      "name": "TIC 256364928 / 4470.01",
+      "tic": 256364928,
+      "isBlend": false,
+      "periodDays": 2.21857480391221,
+      "depthPpm": 20290,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 84.5169409598713,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.2284 d (claimed 2.2186, within 5%), SNR 84.5"
+        },
+        "odd-even-depth": {
           "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "planet",
-          "agreement": true,
-          "diverged": false,
-          "detail": "|odd-even|/mean depth = 0.04 (odd 0.3 ppt vs even 0.3 ppt)"
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.01128993514917462,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.01 (odd 18.8 ppt vs even 19.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.04106829812135952,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.04 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.4499123420648416,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "median/mean depth = 0.45 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 10.155459328284167,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 10.2 arcsec from target, ampSnr 19.8, deltaChi2 1 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
         }
-      ]
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 82308728 / 1821.01",
+      "tic": 82308728,
+      "isBlend": false,
+      "periodDays": 9.4893231,
+      "depthPpm": -333,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": -12.020248066540056,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 10.0675 d (claimed 9.4893, off by >5%), SNR -12.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few transits on one side to judge"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.10207125475201559,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.10 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "ratio undefined on this curve"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 4.5, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 420814525 / 5972.01",
+      "tic": 420814525,
+      "isBlend": false,
+      "periodDays": 3.5247546,
+      "depthPpm": 14411,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 599.0221955903916,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 3.5097 d (claimed 3.5248, within 5%), SNR 599.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.027980875695417892,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.03 (odd 12.9 ppt vs even 13.2 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.00726775945800958,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.4421968157340637,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.44 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 5.2755106611774845e-14,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 18.7, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 55092869 / 664.01",
+      "tic": 55092869,
+      "isBlend": false,
+      "periodDays": 4.73592318960559,
+      "depthPpm": 1629,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 91.15975164134493,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 4.7536 d (claimed 4.7359, within 5%), SNR 91.2"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.08392908635840822,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.08 (odd 1.4 ppt vs even 1.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.0250959813629455,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.03 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.1204692016817726,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.12 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 286923464 / 1271.01",
+      "tic": 286923464,
+      "isBlend": false,
+      "periodDays": 6.1349783,
+      "depthPpm": 2882,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 35.51259255753107,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 6.0916 d (claimed 6.1350, within 5%), SNR 35.5"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.39789957656528846,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.40 (odd 3.0 ppt vs even 2.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.05133897280754978,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.05 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.3759628941338726,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.38 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 4.4, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.0008785084481848705,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.001 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 69679391 / 1151.01",
+      "tic": 69679391,
+      "isBlend": false,
+      "periodDays": 3.4741012,
+      "depthPpm": 7704,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 119.40631929371762,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 3.4817 d (claimed 3.4741, within 5%), SNR 119.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.1461550198245941,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.15 (odd 11.5 ppt vs even 13.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.009061624488266102,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.193941471394196,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.19 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 18.42239824610674,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 18.4 arcsec from target, ampSnr 7.8, deltaChi2 3 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 16740101 / 1150.01",
+      "tic": 16740101,
+      "isBlend": false,
+      "periodDays": 1.48109028542409,
+      "depthPpm": 6749,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 154.61117220261414,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 1.4826 d (claimed 1.4811, within 5%), SNR 154.6"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.06171153048590263,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.06 (odd 6.7 ppt vs even 6.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.013554164152891844,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0251031392603944,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 7.3, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 255930614 / 2024.01",
+      "tic": 255930614,
+      "isBlend": false,
+      "periodDays": 2.8758831,
+      "depthPpm": 1487,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 100.35024646259838,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.8824 d (claimed 2.8759, within 5%), SNR 100.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.0587238217351761,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.06 (odd 2.4 ppt vs even 2.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.016199307158642734,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.02 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.1638500201781128,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.16 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 2.7, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 302773669 / 1573.01",
+      "tic": 302773669,
+      "isBlend": false,
+      "periodDays": 21.216464,
+      "depthPpm": 5565,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 75.84193985541303,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 17.8100 d (claimed 21.2165, off by >5%), SNR 75.8"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few transits on one side to judge"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.012686102378501127,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0335435661844639,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 43.26475354593465,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "displaced source 43.3 arcsec from target, ampSnr 10.6, deltaChi2 96 -> off-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.0004646994306281588,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.000 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 69747919 / 1407.01",
+      "tic": 69747919,
+      "isBlend": false,
+      "periodDays": 9.97833192740438,
+      "depthPpm": 58,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 8.717347982821012,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.4669 d (claimed 9.9783, off by >5%), SNR 8.7"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.7567067530063019,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.76 (odd 0.1 ppt vs even 0.1 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.012087371475843158,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0580906549061881,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.06 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 28.1031844162997,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 28.1 arcsec from target, ampSnr 2.5, deltaChi2 2 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 129979528 / 1599.01",
+      "tic": 129979528,
+      "isBlend": false,
+      "periodDays": 1.21983821253186,
+      "depthPpm": 9360,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 69.09157173607655,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 1.2197 d (claimed 1.2198, within 5%), SNR 69.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.13354615160616234,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.13 (odd 8.2 ppt vs even 9.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.004216934267190571,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.00 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0304080927346637,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 18.064883060789512,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 18.1 arcsec from target, ampSnr 3.4, deltaChi2 2 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 349827430 / 1148.01",
+      "tic": 349827430,
+      "isBlend": false,
+      "periodDays": 5.5514888,
+      "depthPpm": 7065,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 116.00480772184378,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.7789 d (claimed 5.5515, off by >5%), SNR 116.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.02535764068847038,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.03 (odd 6.8 ppt vs even 7.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.029425864344269165,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.03 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9237837346034518,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.92 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 5.2755106611774845e-14,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 9.5, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.429988841606266,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.430 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 371443216 / 1924.01",
+      "tic": 371443216,
+      "isBlend": false,
+      "periodDays": 2.8240691,
+      "depthPpm": 8000,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 169.4607368932195,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.8129 d (claimed 2.8241, within 5%), SNR 169.5"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.04344994593324488,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.04 (odd 7.8 ppt vs even 7.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.006436627983626824,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.1543357797200302,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.15 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 12.244998979175099,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 12.2 arcsec from target, ampSnr 9.1, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 354619337 / 5821.01",
+      "tic": 354619337,
+      "isBlend": false,
+      "periodDays": 2.1425095,
+      "depthPpm": 4681,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 239.1307725657192,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.1414 d (claimed 2.1425, within 5%), SNR 239.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.08166468989364056,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.08 (odd 5.1 ppt vs even 4.7 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.011453642389918221,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.2857105544910654,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.29 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 12.308181282460064,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 12.3 arcsec from target, ampSnr 12.2, deltaChi2 3 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 367366318 / 1682.01",
+      "tic": 367366318,
+      "isBlend": false,
+      "periodDays": 2.7347651,
+      "depthPpm": 6438,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 179.3564491064176,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.7249 d (claimed 2.7348, within 5%), SNR 179.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.0015055663162687129,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.00 (odd 7.5 ppt vs even 7.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.01223244350716046,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.2097218966875254,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.21 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 12.599999999999955,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 12.6 arcsec from target, ampSnr 7.6, deltaChi2 1 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.005230472696528804,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.005 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 97735908 / 4612.01",
+      "tic": 97735908,
+      "isBlend": false,
+      "periodDays": 4.1137862,
+      "depthPpm": 3343,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 117.11608536893053,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 4.0790 d (claimed 4.1138, within 5%), SNR 117.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.011155065627780942,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.01 (odd 4.1 ppt vs even 4.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.02187347083463119,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.02 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.5348835094718276,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.53 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 8.9, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 39903405 / 2020.01",
+      "tic": 39903405,
+      "isBlend": false,
+      "periodDays": 5.633477,
+      "depthPpm": 2335,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 69.56621540441951,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 5.6453 d (claimed 5.6335, within 5%), SNR 69.6"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.042428106662819653,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.04 (odd 4.7 ppt vs even 4.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.02749648753276127,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.03 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0436415056368544,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.04 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 14.849242404917451,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 14.8 arcsec from target, ampSnr 3.4, deltaChi2 1 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 349488688 / 2319.02",
+      "tic": 349488688,
+      "isBlend": false,
+      "periodDays": 11.6207543996685,
+      "depthPpm": 773,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 17.37511562386449,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 8.5251 d (claimed 11.6208, off by >5%), SNR 17.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.325169735410271,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.33 (odd 0.3 ppt vs even 0.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.004870900459917798,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.00 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.8277028691535094,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.83 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 6.5, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 138819293 / 1796.01",
+      "tic": 138819293,
+      "isBlend": false,
+      "periodDays": 2.64388561055203,
+      "depthPpm": 1944,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 46.98163994486484,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 0.6607 d (claimed 2.6439, off by >5%), SNR 47.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.09244080635594112,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.09 (odd 4.8 ppt vs even 4.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.010451092562091308,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.07038128035083034,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "median/mean depth = 0.07 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 12.773801313626283,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 12.8 arcsec from target, ampSnr 2.1, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
     },
     {
       "name": "TIC 297967252 / 1025.01",
@@ -502,28 +1534,7 @@
           "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 9.6838 d, 651 ppm, 1.70 h dip is a genuine planetary transit rather than an eclipsing binary or blended false positive.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "planet",
-          "agreement": true,
-          "diverged": false,
-          "detail": "|odd-even|/mean depth = 0.04 (odd 3.1 ppt vs even 3.3 ppt)"
-        },
-        {
-          "model": "grok-4.7",
-          "hypothesis": "The 9.6838 d, 651 ppm signal is a coherent repeated planetary transit, not a single-point spike or an ephemeris alias.",
-          "test": "bls-snr",
-          "prediction": "planet",
-          "dataOutcome": "inconclusive",
-          "agreement": false,
-          "diverged": false,
-          "detail": "BLS peak 1.1758 d (claimed 9.6838, off by >5%), SNR -28.5"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 458856474 / 1978.01",
@@ -581,18 +1592,7 @@
           "detail": "host fraction of aperture light = 0.308 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 6.0810 d, 13086 ppm, 4.82 h dip is a genuine planetary transit rather than an eclipsing-binary or blend false positive.",
-          "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "planet",
-          "agreement": true,
-          "diverged": false,
-          "detail": "|odd-even|/mean depth = 0.19 (odd 17.9 ppt vs even 14.8 ppt)"
-        }
-      ]
+      "llm": []
     },
     {
       "name": "TIC 412961700 / 589.01",
@@ -650,18 +1650,877 @@
           "detail": "no Gaia dilution supplied"
         }
       },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "hypothesis": "The 334 ppm, 2.16 h dip at 2.5184 d is a genuine planetary transit rather than an eclipsing-binary or blend false positive, so odd and even transits should show equal depths.",
+      "llm": []
+    },
+    {
+      "name": "TIC 20182165 / 1830.01",
+      "tic": 20182165,
+      "isBlend": true,
+      "periodDays": 9.7815625,
+      "depthPpm": 6668,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 25.44393524312571,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.1184 d (claimed 9.7816, off by >5%), SNR 25.4"
+        },
+        "odd-even-depth": {
           "test": "odd-even-depth",
-          "prediction": "planet",
-          "dataOutcome": "blend",
-          "agreement": false,
-          "diverged": true,
-          "detail": "|odd-even|/mean depth = 0.30 (odd 0.5 ppt vs even 0.3 ppt)"
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.848794068596,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.85 (odd 8.2 ppt vs even 20.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.057085520261150054,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.06 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9574499647435757,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.96 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 4.199999999999948,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 4.2 arcsec from target, ampSnr 16.8, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.3647538856149056,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.365 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
-      ]
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 364107753 / 909.01",
+      "tic": 364107753,
+      "isBlend": true,
+      "periodDays": 3.9043855,
+      "depthPpm": 270,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 13.07818234543031,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 3.9206 d (claimed 3.9044, within 5%), SNR 13.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.015553653405935005,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.02 (odd 0.3 ppt vs even 0.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.23916902384158292,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.24 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0828040882358356,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.08 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 27.30779016449079,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 27.3 arcsec from target, ampSnr 0.4, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.07120573470746547,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.071 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 207084429 / 381.01",
+      "tic": 207084429,
+      "isBlend": true,
+      "periodDays": 4.89577,
+      "depthPpm": 285,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 19.790962992179224,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 4.8698 d (claimed 4.8958, within 5%), SNR 19.8"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.35772535154894247,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.36 (odd 0.3 ppt vs even 0.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.001881719498887074,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.00 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9726809050878763,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.97 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 269450900 / 1127.01",
+      "tic": 269450900,
+      "isBlend": true,
+      "periodDays": 2.32439,
+      "depthPpm": 2260,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 146.02516097629768,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.3287 d (claimed 2.3244, within 5%), SNR 146.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.02502272926310608,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.03 (odd 2.0 ppt vs even 2.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.014526211406408224,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.01 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0469022222446882,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.05 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 23.478713763747773,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "displaced source 23.5 arcsec from target, ampSnr 6.5, deltaChi2 10 -> off-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 138017750 / 1608.01",
+      "tic": 138017750,
+      "isBlend": true,
+      "periodDays": 2.4727494357866444,
+      "depthPpm": 2344,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 20.137929427523446,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.5297 d (claimed 2.4727, within 5%), SNR 20.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.09863604912586811,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.10 (odd 3.9 ppt vs even 3.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.15028932357728994,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.15 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9254338361086529,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.93 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 1.8, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 270238522 / 1514.01",
+      "tic": 270238522,
+      "isBlend": true,
+      "periodDays": 1.36991,
+      "depthPpm": 1226,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 17.664413480569436,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.5478 d (claimed 1.3699, off by >5%), SNR 17.7"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.5813724177294968,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.58 (odd 1.7 ppt vs even 0.9 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.18784764562007336,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.19 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9298958781828378,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.93 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 19.361043360315097,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 19.4 arcsec from target, ampSnr 7.6, deltaChi2 4 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.22059780830168813,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.221 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 451599528 / 1104.01",
+      "tic": 451599528,
+      "isBlend": true,
+      "periodDays": 341.2791675905754,
+      "depthPpm": 3782,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 80.40063537959773,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 11.9216 d (claimed 341.2792, off by >5%), SNR 80.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few transits on one side to judge"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few events to judge"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0303640952215662,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.4982184516551412,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.498 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 97700520 / 1013.01",
+      "tic": 97700520,
+      "isBlend": true,
+      "periodDays": 5.42555479046561,
+      "depthPpm": 3356,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 45.367889117341875,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 1.2739 d (claimed 5.4256, off by >5%), SNR 45.4"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.34525259854147544,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.35 (odd 12.3 ppt vs even 8.7 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.05432903537139783,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.05 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9197160230103935,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.92 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 0,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 16.3, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 96246348 / 1014.01",
+      "tic": 96246348,
+      "isBlend": true,
+      "periodDays": 1.40951841053404,
+      "depthPpm": 2602,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 58.11278633980848,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 1.4094 d (claimed 1.4095, within 5%), SNR 58.1"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.07257240427632847,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.07 (odd 5.0 ppt vs even 4.6 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.027937966639200312,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.03 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.8650302767759107,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.87 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 5.2755106611774845e-14,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "displaced source 0.0 arcsec from target, ampSnr 7.3, deltaChi2 0 -> on-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 143350972 / 440.01",
+      "tic": 143350972,
+      "isBlend": true,
+      "periodDays": 1.0817,
+      "depthPpm": 219,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 14.514546402233337,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 1.0805 d (claimed 1.0817, within 5%), SNR 14.5"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.024442020066866934,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.02 (odd 0.2 ppt vs even 0.2 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.23430223385114982,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.23 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9788830229703119,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.98 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 46.957427527495575,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 47.0 arcsec from target, ampSnr 2.6, deltaChi2 3 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 294090620 / 587.01",
+      "tic": 294090620,
+      "isBlend": true,
+      "periodDays": 8.0442389870715,
+      "depthPpm": 4400,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 86.97844071740683,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 8.0118 d (claimed 8.0442, within 5%), SNR 87.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.10810955117693447,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.11 (odd 4.1 ppt vs even 4.5 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.023950622606762877,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.02 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.1020640242520154,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.10 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 45.557995105718426,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 45.6 arcsec from target, ampSnr 2.8, deltaChi2 3 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 117979850 / 428.01",
+      "tic": 117979850,
+      "isBlend": true,
+      "periodDays": 0.6333315,
+      "depthPpm": 158,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 13.793868636109567,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.3068 d (claimed 0.6333, off by >5%), SNR 13.8"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 2,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 2.00 (odd 0.2 ppt vs even -0.0 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.015173825716404113,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.02 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.8487315564116471,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.85 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 10.707940978544801,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 10.7 arcsec from target, ampSnr 0.2, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 447283466 / 1028.01",
+      "tic": 447283466,
+      "isBlend": true,
+      "periodDays": 1.01606,
+      "depthPpm": 1496,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": -4.575794706853182,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 2.8399 d (claimed 1.0161, off by >5%), SNR -4.6"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 1.2367667781347143,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 1.24 (odd 0.3 ppt vs even 1.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.555168343080224,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.56 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "ratio undefined on this curve"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 45.09391468106332,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 45.1 arcsec from target, ampSnr 3.5, deltaChi2 7 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 305943739 / 4498.01",
+      "tic": 305943739,
+      "isBlend": true,
+      "periodDays": 5.3075285851881295,
+      "depthPpm": 161,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 10.880218793670785,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 5.3265 d (claimed 5.3075, within 5%), SNR 10.9"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.4934124474253688,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.49 (odd 0.2 ppt vs even 0.1 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.22420183180701703,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.22 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.9236794629057777,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.92 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 142.47861623852344,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 142.5 arcsec from target, ampSnr 4.0, deltaChi2 13 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": []
+    },
+    {
+      "name": "TIC 9858404 / 394.01",
+      "tic": 9858404,
+      "isBlend": true,
+      "periodDays": 0.39149,
+      "depthPpm": 173,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 14.037337621953585,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 0.7833 d (claimed 0.3915, off by >5%), SNR 14.0"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.1689079113331443,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.17 (odd 0.4 ppt vs even 0.4 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.1773839667303983,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.18 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0307150185388507,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 15.396567592703526,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 15.4 arcsec from target, ampSnr 0.3, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": []
     }
   ]
 }

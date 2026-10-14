@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p50-replay.ts",
+    "protocol": "end-to-end deterministic replay from raw public S3 bytes",
+    "chain": "fetchSpocBytes -> fitsToLightCurve -> computeDataHash -> iterativeBls(production gate) -> replay record",
+    "repeats": 3
+  },
+  "target": {
+    "name": "HD 39091",
+    "tic": 261136679,
+    "sector": 1,
+    "s3Key": "mast/hlsp/tess-spoc/s0001/target/0000/0002/6113/6679/hlsp_tess-spoc_tess_phot_0000000261136679-s0001_tess_v1_lc.fits",
+    "byteSha256": "1ddd212139eb969c676968f581cf2b2825ba38c9d21ed6fd93a190e07209a8b8",
+    "byteLength": 164160
+  },
+  "replayRecord": {
+    "schema": "space-data-rig/replay@1",
+    "dataHash": "38ca21bf24ed8dcf49b6bf0a7dce80ac55fa38dfd1927418c8a2a72cf6c68e24",
+    "codeVersion": "p50-replay",
+    "algorithm": "iterativeBls",
+    "params": {
+      "minPeriodDays": 1,
+      "maxPeriodDays": 15,
+      "maxSignals": 3
+    },
+    "candidate": {
+      "periodDays": 6.270623,
+      "epochBjd": 2458325.491626,
+      "durationHours": 2.267088,
+      "depthFrac": 0.00027452,
+      "snr": 24.481645,
+      "verdict": "candidate"
+    }
+  },
+  "replayHash": "98ea2ad067e5b1eb8e55da49ad109208f90acd2c12dd9e0e385dcd3ef4dc0e44",
+  "inProcessStable": true,
+  "reDownloadByteShaMatch": true,
+  "reDownloadReplayHashMatch": true,
+  "independentRecomputeOk": true,
+  "allDeterministic": true,
+  "discoveryClaim": false
+}

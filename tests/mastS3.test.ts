@@ -15,6 +15,7 @@ import {
   sectorsForCoord,
   fetchSpocBytes,
   fetchSpocLightCurve,
+  createSpocSectorFetcher,
 } from "../src/data/mastS3.ts";
 
 const CACHE = "out/probe-lc.fits"; // TIC 25155310, sector 0004, PDCSAP 2-min
@@ -97,5 +98,39 @@ test(
     // the critic truthSource discriminator matches this exact uppercase marker
     assert.equal(lc!.source!.includes("REAL photometry"), true);
     assert.equal(lc!.source!.includes("Caldwell et al. 2020"), true);
+  },
+);
+
+// ---- first-class multi-sector fetch helper (additive; parallel + per-key byte cache) ----
+
+test("createSpocSectorFetcher.fetchSectors returns [] and never throws when every sector 404s", async () => {
+  const f = createSpocSectorFetcher({ fetchImpl: (async () => new Response("Not Found", { status: 404 })) as never });
+  const curves = await f.fetchSectors(12345, [1, 2, 3], "TIC 12345");
+  assert.deepEqual(curves, []);
+});
+
+test(
+  "createSpocSectorFetcher returns resolved sectors, drops 404s, and serves repeats from cache",
+  { skip: have ? false : "no cached product; run npm run p0:mast" },
+  async () => {
+    const fits = readFileSync(CACHE);
+    let calls = 0;
+    const mockFetch = (async (url: string) => {
+      calls++;
+      // sector 9 misses; sectors 4 and 5 return the real cached bytes
+      if (String(url).includes("-s0009_")) return new Response("Not Found", { status: 404 });
+      return new Response(new Uint8Array(fits), { status: 200 });
+    }) as never;
+    const f = createSpocSectorFetcher({ fetchImpl: mockFetch, concurrency: 3 });
+
+    const first = await f.fetchSectors(25155310, [4, 5, 9], "TIC 25155310");
+    assert.equal(first.length, 2, "two resolved sectors in order, the 404 omitted");
+    assert.ok(first.every((lc) => lc.points.length > 1000 && lc.source!.includes("REAL photometry")));
+    assert.equal(calls, 3, "one fetch per distinct sector key");
+
+    const before = calls;
+    const second = await f.fetchSectors(25155310, [4, 5, 9], "TIC 25155310");
+    assert.equal(second.length, 2);
+    assert.equal(calls, before, "cache: a repeat run triggers zero new downloads");
   },
 );

@@ -170,6 +170,69 @@ export async function fetchSpocLightCurve(
   return null;
 }
 
+export interface SpocSectorFetcherOptions extends SpocFetchOptions {
+  /** max concurrent sector downloads (default 4). */
+  concurrency?: number;
+}
+
+/** The exact REAL-photometry label the critic truthSource discriminator looks for. */
+function spocRealLabel(key: string): string {
+  return `TESS-SPOC PDCSAP product ${key.split("/").pop()} from public S3 (REAL photometry); ` +
+    `CC BY 4.0, cite Caldwell et al. 2020`;
+}
+
+/**
+ * A first-class MULTI-SECTOR fetch helper for the multi-sector studies (p29/p41/p60/...), so pulling
+ * every sector of a host is a single concurrent call rather than a hand-rolled sequential loop -- the
+ * roadmap's "make multi-sector fetching a first-class citizen" item. It is purely ADDITIVE: a factory
+ * returning a fetcher that holds its OWN per-key byte cache, so re-fetching a sector within one run is
+ * free. Nothing in the production / edge path imports it, so the default run behaviour and bundle hash
+ * are unchanged; callers opt in explicitly.
+ */
+export function createSpocSectorFetcher(opts: SpocSectorFetcherOptions = {}) {
+  const byteCache = new Map<string, Promise<Uint8Array | null>>();
+  const getBytes = (key: string): Promise<Uint8Array | null> => {
+    let p = byteCache.get(key);
+    if (!p) { p = fetchSpocBytes(key, opts); byteCache.set(key, p); }
+    return p;
+  };
+
+  /** Fetch + parse ONE (TIC, sector) SPOC curve; null on miss/parse failure. Byte-cached by key. */
+  async function fetchOneCurve(tic: number, sector: number, targetId: string): Promise<LightCurve | null> {
+    const key = resolveSpocKey(tic, sector, "lc");
+    const bytes = await getBytes(key);
+    if (!bytes) return null;
+    try {
+      const lc = fitsToLightCurve(bytes, targetId);
+      lc.source = spocRealLabel(key);
+      return lc;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Fetch ALL the host's sectors concurrently (bounded), returning the curves that resolved IN SECTOR
+   * ORDER. A 404 / non-FITS sector is simply omitted (best-effort, never throws), so callers can count
+   * how many real sectors came back.
+   */
+  async function fetchSectors(tic: number, sectors: number[], targetId: string): Promise<LightCurve[]> {
+    const out: (LightCurve | null)[] = new Array(sectors.length).fill(null);
+    const width = Math.max(1, Math.min(opts.concurrency ?? 4, sectors.length));
+    let next = 0;
+    await Promise.all(
+      Array.from({ length: width }, async () => {
+        for (let idx = next++; idx < sectors.length; idx = next++) {
+          out[idx] = await fetchOneCurve(tic, sectors[idx], targetId);
+        }
+      }),
+    );
+    return out.filter((x): x is LightCurve => x !== null);
+  }
+
+  return { fetchOneCurve, fetchSectors };
+}
+
 function medianOf(xs: number[]): number {
   if (!xs.length) return NaN;
   const s = [...xs].sort((a, b) => a - b);

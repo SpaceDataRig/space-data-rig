@@ -681,7 +681,32 @@ POSITION, not Gaia source_id (int64 precision loss). Reproduce: `npm run p59:off
 
 ---
 
-## 23. Honest limitations
+## 23. Making the two AIs do real science: a hypothesis -> measurement loop (P61)
+
+DeepSeek and Grok were only writing advisory narration about a number the deterministic pipeline had
+already produced; asking them more often would produce more prose, not more science. P61 turns them into
+genuine research *inputs* without breaking the reproducibility guarantee: each model must PROPOSE a
+falsifiable hypothesis and CHOOSE the single discriminating test most likely to refute it, from a fixed
+menu (`src/ai/hypothesis.ts` -- off-menu picks, filenames, URLs and commands are rejected at parse time,
+so a model can never trigger arbitrary work). The rig then RUNS that test on real photometry with its OWN
+vetting detectors (`src/detect/hypothesisTests.ts`: re-detection SNR, odd/even depth, secondary eclipse,
+folded-shape coherence) and records whether the DATA supports or refutes the prediction. A model's idea
+becomes a research result only when a deterministic measurement agrees with it. Nothing here feeds the run
+pipeline, bundle hash, a verdict, or any money path; discoveryClaim and safeToGate stay false.
+
+What the loop measured on 8 known planets (a positive control; see `reports/p61-llm-hypothesis.md` for this
+run's exact counts): both models reliably read the known planets as planet-consistent, and they overwhelmingly
+delegated to the odd/even-depth test -- which the deterministic audit caught false-rejecting roughly half the
+known planets as "blend". So the loop's first real finding is about the PIPELINE, not the models: it surfaces
+that odd/even-depth is a diagnostic-only score that would misfire as a gate (consistent with P44/P51 on the
+naive centroid), and it does so by giving the AIs a job whose output is checkable against ground truth. The
+deterministic half runs even with no API keys, so the audit is always reproducible; the LLM half degrades
+honestly to "deterministic-audit-only" when a key is missing or a reasoning model times out. Reproduce:
+`npm run p61:llm-hypothesis` (add `-- --no-llm` for the keys-free deterministic audit).
+
+---
+
+## 24. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -720,14 +745,14 @@ POSITION, not Gaia source_id (int64 precision loss). Reproduce: `npm run p59:off
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 24. Reproducibility
+## 25. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 381 unit tests
+npm test                     # 392 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -753,6 +778,7 @@ npm run p57:true-veto           # first REAL true-veto 2x2 on token-free labelle
 npm run p58:veto-2x2             # scaled + phase-refined 2x2 (refutes the timing-artifact caveat) -> reports/p58-*
 npm run p59:offtarget-subset      # catch-rate on the localization-addressable (Gaia resolved-contaminant) subset -> reports/p59-*
 npm run p60:joint-vs-single        # joint multi-sector vs single-sector re-find A/B head-to-head on known planets -> reports/p60-*
+npm run p61:llm-hypothesis         # LLM proposes a falsifiable hypothesis + picks a test; rig measures it -> reports/p61-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T04:49:01.700Z",
+  "generatedAt": "2026-10-14T05:23:09.538Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -228,6 +228,15 @@
     "falseKills": 4,
     "negativeClassExoFop": false,
     "negativeClassVizieR": true,
+    "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "negativeClassFeasibility": {
+    "label": "labelled-negative-class feasibility from public data (P52)",
+    "usableNegatives": 0,
+    "gcvsEclipsingBinaries": 944,
+    "exofopReachable": false,
+    "constructible": false,
     "safeToGate": false,
     "discoveryClaim": false
   },

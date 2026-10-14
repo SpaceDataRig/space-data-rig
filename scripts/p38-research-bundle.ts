@@ -37,6 +37,7 @@ const p47 = load("reports/p47-completeness-grid.json");
 const p49 = load("reports/p49-blind-test.json");
 const p50 = load("reports/p50-replay.json");
 const p51 = load("reports/p51-crowding-stratified.json");
+const p52 = load("reports/p52-negative-class.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -196,6 +197,15 @@ const payload = {
     falseKills: p51.totalFalseKills,
     negativeClassExoFop: p51.negativeClass.exofop.reachable,
     negativeClassVizieR: p51.negativeClass.vizierEb.reachable,
+    safeToGate: false,
+    discoveryClaim: false,
+  },
+  negativeClassFeasibility: {
+    label: "labelled-negative-class feasibility from public data (P52)",
+    usableNegatives: p52.usableNegatives,
+    gcvsEclipsingBinaries: p52.gcvsList.eclipsingBines,
+    exofopReachable: p52.exofopReachable,
+    constructible: p52.constructible,
     safeToGate: false,
     discoveryClaim: false,
   },

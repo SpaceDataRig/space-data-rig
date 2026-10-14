@@ -502,7 +502,35 @@ Reproduce: `npm run p51:crowding -- --targets 24 --tmag 12 --pixcap 8 --aperture
 
 ---
 
-## 19. Honest limitations
+## 19. Can we even build the labelled negative class the reviewer's standard demands? Measured: not from public data (P52)
+
+P51 answered the POSITIVES half of the reviewer's standard (crowded-field localization on confirmed planets).
+The harder half is the NEGATIVES: to prove a veto actually *catches* blends (not just that it refrains from
+killing planets) you need real off-target eclipsing binaries at known positions. `src/data/vizierEb.ts` codifies
+token-free access to the General Catalogue of Variable Stars (list + cone builders, a robust VOTABLE parser, an
+eclipsing-class filter), offline-tested against a captured real fixture. `scripts/p52-negative-class.ts` then
+ATTEMPTS the build from every public route and MEASURES the yield:
+
+- **ExoFOP-TESS** (the authoritative per-candidate blend/EB dispositions): NOT reachable anonymously -- REST 404 /
+  token-gated. This is the source that actually labels "this candidate is a blend."
+- **VizieR GCVS list**: works -- 944 real eclipsing binaries with positions + periods parsed.
+- **VizieR GCVS cone** around 12 crowded hosts: 0 EBs inside 21 arcsec; 12/12 cones returned empty -- matching a
+  control (Algol, a guaranteed GCVS member, also returns 0 through the anonymous cone endpoint), so the positional
+  lookup is broken without a token, and GCVS is bright-star-only anyway.
+- **Client cross-match** of the 944-EB list against the hosts: 0 within 21 arcsec.
+
+Usable labelled negatives obtainable: **0**. Verdict `P52-NEGATIVE-CLASS-NOT-CONSTRUCTIBLE-FROM-PUBLIC-DATA`:
+the full true-veto 2x2 is *blocked on access*, not on method. This is itself the honest answer to the reviewer --
+with only positives we can measure a veto's over-kill but never its catch-rate, and the catch-rate test needs
+labelled blends that public token-free data does not supply. The concrete unlock is an ExoFOP-TESS API token (or a
+dedicated blend/FP catalogue with TIC + offset); `src/data/vizierEb.ts` and this script then extend to the 2x2.
+Both veto tools stay `safeToGate: false`. Research-only; nothing gated/anchored/deployed.
+
+Reproduce: `npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --list-rows 3000`.
+
+---
+
+## 20. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -536,14 +564,14 @@ Reproduce: `npm run p51:crowding -- --targets 24 --tmag 12 --pixcap 8 --aperture
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 20. Reproducibility
+## 21. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 347 unit tests
+npm test                     # 352 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -560,6 +588,7 @@ npm run p48:novelty-check     # board-candidate novelty vs the NASA Exoplanet Ar
 npm run p49:blind-test        # formal sealed-key blind test (precision/recall) -> reports/p49-*
 npm run p50:replay            # end-to-end deterministic replay from raw S3 bytes -> reports/p50-*
 npm run p51:crowding          # crowding-stratified blend-veto acceptance re-validation -> reports/p51-*
+npm run p52:negative-class    # labelled-negative-class constructibility from public data -> reports/p52-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

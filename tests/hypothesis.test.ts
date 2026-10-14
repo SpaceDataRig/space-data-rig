@@ -76,12 +76,22 @@ test("unknown / off-menu test id degrades to an undetermined outcome and never t
   assert.equal(o.outcome, "inconclusive");
 });
 
-test("all four menu tests run on a synthetic curve without throwing", () => {
+test("every menu test runs on a synthetic curve without throwing", () => {
   const { lc, truth } = generateSyntheticTransit({ seed: 11, periodDays: 3, depthFrac: 0.01, noisePpm: 200 });
   const ctx = { lc, t0Bjd: truth.t0Bjd, periodDays: truth.periodDays, durationHours: truth.durationHours };
   for (const t of TEST_MENU) {
     const o = runHypothesisTest(t.id, ctx);
     assert.equal(o.test, t.id);
     assert.ok(o.outcome === "planet" || o.outcome === "blend" || o.outcome === "inconclusive");
+  }
+});
+
+test("the pixel (PSF) and Gaia-dilution tests degrade to undetermined when their data is absent, never throw", () => {
+  const { lc, truth } = generateSyntheticTransit({ seed: 5, periodDays: 3, depthFrac: 0.01, noisePpm: 200 });
+  const ctx = { lc, t0Bjd: truth.t0Bjd, periodDays: truth.periodDays, durationHours: truth.durationHours };
+  for (const id of ["psf-localize", "gaia-dilution"]) {
+    const o = runHypothesisTest(id, ctx);
+    assert.equal(o.determined, false, `${id} without its data must be undetermined`);
+    assert.equal(o.outcome, "inconclusive");
   }
 });

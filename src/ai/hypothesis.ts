@@ -38,6 +38,8 @@ export const TEST_MENU: MenuTest[] = [
   { id: "odd-even-depth", label: "Odd vs even transit depth", question: "Do successive (odd vs even) transits have equal depths? A large mismatch points to an eclipsing binary, not a planet." },
   { id: "secondary-eclipse", label: "Secondary-eclipse depth", question: "Is there a comparable dip half a period after the primary? A strong secondary eclipse points to a stellar companion." },
   { id: "shape-coherence", label: "Folded shape coherence", question: "Is the folded dip a coherent, repeated box, or a single-point spike masquerading as a transit?" },
+  { id: "psf-localize", label: "PSF double-difference localization", question: "Does the transit light, imaged off the target, come from an off-axis blended source rather than the host star? (needs target-pixel data)" },
+  { id: "gaia-dilution", label: "Gaia aperture dilution", question: "How much of the light in the photometric aperture is a resolved contaminant rather than the host? (needs Gaia neighbours)" },
 ];
 
 const MENU_IDS = new Set(TEST_MENU.map((t) => t.id));

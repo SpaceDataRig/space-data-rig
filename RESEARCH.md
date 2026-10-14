@@ -689,20 +689,31 @@ genuine research *inputs* without breaking the reproducibility guarantee: each m
 falsifiable hypothesis and CHOOSE the single discriminating test most likely to refute it, from a fixed
 menu (`src/ai/hypothesis.ts` -- off-menu picks, filenames, URLs and commands are rejected at parse time,
 so a model can never trigger arbitrary work). The rig then RUNS that test on real photometry with its OWN
-vetting detectors (`src/detect/hypothesisTests.ts`: re-detection SNR, odd/even depth, secondary eclipse,
-folded-shape coherence) and records whether the DATA supports or refutes the prediction. A model's idea
-becomes a research result only when a deterministic measurement agrees with it. Nothing here feeds the run
-pipeline, bundle hash, a verdict, or any money path; discoveryClaim and safeToGate stay false.
+vetting detectors (`src/detect/hypothesisTests.ts`) and records whether the DATA supports or refutes the
+prediction. A model's idea becomes a research result only when a deterministic measurement agrees with it.
+Nothing here feeds the run pipeline, bundle hash, a verdict, or any money path; discoveryClaim and aggregate
+safeToGate stay false.
 
-What the loop measured on 8 known planets (a positive control; see `reports/p61-llm-hypothesis.md` for this
-run's exact counts): both models reliably read the known planets as planet-consistent, and they overwhelmingly
-delegated to the odd/even-depth test -- which the deterministic audit caught false-rejecting roughly half the
-known planets as "blend". So the loop's first real finding is about the PIPELINE, not the models: it surfaces
-that odd/even-depth is a diagnostic-only score that would misfire as a gate (consistent with P44/P51 on the
-naive centroid), and it does so by giving the AIs a job whose output is checkable against ground truth. The
-deterministic half runs even with no API keys, so the audit is always reproducible; the LLM half degrades
-honestly to "deterministic-audit-only" when a key is missing or a reasoning model times out. Reproduce:
-`npm run p61:llm-hypothesis` (add `-- --no-llm` for the keys-free deterministic audit).
+The loop is now scored against GROUND-TRUTH CLASSES, not just positives. Both classes come from one
+token-free public source -- the ExoFOP TOI table (`src/data/toiDispositions.ts`): confirmed-planet (KP) rows
+are positives, FP/EB rows are labelled blends. Six tests run (four light-curve: re-detection SNR, odd/even
+depth, secondary eclipse, folded-shape coherence; two under `--deep`: PSF double-difference localization on a
+fetched target-pixel cube, and Gaia aperture dilution on a fetched neighbourhood). Each test's catch-rate on
+the labelled blends and false-veto rate on the known planets is scored as a full 2x2 with `vetoAcceptance`
+(`acceptVetoTool`: gate-worthy only at zero false-vetoes AND power above chance).
+
+What the loop measured (`reports/p61-llm-hypothesis.md`, small N here -- 5 planets + 3 blends; the
+`llm-hypothesis-loop` CI workflow re-runs it larger and publishes the authoritative numbers back). Verdict
+`gateable-via-loop = NONE`: every discriminator the models leaned on disqualified itself exactly as the
+standalone veto studies (P53/P58/P59) found -- odd/even-depth caught ~1/3 of blends but FALSE-REJECTED 40% of
+known planets, Gaia dilution caught the most blends (2/3) but false-rejected 60% of planets, and the PSF
+double-difference was the only one with zero false-kills (0 on this sample) yet under-powered at N=3 blends.
+The loop's first real output is a cross-check of the PIPELINE through an AI-driven lens -- and an honest note
+that the models UNDER-flag blends (they predicted "planet" on several labelled blends, so model prediction
+matched the measurement only 4/10). The deterministic 2x2 half runs even with no API keys, so the audit is
+always reproducible; the LLM half degrades honestly to "deterministic-2x2-only". Reproduce:
+`npm run p61:llm-hypothesis -- --pos 5 --neg 5 --deep` (drop `--deep` for light-curve tests only, add
+`-- --no-llm` for the keys-free deterministic 2x2).
 
 ---
 

@@ -1,0 +1,84 @@
+name: llm-hypothesis-loop (LLM-chosen tests scored as a 2x2 on ground-truth classes)
+
+# Roadmap item 1 (make large measurements a routine CI product) applied to the newest analysis, P61.
+# The LLM hypothesis loop turns DeepSeek/Grok into research INPUTS: each model proposes a falsifiable
+# hypothesis and picks a discriminating test from a fixed menu; the rig runs that test on real TESS-SPOC
+# photometry and scores EVERY test's catch-rate on labelled blends and false-veto rate on known planets as a
+# full 2x2 (src/candidate/vetoAcceptance). Both classes come from ONE token-free public source (the ExoFOP
+# TOI table). At scale each target downloads a light curve (+ under --deep a target-pixel cube and a Gaia
+# neighbourhood), which is network- and time-bound on a laptop, so a CI runner does it reproducibly and
+# PUBLISHES the measured report back into the repo (reports/p61-*) so it is publicly readable without
+# artifact authentication and regenerable by anyone -- the same pattern as scale-roc / veto-multisector.
+#
+# The two model keys are OPTIONAL: if the repo secrets are absent the script degrades honestly to a
+# deterministic, keys-free 2x2 (still a full, reproducible measurement). Nothing here gates, anchors,
+# claims, or deploys; discoveryClaim and aggregate safeToGate stay structurally false.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pos:
+        description: "confirmed-planet (KP) positives to sample"
+        required: true
+        default: "24"
+      neg:
+        description: "labelled FP/EB blends to sample"
+        required: true
+        default: "24"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p61-llm-hypothesis-loop.ts
+      - src/ai/hypothesis.ts
+      - src/detect/hypothesisTests.ts
+      - .github/workflows/llm-hypothesis-loop.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: llm-hypothesis-loop
+  cancel-in-progress: false
+
+jobs:
+  llm-hypothesis-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run the LLM -> measurement closed loop at scale
+        env:
+          POS: ${{ github.event.inputs.pos || '24' }}
+          NEG: ${{ github.event.inputs.neg || '24' }}
+          # optional model keys -> the script degrades to a deterministic 2x2 when these are empty
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: npm run p61:llm-hypothesis -- --pos "$POS" --neg "$NEG" --deep
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/p61-llm-hypothesis.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p61-llm-hypothesis.md reports/p61-llm-hypothesis.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Roadmap: publish LLM-hypothesis-loop 2x2 report (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "no report produced; nothing to publish"
+          fi

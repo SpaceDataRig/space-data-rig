@@ -1,20 +1,25 @@
-# P61 an LLM-proposed hypothesis, settled by a deterministic measurement (closed loop)
+# P61 an LLM-chosen test, scored as a 2x2 on ground-truth classes (closed loop @ scale)
 
-Reproduce: `npm run p61:llm-hypothesis`  (models: deepseek-chat, grok-4.7)
+Reproduce: `npm run p61:llm-hypothesis -- --pos 5 --neg 5 --deep`  (models: deepseek-chat, grok-4.7)
 
-On **8** known planets with a strong pipeline detection, the rig does two things:
-1. **Deterministic audit** -- run every vetting test on the real light curve (always available, reproducible):
+Both classes come from ONE token-free public source (the ExoFOP TOI table): **5 confirmed planets (positives)**
+and **3 FP/EB dispositions (labelled blends)**. Each menu test is run on real photometry and scored as a
+full 2x2 via `src/candidate/vetoAcceptance` (catch-rate on blends, false-veto on known planets, acceptVetoTool).
+Pixel (PSF double-difference) and Gaia-dilution tests are ACTIVE (--deep).
 
-| test | planet-consistent | blend-tagged | inconclusive/undetermined |
-|---|---|---|---|
-| bls-snr | 7/8 | 0 | 1 |
-| odd-even-depth | 3/8 | 5 | 0 |
-| secondary-eclipse | 8/8 | 0 | 0 |
-| shape-coherence | 7/8 | 0 | 1 |
+| test | catch-rate on labelled blends | 95% Wilson CI | false-veto on known planets | safe to gate? |
+|---|---|---|---|---|
+| bls-snr | 0% | [0, 56] | 0% | false |
+| odd-even-depth | 33% | [6, 79] | 40% | false |
+| secondary-eclipse | 33% | [6, 79] | 20% | false |
+| shape-coherence | 0% | [0, 56] | 0% | false |
+| psf-localize | 33% | [6, 79] | 0% | false |
+| gaia-dilution | 67% | [21, 94] | 60% | false |
 
-2. **The loop** -- each model proposes a falsifiable hypothesis and picks the decisive test; the rig measures it.
-Valid proposals 11/16; a model's prediction MATCHED the measurement 3 time(s), diverged 8 time(s). Models chose: odd-even-depth x10, shape-coherence x1. Divergences are dominated by any test the positive-control flags as a known-planet false-reject -- so the loop is auditing the TEST, not proving the model wrong.
+LLM loop: 10 proposals, prediction matched the measurement 4, diverged 3.
 
-Positive control: odd-even-depth (5 blend-tagged on known planets) tagged a known planet as blend -- confirming these are DIAGNOSTIC scores, never a gate.
+Gateable via the loop: NONE. No test met the zero-false-veto + power-above-chance bar, so none is gate-worthy here -- every one is a diagnostic score only.
 
-**Verdict LOOP-RAN.** An idea becomes a research result here only when a deterministic measurement agrees with it; even then it is a candidate clue, not a claim. Nothing is gated (safeToGate false), no verdict/bundle/money path is touched.
+An LLM idea becomes a result only when the deterministic measurement agrees; a TEST becomes gate-worthy only when
+its 2x2 shows zero false-vetoes AND real power. Nothing is wired into a verdict / bundle / money path (safeToGate
+false, discoveryClaim false).

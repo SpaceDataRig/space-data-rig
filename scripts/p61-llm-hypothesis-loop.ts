@@ -1,33 +1,38 @@
-// P61 - LLM -> measurement CLOSED LOOP (research; third-party roadmap "make DeepSeek/Grok play a real
-// role", chosen direction: hypothesis -> measurement).
+// P61 - LLM -> measurement CLOSED LOOP, at scale and against ground-truth classes (research; roadmap).
 //
-// The two wired models currently only narrate a result the deterministic pipeline already produced. Here
-// they instead PROPOSE a falsifiable hypothesis and CHOOSE the decisive discriminating test (from a fixed
-// menu, src/ai/hypothesis.ts); the rig then RUNS that test on real photometry (src/detect/hypothesisTests.ts)
-// and records whether the DATA supports or refutes the model's prediction. An idea becomes a research result
-// only when a deterministic measurement agrees with it -- and even then it is logged as a candidate clue,
-// never a discovery claim.
+// Two upgrades over the v1 pilot:
+//  (1) NEGATIVE CLASS: both classes now come from ONE token-free public source, the ExoFOP TOI table
+//      (src/data/toiDispositions.ts) -- confirmed-planet rows (KP) are positives, FP/EB rows are labelled
+//      blends. So for every menu test we can compute the REAL operating point: catch-rate on true blends
+//      and false-veto rate on true planets, scored with src/candidate/vetoAcceptance (a full 2x2 + Wilson
+//      CI + an acceptVetoTool safe/not-safe verdict). This is the measurement the earlier veto work (P57/58/59)
+//      wanted, now driven through the LLM-chosen-test loop.
+//  (2) DEEPER MENU: two pixel/Gaia tests (PSF double-difference localization, aperture dilution) are in
+//      the menu; they activate under `--deep` (which fetches a target-pixel cube + a Gaia neighbourhood per
+//      target). Without --deep they degrade honestly to undetermined, so the cheap light-curve 2x2 always runs.
 //
-// The deterministic half (run ALL menu tests on each target) runs REGARDLESS of keys, so this script always
-// yields real, reproducible numbers: on known planets it is a positive-control audit of the vetting suite
-// (a genuine planet should read planet-consistent on these tests). The LLM half adds, per target, which test
-// each model chose and whether its prediction matched the measurement.
+// The loop: each model proposes a falsifiable hypothesis + picks the decisive test (fixed menu; off-menu
+// rejected), the rig measures it on real photometry, and we record agreement/divergence AND, separately,
+// each test's class-discriminating power. An idea becomes a result only when the measurement agrees; a TEST
+// becomes gate-worthy only when its 2x2 shows zero false-vetoes AND real power -- both are reported as-is
+// (the expected honest outcome is "not safe to gate", consistent with P53/P58/P59).
 //
-// Red lines: no worker import, no verdict, no bundle hash, no money path. Model output is advisory only and
-// never enters any deterministic artifact. discoveryClaim / safeToGate stay false.
+// Red lines: no worker import, no verdict, no bundle hash, no money path; model output is advisory.
+// discoveryClaim and (aggregate) safeToGate stay false.
 //
-// Run: npm run p61:llm-hypothesis  [-- --targets 12 --minsnr 7 --maxperiod 13 --tmag 11 --no-llm]
-// Keys are read from the local .env (via loadLocalEnv) or the ambient environment; with none present the
-// LLM layer degrades honestly to deterministic-audit-only.
+// Run: npm run p61:llm-hypothesis  [-- --pos 8 --neg 8 --deep --no-llm]
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { bls } from "../src/detect/bls.ts";
-import { runHypothesisTest, type TestOutcome } from "../src/detect/hypothesisTests.ts";
+import { runHypothesisTest, type TestContext, type TestOutcome } from "../src/detect/hypothesisTests.ts";
 import { TEST_MENU, parseProposal, hypothesisSystemPrompt, hypothesisUserPrompt, type Prediction } from "../src/ai/hypothesis.ts";
 import { listProviders, completeWithProvider } from "../src/ai/llm.ts";
 import { loadLocalEnv } from "../src/solana/anchor.ts";
-import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
-import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
+import { fetchToiTable, labelledNegatives, confirmedPositives, isPlaceable, type ToiRecord } from "../src/data/toiDispositions.ts";
+import { fetchSpocLightCurve } from "../src/data/mastS3.ts";
+import { fetchSpocTargetPixels } from "../src/data/mastS3Pixels.ts";
+import { fetchGaiaNeighborhood, dilutionFromNeighbors, angularSepArcsec, type DilutionResult } from "../src/data/gaiaDilution.ts";
+import { vetoMetrics, acceptVetoTool, type VetoCase } from "../src/candidate/vetoAcceptance.ts";
 import type { LightCurve } from "../src/core/types.ts";
 
 function arg(name: string, dflt: string): string {
@@ -38,177 +43,171 @@ function arg(name: string, dflt: string): string {
 }
 const hasFlag = (name: string) => process.argv.includes(`--${name}`);
 
-const want = Math.max(1, parseInt(arg("targets", "12"), 10));
-const maxPeriod = Number(arg("maxperiod", "13"));
-const tmagCap = Number(arg("tmag", "11"));
+const wantPos = Math.max(1, parseInt(arg("pos", "8"), 10));
+const wantNeg = Math.max(0, parseInt(arg("neg", "8"), 10));
+const deep = hasFlag("deep");
 const useLlm = !hasFlag("no-llm");
 
 interface ModelTurn {
-  model: string;
-  proposal: { test: string; prediction: Prediction; hypothesis: string; rationale: string } | null;
-  parseFail?: string;
-  dataOutcome?: Prediction;
-  dataDetail?: string;
-  agreement?: boolean;
-  diverged?: boolean;
+  model: string; hypothesis: string; test: string; prediction: Prediction;
+  dataOutcome: Prediction; agreement: boolean; diverged: boolean; detail: string;
 }
-interface Row {
-  name: string; tic: number; periodDays: number; snr: number; depthPpm: number; durationHours: number;
-  audit: Record<string, TestOutcome>;
-  llm: ModelTurn[];
+interface Target {
+  name: string; tic: number; isBlend: boolean; periodDays: number; depthPpm: number | null;
+  audit: Record<string, TestOutcome>; llm: ModelTurn[];
+}
+const ppm = (frac: number) => Math.round(frac * 1e6);
+
+async function fetchCurve(rec: ToiRecord, name: string): Promise<{ lc: LightCurve; sector: number } | null> {
+  for (const s of (rec.sectors && rec.sectors.length ? rec.sectors : []).slice(0, 3)) {
+    let lc: LightCurve | null = null;
+    try { lc = await fetchSpocLightCurve(rec.tic, [s], name); } catch { lc = null; }
+    if (lc && lc.points.length >= 120) return { lc, sector: s };
+  }
+  return null;
 }
 
-const ppm = (frac: number) => Math.round(frac * 1e6);
+async function dilutionFor(ra: number, dec: number): Promise<DilutionResult | null> {
+  try {
+    const neigh = await fetchGaiaNeighborhood(ra, dec, { radiusDeg: 21 / 3600 });
+    if (!neigh.length) return null;
+    let host = neigh[0]; let best = Infinity;
+    for (const s of neigh) { const d = angularSepArcsec(ra, dec, s.ra, s.dec); if (d < best) { best = d; host = s; } }
+    const others = neigh.filter((s) => angularSepArcsec(ra, dec, s.ra, s.dec) > 0.5);
+    return dilutionFromNeighbors(host.gmag, ra, dec, others, 21);
+  } catch { return null; }
+}
+
+async function processOne(rec: ToiRecord, isBlend: boolean, providers: { key: string; base: string; model: string; name: string }[]): Promise<Target | null> {
+  const name = `TIC ${rec.tic}${rec.toi ? ` / ${rec.toi}` : ""}`;
+  const got = await fetchCurve(rec, name);
+  if (!got) { console.log(`  ${name.padEnd(22)} [${isBlend ? "NEG" : "POS"}]: no SPOC curve; skip`); return null; }
+  const lc = got.lc;
+
+  const ctx: TestContext = { lc, t0Bjd: rec.epochBjd, periodDays: rec.periodDays, durationHours: rec.durationHours };
+  // peak depth for reporting only (the pipeline's own fold), not used to gate.
+  let depthPpm: number | null = null;
+  try { const b = bls(lc, { maxPeriodDays: rec.periodDays * 1.5 }); depthPpm = ppm(b.depth); } catch { /* leave null */ }
+
+  if (deep) {
+    try { ctx.cube = await fetchSpocTargetPixels(rec.tic, got.sector, name) as unknown as TestContext["cube"]; } catch { /* leave undefined */ }
+    ctx.dilution = (await dilutionFor(rec.ra, rec.dec)) ?? undefined;
+  }
+
+  const audit: Record<string, TestOutcome> = {};
+  for (const t of TEST_MENU) audit[t.id] = runHypothesisTest(t.id, ctx);
+
+  const llm: ModelTurn[] = [];
+  if (providers.length) {
+    const summary = `period ${rec.periodDays.toFixed(4)} d, depth ${depthPpm ?? rec.depthPpm ?? "?"} ppm, duration ${(rec.durationHours || 0).toFixed(2)} h (real single-sector TESS-SPOC curve)`;
+    const sys = hypothesisSystemPrompt();
+    const user = hypothesisUserPrompt(summary);
+    const replies = await Promise.all(providers.map((pr) => completeWithProvider(pr, sys, user, { maxTokens: 220, timeoutMs: 55000 })));
+    providers.forEach((pr, i) => {
+      const parsed = parseProposal(replies[i] ?? "");
+      if (!parsed.ok) return;
+      const outcome = audit[parsed.test] ?? runHypothesisTest(parsed.test, ctx);
+      const det = outcome.determined;
+      llm.push({
+        model: pr.name, hypothesis: parsed.hypothesis, test: parsed.test, prediction: parsed.prediction,
+        dataOutcome: outcome.outcome, agreement: det && parsed.prediction === outcome.outcome,
+        diverged: det && parsed.prediction !== outcome.outcome && outcome.outcome !== "inconclusive", detail: outcome.detail,
+      });
+    });
+  }
+  const a = Object.values(audit).map((o) => `${o.test}:${o.determined ? o.outcome : "?"}`).join(" ");
+  const l = llm.map((t) => `${t.model}->${t.test}(${t.prediction})=${t.dataOutcome}${t.agreement ? " AGREE" : t.diverged ? " DIVERGE" : ""}`).join(" | ");
+  console.log(`  ${name.padEnd(22)} [${isBlend ? "NEG" : "POS"}] P=${rec.periodDays.toFixed(3)}d  audit[${a}]  ${l}`);
+  return { name, tic: rec.tic, isBlend, periodDays: rec.periodDays, depthPpm, audit, llm };
+}
 
 async function main(): Promise<void> {
   let providers: { key: string; base: string; model: string; name: string }[] = [];
-  if (useLlm) {
-    try { loadLocalEnv(); } catch { /* ambient env still applies */ }
-    providers = listProviders();
-  }
+  if (useLlm) { try { loadLocalEnv(); } catch { /* ambient */ } providers = listProviders(); }
 
-  console.log(`P61 LLM->measurement closed loop: up to ${want} confirmed planets, P<=${maxPeriod}d, T<=${tmagCap}.`);
-  console.log(`  deterministic audit tests: ${TEST_MENU.map((t) => t.id).join(", ")}`);
-  console.log(`  LLM proposal layer: ${providers.length ? providers.map((p) => p.name).join(", ") : "OFF (no keys) -> deterministic-audit-only"}`);
-  console.log(`  token-free real SPOC photometry; research probe; nothing gated or claimed.\n`);
+  console.log(`P61 LLM->measurement loop @ ground-truth classes: ${wantPos} positive (KP) + ${wantNeg} negative (FP/EB) from the public TOI table.`);
+  console.log(`  deep pixel/Gaia tests: ${deep ? "ON (--deep)" : "OFF (light-curve tests only; pixel/Gaia degrade to undetermined)"}`);
+  console.log(`  LLM proposal layer: ${providers.length ? providers.map((p) => p.name).join(", ") : "OFF (no keys) -> deterministic 2x2 only"}\n`);
 
-  const planets = (await fetchConfirmedPlanets({ maxTmag: tmagCap, requireTic: true, limit: 6000 })).planets
-    .filter((p) => p.pl_orbper != null && p.pl_orbper > 0 && p.pl_orbper <= maxPeriod)
-    .filter((p) => p.tic != null && p.ra != null && p.dec != null)
-    .slice(0, want * 6);
+  const records = await fetchToiTable();
+  if (!records.length) { console.log("Could not fetch the public TOI table (network). VERDICT: NO-USEFUL-DATA"); return; }
+  const byBright = (a: ToiRecord, b: ToiRecord) => (a.tessMag || 99) - (b.tessMag || 99);
+  const posPick = confirmedPositives(records).filter(isPlaceable).sort(byBright).slice(0, wantPos);
+  const negPick = labelledNegatives(records).filter(isPlaceable).sort(byBright).slice(0, wantNeg);
 
-  const rows: Row[] = [];
-  for (const p of planets) {
-    if (rows.length >= want) break;
-    const tic = p.tic!;
-    const name = p.pl_name ?? p.hostname ?? `TIC ${tic}`;
-    let sectors: number[];
-    try { sectors = await sectorsForCoord(p.ra!, p.dec!); } catch { continue; }
-    if (!sectors.length) continue;
-    let lc: LightCurve | null = null;
-    for (const s of sectors.slice(0, 4)) { try { lc = await fetchSpocLightCurve(tic, [s], name); } catch { lc = null; } if (lc && lc.points.length >= 120) break; }
-    if (!lc) { console.log(`  ${name.padEnd(16)}: no usable SPOC curve; skip`); continue; }
+  const targets: Target[] = [];
+  for (const r of posPick) { const t = await processOne(r, false, providers); if (t) targets.push(t); }
+  for (const r of negPick) { const t = await processOne(r, true, providers); if (t) targets.push(t); }
 
-    let b; try { b = bls(lc, { maxPeriodDays: maxPeriod + 2 }); } catch { continue; }
-    if (!(b.snr >= 7) || b.periodDays <= 0) { console.log(`  ${name.padEnd(16)}: pipeline's own BLS weak (SNR ${b.snr.toFixed(1)}); skip`); continue; }
-    const ctx = { lc, t0Bjd: b.epochBjd, periodDays: b.periodDays, durationHours: b.durationDays * 24 };
+  const nPos = targets.filter((t) => !t.isBlend).length;
+  const nNeg = targets.filter((t) => t.isBlend).length;
+  if (!nPos) { console.log("\nno usable positive targets. VERDICT: INSUFFICIENT-DATA"); return; }
 
-    // Deterministic audit: run every menu test on the pipeline's own detection. Always available.
-    const audit: Record<string, TestOutcome> = {};
-    for (const t of TEST_MENU) audit[t.id] = runHypothesisTest(t.id, ctx);
-
-    // LLM layer: ask each model to propose + choose a test; measure the test IT picked; compare to its prediction.
-    const llm: ModelTurn[] = [];
-    if (providers.length) {
-      const summary = `period ${b.periodDays.toFixed(4)} d, depth ${ppm(b.depth)} ppm, BLS SNR ${b.snr.toFixed(1)}, duration ${(b.durationDays * 24).toFixed(2)} h (real single-sector TESS-SPOC curve)`;
-      const sys = hypothesisSystemPrompt();
-      const user = hypothesisUserPrompt(summary);
-      const replies = await Promise.all(
-        providers.map((pr) => completeWithProvider(pr, sys, user, { maxTokens: 220, timeoutMs: 50000 })),
-      );
-      providers.forEach((pr, i) => {
-        const parsed = parseProposal(replies[i] ?? "");
-        if (!parsed.ok) { llm.push({ model: pr.name, proposal: null, parseFail: parsed.reason }); return; }
-        const outcome = audit[parsed.test] ?? runHypothesisTest(parsed.test, ctx);
-        const determined = outcome.determined;
-        llm.push({
-          model: pr.name,
-          proposal: { test: parsed.test, prediction: parsed.prediction, hypothesis: parsed.hypothesis, rationale: parsed.rationale },
-          dataOutcome: outcome.outcome,
-          dataDetail: outcome.detail,
-          agreement: determined && parsed.prediction === outcome.outcome,
-          diverged: determined && parsed.prediction !== outcome.outcome && outcome.outcome !== "inconclusive",
-        });
-      });
-    }
-
-    rows.push({ name, tic, periodDays: b.periodDays, snr: b.snr, depthPpm: ppm(b.depth), durationHours: b.durationDays * 24, audit, llm });
-    const a = Object.values(audit).map((o) => `${o.test}:${o.determined ? o.outcome : "?"}`).join(" ");
-    const l = llm.map((t) => (t.proposal ? `${t.model}->${t.proposal.test}(${t.proposal.prediction})=${t.dataOutcome}${t.agreement ? " AGREE" : t.diverged ? " DIVERGE" : ""}` : `${t.model}->parse-fail`)).join(" | ");
-    console.log(`  ${name.padEnd(16)} SNR ${b.snr.toFixed(0).padStart(3)}  audit[${a}]  ${l}`);
-  }
-
-  if (!rows.length) { console.log("\nno usable targets (network/SPOC fallback). VERDICT: NO-USEFUL-DATA"); return; }
-
-  const n = rows.length;
-  // deterministic audit roll-up on known planets: each test should read mostly "planet" (positive control).
-  const auditRates: Record<string, { planet: number; blend: number; inconclusive: number; determined: number }> = {};
+  // Per-test 2x2 on ground-truth classes: veto := the test tagged the target "blend"; isBlend := a labelled FP/EB.
+  const perTest: Record<string, { cases: number; power: number | null; powerCI: [number, number] | null; falseVetoRate: number | null; safeToGate: boolean; reason: string }> = {};
   for (const t of TEST_MENU) {
-    const os = rows.map((r) => r.audit[t.id]);
-    auditRates[t.id] = {
-      planet: os.filter((o) => o.determined && o.outcome === "planet").length,
-      blend: os.filter((o) => o.determined && o.outcome === "blend").length,
-      inconclusive: os.filter((o) => !o.determined || o.outcome === "inconclusive").length,
-      determined: os.filter((o) => o.determined).length,
-    };
+    const cases: VetoCase[] = targets.map((tg) => ({ isBlend: tg.isBlend, veto: tg.audit[t.id]?.outcome === "blend" }));
+    const m = vetoMetrics(cases);
+    const acc = acceptVetoTool(cases);
+    perTest[t.id] = { cases: cases.length, power: m.vetoPower, powerCI: m.vetoPowerCI, falseVetoRate: m.falseVetoRate, safeToGate: acc.safeToGate, reason: acc.reason };
   }
-  // LLM-layer agreement.
-  const turns = rows.flatMap((r) => r.llm);
-  const withProposal = turns.filter((t) => t.proposal);
-  const agreed = withProposal.filter((t) => t.agreement).length;
-  const diverged = withProposal.filter((t) => t.diverged).length;
-  const testChoice: Record<string, number> = {};
-  for (const t of withProposal) if (t.proposal) testChoice[t.proposal.test] = (testChoice[t.proposal.test] ?? 0) + 1;
 
-  console.log(`\n=== P61 SUMMARY (${n} known planets with a strong pipeline detection) ===`);
+  const turns = targets.flatMap((t) => t.llm);
+  const agreed = turns.filter((t) => t.agreement).length;
+  const diverged = turns.filter((t) => t.diverged).length;
+
+  console.log(`\n=== P61 SUMMARY (${nPos} known planets + ${nNeg} labelled FP/EB blends) ===`);
   for (const t of TEST_MENU) {
-    const a = auditRates[t.id];
-    console.log(`  [data] ${t.id.padEnd(16)} planet ${a.planet}/${n}  blend ${a.blend}  inconclusive/undet ${a.inconclusive}`);
+    const p = perTest[t.id];
+    const pw = p.power == null ? "n/a" : `${(100 * p.power).toFixed(0)}%`;
+    const fv = p.falseVetoRate == null ? "n/a" : `${(100 * p.falseVetoRate).toFixed(0)}%`;
+    console.log(`  [2x2] ${t.id.padEnd(16)} catch ${pw} [${p.powerCI ? `${(100 * p.powerCI[0]).toFixed(0)},${(100 * p.powerCI[1]).toFixed(0)}` : "-"}]  false-veto ${fv}  safeToGate=${p.safeToGate}`);
+    console.log(`         -> ${p.reason}`);
   }
-  if (providers.length) {
-    console.log(`  [loop] models proposed ${withProposal.length}/${turns.length} valid tests; prediction matched the measurement ${agreed}/${withProposal.length}; diverged ${diverged} time(s)`);
-    console.log(`  [loop] NOTE: divergences are dominated by any test the positive-control flags as a known-planet false-reject -- the loop is AUDITING the test, not proving the model wrong.`);
-    console.log(`  [loop] tests chosen by models: ${Object.entries(testChoice).map(([k, v]) => `${k}x${v}`).join(", ") || "none"}`);
-  } else {
-    console.log(`  [loop] LLM proposal layer OFF (no API keys) -> deterministic audit only`);
-  }
+  if (providers.length) console.log(`  [loop] model predictions matched the measurement ${agreed}/${turns.length}, diverged ${diverged}`);
 
-  // A vetting test that reads "blend" on a KNOWN planet is a false-reject -- flag any test failing the
-  // positive control (measure-before-gate: these tests are diagnostics, and this audit surfaces which, if
-  // any, misfire on real planets so they must NOT be promoted to a gate).
-  const failing = TEST_MENU.filter((t) => auditRates[t.id].blend > 0).map((t) => `${t.id} (${auditRates[t.id].blend} blend-tagged on known planets)`);
-  const verdict = providers.length ? "LOOP-RAN" : "DETERMINISTIC-AUDIT-ONLY";
-  console.log(`\n  positive-control check: ${failing.length ? "tests tagging a KNOWN planet as blend -> " + failing.join("; ") + " (these are diagnostic-only, NOT gates)" : "no vetting test tagged any known planet as a blend (clean positive control)"}`);
-  console.log(`\nVERDICT: ${verdict}  (advisory; a model's idea counts only when the deterministic measurement agrees; discoveryClaim false; nothing gated. safeToGate false)`);
+  const anyGateable = TEST_MENU.some((t) => perTest[t.id].safeToGate);
+  console.log(`\nVERDICT: ${providers.length ? "LOOP-RAN" : "DETERMINISTIC-2X2-ONLY"}; gateable-via-loop=${anyGateable ? "SOME" : "NONE"} (advisory; a test gates only on zero false-vetoes AND power above chance; discoveryClaim false, aggregate safeToGate false).`);
 
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
-      generatedBy: "scripts/p61-llm-hypothesis-loop.ts", n, maxPeriod, tmagCap,
-      providers: providers.map((p) => p.name), useLlm,
-      note: "LLM proposes a falsifiable hypothesis + chooses a menu test; the rig runs that test on real photometry and records whether the data supports/refutes the model. Advisory only; deterministic audit runs regardless of keys. Not a discovery claim.",
+      generatedBy: "scripts/p61-llm-hypothesis-loop.ts", nPos, nNeg, deep, providers: providers.map((p) => p.name), useLlm,
+      positiveSource: "TOI-table KP dispositions (confirmed planets)", negativeSource: "TOI-table FP/EB dispositions (labelled blends)",
+      note: "LLM proposes a falsifiable hypothesis + picks a menu test; the rig measures it on real photometry; each test's catch/false-veto is scored as a 2x2 on ground-truth classes via vetoAcceptance. Advisory; deterministic 2x2 runs even with no keys. Not a discovery claim.",
       integrity: "no worker import, no verdict, no bundle hash, no money path; model output never enters any deterministic artifact.",
     },
-    deterministicAudit: auditRates,
-    llmLoop: { proposals: withProposal.length, turns: turns.length, matchedPrediction: agreed, modelDataDivergence: diverged, testChoice },
-    positiveControlFailing: failing,
-    verdict,
+    perTest,
+    llmLoop: providers.length ? { proposals: turns.length, matchedPrediction: agreed, diverged } : { off: true },
+    gateableViaLoop: anyGateable,
     safeToGate: false,
     discoveryClaim: false,
-    rows,
+    targets,
   };
   writeFileSync("reports/p61-llm-hypothesis.json", JSON.stringify(json, null, 2) + "\n");
 
+  const fmtPct = (x: number | null) => (x == null ? "n/a" : `${(100 * x).toFixed(0)}%`);
   const md = [
-    "# P61 an LLM-proposed hypothesis, settled by a deterministic measurement (closed loop)",
+    "# P61 an LLM-chosen test, scored as a 2x2 on ground-truth classes (closed loop @ scale)",
     "",
-    `Reproduce: \`npm run p61:llm-hypothesis${providers.length ? "" : " -- --no-llm"}\`  (models: ${providers.length ? providers.map((p) => p.name).join(", ") : "none configured -> deterministic audit only"})`,
+    `Reproduce: \`npm run p61:llm-hypothesis -- --pos ${wantPos} --neg ${wantNeg}${deep ? " --deep" : ""}${providers.length ? "" : " --no-llm"}\`  (models: ${providers.length ? providers.map((p) => p.name).join(", ") : "none -> deterministic 2x2"})`,
     "",
-    `On **${n}** known planets with a strong pipeline detection, the rig does two things:`,
-    "1. **Deterministic audit** -- run every vetting test on the real light curve (always available, reproducible):",
+    `Both classes come from ONE token-free public source (the ExoFOP TOI table): **${nPos} confirmed planets (positives)**`,
+    `and **${nNeg} FP/EB dispositions (labelled blends)**. Each menu test is run on real photometry and scored as a`,
+    `full 2x2 via \`src/candidate/vetoAcceptance\` (catch-rate on blends, false-veto on known planets, acceptVetoTool).`,
+    deep ? "Pixel (PSF double-difference) and Gaia-dilution tests are ACTIVE (--deep)." : "Pixel/Gaia tests degrade to undetermined without --deep (light-curve tests below are the operating point).",
     "",
-    `| test | planet-consistent | blend-tagged | inconclusive/undetermined |`,
-    `|---|---|---|---|`,
-    ...TEST_MENU.map((t) => { const a = auditRates[t.id]; return `| ${t.id} | ${a.planet}/${n} | ${a.blend} | ${a.inconclusive} |`; }),
+    `| test | catch-rate on labelled blends | 95% Wilson CI | false-veto on known planets | safe to gate? |`,
+    `|---|---|---|---|---|`,
+    ...TEST_MENU.map((t) => { const p = perTest[t.id]; return `| ${t.id} | ${fmtPct(p.power)} | ${p.powerCI ? `[${(100 * p.powerCI[0]).toFixed(0)}, ${(100 * p.powerCI[1]).toFixed(0)}]` : "-"} | ${fmtPct(p.falseVetoRate)} | ${p.safeToGate} |`; }),
     "",
-    `2. **The loop** -- each model proposes a falsifiable hypothesis and picks the decisive test; the rig measures it.`,
-    providers.length
-      ? `Valid proposals ${withProposal.length}/${turns.length}; a model's prediction MATCHED the measurement ${agreed} time(s), diverged ${diverged} time(s). Models chose: ${Object.entries(testChoice).map(([k, v]) => `${k} x${v}`).join(", ") || "none"}. Divergences are dominated by any test the positive-control flags as a known-planet false-reject -- so the loop is auditing the TEST, not proving the model wrong.`
-      : `LLM layer OFF (no keys) -- this run is the deterministic audit only.`,
+    providers.length ? `LLM loop: ${turns.length} proposals, prediction matched the measurement ${agreed}, diverged ${diverged}.` : `LLM layer OFF -- this is the deterministic per-test 2x2.`,
     "",
-    `Positive control: ${failing.length ? failing.join("; ") + " tagged a known planet as blend -- confirming these are DIAGNOSTIC scores, never a gate" : "no vetting test tagged any known planet as a blend (clean)"}.`,
+    `Gateable via the loop: ${anyGateable ? "SOME" : "NONE"}. ${anyGateable ? "At least one test met the zero-false-veto + power bar on this sample; it still needs a larger, labelled re-run before it could be proposed as a gate." : "No test met the zero-false-veto + power-above-chance bar, so none is gate-worthy here -- every one is a diagnostic score only."}`,
     "",
-    `**Verdict ${verdict}.** An idea becomes a research result here only when a deterministic measurement agrees with it; even then it is a candidate clue, not a claim. Nothing is gated (safeToGate false), no verdict/bundle/money path is touched.`,
+    `An LLM idea becomes a result only when the deterministic measurement agrees; a TEST becomes gate-worthy only when`,
+    `its 2x2 shows zero false-vetoes AND real power. Nothing is wired into a verdict / bundle / money path (safeToGate`,
+    `false, discoveryClaim false).`,
     "",
   ].join("\n");
   writeFileSync("reports/p61-llm-hypothesis.md", md);

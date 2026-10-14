@@ -1,577 +1,665 @@
 {
   "meta": {
     "generatedBy": "scripts/p61-llm-hypothesis-loop.ts",
-    "n": 8,
-    "maxPeriod": 13,
-    "tmagCap": 11,
+    "nPos": 5,
+    "nNeg": 3,
+    "deep": true,
     "providers": [
       "deepseek-chat",
       "grok-4.7"
     ],
     "useLlm": true,
-    "note": "LLM proposes a falsifiable hypothesis + chooses a menu test; the rig runs that test on real photometry and records whether the data supports/refutes the model. Advisory only; deterministic audit runs regardless of keys. Not a discovery claim.",
+    "positiveSource": "TOI-table KP dispositions (confirmed planets)",
+    "negativeSource": "TOI-table FP/EB dispositions (labelled blends)",
+    "note": "LLM proposes a falsifiable hypothesis + picks a menu test; the rig measures it on real photometry; each test's catch/false-veto is scored as a 2x2 on ground-truth classes via vetoAcceptance. Advisory; deterministic 2x2 runs even with no keys. Not a discovery claim.",
     "integrity": "no worker import, no verdict, no bundle hash, no money path; model output never enters any deterministic artifact."
   },
-  "deterministicAudit": {
+  "perTest": {
     "bls-snr": {
-      "planet": 7,
-      "blend": 0,
-      "inconclusive": 1,
-      "determined": 8
+      "cases": 8,
+      "power": 0,
+      "powerCI": [
+        0,
+        0.5615060804490177
+      ],
+      "falseVetoRate": 0,
+      "safeToGate": false,
+      "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
     },
     "odd-even-depth": {
-      "planet": 3,
-      "blend": 5,
-      "inconclusive": 0,
-      "determined": 8
+      "cases": 8,
+      "power": 0.3333333333333333,
+      "powerCI": [
+        0.061490315276160556,
+        0.792345044873512
+      ],
+      "falseVetoRate": 0.4,
+      "safeToGate": false,
+      "reason": "2 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "secondary-eclipse": {
-      "planet": 8,
-      "blend": 0,
-      "inconclusive": 0,
-      "determined": 8
+      "cases": 8,
+      "power": 0.3333333333333333,
+      "powerCI": [
+        0.061490315276160556,
+        0.792345044873512
+      ],
+      "falseVetoRate": 0.2,
+      "safeToGate": false,
+      "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     },
     "shape-coherence": {
-      "planet": 7,
-      "blend": 0,
-      "inconclusive": 1,
-      "determined": 8
+      "cases": 8,
+      "power": 0,
+      "powerCI": [
+        0,
+        0.5615060804490177
+      ],
+      "falseVetoRate": 0,
+      "safeToGate": false,
+      "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
+    },
+    "psf-localize": {
+      "cases": 8,
+      "power": 0.3333333333333333,
+      "powerCI": [
+        0.061490315276160556,
+        0.792345044873512
+      ],
+      "falseVetoRate": 0,
+      "safeToGate": false,
+      "reason": "zero false vetoes but veto power 0.33 (95% low 0.06) is below target 0.5 / not above chance 0.5 -- safe but under-powered"
+    },
+    "gaia-dilution": {
+      "cases": 8,
+      "power": 0.6666666666666666,
+      "powerCI": [
+        0.20765495512648796,
+        0.9385096847238394
+      ],
+      "falseVetoRate": 0.6,
+      "safeToGate": false,
+      "reason": "3 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate"
     }
   },
   "llmLoop": {
-    "proposals": 11,
-    "turns": 16,
-    "matchedPrediction": 3,
-    "modelDataDivergence": 8,
-    "testChoice": {
-      "odd-even-depth": 10,
-      "shape-coherence": 1
-    }
+    "proposals": 10,
+    "matchedPrediction": 4,
+    "diverged": 3
   },
-  "positiveControlFailing": [
-    "odd-even-depth (5 blend-tagged on known planets)"
-  ],
-  "verdict": "LOOP-RAN",
+  "gateableViaLoop": false,
   "safeToGate": false,
   "discoveryClaim": false,
-  "rows": [
+  "targets": [
     {
-      "name": "pi Men c",
-      "tic": 261136679,
-      "periodDays": 3.1411363778511108,
-      "snr": 15.993173101423718,
-      "depthPpm": 139,
-      "durationHours": 2.267087799557422,
+      "name": "TIC 283722336 / 1469.01",
+      "tic": 283722336,
+      "isBlend": false,
+      "periodDays": 3.0929386,
+      "depthPpm": 90,
       "audit": {
         "bls-snr": {
           "test": "bls-snr",
           "metricLabel": "re-detection SNR",
-          "metric": 13.180468608702098,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 3.1215 d (claimed 3.1411, within 5%), SNR 13.2"
-        },
-        "odd-even-depth": {
-          "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 2,
-          "determined": true,
-          "outcome": "blend",
-          "detail": "|odd-even|/mean depth = 2.00 (odd -0.0 ppt vs even 0.2 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": -0.0652018395491201,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = -0.07 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 0.3326322035554569,
+          "metric": -7.453703220232458,
           "determined": true,
           "outcome": "inconclusive",
-          "detail": "median/mean depth = 0.33 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 139 ppm dip at 3.1411 d is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits should have equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit rather than an eclipsing binary."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 2.00 (odd -0.0 ppt vs even 0.2 ppt)",
-          "agreement": false,
-          "diverged": true
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 3.1411 d, 139 ppm signal is a genuine planetary transit, not an eclipsing binary at twice the period.",
-            "rationale": "A large odd-versus-even depth mismatch would falsify the planet claim and expose an eclipsing-binary alias."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 2.00 (odd -0.0 ppt vs even 0.2 ppt)",
-          "agreement": false,
-          "diverged": true
-        }
-      ]
-    },
-    {
-      "name": "HR 858 b",
-      "tic": 178155732,
-      "periodDays": 3.6132985255394976,
-      "snr": 14.986659143185166,
-      "depthPpm": 122,
-      "durationHours": 4.8274469230281465,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 16.903657788615295,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 3.5969 d (claimed 3.6133, within 5%), SNR 16.9"
+          "detail": "BLS peak 4.8327 d (claimed 3.0929, off by >5%), SNR -7.5"
         },
         "odd-even-depth": {
           "test": "odd-even-depth",
           "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.6365258384562691,
+          "metric": 1.3162200282085448,
           "determined": true,
           "outcome": "blend",
-          "detail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)"
+          "detail": "|odd-even|/mean depth = 1.32 (odd 0.0 ppt vs even 0.2 ppt)"
         },
         "secondary-eclipse": {
           "test": "secondary-eclipse",
           "metricLabel": "secondary/primary depth ratio",
-          "metric": 0.06121133455452233,
+          "metric": -0.2612312811971318,
           "determined": true,
           "outcome": "planet",
-          "detail": "secondary/primary = 0.06 (>=0.2 points to a stellar companion)"
+          "detail": "secondary/primary = -0.26 (>=0.2 points to a stellar companion)"
         },
         "shape-coherence": {
           "test": "shape-coherence",
           "metricLabel": "folded shape coherence ratio",
-          "metric": 1.1407059947238258,
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "ratio undefined on this curve"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 44.29954853043084,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 44.3 arcsec from target, ampSnr 1.6, deltaChi2 1 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.4204124023241892,
           "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 1.14 (near 1 = coherent box, near 0 = single-point spike)"
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.420 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
       "llm": [
         {
           "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 122 ppm dip at 3.6133 d is a genuine planetary transit rather than an eclipsing-binary or blend false positive, so odd and even transits should have equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)",
-          "agreement": false,
-          "diverged": true
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 3.6133 d, 122 ppm signal is a genuine planetary transit rather than a half-period eclipsing-binary alias, so odd and even transit depths match.",
-            "rationale": "A large odd-even depth mismatch would falsify the planet claim and expose an eclipsing binary."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)",
-          "agreement": false,
-          "diverged": true
-        }
-      ]
-    },
-    {
-      "name": "HR 858 d",
-      "tic": 178155732,
-      "periodDays": 3.6132985255394976,
-      "snr": 14.986659143185166,
-      "depthPpm": 122,
-      "durationHours": 4.8274469230281465,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 16.903657788615295,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 3.5969 d (claimed 3.6133, within 5%), SNR 16.9"
-        },
-        "odd-even-depth": {
+          "hypothesis": "The 90 ppm, 0.88 h dip at 3.0929 d is a genuine planetary transit rather than a blend, eclipsing binary, spike, or ephemeris alias.",
           "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.6365258384562691,
-          "determined": true,
-          "outcome": "blend",
-          "detail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": 0.06121133455452233,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = 0.06 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 1.1407059947238258,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 1.14 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 122 ppm, 4.83 h dip at 3.6133 d is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits should show equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit rather than an eclipsing binary."
-          },
+          "prediction": "planet",
           "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)",
           "agreement": false,
-          "diverged": true
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 122 ppm signal at 3.6133 d is a planetary transit with equal odd and even depths, not an eclipsing binary.",
-            "rationale": "A large odd-versus-even depth mismatch would falsify the equal-depth planet claim and indicate an eclipsing binary."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)",
-          "agreement": false,
-          "diverged": true
+          "diverged": true,
+          "detail": "|odd-even|/mean depth = 1.32 (odd 0.0 ppt vs even 0.2 ppt)"
         }
       ]
     },
     {
-      "name": "HR 858 c",
-      "tic": 178155732,
-      "periodDays": 3.6132985255394976,
-      "snr": 14.986659143185166,
-      "depthPpm": 122,
-      "durationHours": 4.8274469230281465,
+      "name": "TIC 283722336 / 1469.02",
+      "tic": 283722336,
+      "isBlend": false,
+      "periodDays": 6.7650398,
+      "depthPpm": -282,
       "audit": {
         "bls-snr": {
           "test": "bls-snr",
           "metricLabel": "re-detection SNR",
-          "metric": 16.903657788615295,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 3.5969 d (claimed 3.6133, within 5%), SNR 16.9"
-        },
-        "odd-even-depth": {
-          "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.6365258384562691,
-          "determined": true,
-          "outcome": "blend",
-          "detail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": 0.06121133455452233,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = 0.06 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 1.1407059947238258,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 1.14 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 122 ppm dip at 3.6133 d is a genuine planetary transit rather than an eclipsing-binary blend or systematic artifact, so the odd and even transits will show equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit rather than an eclipsing binary."
-          },
-          "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.64 (odd 0.2 ppt vs even 0.1 ppt)",
-          "agreement": false,
-          "diverged": true
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": null,
-          "parseFail": "empty reply"
-        }
-      ]
-    },
-    {
-      "name": "HD 50554 c",
-      "tic": 80224448,
-      "periodDays": 12.98673926562278,
-      "snr": 14.124869945242418,
-      "depthPpm": 170,
-      "durationHours": 14.999999999999996,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 14.620045095002816,
+          "metric": -13.088430953254841,
           "determined": true,
           "outcome": "inconclusive",
-          "detail": "BLS peak 4.1785 d (claimed 12.9867, off by >5%), SNR 14.6"
+          "detail": "BLS peak 6.6429 d (claimed 6.7650, within 5%), SNR -13.1"
         },
         "odd-even-depth": {
           "test": "odd-even-depth",
           "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.03508680622625194,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "|odd-even|/mean depth = 0.04 (odd 0.2 ppt vs even 0.2 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": -0.20701228679092068,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = -0.21 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 0.9769801395014085,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 0.98 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "shape-coherence",
-            "prediction": "planet",
-            "hypothesis": "The 12.9867 d, 170 ppm dip is a genuine planetary transit whose folded shape is a coherent, repeated box rather than a single-point spike or blend artifact.",
-            "rationale": "If the folded dip collapses to an incoherent single-point spike or fails to repeat as a box across successive transits, my claim is falsified."
-          },
-          "dataOutcome": "planet",
-          "dataDetail": "median/mean depth = 0.98 (near 1 = coherent box, near 0 = single-point spike)",
-          "agreement": true,
-          "diverged": false
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": null,
-          "parseFail": "empty reply"
-        }
-      ]
-    },
-    {
-      "name": "HD 207496 b",
-      "tic": 290348383,
-      "periodDays": 11.571447074800009,
-      "snr": 18.39113586096234,
-      "depthPpm": 4756,
-      "durationHours": 14.999999999999996,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 17.465161166039284,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 11.2892 d (claimed 11.5714, within 5%), SNR 17.5"
-        },
-        "odd-even-depth": {
-          "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.12835641172143336,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "|odd-even|/mean depth = 0.13 (odd 5.1 ppt vs even 5.8 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": -0.11564409864622453,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = -0.12 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 1.1916888840754212,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 1.19 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 11.5714 d, 4756 ppm dip is a genuine planetary transit rather than an eclipsing-binary blend, so odd and even transits should have equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit rather than an eclipsing binary."
-          },
-          "dataOutcome": "planet",
-          "dataDetail": "|odd-even|/mean depth = 0.13 (odd 5.1 ppt vs even 5.8 ppt)",
-          "agreement": true,
-          "diverged": false
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": null,
-          "parseFail": "empty reply"
-        }
-      ]
-    },
-    {
-      "name": "HD 213885 b",
-      "tic": 403224672,
-      "periodDays": 1.0075426216103405,
-      "snr": 18.659963045513845,
-      "depthPpm": 204,
-      "durationHours": 1.5536162529769286,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 18.035100379813198,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 1.0069 d (claimed 1.0075, within 5%), SNR 18.0"
-        },
-        "odd-even-depth": {
-          "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.11696257474680251,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "|odd-even|/mean depth = 0.12 (odd 0.2 ppt vs even 0.2 ppt)"
-        },
-        "secondary-eclipse": {
-          "test": "secondary-eclipse",
-          "metricLabel": "secondary/primary depth ratio",
-          "metric": -0.036600689719798594,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "secondary/primary = -0.04 (>=0.2 points to a stellar companion)"
-        },
-        "shape-coherence": {
-          "test": "shape-coherence",
-          "metricLabel": "folded shape coherence ratio",
-          "metric": 0.9607945587596234,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 0.96 (near 1 = coherent box, near 0 = single-point spike)"
-        }
-      },
-      "llm": [
-        {
-          "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 204 ppm dip at 1.0075 d is a genuine planetary transit rather than an eclipsing-binary blend, so odd and even transits should have equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that this is a planetary transit rather than an eclipsing binary."
-          },
-          "dataOutcome": "planet",
-          "dataDetail": "|odd-even|/mean depth = 0.12 (odd 0.2 ppt vs even 0.2 ppt)",
-          "agreement": true,
-          "diverged": false
-        },
-        {
-          "model": "grok-4.7",
-          "proposal": null,
-          "parseFail": "empty reply"
-        }
-      ]
-    },
-    {
-      "name": "TOI-6054.01",
-      "tic": 392681545,
-      "periodDays": 11.54064282037106,
-      "snr": 10.570640947449698,
-      "depthPpm": 181,
-      "durationHours": 14.999999999999996,
-      "audit": {
-        "bls-snr": {
-          "test": "bls-snr",
-          "metricLabel": "re-detection SNR",
-          "metric": 10.03768167445178,
-          "determined": true,
-          "outcome": "planet",
-          "detail": "BLS peak 11.2198 d (claimed 11.5406, within 5%), SNR 10.0"
-        },
-        "odd-even-depth": {
-          "test": "odd-even-depth",
-          "metricLabel": "odd/even depth mismatch (frac)",
-          "metric": 0.5920725345318615,
+          "metric": 0.35422818142301016,
           "determined": true,
           "outcome": "blend",
-          "detail": "|odd-even|/mean depth = 0.59 (odd 0.1 ppt vs even 0.2 ppt)"
+          "detail": "|odd-even|/mean depth = 0.35 (odd 0.4 ppt vs even 0.2 ppt)"
         },
         "secondary-eclipse": {
           "test": "secondary-eclipse",
           "metricLabel": "secondary/primary depth ratio",
-          "metric": -0.10717159763471418,
+          "metric": -1.0318940082337247,
           "determined": true,
           "outcome": "planet",
-          "detail": "secondary/primary = -0.11 (>=0.2 points to a stellar companion)"
+          "detail": "secondary/primary = -1.03 (>=0.2 points to a stellar companion)"
         },
         "shape-coherence": {
           "test": "shape-coherence",
           "metricLabel": "folded shape coherence ratio",
-          "metric": 1.0251928875670409,
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "ratio undefined on this curve"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.4204124023241892,
           "determined": true,
-          "outcome": "planet",
-          "detail": "median/mean depth = 1.03 (near 1 = coherent box, near 0 = single-point spike)"
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.420 (< 0.7 = a resolved contaminant dilutes the signal)"
         }
       },
       "llm": [
         {
           "model": "deepseek-chat",
-          "proposal": {
-            "test": "odd-even-depth",
-            "prediction": "planet",
-            "hypothesis": "The 181 ppm dip at 11.5406 d is a genuine planetary transit rather than a blended eclipsing binary, so odd and even transits will have equal depths.",
-            "rationale": "A significant odd-even depth mismatch would falsify the claim that the signal is a genuine planet rather than an eclipsing binary blend."
-          },
+          "hypothesis": "The 6.7650 d, 282 ppm, 1.42 h dip is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so it should repeat coherently at the claimed period with equal odd/even depths.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
           "dataOutcome": "blend",
-          "dataDetail": "|odd-even|/mean depth = 0.59 (odd 0.1 ppt vs even 0.2 ppt)",
           "agreement": false,
-          "diverged": true
+          "diverged": true,
+          "detail": "|odd-even|/mean depth = 0.35 (odd 0.4 ppt vs even 0.2 ppt)"
+        }
+      ]
+    },
+    {
+      "name": "TIC 136916387 / 2011.01",
+      "tic": 136916387,
+      "isBlend": false,
+      "periodDays": 11.5778362083528,
+      "depthPpm": 474,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 13.207034358219223,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 11.6723 d (claimed 11.5778, within 5%), SNR 13.2"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few transits on one side to judge"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.4463850110212411,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.45 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.989732591237019,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.99 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 474 ppm, 3.88 h dip at 11.5778 d is a genuine planetary transit rather than a blend, eclipsing binary, or ephemeris alias, so it should repeat coherently at the claimed period with equal odd/even depths.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "agreement": false,
+          "diverged": false,
+          "detail": "too few transits on one side to judge"
+        }
+      ]
+    },
+    {
+      "name": "TIC 136916387 / 2011.02",
+      "tic": 136916387,
+      "isBlend": false,
+      "periodDays": 27.5920717535465,
+      "depthPpm": 474,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 13.296271076861553,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 10.9511 d (claimed 27.5921, off by >5%), SNR 13.3"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "too few transits on one side to judge"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.14767048625924734,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.15 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 0.989732591237019,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 0.99 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "localization not determined (no significant displaced source)"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 474 ppm, 3.27 h dip at 27.5921 d is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits will have equal depths.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "agreement": false,
+          "diverged": false,
+          "detail": "too few transits on one side to judge"
         },
         {
           "model": "grok-4.7",
-          "proposal": null,
-          "parseFail": "empty reply"
+          "hypothesis": "The 474 ppm, 3.27 h signal at 27.5921 d is a coherent multi-cadence transit, not a single-point spike masquerading as one.",
+          "test": "shape-coherence",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "agreement": true,
+          "diverged": false,
+          "detail": "median/mean depth = 0.99 (near 1 = coherent box, near 0 = single-point spike)"
+        }
+      ]
+    },
+    {
+      "name": "TIC 332064670 / 1773.01",
+      "tic": 332064670,
+      "isBlend": false,
+      "periodDays": 0.736546250262761,
+      "depthPpm": 316,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 25.558861151047605,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 0.7357 d (claimed 0.7365, within 5%), SNR 25.6"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.03791218612579499,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.04 (odd 0.3 ppt vs even 0.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": -0.018708948197878564,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = -0.02 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0012648661616754,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.00 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 53.212952841457216,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 53.2 arcsec from target, ampSnr 0.7, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 0.7365 d, 316 ppm dip is a genuine planetary transit rather than an eclipsing-binary or blended false positive, so odd and even transits should have equal depths.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "agreement": true,
+          "diverged": false,
+          "detail": "|odd-even|/mean depth = 0.04 (odd 0.3 ppt vs even 0.3 ppt)"
+        }
+      ]
+    },
+    {
+      "name": "TIC 297967252 / 1025.01",
+      "tic": 297967252,
+      "isBlend": true,
+      "periodDays": 9.683790810595978,
+      "depthPpm": -651,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": -28.488504752785737,
+          "determined": true,
+          "outcome": "inconclusive",
+          "detail": "BLS peak 1.1758 d (claimed 9.6838, off by >5%), SNR -28.5"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.037368678528276494,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.04 (odd 3.1 ppt vs even 3.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.12281136311303739,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.12 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "ratio undefined on this curve"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 29.249615382086617,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 29.2 arcsec from target, ampSnr 3.5, deltaChi2 4 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.5,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.500 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 9.6838 d, 651 ppm, 1.70 h dip is a genuine planetary transit rather than an eclipsing binary or blended false positive.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "agreement": true,
+          "diverged": false,
+          "detail": "|odd-even|/mean depth = 0.04 (odd 3.1 ppt vs even 3.3 ppt)"
+        },
+        {
+          "model": "grok-4.7",
+          "hypothesis": "The 9.6838 d, 651 ppm signal is a coherent repeated planetary transit, not a single-point spike or an ephemeris alias.",
+          "test": "bls-snr",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "agreement": false,
+          "diverged": false,
+          "detail": "BLS peak 1.1758 d (claimed 9.6838, off by >5%), SNR -28.5"
+        }
+      ]
+    },
+    {
+      "name": "TIC 458856474 / 1978.01",
+      "tic": 458856474,
+      "isBlend": true,
+      "periodDays": 6.081043046196433,
+      "depthPpm": 13086,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 69.18253479672804,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 6.0813 d (claimed 6.0810, within 5%), SNR 69.2"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.18936248334676545,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "|odd-even|/mean depth = 0.19 (odd 17.9 ppt vs even 14.8 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.06203053607998381,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "secondary/primary = 0.06 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0134922015246495,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.01 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 106.21387742020879,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "displaced source 106.2 arcsec from target, ampSnr 12.8, deltaChi2 164 -> off-target"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": 0.30832992175285445,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "host fraction of aperture light = 0.308 (< 0.7 = a resolved contaminant dilutes the signal)"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 6.0810 d, 13086 ppm, 4.82 h dip is a genuine planetary transit rather than an eclipsing-binary or blend false positive.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "agreement": true,
+          "diverged": false,
+          "detail": "|odd-even|/mean depth = 0.19 (odd 17.9 ppt vs even 14.8 ppt)"
+        }
+      ]
+    },
+    {
+      "name": "TIC 412961700 / 589.01",
+      "tic": 412961700,
+      "isBlend": true,
+      "periodDays": 2.51838455597415,
+      "depthPpm": 334,
+      "audit": {
+        "bls-snr": {
+          "test": "bls-snr",
+          "metricLabel": "re-detection SNR",
+          "metric": 28.929715685236953,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "BLS peak 2.5226 d (claimed 2.5184, within 5%), SNR 28.9"
+        },
+        "odd-even-depth": {
+          "test": "odd-even-depth",
+          "metricLabel": "odd/even depth mismatch (frac)",
+          "metric": 0.3041431361563907,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "|odd-even|/mean depth = 0.30 (odd 0.5 ppt vs even 0.3 ppt)"
+        },
+        "secondary-eclipse": {
+          "test": "secondary-eclipse",
+          "metricLabel": "secondary/primary depth ratio",
+          "metric": 0.24742942453280387,
+          "determined": true,
+          "outcome": "blend",
+          "detail": "secondary/primary = 0.25 (>=0.2 points to a stellar companion)"
+        },
+        "shape-coherence": {
+          "test": "shape-coherence",
+          "metricLabel": "folded shape coherence ratio",
+          "metric": 1.0686139874616725,
+          "determined": true,
+          "outcome": "planet",
+          "detail": "median/mean depth = 1.07 (near 1 = coherent box, near 0 = single-point spike)"
+        },
+        "psf-localize": {
+          "test": "psf-localize",
+          "metricLabel": "PSF double-difference offset (arcsec)",
+          "metric": 20.682601383771814,
+          "determined": false,
+          "outcome": "inconclusive",
+          "detail": "displaced source 20.7 arcsec from target, ampSnr 1.1, deltaChi2 0 -> inconclusive"
+        },
+        "gaia-dilution": {
+          "test": "gaia-dilution",
+          "metricLabel": "aperture dilution factor (host/total)",
+          "metric": null,
+          "outcome": "inconclusive",
+          "determined": false,
+          "detail": "no Gaia dilution supplied"
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "hypothesis": "The 334 ppm, 2.16 h dip at 2.5184 d is a genuine planetary transit rather than an eclipsing-binary or blend false positive, so odd and even transits should show equal depths.",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "blend",
+          "agreement": false,
+          "diverged": true,
+          "detail": "|odd-even|/mean depth = 0.30 (odd 0.5 ppt vs even 0.3 ppt)"
         }
       ]
     }

@@ -283,6 +283,17 @@ completeness multiplier.
 
 Reproduce: `npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7`.
 
+P60 turns the same question into the head-to-head A/B a reviewer asked for (the prerequisite to ever
+consider leaning on a joint multi-sector search for novel targets): on 20 confirmed planets with >= 2 usable
+real sectors, run BOTH a single-sector arm (best of independent per-sector BLS) and a joint arm (BLS on the
+stitched long baseline), same detector + SNR>=7 + period-within-5% gate. Result: **both arms re-find 6/20
+(30%), lift +0.0 pp**, and the joint arm's mean SNR (19.6) is actually *lower* than the single arm's (23.0) --
+naively stitching sectors separated by baseline gaps breaks phase coherence for periods near/above the span,
+hurting rather than helping. Verdict `NO-JOINT-ADVANTAGE`. This is direct empirical evidence that the joint
+multi-sector path, as implemented on public single-/few-sector data, gives no re-find advantage -- so there is
+NO basis to relax the discovery-claim limit, and doing so remains off the table. Positive control on known
+planets; research-only, nothing gated. Reproduce: `npm run p60:joint-vs-single`.
+
 ---
 
 ## 10. Are window aliases the problem? Measured -- no, not here (P43)
@@ -741,6 +752,7 @@ npm run p56:real-selection     # per-target selection function on real Gaia dilu
 npm run p57:true-veto           # first REAL true-veto 2x2 on token-free labelled TOI dispositions -> reports/p57-*
 npm run p58:veto-2x2             # scaled + phase-refined 2x2 (refutes the timing-artifact caveat) -> reports/p58-*
 npm run p59:offtarget-subset      # catch-rate on the localization-addressable (Gaia resolved-contaminant) subset -> reports/p59-*
+npm run p60:joint-vs-single        # joint multi-sector vs single-sector re-find A/B head-to-head on known planets -> reports/p60-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

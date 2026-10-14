@@ -341,8 +341,12 @@ low -- median **0.020**, max **0.042**, and **0/16** real planets pushed above 0
 check. But these are bright, uncrowded hosts: only 1/16 had a neighbour that could even be a blend, so the sample does
 not exercise the crowded-field regime where the impostor actually bites. The honest verdict is that this P(FP) is a
 **prior-dependent ranking / triage quantity, not a validation and not safe to gate** -- a neighbour existing does not
-mean it is an EB. A discovery-grade version needs a measured EB depth function and resolved-photometry contrast limits,
-not order-of-magnitude priors; the discriminating test on crowded blind candidates is future work.
+mean it is an EB. A reviewer sharpened exactly this: *acceptance testing a veto tool needs performance in crowded
+fields where blends matter, not just a synthetic pass.* We took that seriously and closed the gap in P51 (section 18):
+re-running P(FP) on a sample deliberately pushed into the galactic disc (15/24 crowded, up to 34 Gaia neighbours in
+the aperture) still gives median P(FP) 0.020 with 0 above 0.5 -- so even in the regime the tool was built for, crowding
+raises the *count* of candidate contaminants but the crude prior produces **no discrimination**. A discovery-grade
+version needs a measured EB depth function and resolved-photometry contrast limits, not order-of-magnitude priors.
 
 Reproduce: `npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21`.
 
@@ -463,7 +467,42 @@ Reproduce: `npm run p50:replay -- --repeats 3 --tmag 10 --sector 1`.
 
 ---
 
-## 18. Honest limitations
+## 18. A reviewer's acceptance test: crowded-field localization + a labelled negative class (P51)
+
+A professional reviewer's objection to the two veto tools was precise and correct: *"a synthetic-data pass is not
+enough for a veto tool. Acceptance testing also needs localization on confirmed planets and performance in crowded
+fields where blends matter."* P44 had localized confirmed planets, but on mostly-uncrowded hosts; P45 was
+characterised only on bright isolated stars -- the regime where blends do NOT happen. This section closes that gap
+measurement-first.
+
+`src/candidate/crowding.ts` computes a field's crowding: absolute galactic latitude |b| and the number / nearest
+separation of Gaia neighbours inside the ~21" aperture. `scripts/p51-crowding-stratified.ts` samples confirmed planets
+lowest-|b| first (forcing crowded fields into the sample) and reports P(FP) and the P44 difference-imaging localization
+STRATIFIED BY CROWDING. On 24 planets (15 crowded, up to 34 neighbours in aperture):
+
+- **P(FP) does not discriminate even when crowded.** Median P(FP) = 0.020 in every bin (isolated / moderate /
+  crowded), 0 planets above 0.5. Crowding raises the count of candidate contaminants but the crude literature-EB prior
+  turns that into no separation -- confirming P45's verdict holds in the hard regime, now with the crowded sample the
+  reviewer asked for.
+- **Naive difference-imaging localization still kills real planets in crowded fields.** Of 8 planets localized on real
+  SPOC pixels, 4 confirmed planets were wrongly vetoed off-target at a 2" cut (including HD 114082 b at difference-image
+  SNR 76, mislocalized by 22"). P44's NOT-SAFE verdict extends into crowding; the coherent pointing/focus structure is
+  if anything worse there.
+
+The deeper point the reviewer implies: a veto's TRUE power (catching real blends) can only be measured against a
+labelled NEGATIVE class; with only confirmed planets (positives) you can measure over-kill, never catch-rate. We probed
+reachability: **ExoFOP-TESS** (the per-candidate community dispositions that would say "this candidate is an EB/blend")
+is NOT anonymously reachable -- its REST paths 404 and the documented API needs a registered token, the concrete blocker
+to the full 2x2 acceptance test. But **VizieR** (the General Catalogue of Variable Stars, B/gcvs) returns labelled
+eclipsing binaries at known positions anonymously -- a token-free positional negative class. Building the crowded-field
+true-veto 2x2 (true-veto vs false-veto, ROC, operating point) on those pixels is now UNBLOCKED and is the honest next
+step; it is not run here. Both veto tools remain `safeToGate: false`.
+
+Reproduce: `npm run p51:crowding -- --targets 24 --tmag 12 --pixcap 8 --aperture 21`.
+
+---
+
+## 19. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -478,9 +517,14 @@ Reproduce: `npm run p50:replay -- --repeats 3 --tmag 10 --sector 1`.
   difference-image centroid mislocalizes confirmed planets by 11-45 arcsec on real SPOC pixels (a systematic, not just
   noise), so it is not safe to veto; the full-aperture centroid shift (<= 0.6") remains the pixel lever. A real gain
   would need PSF-model double-difference imaging.
-- **The false-positive probability is a prior, not a verdict.** P45 shows the measured-Gaia blend term does not
-  false-alarm on 16 bright, uncrowded confirmed planets (0/16 above P(FP)=0.5), but that sample never exercises the
-  crowded field where blends dominate; P(FP) ranks candidates, it does not validate them.
+- **The false-positive probability is a prior, not a verdict.** P45 showed the measured-Gaia blend term does not
+  false-alarm on bright uncrowded confirmed planets (0/16 above P(FP)=0.5); P51 re-tested it on a crowded, low-|b|
+  sample (15/24 crowded, up to 34 neighbours) and P(FP) STILL sits at 0.020 with 0 above 0.5 -- crowding adds
+  contaminant *count*, not discrimination. P(FP) ranks candidates, it does not validate them.
+- **A veto needs a labelled negative class to be accepted, and so far we only have positives.** P51 measures
+  crowded-field localization (naive difference-imaging still false-kills 4/8 confirmed planets) and confirms P(FP)
+  has no crowded-field discrimination; the true-veto power test needs real labelled blends, which ExoFOP-TESS gates
+  behind a token while VizieR EBs are reachable -- so the full 2x2 acceptance is unblocked but not yet run.
 - **O-C coherence is not a period-selector on real data.** P46 measures that a multi-year linear-O-C coherence
   score recognises clean single signals (true-period median 0.74) but only clears 0.5 on 3/6 known planets, collapses
   on multi-planet systems, and does not beat the raw BLS peak at picking a known period (3/6 vs 4/6) because
@@ -492,14 +536,14 @@ Reproduce: `npm run p50:replay -- --repeats 3 --tmag 10 --sector 1`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 19. Reproducibility
+## 20. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 340 unit tests
+npm test                     # 347 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -515,6 +559,7 @@ npm run p47:completeness-grid # 2-D period x depth completeness map on real curv
 npm run p48:novelty-check     # board-candidate novelty vs the NASA Exoplanet Archive -> reports/p48-*
 npm run p49:blind-test        # formal sealed-key blind test (precision/recall) -> reports/p49-*
 npm run p50:replay            # end-to-end deterministic replay from raw S3 bytes -> reports/p50-*
+npm run p51:crowding          # crowding-stratified blend-veto acceptance re-validation -> reports/p51-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

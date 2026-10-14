@@ -36,6 +36,7 @@ const p46 = load("reports/p46-coherence.json");
 const p47 = load("reports/p47-completeness-grid.json");
 const p49 = load("reports/p49-blind-test.json");
 const p50 = load("reports/p50-replay.json");
+const p51 = load("reports/p51-crowding-stratified.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -184,6 +185,18 @@ const payload = {
     reDownloadMatch: p50.reDownloadReplayHashMatch,
     independentRecomputeOk: p50.independentRecomputeOk,
     allDeterministic: p50.allDeterministic,
+    discoveryClaim: false,
+  },
+  blendVetoAcceptance: {
+    label: "crowding-stratified blend-veto acceptance re-check (P51, reviewer follow-up)",
+    nTotal: p51.nRows,
+    nCrowded: (p51.crowdingOfSample.find((x: any) => x.bin === "crowded") || { n: 0 }).n,
+    pfpMedianCrowded: (p51.stratified.find((x: any) => x.bin === "crowded") || { pfpMedian: null }).pfpMedian,
+    localized: p51.totalLocalized,
+    falseKills: p51.totalFalseKills,
+    negativeClassExoFop: p51.negativeClass.exofop.reachable,
+    negativeClassVizieR: p51.negativeClass.vizierEb.reachable,
+    safeToGate: false,
     discoveryClaim: false,
   },
   detectionEfficiency: {

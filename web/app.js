@@ -1053,6 +1053,7 @@ function renderResearch(r) {
         `<div class="rc-metric"><span class="k">PDM period agreement</span><span class="v">${cv.pdm.agreement.agree}/${cv.pdm.agreement.comparable} (${pct(cv.pdm.agreement.rate)})</span></div>` +
         `<div class="rc-metric"><span class="k">Python-stack purity</span><span class="v">${pct(cv.python.purity)} (${cv.python.nullTP}/${cv.python.nullFP})</span></div>` +
         (r.replayDeterminism ? `<div class="rc-metric"><span class="k">deterministic replay</span><span class="v">${r.replayDeterminism.allDeterministic ? "reproducible" : "not reproducible"} &middot; hash ${esc(String(r.replayDeterminism.replayHash).slice(0, 12))}...</span></div>` : ``) +
+        (r.blendVetoAcceptance ? `<div class="rc-metric"><span class="k">crowded-field veto check</span><span class="v">${r.blendVetoAcceptance.nCrowded}/${r.blendVetoAcceptance.nTotal} crowded &middot; ${r.blendVetoAcceptance.falseKills} false-kills &middot; not a gate</span></div>` : ``) +
         `<p class="rc-note">A different algorithm (PDM) and a different codebase (wotan + astropy BLS) re-analyze the same real data; agreement corroborates, disagreement is explained.</p></div>` +
       `<div class="research-card"><h3>Measured compute cost</h3>` +
         `<div class="rc-metric"><span class="k">scaling exponent</span><span class="v">~${cm.exponentP.toFixed(2)} (R&sup2; ${cm.r2.toFixed(2)})</span></div>` +

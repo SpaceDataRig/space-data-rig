@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T04:10:26.375Z",
+  "generatedAt": "2026-10-14T04:49:01.700Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -217,6 +217,18 @@
     "reDownloadMatch": true,
     "independentRecomputeOk": true,
     "allDeterministic": true,
+    "discoveryClaim": false
+  },
+  "blendVetoAcceptance": {
+    "label": "crowding-stratified blend-veto acceptance re-check (P51, reviewer follow-up)",
+    "nTotal": 24,
+    "nCrowded": 15,
+    "pfpMedianCrowded": 0.020000000000000018,
+    "localized": 8,
+    "falseKills": 4,
+    "negativeClassExoFop": false,
+    "negativeClassVizieR": true,
+    "safeToGate": false,
     "discoveryClaim": false
   },
   "detectionEfficiency": {

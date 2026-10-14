@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p45-fp-probability.ts",
+    "tmag": 10,
+    "aperture": 21,
+    "data": "real Gaia DR3 neighbours of confirmed planets",
+    "module": "src/candidate/falsePositiveProbability.ts",
+    "priors": "literature (ebFraction 0.11, geoProb 0.3, onTarget 0.02)"
+  },
+  "n": 16,
+  "pFalsePositive": {
+    "min": 0.020000000000000018,
+    "p50": 0.020000000000000018,
+    "p90": 0.020000000000000018,
+    "max": 0.042262529283898176
+  },
+  "withViableBlend": 1,
+  "highFpCount": 0,
+  "highFpFraction": 0,
+  "safeToGate": false,
+  "discoveryClaim": false,
+  "rows": [
+    {
+      "name": "pi Men c",
+      "depthPpm": 267.59000000000003,
+      "hostGmag": 5.5115805,
+      "nNeighbours": 0,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HR 858 b",
+      "depthPpm": 213.7,
+      "hostGmag": 6.264977,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HR 858 d",
+      "depthPpm": 213,
+      "hostGmag": 6.264977,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HR 858 c",
+      "depthPpm": 208.7,
+      "hostGmag": 6.264977,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 63433 b",
+      "depthPpm": 501.60580000000004,
+      "hostGmag": 6.7371826,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 63433 c",
+      "depthPpm": 799.3817,
+      "hostGmag": 6.7371826,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 50554 c",
+      "depthPpm": 105.5424,
+      "hostGmag": 6.715178,
+      "nNeighbours": 4,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 50554 d",
+      "depthPpm": 154.3008,
+      "hostGmag": 6.715178,
+      "nNeighbours": 4,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 73344 b",
+      "depthPpm": 520.4898000000001,
+      "hostGmag": 6.7626004,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 25463 c",
+      "depthPpm": 82.735,
+      "hostGmag": 6.792206,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 25463 b",
+      "depthPpm": 300.5227,
+      "hostGmag": 6.792206,
+      "nNeighbours": 1,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "TOI-5789 c",
+      "depthPpm": 790,
+      "hostGmag": 7.1130667,
+      "nNeighbours": 11,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "TOI-4307 b",
+      "depthPpm": 108.5171,
+      "hostGmag": 7.035059,
+      "nNeighbours": 4,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "TOI-2128 b",
+      "depthPpm": 372.0971,
+      "hostGmag": 7.081035,
+      "nNeighbours": 2,
+      "nViable": 1,
+      "pBlend": 0.022716866616222676,
+      "pFalsePositive": 0.042262529283898176
+    },
+    {
+      "name": "HD 101581 c",
+      "depthPpm": 210.8404,
+      "hostGmag": 7.394229,
+      "nNeighbours": 2,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    },
+    {
+      "name": "HD 101581 b",
+      "depthPpm": 210.7033,
+      "hostGmag": 7.394229,
+      "nNeighbours": 2,
+      "nViable": 0,
+      "pBlend": 0,
+      "pFalsePositive": 0.020000000000000018
+    }
+  ],
+  "skipped": []
+}

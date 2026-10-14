@@ -43,6 +43,10 @@ const p57 = load("reports/p57-true-veto.json");
 const p58 = load("reports/p58-veto-2x2.json");
 const p59 = load("reports/p59-offtarget-subset.json");
 const p61 = load("reports/p61-llm-hypothesis.json");
+const p62 = load("reports/p62-phase-aligned-joint.json");
+const p63 = load("reports/p63-soft-score.json");
+const p64 = load("reports/p64-fetch-telemetry.json");
+const p65 = load("reports/p65-external-audit.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -275,6 +279,37 @@ const payload = {
     safeToGate: false,
     discoveryClaim: false,
   },
+  jointPhaseAlignmentP62: {
+    label: "phase-aligned joint folding vs the naive stitch -- the seed, not the fold, is the wall (P62)",
+    single: p62.singleRefind.count, naive: p62.naiveJointRefind.count,
+    refined: p62.refinedRefind.count, oracle: p62.oracleRefind.count, n: p62.meta.n,
+    bottleneck: p62.bottleneck, verdict: p62.verdict,
+    caveat: "strict A/B on the P60 20-planet sample; the long-baseline fold doubles re-find only with a correct (oracle) seed, so a blind single-sector seed -- often the wrong period on multi-planet hosts -- makes joint search no free lunch. Positive control on known planets.",
+    discoveryClaim: false,
+  },
+  softBlendScoreP63: {
+    label: "pixel/vetting tools as a continuous soft score, not a veto -- false-kill rate published (P63)",
+    nScored: p63.meta.nScored, nPositives: p63.meta.nPositives, nNegatives: p63.meta.nNegatives,
+    meanPlanets: p63.meanBlendLikelihood.planets, meanBlends: p63.meanBlendLikelihood.blends,
+    atThreshold: p63.operatingPoint.threshold, falseVetoRate: p63.operatingPoint.falseVetoRate, blendCatchRate: p63.operatingPoint.blendCatchRate,
+    caveat: "a high false-veto rate at the default cut is exactly why these tools stay advisory ranking weights (critic blendScore), never a hard gate. offline re-derivation from P61 continuous metrics.",
+    safeToGate: false, discoveryClaim: false,
+  },
+  fetchTelemetryP64: {
+    label: "multi-sector fetch telemetry -- cache-hit rate and the download bottleneck (P64)",
+    hosts: p64.meta.hosts, coldDownloadMs: p64.coldPass.stats.downloadMs, meanMissMs: p64.coldPass.stats.meanMissMs,
+    warmHitRate: p64.warmPass.hitRate, coldWallMs: p64.coldPass.wallMs, warmWallMs: p64.warmPass.wallMs,
+    bottleneck: p64.bottleneck,
+    caveat: "download is the dominant cost; the per-key cache makes re-fetch effectively free. Promotion toward production is a separate gated decision this telemetry does not make.",
+    discoveryClaim: false,
+  },
+  externalAuditP65: {
+    label: "external-candidate audit entry -- submit a claim, run the full critic + gates, report pass/fail (P65, research mode)",
+    nClaims: p65.meta.nClaims, passes: p65.passesCurrentGate.filter((x: any) => x.passes).length,
+    verdicts: p65.passesCurrentGate.map((x: any) => `${x.label}:${x.verdict}`),
+    caveat: "reviews third-party candidates on public data; the critic runs BLIND so an unconfirmed/external claim caps at needs-more-data and never passes the accepted-only money gate. Not anchored, not on-chain.",
+    anchored: false, discoveryClaim: false,
+  },
   blindTest: {
     label: "sealed-key blind test of the detector on real curves (P49)",
     curves: p49.curves,
@@ -303,5 +338,6 @@ console.log(`  pixel vetting (P44): diff-image offset median ${falsePositiveCont
 console.log(`  PSF double-difference (P53): false-kills ${falsePositiveControl.psfDoubleDifference.psfFalseKillsAt2Arcsec}/${falsePositiveControl.psfDoubleDifference.confirmedPlanets} vs naive ${falsePositiveControl.psfDoubleDifference.naiveFalseKillsAt2Arcsec}, safeToGate=${falsePositiveControl.psfDoubleDifference.safeToGate}, powerUnproven=${falsePositiveControl.psfDoubleDifference.powerUnproven}`);
 console.log(`  true-veto 2x2 (P58/P59): ${payload.trueVetoAcceptance.usableCases} labelled cases; PSF false-killed ${payload.trueVetoAcceptance.psfVeto.cm.falseVeto} known planet (naive falseVeto ${(payload.trueVetoAcceptance.naiveVeto.falseVetoRate * 100).toFixed(0)}%), addressable catch ${payload.trueVetoAcceptance.addressable.caught}/${payload.trueVetoAcceptance.addressable.negatives}, addressable AUC ${payload.trueVetoAcceptance.addressable.auc.toFixed(3)}; safeToGate=false`);
 console.log(`  LLM hypothesis loop (P61): ${payload.llmHypothesisLoop.nPositives} planets + ${payload.llmHypothesisLoop.nNegatives} labelled blends, ${payload.llmHypothesisLoop.tests.length} tests, gateable-via-loop=${payload.llmHypothesisLoop.gateableViaLoop}; safeToGate=false`);
+console.log(`  P62 joint(single/naive/refined/oracle): ${p62.singleRefind.count}/${p62.naiveJointRefind.count}/${p62.refinedRefind.count}/${p62.oracleRefind.count} of ${p62.meta.n} (bottleneck ${p62.bottleneck}); P63 soft false-veto ${(p63.operatingPoint.falseVetoRate * 100).toFixed(0)}% / catch ${(p63.operatingPoint.blendCatchRate * 100).toFixed(0)}%; P64 warm cache hit ${(p64.warmPass.hitRate * 100).toFixed(0)}% (${p64.warmPass.wallMs}ms vs ${p64.coldPass.wallMs}ms cold); P65 external passes ${payload.externalAuditP65.passes}/${p65.meta.nClaims}; discoveryClaim false`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

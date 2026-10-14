@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T15:09:28.037Z",
+  "generatedAt": "2026-10-14T17:27:05.921Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -397,6 +397,36 @@
         ],
         "falseVetoRate": 0.4583333333333333,
         "safeToGate": false
+      },
+      {
+        "id": "multisector-phase",
+        "catchRate": 0.1111111111111111,
+        "catchCI": [
+          0.031018868453582787,
+          0.3280024486660421
+        ],
+        "falseVetoRate": 0.041666666666666664,
+        "safeToGate": false
+      },
+      {
+        "id": "common-mode-residual",
+        "catchRate": 0,
+        "catchCI": [
+          0,
+          0.1758845505823749
+        ],
+        "falseVetoRate": 0,
+        "safeToGate": false
+      },
+      {
+        "id": "dilution-prior",
+        "catchRate": 0,
+        "catchCI": [
+          0,
+          0.1758845505823749
+        ],
+        "falseVetoRate": 0,
+        "safeToGate": false
       }
     ],
     "gateableViaLoop": false,
@@ -404,6 +434,56 @@
     "llmMatched": null,
     "caveat": "small-sample snapshot; the llm-hypothesis-loop CI workflow re-runs at larger N and publishes the authoritative numbers back. The models under-flag blends (they call several labelled blends planet). No test is gate-worthy: a gate needs zero false-vetoes AND power above chance.",
     "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "jointPhaseAlignmentP62": {
+    "label": "phase-aligned joint folding vs the naive stitch -- the seed, not the fold, is the wall (P62)",
+    "single": 6,
+    "naive": 6,
+    "refined": 4,
+    "oracle": 10,
+    "n": 20,
+    "bottleneck": "seed-acquisition",
+    "verdict": "NO-LIFT-JOINT-NOT-A-FREE-LUNCH (phase-aligned refinement does not recover more known planets on this few-sector sample; the P60 negative stands and is now mechanistically explained)",
+    "caveat": "strict A/B on the P60 20-planet sample; the long-baseline fold doubles re-find only with a correct (oracle) seed, so a blind single-sector seed -- often the wrong period on multi-planet hosts -- makes joint search no free lunch. Positive control on known planets.",
+    "discoveryClaim": false
+  },
+  "softBlendScoreP63": {
+    "label": "pixel/vetting tools as a continuous soft score, not a veto -- false-kill rate published (P63)",
+    "nScored": 28,
+    "nPositives": 16,
+    "nNegatives": 12,
+    "meanPlanets": 0.3867674186195358,
+    "meanBlends": 0.49508826323703214,
+    "atThreshold": 0.5,
+    "falseVetoRate": 0.5,
+    "blendCatchRate": 0.75,
+    "caveat": "a high false-veto rate at the default cut is exactly why these tools stay advisory ranking weights (critic blendScore), never a hard gate. offline re-derivation from P61 continuous metrics.",
+    "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "fetchTelemetryP64": {
+    "label": "multi-sector fetch telemetry -- cache-hit rate and the download bottleneck (P64)",
+    "hosts": 8,
+    "coldDownloadMs": 18054,
+    "meanMissMs": 1062,
+    "warmHitRate": 1,
+    "coldWallMs": 7714,
+    "warmWallMs": 77,
+    "bottleneck": "download",
+    "caveat": "download is the dominant cost; the per-key cache makes re-fetch effectively free. Promotion toward production is a separate gated decision this telemetry does not make.",
+    "discoveryClaim": false
+  },
+  "externalAuditP65": {
+    "label": "external-candidate audit entry -- submit a claim, run the full critic + gates, report pass/fail (P65, research mode)",
+    "nClaims": 2,
+    "passes": 0,
+    "verdicts": [
+      "Aakanksha:rejected",
+      "Orbit:rejected"
+    ],
+    "caveat": "reviews third-party candidates on public data; the critic runs BLIND so an unconfirmed/external claim caps at needs-more-data and never passes the accepted-only money gate. Not anchored, not on-chain.",
+    "anchored": false,
     "discoveryClaim": false
   },
   "blindTest": {

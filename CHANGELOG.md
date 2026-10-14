@@ -31,6 +31,22 @@ Keep a Changelog and adheres to Semantic Versioning.
 - English-only, text-only X auto-post channel (`scripts/post-x-text.ts`, `.github/workflows/x-post.yml`): X API
   v2 with hand-rolled OAuth 1.0a; credentials read only from the environment, dry-run by default, refuses any
   non-ASCII. NOT enabled (no X API secrets configured). Uses the X platform API -- unrelated to the xAI/Grok key.
+- P63 soft blend-likelihood score (`src/candidate/softScore.ts`, `src/critic/review.ts` `blendScore`,
+  `scripts/p63-soft-score.ts`): the pixel/dilution vetting tools re-cast as a continuous 0..1 advisory score
+  (never a hard veto -- they false-kill known planets, P57-P59); the critic consumes it as a bounded ranking
+  downweight that cannot flip a verdict. Published false-kill rate (offline re-derivation from P61 metrics):
+  28 labelled targets, mean 0.39 planets vs 0.50 blends, 50% of known planets flagged at the 0.5 cut -- advisory.
+- P61 protocol extension: TEST_MENU grew 6 -> 9 (multisector-phase, common-mode-residual, dilution-prior),
+  `p61` now feeds per-sector curves so multisector-phase is active; the CI-published report reflects it.
+- P64 fetch telemetry (`src/data/mastS3.ts` `fetchStats()`, `scripts/p64-fetch-telemetry.ts`): measured the
+  multi-sector helper cold vs warm -- download mean 1062 ms/sector; warm repeat sweep 100% cache hits
+  (77 ms vs 7714 ms wall). Evidence for broad research use; production promotion stays a separate gated call.
+- P65 external-candidate audit entry (`scripts/p65-external-candidate-audit.ts`): research-mode "submit a
+  third-party claim -> run the full independent audit + mission-critic with current gates -> report pass/fail",
+  not on-chain. Both sample external claims cap at rejected/needs-more-data, neither passes the accepted-only
+  gate; discoveryClaim/anchored/safeToGate false.
+- Dashboard: P62 joint, P63 soft score, P64 telemetry and P65 external audit distilled into
+  `web/research.json` (`scripts/p38-research-bundle.ts`) and rendered in the FP-control card.
 
 ### Science -- false-positive control (root cause)
 - A systematics-inclusive null (`src/detect/instrumentalNull.ts`): the measured coherent common-mode template is

@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p65-external-candidate-audit.ts",
+    "mode": "RESEARCH -- reviews third-party candidates; never our discovery; NOT anchored / on-chain / money-path",
+    "nClaims": 2,
+    "data": "real TESS-SPOC + Gaia public channels (token-free)"
+  },
+  "outcomes": [
+    {
+      "label": "Aakanksha",
+      "tic": 370612437,
+      "corroborated": false,
+      "novel": true,
+      "geometryConsistent": true,
+      "blendTier": "low",
+      "criticVerdict": "rejected",
+      "passesCurrentGate": false,
+      "reason": "False-positive vetting failed: false-alarm probability 1.0 is not significant against the phase-scrambled null.",
+      "fap": 1,
+      "blendScore": 0.017217584641619932,
+      "notes": []
+    },
+    {
+      "label": "Orbit",
+      "tic": 252721481,
+      "corroborated": false,
+      "novel": true,
+      "geometryConsistent": true,
+      "blendTier": "low",
+      "criticVerdict": "rejected",
+      "passesCurrentGate": false,
+      "reason": "False-positive vetting failed: false-alarm probability 0.11 is not significant against the phase-scrambled null.",
+      "fap": 0.11475409836065574,
+      "blendScore": 0.0037473035310090497,
+      "notes": []
+    }
+  ],
+  "passesCurrentGate": [
+    {
+      "label": "Aakanksha",
+      "passes": false,
+      "verdict": "rejected"
+    },
+    {
+      "label": "Orbit",
+      "passes": false,
+      "verdict": "rejected"
+    }
+  ],
+  "discoveryClaim": false,
+  "anchored": false,
+  "safeToGate": false
+}

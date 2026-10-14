@@ -348,7 +348,30 @@ Reproduce: `npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21`.
 
 ---
 
-## 13. Honest limitations
+## 13. Does multi-year O-C coherence fix period selection? Measured -- no (P46)
+
+p29/p30 pinned the joint-search bottleneck on period *selection*: on a stitched multi-year baseline a single
+blind BLS locks the strongest peak, which is often a different real planet in the same system. We built a
+principled selector -- `src/detect/multiYearCoherence.ts`, which scores a candidate period by how well its
+transits time onto one straight O-C line across the whole baseline (composing the existing ephemeris timing +
+refit) -- and tested it on real data (P46, 6 multi-sector TESS-SPOC hosts).
+
+Two honest findings. (a) Positive control is **mixed**: a known planet's true period scores coherence median
+**0.74**, but only **3/6** clear 0.5 -- the score recognises clean, isolated signals yet collapses on multi-planet
+systems where the stitched curve mixes several orbits (HD 63433's true period scores 0.14). (b) Selection shows
+**no gain**: ranking method candidates (peak, half, double, alias-resolved) by coherence matched a known planet
+**3/6**, versus **4/6** for the raw BLS peak -- coherence actually did worse, because a harmonic alias is itself
+perfectly linear in O-C and gets promoted to the top, exactly the limitation the module documents. Verdict
+`P46-COHERENCE-NO-SELECTION-GAIN`: O-C coherence is a valid Keplerian-consistency test on a clean signal but is
+not a usable standalone period-selector. The real lever for multi-planet systems is iterative multi-signal
+extraction (`src/detect/iterative.ts`), which coherence can then confirm signal-by-signal. This reinforces, via a
+new tool, the p29/p30 conclusion rather than contradicting it.
+
+Reproduce: `npm run p46:coherence -- --hosts 6 --maxsectors 3 --tmag 11`.
+
+---
+
+## 14. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -366,6 +389,10 @@ Reproduce: `npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21`.
 - **The false-positive probability is a prior, not a verdict.** P45 shows the measured-Gaia blend term does not
   false-alarm on 16 bright, uncrowded confirmed planets (0/16 above P(FP)=0.5), but that sample never exercises the
   crowded field where blends dominate; P(FP) ranks candidates, it does not validate them.
+- **O-C coherence is not a period-selector on real data.** P46 measures that a multi-year linear-O-C coherence
+  score recognises clean single signals (true-period median 0.74) but only clears 0.5 on 3/6 known planets, collapses
+  on multi-planet systems, and does not beat the raw BLS peak at picking a known period (3/6 vs 4/6) because
+  harmonic aliases are equally coherent. Iterative multi-signal extraction, not coherence, is the lever.
 - **Purity is a floor, not a ceiling.** Unconfirmed planets count as false positives, so reported purity understates
   reality by an unknown amount.
 - **The cross-pipeline fixtures are subsampled** (<= 2500 points) so their completeness is not 1:1 comparable with
@@ -373,14 +400,14 @@ Reproduce: `npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 14. Reproducibility
+## 15. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 301 unit tests
+npm test                     # 308 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -391,6 +418,7 @@ npm run p42:fp-scale         # multi-sector FP + AUC at scale -> reports/p42-*
 npm run p43:window-alias     # window-alias risk on real curves -> reports/p43-*
 npm run p44:diff-imaging     # difference-imaging localization calibration -> reports/p44-*
 npm run p45:fp-probability   # blended-EB false-positive probability characterisation -> reports/p45-*
+npm run p46:coherence        # multi-year O-C coherence on real known planets -> reports/p46-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

@@ -32,6 +32,7 @@ const p42 = load("reports/p42-fp-scale.json");
 const p43 = load("reports/p43-window-alias.json");
 const p44 = load("reports/p44-diff-imaging.json");
 const p45 = load("reports/p45-fp-probability.json");
+const p46 = load("reports/p46-coherence.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -134,6 +135,15 @@ const falsePositiveControl = {
     realPlanetsAboveHalf: p45.highFpCount,
     withViableBlend: p45.withViableBlend,
     safeToGate: p45.safeToGate,
+  },
+  coherenceSelector: {
+    label: "multi-year O-C coherence as a period selector (P46)",
+    hosts: p46.n,
+    trueCoherenceMedian: p46.trueCoherenceMedian,
+    trueCoherenceHighCount: p46.trueCoherenceHighCount,
+    rawMatchCount: p46.rawMatchCount,
+    coherenceRankMatchCount: p46.coherenceRankMatchCount,
+    safeToGate: p46.safeToGate,
   },
 };
 

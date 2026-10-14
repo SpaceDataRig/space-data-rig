@@ -702,18 +702,19 @@ fetched target-pixel cube, and Gaia aperture dilution on a fetched neighbourhood
 the labelled blends and false-veto rate on the known planets is scored as a full 2x2 with `vetoAcceptance`
 (`acceptVetoTool`: gate-worthy only at zero false-vetoes AND power above chance).
 
-What the loop measured (`reports/p61-llm-hypothesis.md`, small N here -- 5 planets + 3 blends; the
-`llm-hypothesis-loop` CI workflow re-runs it larger and publishes the authoritative numbers back). Verdict
-`gateable-via-loop = NONE`: every discriminator the models leaned on disqualified itself exactly as the
-standalone veto studies (P53/P58/P59) found -- odd/even-depth caught ~1/3 of blends but FALSE-REJECTED 40% of
-known planets, Gaia dilution caught the most blends (2/3) but false-rejected 60% of planets, and the PSF
-double-difference was the only one with zero false-kills (0 on this sample) yet under-powered at N=3 blends.
-The loop's first real output is a cross-check of the PIPELINE through an AI-driven lens -- and an honest note
-that the models UNDER-flag blends (they predicted "planet" on several labelled blends, so model prediction
-matched the measurement only 4/10). The deterministic 2x2 half runs even with no API keys, so the audit is
-always reproducible; the LLM half degrades honestly to "deterministic-2x2-only". Reproduce:
-`npm run p61:llm-hypothesis -- --pos 5 --neg 5 --deep` (drop `--deep` for light-curve tests only, add
-`-- --no-llm` for the keys-free deterministic 2x2).
+What the committed report measures (`reports/p61-llm-hypothesis.md/.json`, CI-published at 24 planets + 18
+labelled blends with `--deep`). Verdict `gateable-via-loop = NONE`, matching the standalone veto studies
+(P53/P58/P59): Gaia dilution caught the most blends (50%) but FALSE-REJECTED 46% of known planets; odd/even-
+depth caught 44% and false-rejected 21%; secondary eclipse caught 28% at 4% false-veto; the PSF double-
+difference caught only 11% (low false-veto 4%, i.e. safe but under-powered); re-detection SNR and shape-
+coherence caught nothing (0%). No test clears a gate that needs zero false-vetoes AND power above chance.
+
+Honest scope note on the LLM layer: the committed CI run had no model API keys in the Actions secrets, so it
+exercised the DETERMINISTIC 2x2 only (`llmLoop: off`) -- which is exactly why the audit is fully reproducible
+keys-free. A separate local pilot with both models live showed them UNDER-flagging blends (calling several
+labelled blends "planet"), so the model-proposal half is the fragile part and the ground-truth 2x2 is the
+load-bearing result. Reproduce: `npm run p61:llm-hypothesis -- --pos 24 --neg 18 --deep` (add `-- --no-llm`
+for the keys-free deterministic 2x2 the CI runs).
 
 ---
 

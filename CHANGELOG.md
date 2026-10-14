@@ -5,6 +5,28 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Research -- LLM hypothesis closed loop, CI scaling, dashboard, and an English-only X auto-post channel (2026-10-14)
+- P60 (`scripts/p60-joint-vs-single.ts`): joint multi-sector vs per-sector BLS re-find A/B on real curves --
+  joint gives no detectability advantage over per-sector search; roadmap priority 1 closed negative.
+- `createSpocSectorFetcher` (`src/data/mastS3.ts`): one bounded pool + memo shared across TESS sectors for
+  concurrent multi-sector fetch; `tests/mastS3.test.ts` asserts the concurrency cap.
+- P61 LLM hypothesis closed loop (`src/ai/hypothesis.ts`, `src/detect/hypothesisTests.ts`,
+  `scripts/p61-llm-hypothesis-loop.ts`, `tests/hypothesis.test.ts`): a model proposes a falsifiable hypothesis +
+  picks a test from a strict whitelist menu; the rig runs it on real photometry and scores EVERY test as a 2x2
+  (catch-rate on labelled blends vs false-veto on known planets) against ground truth from one token-free source
+  (the ExoFOP TOI table). Six tests, incl. a PSF double-difference + Gaia-dilution check under `--deep`. The
+  CI-published report at 24 planets + 18 blends gives `gateable-via-loop = NONE` (consistent with P53/P58/P59);
+  the CI run is deterministic-2x2-only (no model keys in Actions secrets), so the audit is reproducible keys-free.
+- CI: `llm-hypothesis-loop.yml` runs the loop at large N and publishes the report back to `reports/`;
+  `veto-multisector.yml` extended to cover P60.
+- Dashboard: the P61 2x2 is surfaced on the public research panel (`scripts/p38-research-bundle.ts` adds an
+  `llmHypothesisLoop` section to `web/research.json`, rendered in the FP-control card); deployed (version
+  ac190e4e) and live-verified -- research.json 200 with the section, discoveryClaim/safeToGate false.
+- Docs (`CONTRIBUTING.md`): the LLM-injection -> opt-in-gate distinction, and an "adding a pXX study" guide.
+- English-only, text-only X auto-post channel (`scripts/post-x-text.ts`, `.github/workflows/x-post.yml`): X API
+  v2 with hand-rolled OAuth 1.0a; credentials read only from the environment, dry-run by default, refuses any
+  non-ASCII. NOT enabled (no X API secrets configured). Uses the X platform API -- unrelated to the xAI/Grok key.
+
 ### Science -- false-positive control (root cause)
 - A systematics-inclusive null (`src/detect/instrumentalNull.ts`): the measured coherent common-mode template is
   injected into the phase-scrambled null, plus a Benjamini-Hochberg ensemble FDR. On 200 real TGLC curves (P39,

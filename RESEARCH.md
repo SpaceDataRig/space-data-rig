@@ -304,7 +304,30 @@ Reproduce: `npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 
 
 ---
 
-## 11. Honest limitations
+## 11. Can difference imaging localize a transit better than the centroid shift? Measured -- no (P44)
+
+The highest-leverage idea on the vetting roadmap was pixel-level **difference imaging**: subtract the out-of-transit
+mean image from the in-transit mean image and localize where the flux dropped -- a real planet dims on the target, a
+blend dims off to the side. We built it (`src/detect/diffImaging.ts`: the difference image, the positive-part centroid
+of the varied source vs the starlight centroid, a cadence-bootstrap error bar, and a conservative judge that refuses to
+veto unless the difference image is significant AND the offset clears the threshold at 1 sigma) and verified it on
+synthetic cubes -- an on-target dip localizes at ~0 arcsec, an off-axis blend at ~100 arcsec -- so the implementation is
+correct.
+
+Then we calibrated it on **12 real TESS-SPOC target-pixel cubes of confirmed planets** (all transit their host, so their
+offsets must be small). They are not: the difference-image centroid mislocalizes true planets by median **24 arcsec**
+(range 11-45), and even the 3 planets whose difference image is significant (snr > 5) are still wrongly called
+off-target at every threshold. The full-aperture centroid shift on the SAME cubes stays under **0.6 arcsec**. So the
+naive difference-image centroid carries a *systematic* bias on real SPOC pixels (coherent pointing / focus structure
+survives the in-minus-out subtraction), not just noise, and is **not safe to gate**; a discovery-grade version needs a
+PSF-model double-difference image (DRF), not a centroid. A clean negative that confirms the deployed centroid shift is
+still the robust pixel veto.
+
+Reproduce: `npm run p44:diff-imaging -- --targets 12 --tmag 10 --boot 200`.
+
+---
+
+## 12. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -315,6 +338,10 @@ Reproduce: `npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 
   it adds ~0 discrimination (AUC gain -0.005) at 100% planet safety; its large FP cut is on un-subtracted data.
 - **Window aliasing is not a driver on TESS FFI.** P43 measures the 1 c/d spectral window at ~0.012 (essentially
   closed); the residual false positives are systematics and stellar variability, not daily aliases.
+- **Difference imaging is not a shortcut over the centroid shift.** P44 measures that a naive in-minus-out
+  difference-image centroid mislocalizes confirmed planets by 11-45 arcsec on real SPOC pixels (a systematic, not just
+  noise), so it is not safe to veto; the full-aperture centroid shift (<= 0.6") remains the pixel lever. A real gain
+  would need PSF-model double-difference imaging.
 - **Purity is a floor, not a ceiling.** Unconfirmed planets count as false positives, so reported purity understates
   reality by an unknown amount.
 - **The cross-pipeline fixtures are subsampled** (<= 2500 points) so their completeness is not 1:1 comparable with
@@ -322,14 +349,14 @@ Reproduce: `npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 12. Reproducibility
+## 13. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 285 unit tests
+npm test                     # 293 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -338,6 +365,7 @@ npm run p40:fp-safety        # measure-before-gate safety cert -> reports/p40-*
 npm run p41:longbaseline     # single vs stitched-baseline completeness -> reports/p41-*
 npm run p42:fp-scale         # multi-sector FP + AUC at scale -> reports/p42-*
 npm run p43:window-alias     # window-alias risk on real curves -> reports/p43-*
+npm run p44:diff-imaging     # difference-imaging localization calibration -> reports/p44-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

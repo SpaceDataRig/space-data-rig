@@ -30,6 +30,7 @@ const p39 = load("reports/p39-candidates.json");
 const p40 = load("reports/p40-fp-safety.json");
 const p42 = load("reports/p42-fp-scale.json");
 const p43 = load("reports/p43-window-alias.json");
+const p44 = load("reports/p44-diff-imaging.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -114,6 +115,16 @@ const falsePositiveControl = {
     fpCount: p43.counts.fp,
     tpCount: p43.counts.tp,
   },
+  pixelVetting: {
+    label: "difference-imaging localization vs the full-aperture centroid shift (P44)",
+    confirmedPlanets: p44.n,
+    diffImageOffsetMedianArcsec: p44.offsetArcsec.p50,
+    diffImageOffsetMaxArcsec: p44.offsetArcsec.max,
+    diffImageSnrMedian: p44.dropSnr.p50,
+    falseKillsAt2Arcsec: (p44.thresholdSweep.find((s: any) => s.thresholdArcsec === 2.0) || { falseKills: null }).falseKills,
+    centroidShiftMaxArcsec: p44.legacyShiftMaxArcsec,
+    safeToGate: p44.safeToGate,
+  },
 };
 
 const payload = {
@@ -150,5 +161,6 @@ console.log(`  survey: ${N33} stars, purity ${tsDets ? (100 * tsTP / tsDets).toF
 console.log(`  completeness TS: ${completenessTS.map((c) => (c.rate * 100).toFixed(0) + "%").join(" ")}`);
 console.log(`  PDM agreement: ${pdmAgreement.agree}/${pdmAgreement.comparable}; Python purity ${pythonValidation.purity}`);
 console.log(`  FP control: raw FP ${(falsePositiveControl.coherentNull.rawFpRateByGate.snr * 100).toFixed(0)}% -> ${(falsePositiveControl.coherentNull.rawFpRateByGate.sysFap * 100).toFixed(0)}% (sysFAP); AUC ${falsePositiveControl.scaleMultiSector.aucNoise.toFixed(3)} noise vs ${falsePositiveControl.scaleMultiSector.aucSys.toFixed(3)} sys; safety ${falsePositiveControl.safetyCert.declined}/${falsePositiveControl.safetyCert.detected} declined; window median ${falsePositiveControl.windowAlias.dailyWindowMedian}`);
+console.log(`  pixel vetting (P44): diff-image offset median ${falsePositiveControl.pixelVetting.diffImageOffsetMedianArcsec}" on ${falsePositiveControl.pixelVetting.confirmedPlanets} confirmed planets, safeToGate=${falsePositiveControl.pixelVetting.safeToGate}`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

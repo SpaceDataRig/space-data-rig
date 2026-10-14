@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p44-diff-imaging-calibrate.ts",
+    "tmag": 10,
+    "boot": 200,
+    "data": "real TESS-SPOC target-pixel cubes (token-free S3), confirmed-planet catalog ephemerides",
+    "module": "src/detect/diffImaging.ts"
+  },
+  "n": 12,
+  "offsetArcsec": {
+    "min": 11.406575269571984,
+    "p50": 23.761059372004645,
+    "p90": 30.00736230831997,
+    "max": 44.5044214545779
+  },
+  "dropSnr": {
+    "min": 0.3424895748211651,
+    "p50": 1.7295888580567058,
+    "max": 10.02425923666445
+  },
+  "minSnrFloor": 5,
+  "opinionatedAt2Arcsec": 3,
+  "legacyShiftMaxArcsec": 0.5690494545561231,
+  "thresholdSweep": [
+    {
+      "thresholdArcsec": 0.5,
+      "falseKills": 3
+    },
+    {
+      "thresholdArcsec": 1,
+      "falseKills": 3
+    },
+    {
+      "thresholdArcsec": 1.5,
+      "falseKills": 3
+    },
+    {
+      "thresholdArcsec": 2,
+      "falseKills": 3
+    },
+    {
+      "thresholdArcsec": 3,
+      "falseKills": 3
+    },
+    {
+      "thresholdArcsec": 5,
+      "falseKills": 3
+    }
+  ],
+  "suggestedGateArcsec": 46,
+  "safeToGate": false,
+  "discoveryClaim": false,
+  "rows": [
+    {
+      "name": "pi Men c",
+      "tic": 261136679,
+      "sector": 1,
+      "offsetArcsec": 44.5044214545779,
+      "offsetSigmaArcsec": 6.322913281830523,
+      "dropSnr": 1.1224375940417346,
+      "depthFraction": 0.0013388682638839186,
+      "concentration": 0.44970128103571116,
+      "legacyShiftArcsec": 0.10474202671406126,
+      "inCount": 25,
+      "outCount": 1157
+    },
+    {
+      "name": "HR 858 b",
+      "tic": 178155732,
+      "sector": 3,
+      "offsetArcsec": 23.761059372004645,
+      "offsetSigmaArcsec": 2.546246365630889,
+      "dropSnr": 1.1679492636525335,
+      "depthFraction": 0.0010831753729815396,
+      "concentration": 0.2513334715698598,
+      "legacyShiftArcsec": 0.0516872644189237,
+      "inCount": 26,
+      "outCount": 806
+    },
+    {
+      "name": "HR 858 d",
+      "tic": 178155732,
+      "sector": 3,
+      "offsetArcsec": 30.00736230831997,
+      "offsetSigmaArcsec": 0.30617491194698765,
+      "dropSnr": 2.799647521776797,
+      "depthFraction": 0.003864171579715862,
+      "concentration": 0.2971494569090233,
+      "legacyShiftArcsec": 0.1985362787083902,
+      "inCount": 13,
+      "outCount": 819
+    },
+    {
+      "name": "HR 858 c",
+      "tic": 178155732,
+      "sector": 3,
+      "offsetArcsec": 26.50409714607747,
+      "offsetSigmaArcsec": 2.2104819478663416,
+      "dropSnr": 1.7295888580567058,
+      "depthFraction": 0.0016770088722102379,
+      "concentration": 0.26304633365212915,
+      "legacyShiftArcsec": 0.08894617531688812,
+      "inCount": 18,
+      "outCount": 814
+    },
+    {
+      "name": "HD 63433 b",
+      "tic": 130181866,
+      "sector": 20,
+      "offsetArcsec": 11.406575269571984,
+      "offsetSigmaArcsec": 4.438748045318487,
+      "dropSnr": 0.3424895748211651,
+      "depthFraction": 0.002153198241969517,
+      "concentration": 0.2007259533854762,
+      "legacyShiftArcsec": 0.02525117707588755,
+      "inCount": 25,
+      "outCount": 1071
+    },
+    {
+      "name": "HD 63433 c",
+      "tic": 130181866,
+      "sector": 20,
+      "offsetArcsec": 21.1668096640221,
+      "offsetSigmaArcsec": 2.3951234008085613,
+      "dropSnr": 0.7343040809496952,
+      "depthFraction": 0.00847934601099191,
+      "concentration": 0.37912927835567056,
+      "legacyShiftArcsec": 0.48998229705111457,
+      "inCount": 17,
+      "outCount": 1079
+    },
+    {
+      "name": "HD 63433 d",
+      "tic": 130181866,
+      "sector": 20,
+      "offsetArcsec": 15.786720513864335,
+      "offsetSigmaArcsec": 4.0481379900434415,
+      "dropSnr": 0.9959657009420624,
+      "depthFraction": 0.006627119691363269,
+      "concentration": 0.2958477171894352,
+      "legacyShiftArcsec": 0.3118866785800462,
+      "inCount": 31,
+      "outCount": 1065
+    },
+    {
+      "name": "HD 50554 c",
+      "tic": 80224448,
+      "sector": 44,
+      "offsetArcsec": 28.850061752956677,
+      "offsetSigmaArcsec": 0.4654467580507369,
+      "dropSnr": 6.429832003724534,
+      "depthFraction": 0.009991136696255783,
+      "concentration": 0.4191881779661313,
+      "legacyShiftArcsec": 0.5690494545561231,
+      "inCount": 78,
+      "outCount": 3068
+    },
+    {
+      "name": "HD 50554 d",
+      "tic": 80224448,
+      "sector": 44,
+      "offsetArcsec": 27.510199538989742,
+      "offsetSigmaArcsec": 0.24891718088906245,
+      "dropSnr": 10.02425923666445,
+      "depthFraction": 0.0037997958316337488,
+      "concentration": 0.3619687864192109,
+      "legacyShiftArcsec": 0.18130954038622626,
+      "inCount": 33,
+      "outCount": 3113
+    },
+    {
+      "name": "HD 73344 b",
+      "tic": 175193677,
+      "sector": 45,
+      "offsetArcsec": 21.966125242246385,
+      "offsetSigmaArcsec": 0.36421452685803146,
+      "dropSnr": 2.601308192046864,
+      "depthFraction": 0.004528855563628477,
+      "concentration": 0.2489056833045442,
+      "legacyShiftArcsec": 0.19652103256120013,
+      "inCount": 40,
+      "outCount": 3056
+    },
+    {
+      "name": "WASP-189 b",
+      "tic": 157910432,
+      "sector": 51,
+      "offsetArcsec": 14.221092293607686,
+      "offsetSigmaArcsec": 8.921925028963754,
+      "dropSnr": 5.14730357722777,
+      "depthFraction": 0.004892222723431395,
+      "concentration": 0.33673287538131075,
+      "legacyShiftArcsec": 0.07221819148719893,
+      "inCount": 78,
+      "outCount": 1523
+    },
+    {
+      "name": "HD 25463 c",
+      "tic": 407966340,
+      "sector": 5,
+      "offsetArcsec": 18.713899920034045,
+      "offsetSigmaArcsec": 2.1297678130439692,
+      "dropSnr": 0.6894118852632191,
+      "depthFraction": 0.004775435990320161,
+      "concentration": 0.3890104389938296,
+      "legacyShiftArcsec": 0.18473482015493248,
+      "inCount": 22,
+      "outCount": 1121
+    }
+  ],
+  "skipped": []
+}

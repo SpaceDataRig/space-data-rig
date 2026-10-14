@@ -135,6 +135,14 @@ export interface SourceLocalization {
   offsetSigmaArcsec: number;
   /** Total flux that dropped in-transit (sum of positive difference image). */
   dropFlux: number;
+  /** 1-sigma spread of dropFlux from the bootstrap (NaN if not estimable). */
+  dropFluxSigma: number;
+  /**
+   * Significance of the difference image itself: dropFlux / dropFluxSigma. A shallow real
+   * transit on a noisy aperture has a LOW snr -- the difference image is then noise, and its
+   * centroid is meaningless. The judge refuses to veto below a snr floor for this reason.
+   */
+  dropSnr: number;
   /** dropFlux / steady aperture flux -- the pixel-space transit depth. */
   depthFraction: number;
   /** Peak difference pixel / dropFlux: high = one compact source, low = diffuse systematic. */
@@ -193,6 +201,7 @@ export function localizeTransitSource(
   const B = opts.bootstraps ?? 200;
   const rand = prng(opts.seed ?? 12345);
   const offsets: number[] = [];
+  const drops: number[] = [];
   for (let b = 0; b < B; b++) {
     const inSample = new Array<number>(inRows.length);
     for (let j = 0; j < inRows.length; j++) inSample[j] = inRows[Math.floor(rand() * inRows.length)];
@@ -201,10 +210,14 @@ export function localizeTransitSource(
     const inB = meanImage(cube, inSample);
     const outB = meanImage(cube, outSample);
     const dropB = new Float64Array(npix);
+    let dropFluxB = 0;
     for (let i = 0; i < npix; i++) {
       const d = outB.img[i] - inB.img[i];
-      dropB[i] = d > 0 ? d : 0;
+      const v = d > 0 ? d : 0;
+      dropB[i] = v;
+      dropFluxB += v;
     }
+    drops.push(dropFluxB);
     const tB = imageCentroid(outB.img, cube.nx, cube.ny, true);
     const sB = imageCentroid(dropB, cube.nx, cube.ny, false);
     if (!Number.isFinite(tB.x) || !Number.isFinite(sB.x)) continue;
@@ -217,6 +230,12 @@ export function localizeTransitSource(
     const hi = quantile(offsets, 0.84);
     offsetSigmaArcsec = (hi - lo) / 2;
   }
+  let dropFluxSigma = NaN;
+  if (drops.length >= 8) {
+    drops.sort((a, c) => a - c);
+    dropFluxSigma = (quantile(drops, 0.84) - quantile(drops, 0.16)) / 2;
+  }
+  const dropSnr = dropFluxSigma > 0 ? dropFlux / dropFluxSigma : (dropFlux > 0 ? Infinity : 0);
 
   const determined = Number.isFinite(offsetArcsec) && dropFlux > 0 && steadyFlux > 0;
   return {
@@ -225,6 +244,8 @@ export function localizeTransitSource(
     offsetArcsec,
     offsetSigmaArcsec,
     dropFlux,
+    dropFluxSigma,
+    dropSnr,
     depthFraction: steadyFlux > 0 ? dropFlux / steadyFlux : NaN,
     concentration: dropFlux > 0 ? peak / dropFlux : NaN,
     inCount: inRows.length,
@@ -242,14 +263,20 @@ export interface LocalizationVerdict {
 }
 
 /**
- * Conservative judge. Calls "off-target" ONLY when the offset is beyond the threshold even
- * after subtracting its own 1-sigma uncertainty (so a noisy real planet is never rejected).
- * Missing / thin data is "inconclusive", never a veto -- a false kill of a real planet is
+ * Conservative judge. Refuses to veto unless BOTH conditions hold: (a) the difference image
+ * is statistically significant (dropSnr >= minSnr) -- on a shallow/noisy real transit the
+ * difference image is noise and its centroid is meaningless, so we must NOT veto; and (b) the
+ * offset is beyond the threshold even after subtracting its own 1-sigma uncertainty. Missing /
+ * thin / insignificant data is "inconclusive", never a veto -- a false kill of a real planet is
  * worse than a missed blend.
  */
-export function judgeLocalization(loc: SourceLocalization | null, thresholdArcsec = 1.0): LocalizationVerdict {
+export function judgeLocalization(loc: SourceLocalization | null, thresholdArcsec = 1.0, opts: { minSnr?: number } = {}): LocalizationVerdict {
+  const minSnr = opts.minSnr ?? 5;
   if (!loc || !loc.determined || !Number.isFinite(loc.offsetArcsec)) {
     return { classification: "inconclusive", onTarget: false, reason: "too few good in/out cadences to localize the varied source" };
+  }
+  if (!(loc.dropSnr >= minSnr)) {
+    return { classification: "inconclusive", onTarget: false, reason: `difference image not significant (snr ${Number.isFinite(loc.dropSnr) ? loc.dropSnr.toFixed(1) : "n/a"} < ${minSnr}): the drop is below the aperture noise, its position is meaningless -- refusing to veto` };
   }
   const sigma = Number.isFinite(loc.offsetSigmaArcsec) ? loc.offsetSigmaArcsec : 0;
   const lowerBound = loc.offsetArcsec - sigma;
@@ -257,11 +284,11 @@ export function judgeLocalization(loc: SourceLocalization | null, thresholdArcse
     return {
       classification: "off-target",
       onTarget: false,
-      reason: `varied source is ${loc.offsetArcsec.toFixed(2)}" from the starlight centroid (>=1sigma bound ${lowerBound.toFixed(2)}" > ${thresholdArcsec}"): the dip is not on the target star`,
+      reason: `varied source is ${loc.offsetArcsec.toFixed(2)}" from the starlight centroid (>=1sigma bound ${lowerBound.toFixed(2)}" > ${thresholdArcsec}", snr ${loc.dropSnr.toFixed(1)}): the dip is not on the target star`,
     };
   }
   if (loc.offsetArcsec <= thresholdArcsec) {
-    return { classification: "on-target", onTarget: true, reason: `varied source is ${loc.offsetArcsec.toFixed(2)}" from the starlight centroid (<= ${thresholdArcsec}"): consistent with a transit on the target star` };
+    return { classification: "on-target", onTarget: true, reason: `varied source is ${loc.offsetArcsec.toFixed(2)}" from the starlight centroid (<= ${thresholdArcsec}", snr ${loc.dropSnr.toFixed(1)}): consistent with a transit on the target star` };
   }
   return {
     classification: "inconclusive",

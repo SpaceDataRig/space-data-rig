@@ -129,6 +129,8 @@ test("the judge is conservative: it vetoes only when offset minus 1sigma clears 
     targetCentroid: { x: 7, y: 7, flux: 1 },
     sourceCentroid: { x: 7, y: 7, flux: 1 },
     dropFlux: 1,
+    dropFluxSigma: 0.01,
+    dropSnr: 100,
     depthFraction: 0.01,
     concentration: 0.2,
     inCount: 100,
@@ -139,6 +141,28 @@ test("the judge is conservative: it vetoes only when offset minus 1sigma clears 
   assert.equal(judgeLocalization({ ...base, offsetArcsec: 5, offsetSigmaArcsec: 0.5 }, 1).classification, "off-target");
   // offset above the threshold but its 1sigma bound is NOT -> inconclusive, never a veto
   assert.equal(judgeLocalization({ ...base, offsetArcsec: 1.5, offsetSigmaArcsec: 1.0 }, 1).classification, "inconclusive");
+});
+
+test("a large offset is NOT a veto when the difference image is insignificant (low snr)", () => {
+  // The real-data failure mode: a shallow transit gives a noise-dominated difference image
+  // whose centroid is far away by chance. Even a 50" offset must NOT veto at low snr.
+  const loc = {
+    targetCentroid: { x: 7, y: 7, flux: 1 },
+    sourceCentroid: { x: 5, y: 5, flux: 1 },
+    offsetArcsec: 50,
+    offsetSigmaArcsec: 1,
+    dropFlux: 1,
+    dropFluxSigma: 0.6,
+    dropSnr: 1.7,
+    depthFraction: 0.001,
+    concentration: 0.05,
+    inCount: 25,
+    outCount: 1150,
+    determined: true,
+  };
+  assert.equal(judgeLocalization(loc, 1.0).classification, "inconclusive");
+  // ...but the SAME offset at high snr IS a veto
+  assert.equal(judgeLocalization({ ...loc, dropSnr: 40 }, 1.0).classification, "off-target");
 });
 
 test("pixel scale constant matches the reader module", () => {

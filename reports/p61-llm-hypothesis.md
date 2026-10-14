@@ -15,6 +15,9 @@ Pixel (PSF double-difference) and Gaia-dilution tests are ACTIVE (--deep).
 | shape-coherence | 0% | [0, 18] | 4% | false |
 | psf-localize | 11% | [3, 33] | 4% | false |
 | gaia-dilution | 50% | [29, 71] | 46% | false |
+| multisector-phase | 11% | [3, 33] | 4% | false |
+| common-mode-residual | 0% | [0, 18] | 0% | false |
+| dilution-prior | 0% | [0, 18] | 0% | false |
 
 LLM layer OFF -- this is the deterministic per-test 2x2.
 

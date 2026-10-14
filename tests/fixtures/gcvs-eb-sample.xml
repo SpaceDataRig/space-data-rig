@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE version="1.4" xmlns="http://www.ivoa.net/xml/VOTable/v1.3">
+<RESOURCE type="data">
+<TABLE>
+<FIELD name="_RAJ2000" ucd="pos.eq.ra" ref="J2000" datatype="double" unit="deg"/>
+<FIELD name="_DEJ2000" ucd="pos.eq.dec" ref="J2000" datatype="double" unit="deg"/>
+<FIELD name="VarType" ucd="meta.code;src.var" datatype="char"/>
+<FIELD name="Period" ucd="time.period" datatype="double" unit="d"/>
+<FIELD name="recno" ucd="meta.record" datatype="int"/>
+<FIELD name="GCVS" ucd="meta.id;meta.main" datatype="char"/>
+<FIELD name="n_GCVS" ucd="meta.note" datatype="char"/>
+<FIELD name="RAJ2000" ucd="pos.eq.ra" datatype="char"/>
+<FIELD name="DEJ2000" ucd="pos.eq.dec" datatype="char"/>
+<TR><TD>005.5964583</TD><TD>+26.9960556</TD><TD>M</TD><TD>281.0000000000</TD><TD>1</TD><TD>T And</TD><TD>x</TD><TD>00 22 23.15</TD><TD>+26 59 45.8</TD></TR>
+<TR><TD>018.8737500</TD><TD>+40.7190000</TD><TD>EA</TD><TD>0.8965000000</TD><TD>2</TD><TD>RR Lyr</TD><TD>x</TD><TD>18 49 47.5</TD><TD>+36 55 54</TD></TR>
+<TR><TD>051.0730000</TD><TD>+40.9560000</TD><TD>EA</TD><TD>2.8673200000</TD><TD>3</TD><TD>beta Per</TD><TD>x</TD><TD>03 08 28.6</TD><TD>+40 57 20</TD></TR>
+<TR><TD>286.2830000</TD><TD>-23.7940000</TD><TD>EW</TD><TD>0.3140000000</TD><TD>4</TD><TD>W UMa</TD><TD>x</TD><TD>11 25 49.3</TD><TD>-23 47 41</TD></TR>
+</TABLE>
+</RESOURCE>
+</VOTABLE>

@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p52-negative-class.ts",
+    "wantHosts": 12,
+    "coneRadiusArcsec": 21,
+    "listRows": 3000,
+    "reviewerStandard": "acceptance needs a labelled negative class (real off-target blends), not just positives"
+  },
+  "exofopReachable": false,
+  "gcvsList": {
+    "variablesParsed": 9000,
+    "eclipsingBines": 944
+  },
+  "hosts": [
+    {
+      "name": "KELT-9 b",
+      "ra": 307.8598998,
+      "dec": 39.9389161,
+      "absB": 0.25
+    },
+    {
+      "name": "GJ 806 b",
+      "ra": 311.2697002,
+      "dec": 44.5002351,
+      "absB": 1.01
+    },
+    {
+      "name": "TOI-677 b",
+      "ra": 144.1193594,
+      "dec": -50.4630933,
+      "absB": 1.26
+    },
+    {
+      "name": "TOI-5807 b",
+      "ra": 308.5672242,
+      "dec": 43.3606897,
+      "absB": 1.86
+    },
+    {
+      "name": "TOI-628 b",
+      "ra": 99.2630608,
+      "dec": 1.7675497,
+      "absB": 2.39
+    },
+    {
+      "name": "HD 114082 b",
+      "ra": 197.3171237,
+      "dec": -60.3084347,
+      "absB": 2.49
+    },
+    {
+      "name": "TOI-883 b",
+      "ra": 103.3690609,
+      "dec": -6.5078349,
+      "absB": 2.51
+    },
+    {
+      "name": "HD 332231 b",
+      "ra": 306.741134,
+      "dec": 33.7443882,
+      "absB": 2.65
+    },
+    {
+      "name": "TOI-1333 b",
+      "ra": 325.0145363,
+      "dec": 48.4067674,
+      "absB": 3.18
+    },
+    {
+      "name": "KELT-7 b",
+      "ra": 78.2955912,
+      "dec": 33.3179532,
+      "absB": 3.37
+    },
+    {
+      "name": "TIC 65612701 b",
+      "ra": 310.4738195,
+      "dec": 36.3388288,
+      "absB": 3.56
+    },
+    {
+      "name": "TOI-6054.01",
+      "ra": 56.337007,
+      "dec": 60.350917,
+      "absB": 4.41
+    }
+  ],
+  "coneMatches": [],
+  "coneEmptyResponses": 12,
+  "clientCrossMatches": [],
+  "usableNegatives": 0,
+  "vetoTrials": [],
+  "constructible": false,
+  "safeToGate": false,
+  "discoveryClaim": false
+}

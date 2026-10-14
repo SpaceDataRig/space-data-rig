@@ -35,6 +35,7 @@ const p45 = load("reports/p45-fp-probability.json");
 const p46 = load("reports/p46-coherence.json");
 const p47 = load("reports/p47-completeness-grid.json");
 const p49 = load("reports/p49-blind-test.json");
+const p50 = load("reports/p50-replay.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -174,6 +175,17 @@ const payload = {
     python: { label: "wotan + astropy BLS (independent stack)", ...pythonValidation },
   },
   falsePositiveControl,
+  replayDeterminism: {
+    label: "end-to-end deterministic replay from raw public S3 bytes (P50)",
+    target: p50.target.name,
+    byteLength: p50.target.byteLength,
+    replayHash: p50.replayHash,
+    inProcessStable: p50.inProcessStable,
+    reDownloadMatch: p50.reDownloadReplayHashMatch,
+    independentRecomputeOk: p50.independentRecomputeOk,
+    allDeterministic: p50.allDeterministic,
+    discoveryClaim: false,
+  },
   detectionEfficiency: {
     label: "2-D period x depth completeness map on real light curves (P47)",
     nHosts: p47.meta.nHosts,

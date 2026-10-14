@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T03:47:00.965Z",
+  "generatedAt": "2026-10-14T04:10:26.375Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -207,6 +207,17 @@
       "coherenceRankMatchCount": 3,
       "safeToGate": false
     }
+  },
+  "replayDeterminism": {
+    "label": "end-to-end deterministic replay from raw public S3 bytes (P50)",
+    "target": "HD 39091",
+    "byteLength": 164160,
+    "replayHash": "98ea2ad067e5b1eb8e55da49ad109208f90acd2c12dd9e0e385dcd3ef4dc0e44",
+    "inProcessStable": true,
+    "reDownloadMatch": true,
+    "independentRecomputeOk": true,
+    "allDeterministic": true,
+    "discoveryClaim": false
   },
   "detectionEfficiency": {
     "label": "2-D period x depth completeness map on real light curves (P47)",

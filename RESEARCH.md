@@ -440,7 +440,30 @@ Reproduce: `npm run p49:blind-test -- --stars 30 --maxsectors 2 --seed 7`.
 
 ---
 
-## 17. Honest limitations
+## 17. Can an auditor reproduce our numbers exactly? End-to-end deterministic replay (P50)
+
+The last link in the audit chain (problem 3) is reproducibility: given only the public inputs and this
+code, does the detection chain yield EXACTLY the same number every time? `src/sim/replay.ts` builds a
+replay record from ONLY the deterministic ingredients -- a canonical hash of the parsed light curve, the
+code version, the algorithm and its numeric parameters, and the recovered candidate numbers -- deliberately
+excluding timestamps, run ids, and narration (the non-reproducible fields), and hashes it canonically.
+`scripts/p50-replay.ts` runs the whole chain on REAL public S3 bytes
+(`fetchSpocBytes -> fitsToLightCurve -> computeDataHash -> iterativeBls` under the production gate) and
+proves determinism two ways: **3 in-process runs produce an identical replay hash**, and a **fresh
+re-download of the same S3 key matches both the byte SHA-256 and the replay hash**.
+
+On a real target (HD 39091, TIC 261136679, sector 1, 164160 bytes) the replay hash was stable across all
+repeats and the re-download, and the chain independently recomputed the same candidate (P = 6.2706 d,
+SNR 24.5). Verdict `P50-REPLAY-DETERMINISTIC`: the detection chain is a pure function of its public
+inputs, so any auditor with the S3 key and the emitted replay manifest can recompute the exact number --
+the basis for third-party verification without trusting us. This is a positive result; research-only
+audit artifact, no verdict/bundle-hash/money-path change, nothing anchored, claimed, or deployed.
+
+Reproduce: `npm run p50:replay -- --repeats 3 --tmag 10 --sector 1`.
+
+---
+
+## 18. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -469,14 +492,14 @@ Reproduce: `npm run p49:blind-test -- --stars 30 --maxsectors 2 --seed 7`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 18. Reproducibility
+## 19. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 335 unit tests
+npm test                     # 340 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -491,6 +514,7 @@ npm run p46:coherence        # multi-year O-C coherence on real known planets ->
 npm run p47:completeness-grid # 2-D period x depth completeness map on real curves -> reports/p47-*
 npm run p48:novelty-check     # board-candidate novelty vs the NASA Exoplanet Archive -> reports/p48-*
 npm run p49:blind-test        # formal sealed-key blind test (precision/recall) -> reports/p49-*
+npm run p50:replay            # end-to-end deterministic replay from raw S3 bytes -> reports/p50-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

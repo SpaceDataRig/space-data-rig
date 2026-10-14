@@ -643,6 +643,18 @@ gated / anchored / deployed; discoveryClaim false.
 
 Reproduce: `npm run p57:true-veto -- --neg 18 --pos 18 --tmag 11 --boot 120`.
 
+P58 scales and hardens the same test: a larger labelled sample (36 usable: 16 negatives / 20 positives)
+plus a transit-PHASE refinement (the fold is modulo the period, so we sweep one full period and localize at
+the phase of the strongest real dip) to strip out catalog-epoch mis-timing as a confound. Result: the
+phase sweep selected the catalog epoch itself (phase 0) for every case -- the timing was never off -- and the
+SAME known planet P57 falsely vetoed (TIC 302773669, a strong dropSnr-25 transit) is STILL mislocalized to
+43" at ampSnr 10.6. That REFUTES the P57 caveat that the false kill might be a timing artifact: it is a
+Genuine PSF localization failure on a real, well-detected transit of a confirmed planet. Numbers (phase-
+refined): PSF 2x2 caught 2 / missed 14 / false-killed 1 / kept 19, power 0.13 [0.03,0.36] (still a lower
+bound -- on-target EBs pollute the negative class), false-veto 0.05 [0.01,0.24], ROC AUC 0.694 (naive 0.566,
+naive false-veto 0.40). Verdict unchanged and now firmer: `safeToGate = false`. Reproduce: `npm run
+p58:veto-2x2 -- --neg 24 --pos 24 --tmag 11 --boot 80 --phases 16`.
+
 ---
 
 ## 23. Honest limitations
@@ -714,6 +726,7 @@ npm run p54:selection-function # selection-function skeleton (geometry x dilutio
 npm run p55:replay-manifest    # publish a code-free third-party replay manifest -> web/replay-manifest.json
 npm run p56:real-selection     # per-target selection function on real Gaia dilution + Archive stellar params -> reports/p56-*
 npm run p57:true-veto           # first REAL true-veto 2x2 on token-free labelled TOI dispositions -> reports/p57-*
+npm run p58:veto-2x2             # scaled + phase-refined 2x2 (refutes the timing-artifact caveat) -> reports/p58-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

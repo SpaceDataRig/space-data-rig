@@ -89,9 +89,22 @@ test("every menu test runs on a synthetic curve without throwing", () => {
 test("the pixel (PSF) and Gaia-dilution tests degrade to undetermined when their data is absent, never throw", () => {
   const { lc, truth } = generateSyntheticTransit({ seed: 5, periodDays: 3, depthFrac: 0.01, noisePpm: 200 });
   const ctx = { lc, t0Bjd: truth.t0Bjd, periodDays: truth.periodDays, durationHours: truth.durationHours };
-  for (const id of ["psf-localize", "gaia-dilution"]) {
+  for (const id of ["psf-localize", "gaia-dilution", "common-mode-residual", "dilution-prior"]) {
     const o = runHypothesisTest(id, ctx);
     assert.equal(o.determined, false, `${id} without its data must be undetermined`);
     assert.equal(o.outcome, "inconclusive");
   }
+});
+
+test("multisector-phase confirms a planet when >=2 sectors share the ephemeris, degrades with <2", () => {
+  const a = generateSyntheticTransit({ seed: 9, periodDays: 3, depthFrac: 0.01, noisePpm: 200, cadenceSec: 120, baselineDays: 27 });
+  const b = generateSyntheticTransit({ seed: 9, periodDays: 3, depthFrac: 0.01, noisePpm: 200, cadenceSec: 120, baselineDays: 27 });
+  const base = { t0Bjd: a.truth.t0Bjd, periodDays: a.truth.periodDays, durationHours: a.truth.durationHours };
+  const two = runHypothesisTest("multisector-phase", { lc: a.lc, sectorLcs: [a.lc, b.lc], ...base });
+  assert.equal(two.determined, true);
+  assert.equal(two.outcome, "planet");
+  // one sector only -> undetermined, never throws
+  const one = runHypothesisTest("multisector-phase", { lc: a.lc, sectorLcs: [a.lc], ...base });
+  assert.equal(one.determined, false);
+  assert.equal(one.outcome, "inconclusive");
 });

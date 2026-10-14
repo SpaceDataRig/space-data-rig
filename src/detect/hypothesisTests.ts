@@ -8,7 +8,8 @@
 // they are auditable. Nothing here touches the run pipeline, the bundle, a verdict, or any money path.
 
 import { bls } from "./bls.ts";
-import { shapeCoherence } from "./shapeCoherence.ts";
+import { shapeCoherence, foldedBoxDepth } from "./shapeCoherence.ts";
+import { classifyDepthRegime } from "../candidate/falsePositive.ts";
 import { oddEvenDepth, secondaryEclipse } from "./vetting.ts";
 import { localizePsfDiff, judgePsfDiff } from "./psfDiffImaging.ts";
 import type { PixelCube } from "./diffImaging.ts";
@@ -25,6 +26,12 @@ export interface TestContext {
   cube?: PixelCube;
   /** optional pre-computed Gaia aperture dilution for the dilution test (the caller does the async fetch). */
   dilution?: DilutionResult;
+  /** optional per-sector curves for the multi-sector phase-consistency test (the caller fetches each sector). */
+  sectorLcs?: LightCurve[];
+  /** optional pre-computed fraction [0,1] of the dip that SURVIVES common-mode (ensemble) subtraction. */
+  commonModeResidualFrac?: number;
+  /** optional pre-computed analytic blended-EB false-positive probability [0,1] (measured-Gaia prior). */
+  blendPriorPfp?: number;
 }
 
 export interface TestOutcome {
@@ -108,6 +115,40 @@ export function runHypothesisTest(test: string, ctx: TestContext): TestOutcome {
           test, metricLabel: "aperture dilution factor (host/total)", metric: df, determined: true,
           outcome: df >= 0.9 ? "planet" : df < 0.7 ? "blend" : "inconclusive",
           detail: `host fraction of aperture light = ${df.toFixed(3)} (< 0.7 = a resolved contaminant dilutes the signal)`,
+        };
+      }
+      case "multisector-phase": {
+        const secs = ctx.sectorLcs;
+        if (!secs || secs.length < 2) return undetermined(test, "sectors confirming a dip at the same ephemeris", "fewer than 2 per-sector curves supplied");
+        let nConfirm = 0;
+        for (const s of secs) {
+          const d = foldedBoxDepth(s, periodDays, t0Bjd, durationHours / 24);
+          const depthPpm = d.depth * 1e6;
+          if (Number.isFinite(depthPpm) && depthPpm >= 150 && classifyDepthRegime(depthPpm).planetPlausible) nConfirm++;
+        }
+        const frac = nConfirm / secs.length;
+        return {
+          test, metricLabel: "independent sectors confirming a dip (frac)", metric: frac, determined: true,
+          outcome: nConfirm >= 2 ? "planet" : "blend",
+          detail: `${nConfirm}/${secs.length} independent sectors show a planet-plausible dip at the SAME ephemeris (<2 = the signal is not phase-consistent across sectors)`,
+        };
+      }
+      case "common-mode-residual": {
+        const v = ctx.commonModeResidualFrac;
+        if (!Number.isFinite(v)) return undetermined(test, "dip survival after common-mode subtraction", "no ensemble common-mode correction supplied");
+        return {
+          test, metricLabel: "dip survival after common-mode subtraction (frac)", metric: v as number, determined: true,
+          outcome: (v as number) >= 0.7 ? "planet" : (v as number) <= 0.3 ? "blend" : "inconclusive",
+          detail: `${((v as number) * 100).toFixed(0)}% of the dip survives removing the ensemble-common instrumental signal (low = a shared artifact, not a source)`,
+        };
+      }
+      case "dilution-prior": {
+        const v = ctx.blendPriorPfp;
+        if (!Number.isFinite(v)) return undetermined(test, "blended-EB false-positive prior", "no analytic blend prior supplied");
+        return {
+          test, metricLabel: "blended-EB false-positive probability", metric: v as number, determined: true,
+          outcome: (v as number) >= 0.5 ? "blend" : (v as number) <= 0.1 ? "planet" : "inconclusive",
+          detail: "measured-Gaia analytic P(false positive = diluted blended EB) = " + (v as number).toFixed(2) + " (a prior, ranks candidates; never a verdict)",
         };
       }
       default:

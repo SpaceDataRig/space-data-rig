@@ -58,13 +58,16 @@ interface Target {
 }
 const ppm = (frac: number) => Math.round(frac * 1e6);
 
-async function fetchCurve(rec: ToiRecord, name: string): Promise<{ lc: LightCurve; sector: number } | null> {
+async function fetchCurve(rec: ToiRecord, name: string): Promise<{ lc: LightCurve; sector: number; sectorLcs: LightCurve[] } | null> {
+  const sectorLcs: LightCurve[] = [];
+  let primary: LightCurve | null = null; let pSector = 0;
   for (const s of (rec.sectors && rec.sectors.length ? rec.sectors : []).slice(0, 3)) {
     let lc: LightCurve | null = null;
     try { lc = await fetchSpocLightCurve(rec.tic, [s], name); } catch { lc = null; }
-    if (lc && lc.points.length >= 120) return { lc, sector: s };
+    if (lc && lc.points.length >= 120) { sectorLcs.push(lc); if (!primary) { primary = lc; pSector = s; } }
   }
-  return null;
+  if (!primary) return null;
+  return { lc: primary, sector: pSector, sectorLcs };
 }
 
 async function dilutionFor(ra: number, dec: number): Promise<DilutionResult | null> {
@@ -84,7 +87,7 @@ async function processOne(rec: ToiRecord, isBlend: boolean, providers: { key: st
   if (!got) { console.log(`  ${name.padEnd(22)} [${isBlend ? "NEG" : "POS"}]: no SPOC curve; skip`); return null; }
   const lc = got.lc;
 
-  const ctx: TestContext = { lc, t0Bjd: rec.epochBjd, periodDays: rec.periodDays, durationHours: rec.durationHours };
+  const ctx: TestContext = { lc, t0Bjd: rec.epochBjd, periodDays: rec.periodDays, durationHours: rec.durationHours, sectorLcs: got.sectorLcs };
   // peak depth for reporting only (the pipeline's own fold), not used to gate.
   let depthPpm: number | null = null;
   try { const b = bls(lc, { maxPeriodDays: rec.periodDays * 1.5 }); depthPpm = ppm(b.depth); } catch { /* leave null */ }

@@ -40,6 +40,9 @@ export const TEST_MENU: MenuTest[] = [
   { id: "shape-coherence", label: "Folded shape coherence", question: "Is the folded dip a coherent, repeated box, or a single-point spike masquerading as a transit?" },
   { id: "psf-localize", label: "PSF double-difference localization", question: "Does the transit light, imaged off the target, come from an off-axis blended source rather than the host star? (needs target-pixel data)" },
   { id: "gaia-dilution", label: "Gaia aperture dilution", question: "How much of the light in the photometric aperture is a resolved contaminant rather than the host? (needs Gaia neighbours)" },
+  { id: "multisector-phase", label: "Multi-sector phase consistency", question: "Does the transit recur at the SAME ephemeris, as a planet-plausible dip, in two or more INDEPENDENT sectors? (needs per-sector curves)" },
+  { id: "common-mode-residual", label: "Common-mode residual survival", question: "After removing the ensemble-common instrumental signal, does the dip survive (source-localized) or vanish (a shared artifact)? (needs an ensemble correction)" },
+  { id: "dilution-prior", label: "Blended-EB false-positive prior", question: "What is the measured-Gaia analytic probability that this depth is a diluted blended eclipsing binary rather than a planet? (needs a blend prior)" },
 ];
 
 const MENU_IDS = new Set(TEST_MENU.map((t) => t.id));

@@ -655,6 +655,19 @@ bound -- on-target EBs pollute the negative class), false-veto 0.05 [0.01,0.24],
 naive false-veto 0.40). Verdict unchanged and now firmer: `safeToGate = false`. Reproduce: `npm run
 p58:veto-2x2 -- --neg 24 --pos 24 --tmag 11 --boot 80 --phases 16`.
 
+P59 answers WHY the power number was a lower bound, by measuring it only where a localization veto can
+legitimately act. The FP/EB negatives are split on a Gaia resolved-contaminant test: a case is
+"localization-addressable" only if a companion star sits >= 1.5" off the host inside the ~21" aperture (a
+place a displaced source could physically be). Of 16 negatives, 8 qualify and 8 (on-target / unresolved, no
+companion) are excluded from the denominator. On the addressable subset the PSF catch-rate is 2/8 = 0.25
+[0.07,0.59] and the ROC AUC rises to 0.788 (removing the on-target EBs localization cannot separate sharpens
+discrimination) -- but 6 of the 8 addressable blends carry a resolved companion several arcsec off the star and
+were STILL not vetoed, and the one catch's offset did not coincide with the known companion's position. So even
+in the regime it is built for, this PSF localization is a weak blend-finder and its off-target flags do not
+reliably land on the real contaminant; the false-veto rate (1 known planet) is unchanged and still disqualifies.
+`safeToGate = false`, now with the power number measured on the correct subset. Excluding the host is done by
+POSITION, not Gaia source_id (int64 precision loss). Reproduce: `npm run p59:offtarget-subset`.
+
 ---
 
 ## 23. Honest limitations
@@ -727,6 +740,7 @@ npm run p55:replay-manifest    # publish a code-free third-party replay manifest
 npm run p56:real-selection     # per-target selection function on real Gaia dilution + Archive stellar params -> reports/p56-*
 npm run p57:true-veto           # first REAL true-veto 2x2 on token-free labelled TOI dispositions -> reports/p57-*
 npm run p58:veto-2x2             # scaled + phase-refined 2x2 (refutes the timing-artifact caveat) -> reports/p58-*
+npm run p59:offtarget-subset      # catch-rate on the localization-addressable (Gaia resolved-contaminant) subset -> reports/p59-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

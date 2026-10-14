@@ -66,6 +66,7 @@
     "p56:real-selection": "tsx scripts/p56-real-selection.ts",
     "p57:true-veto": "tsx scripts/p57-true-veto.ts",
     "p58:veto-2x2": "tsx scripts/p58-veto-2x2-scaled.ts",
+    "p59:offtarget-subset": "tsx scripts/p59-offtarget-subset.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",
     "p36:export-fixtures": "tsx scripts/p36-export-fixtures.ts",

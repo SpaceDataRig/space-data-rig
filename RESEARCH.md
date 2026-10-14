@@ -559,7 +559,32 @@ Reproduce: `npm run p53:psf-diff-imaging -- --targets 24 --tmag 11 --boot 120`.
 
 ---
 
-## 21. Honest limitations
+## 21. From completeness to a selection function: the eta_earth denominator skeleton (P54)
+
+An occurrence rate is not "detections / stars"; the right denominator is a SELECTION FUNCTION -- the
+probability that a planet of a given TRUE period and radius around a given star would be found at all.
+That is the product of three things this project had measured separately but never combined:
+geometric transit probability (R*/a), the dilution / contrast window (an unresolved neighbour makes the
+observed depth understate the true one -- `src/data/gaiaDilution.ts`), and the (period, observed-depth)
+detection completeness from the P47 grid. `src/sim/selectionFunction.ts` composes them (pure, offline,
+deterministic; unit-tested: Kepler's third law, transit-probability monotonicity and clipping, dilution
+inflation, null propagation for unrecovered bins).
+
+`scripts/p54-selection-function.ts` demonstrates the composition on the REAL committed P47 grid: the
+observed 50% depths (300 / 300 / 363 / 1850 ppm, and the 9.5-13 d bin that never reaches 50%) are
+unchanged, but a dilution factor of 0.7 inflates the TRUE 50% depth to 429 / 429 / 518 / 2643 ppm -- the
+dilution window is what turns a shallow observed dip into a planet you could not have seen. **This is an
+illustration, not a rate**: the dilution factors and the solar-twin star are documented assumptions (the
+P47 hosts carry no per-target radii/masses here), and P47's hosts are bright planet-bearing stars, so it
+is detector efficiency, not an unbiased survey selection. Producing an actual eta_earth needs per-target
+Gaia dilution + stellar parameters over an unbiased sample -- the honest next step, not run here. Kept off
+the public panel for that reason. discoveryClaim: false.
+
+Reproduce: `npm run p54:selection-function`.
+
+---
+
+## 22. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -595,14 +620,14 @@ Reproduce: `npm run p53:psf-diff-imaging -- --targets 24 --tmag 11 --boot 120`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 22. Reproducibility
+## 23. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 361 unit tests
+npm test                     # 366 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -621,6 +646,7 @@ npm run p50:replay            # end-to-end deterministic replay from raw S3 byte
 npm run p51:crowding          # crowding-stratified blend-veto acceptance re-validation -> reports/p51-*
 npm run p52:negative-class    # labelled-negative-class constructibility from public data -> reports/p52-*
 npm run p53:psf-diff-imaging  # PSF-model double-difference vs the naive centroid on confirmed planets -> reports/p53-*
+npm run p54:selection-function # selection-function skeleton (geometry x dilution x completeness) on the P47 grid -> reports/p54-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

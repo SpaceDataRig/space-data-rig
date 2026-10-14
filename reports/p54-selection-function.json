@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p54-selection-function.ts",
+    "module": "src/sim/selectionFunction.ts",
+    "completenessGrid": "reports/p47-completeness-grid.json (real detector efficiency on real photometry)",
+    "illustrative": true,
+    "note": "Dilution factors and the solar-twin star are DOCUMENTED ASSUMPTIONS for a demonstration, not per-target Gaia measurements or stellar parameters. This composes geometry x dilution x completeness into the eta_earth denominator skeleton; it is NOT a measured occurrence rate and there is nothing to divide (no detections are claimed)."
+  },
+  "dilutions": [
+    1,
+    0.9,
+    0.7
+  ],
+  "star": {
+    "starRadiusSolar": 1,
+    "starMassSolar": 1
+  },
+  "periodBins": [
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "geometricTransitProb": 0.18134106311929468
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "geometricTransitProb": 0.11423771131715713
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "geometricTransitProb": 0.07866546748803696
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "geometricTransitProb": 0.059406003823323
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "geometricTransitProb": 0.04732841733472582
+    }
+  ],
+  "byDilution": [
+    {
+      "dilutionFactor": 1,
+      "observedDepth50Ppm": [
+        300,
+        300,
+        362.5,
+        1850,
+        null
+      ],
+      "trueDepth50Ppm": [
+        300,
+        300,
+        362.5,
+        1850,
+        null
+      ]
+    },
+    {
+      "dilutionFactor": 0.9,
+      "observedDepth50Ppm": [
+        300,
+        300,
+        362.5,
+        1850,
+        null
+      ],
+      "trueDepth50Ppm": [
+        333.3333333333333,
+        333.3333333333333,
+        402.77777777777777,
+        2055.5555555555557,
+        null
+      ]
+    },
+    {
+      "dilutionFactor": 0.7,
+      "observedDepth50Ppm": [
+        300,
+        300,
+        362.5,
+        1850,
+        null
+      ],
+      "trueDepth50Ppm": [
+        428.5714285714286,
+        428.5714285714286,
+        517.8571428571429,
+        2642.857142857143,
+        null
+      ]
+    }
+  ],
+  "discoveryClaim": false
+}

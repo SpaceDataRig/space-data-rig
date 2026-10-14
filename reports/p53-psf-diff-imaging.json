@@ -1,0 +1,301 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p53-psf-diff-imaging.ts",
+    "tmag": 11,
+    "boot": 120,
+    "minAmpSnr": 5,
+    "minDeltaChi2": 9,
+    "data": "real TESS-SPOC target-pixel cubes (token-free S3), confirmed-planet catalog ephemerides",
+    "module": "src/detect/psfDiffImaging.ts",
+    "comparedWith": "src/detect/diffImaging.ts (naive, P44)"
+  },
+  "n": 15,
+  "psfOffsetArcsec": {
+    "min": 0,
+    "p50": 19.361043360315097,
+    "p90": 54.59999999999997,
+    "max": 73.49999999999996
+  },
+  "naiveOffsetArcsec": {
+    "min": 11.406575269571984,
+    "p50": 20.330871409905328,
+    "p90": 28.850061752956677,
+    "max": 29.508050411864104
+  },
+  "legacyShiftMaxArcsec": 1.0221461885808163,
+  "psfDeltaChi2": {
+    "min": 0,
+    "p50": 2.508641825530532,
+    "max": 310.33326188065394
+  },
+  "psfOpinionAt2Arcsec": 6,
+  "naiveOpinionAt2Arcsec": 6,
+  "psfVerdictCounts": {
+    "onTarget": 5,
+    "offTarget": 1,
+    "inconclusive": 9
+  },
+  "naiveFalseKillsAt2Arcsec": 6,
+  "psfSweep": [
+    {
+      "thresholdArcsec": 0.5,
+      "falseKills": 1
+    },
+    {
+      "thresholdArcsec": 1,
+      "falseKills": 1
+    },
+    {
+      "thresholdArcsec": 1.5,
+      "falseKills": 1
+    },
+    {
+      "thresholdArcsec": 2,
+      "falseKills": 1
+    },
+    {
+      "thresholdArcsec": 3,
+      "falseKills": 1
+    },
+    {
+      "thresholdArcsec": 5,
+      "falseKills": 1
+    }
+  ],
+  "naiveSweep": [
+    {
+      "thresholdArcsec": 0.5,
+      "falseKills": 6
+    },
+    {
+      "thresholdArcsec": 1,
+      "falseKills": 6
+    },
+    {
+      "thresholdArcsec": 1.5,
+      "falseKills": 6
+    },
+    {
+      "thresholdArcsec": 2,
+      "falseKills": 6
+    },
+    {
+      "thresholdArcsec": 3,
+      "falseKills": 6
+    },
+    {
+      "thresholdArcsec": 5,
+      "falseKills": 6
+    }
+  ],
+  "noFalseKills": false,
+  "powerUnproven": false,
+  "safeToGate": false,
+  "verdict": "P53-NOT-SAFE-TO-GATE (a PSF threshold still killed a confirmed planet)",
+  "discoveryClaim": false,
+  "rows": [
+    {
+      "name": "HR 858 b",
+      "tic": 178155732,
+      "sector": 3,
+      "psfOffsetArcsec": 0,
+      "psfDeltaChi2": 0,
+      "psfAmpSnr": 2.1752355794703124,
+      "naiveOffsetArcsec": 23.761059372004645,
+      "naiveDropSnr": 1.1362353914649233,
+      "legacyShiftArcsec": 0.0516872644189237
+    },
+    {
+      "name": "HR 858 c",
+      "tic": 178155732,
+      "sector": 3,
+      "psfOffsetArcsec": 19.361043360315097,
+      "psfDeltaChi2": 0.08384064319088935,
+      "psfAmpSnr": 1.9211494661633766,
+      "naiveOffsetArcsec": 26.50409714607747,
+      "naiveDropSnr": 1.6969689037455538,
+      "legacyShiftArcsec": 0.08894617531688812
+    },
+    {
+      "name": "HD 63433 b",
+      "tic": 130181866,
+      "sector": 20,
+      "psfOffsetArcsec": 15.86674167976008,
+      "psfDeltaChi2": 0.12753874678873475,
+      "psfAmpSnr": 0.8737640706691006,
+      "naiveOffsetArcsec": 11.406575269571984,
+      "naiveDropSnr": 0.34383994815962465,
+      "legacyShiftArcsec": 0.02525117707588755
+    },
+    {
+      "name": "HD 50554 c",
+      "tic": 80224448,
+      "sector": 44,
+      "psfOffsetArcsec": 0,
+      "psfDeltaChi2": 0,
+      "psfAmpSnr": 13.161094506104119,
+      "naiveOffsetArcsec": 28.850061752956677,
+      "naiveDropSnr": 5.911027095539614,
+      "legacyShiftArcsec": 0.5690494545561231
+    },
+    {
+      "name": "HD 73344 b",
+      "tic": 175193677,
+      "sector": 45,
+      "psfOffsetArcsec": 33.20391543176796,
+      "psfDeltaChi2": 2.8955981388378618,
+      "psfAmpSnr": 3.618113383937529,
+      "naiveOffsetArcsec": 21.966125242246385,
+      "naiveDropSnr": 2.6827748073083653,
+      "legacyShiftArcsec": 0.19652103256120013
+    },
+    {
+      "name": "WASP-189 b",
+      "tic": 157910432,
+      "sector": 51,
+      "psfOffsetArcsec": 39.45541787891751,
+      "psfDeltaChi2": 19.960492977063588,
+      "psfAmpSnr": 4.730127315388427,
+      "naiveOffsetArcsec": 14.221092293607686,
+      "naiveDropSnr": 5.1287911265971635,
+      "legacyShiftArcsec": 0.07221819148719893
+    },
+    {
+      "name": "TOI-5789 c",
+      "tic": 87216634,
+      "sector": 54,
+      "psfOffsetArcsec": 5.2755106611774845e-14,
+      "psfDeltaChi2": 2.6645352591003757e-15,
+      "psfAmpSnr": 1.7186552181590156,
+      "naiveOffsetArcsec": 13.08723856484819,
+      "naiveDropSnr": 1.0299589830356575,
+      "legacyShiftArcsec": 0.018143910564849118
+    },
+    {
+      "name": "TOI-4307 b",
+      "tic": 141186075,
+      "sector": 1,
+      "psfOffsetArcsec": 39.95522493992491,
+      "psfDeltaChi2": 310.33326188065394,
+      "psfAmpSnr": 20.09596987728569,
+      "naiveOffsetArcsec": 22.834045309895078,
+      "naiveDropSnr": 40.78405262976318,
+      "legacyShiftArcsec": 1.0221461885808163
+    },
+    {
+      "name": "TOI-2128 b",
+      "tic": 21832928,
+      "sector": 25,
+      "psfOffsetArcsec": 17.819090885900934,
+      "psfDeltaChi2": 2.508641825530532,
+      "psfAmpSnr": 5.227581863395602,
+      "naiveOffsetArcsec": 20.543449135115665,
+      "naiveDropSnr": 5.682408157702652,
+      "legacyShiftArcsec": 0.30864377306437146
+    },
+    {
+      "name": "HD 101581 c",
+      "tic": 397362481,
+      "sector": 63,
+      "psfOffsetArcsec": 31.49999999999994,
+      "psfDeltaChi2": 8.441508759625592,
+      "psfAmpSnr": 3.906604834200656,
+      "naiveOffsetArcsec": 29.508050411864104,
+      "naiveDropSnr": 4.131754468337108,
+      "legacyShiftArcsec": 0.06347654246172613
+    },
+    {
+      "name": "AU Mic b",
+      "tic": 441420236,
+      "sector": 1,
+      "psfOffsetArcsec": 23.478713763747738,
+      "psfDeltaChi2": 2.8806590726221586,
+      "psfAmpSnr": 4.021519607073397,
+      "naiveOffsetArcsec": 12.916283294446238,
+      "naiveDropSnr": 3.1312712153152082,
+      "legacyShiftArcsec": 0.1675342703965948
+    },
+    {
+      "name": "AU Mic c",
+      "tic": 441420236,
+      "sector": 1,
+      "psfOffsetArcsec": 0,
+      "psfDeltaChi2": 0,
+      "psfAmpSnr": 23.574336718421133,
+      "naiveOffsetArcsec": 17.748776192877592,
+      "naiveDropSnr": 30.325713282753327,
+      "legacyShiftArcsec": 0.8499909258908132
+    },
+    {
+      "name": "TOI-480 b",
+      "tic": 317548889,
+      "sector": 6,
+      "psfOffsetArcsec": 73.49999999999996,
+      "psfDeltaChi2": 5.0919724314013735,
+      "psfAmpSnr": 2.2614892229626595,
+      "naiveOffsetArcsec": 20.330871409905328,
+      "naiveDropSnr": 2.4183326779804495,
+      "legacyShiftArcsec": 0.21050362412583942
+    },
+    {
+      "name": "TOI-5807 b",
+      "tic": 188646744,
+      "sector": 15,
+      "psfOffsetArcsec": 54.59999999999997,
+      "psfDeltaChi2": 3.7781272822994083,
+      "psfAmpSnr": 1.9718009894676198,
+      "naiveOffsetArcsec": 20.25702774189756,
+      "naiveDropSnr": 6.451951578348638,
+      "legacyShiftArcsec": 0.2061731832220474
+    },
+    {
+      "name": "HD 21749 c",
+      "tic": 279741379,
+      "sector": 1,
+      "psfOffsetArcsec": 0,
+      "psfDeltaChi2": 0,
+      "psfAmpSnr": 0.689611995652329,
+      "naiveOffsetArcsec": 19.374943664155698,
+      "naiveDropSnr": 1.2021802571979958,
+      "legacyShiftArcsec": 0.13083630521093403
+    }
+  ],
+  "skipped": [
+    {
+      "name": "pi Men c",
+      "why": "too few in/out cadences to localize (25/1157)"
+    },
+    {
+      "name": "HR 858 d",
+      "why": "too few in/out cadences to localize (13/819)"
+    },
+    {
+      "name": "HD 63433 c",
+      "why": "too few in/out cadences to localize (17/1079)"
+    },
+    {
+      "name": "HD 63433 d",
+      "why": "too few in/out cadences to localize (31/1065)"
+    },
+    {
+      "name": "HD 50554 d",
+      "why": "too few in/out cadences to localize (33/3113)"
+    },
+    {
+      "name": "HD 25463 c",
+      "why": "too few in/out cadences to localize (22/1121)"
+    },
+    {
+      "name": "HD 25463 b",
+      "why": "too few in/out cadences to localize (21/1122)"
+    },
+    {
+      "name": "HD 60779 b",
+      "why": "too few in/out cadences to localize (0/0)"
+    },
+    {
+      "name": "HD 101581 b",
+      "why": "too few in/out cadences to localize (159/10667)"
+    }
+  ]
+}

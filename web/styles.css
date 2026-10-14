@@ -415,8 +415,8 @@ details.collapse[open] > summary.panel-head::after { content: "\2212"; }
 .research-body { padding-top: 6px; }
 .research-figure { margin: 6px 0 18px; }
 .research-figure img { width: 100%; height: auto; border: 1px solid var(--edge); border-radius: 12px; background: #0b1220; }
-.research-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
-.research-card { background: rgba(9, 14, 26, 0.6); border: 1px solid var(--edge); border-radius: 12px; padding: 14px 16px; }
+.research-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; margin-bottom: 18px; }
+.research-card { background: rgba(9, 14, 26, 0.6); border: 1px solid var(--edge); border-radius: 12px; padding: 14px 16px; min-width: 0; overflow-wrap: anywhere; }
 .research-card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); margin: 0 0 10px; }
 .rc-metric { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 5px 0; border-bottom: 1px dashed rgba(120, 180, 255, 0.1); }
 .rc-metric .k { color: var(--ink-dim); font-size: 12.5px; }
@@ -439,3 +439,25 @@ details.collapse[open] > summary.panel-head::after { content: "\2212"; }
 .cand-sort { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-dim); }
 .cand-sort select { font: 400 13px var(--sans); color: var(--ink); background: rgba(3, 5, 13, 0.6); border: 1px solid var(--edge); border-radius: 8px; padding: 6px 8px; }
 .cand-count { font: 500 12px var(--mono); color: var(--ink-faint); margin-left: auto; }
+
+/* ---- phone refinements (<=560px): keep everything inside the viewport ---- */
+/* Fixes two real mobile bugs found in QA: (1) the topbar grid did not shrink, pushing the
+   "Launch run" button off-screen and causing 80px of page-wide horizontal overflow; (2) the
+   research card grid did not collapse. Appended last so these rules win the cascade. */
+@media (max-width: 560px) {
+  .topbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .brand { min-width: 0; }
+  .brand-text { min-width: 0; }
+  .brand-text h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tagline { display: none; }
+  .mission-clock { display: none; }
+  .mode-badge { display: none; }
+  .topbar-right { gap: 8px; }
+  #run-btn { padding: 8px 11px; font-size: 12px; }
+  /* one scrollable nav row instead of a 3-line stack that eats the first screen */
+  .viewnav { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .viewnav::-webkit-scrollbar { display: none; }
+  .viewnav-link { flex: 0 0 auto; }
+  /* wide research tables scroll inside the card, never the page */
+  .research-body { overflow-x: auto; }
+}

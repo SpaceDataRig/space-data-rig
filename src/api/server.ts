@@ -640,6 +640,14 @@ app.get("/styles.css", (c) => serveStatic(c, "styles.css"));
 app.get("/space.js", (c) => serveStatic(c, "space.js"));
 app.get("/live.js", (c) => serveStatic(c, "live.js"));
 app.get("/vendor/three.js", (c) => serveStatic(c, "vendor/three.js"));
+// Serve the remaining static dashboard assets the browser fetches, so the local Node server
+// matches what the Cloudflare worker serves from web/ as static assets (edge parity).
+app.get("/vendor/solana-burn.js", (c) => serveStatic(c, "vendor/solana-burn.js"));
+app.get("/candidates.json", (c) => serveStatic(c, "candidates.json"));
+app.get("/observe-stars.json", (c) => serveStatic(c, "observe-stars.json"));
+app.get("/research.json", (c) => serveStatic(c, "research.json"));
+app.get("/results-figure.svg", (c) => serveStatic(c, "results-figure.svg"));
+app.get("/transit-example.svg", (c) => serveStatic(c, "transit-example.svg"));
 
 app.notFound((c) => c.json({ error: "not found", path: c.req.path }, 404));
 app.onError((err, c) => {

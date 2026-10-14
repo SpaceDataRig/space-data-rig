@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildReplayRecord, replayHash, verifyReplay, type ReplayInput } from "../src/sim/replay.ts";
+import { buildReplayRecord, replayHash, verifyReplay, buildReplayManifest, verifyManifest, REPLAY_MANIFEST_SCHEMA, type ReplayInput } from "../src/sim/replay.ts";
 
 const base: ReplayInput = {
   dataHash: "abc123",
@@ -57,4 +57,31 @@ test("verifyReplay confirms a match and rejects a tamper", async () => {
   assert.equal(await verifyReplay(record, hash), true);
   const tampered = { ...record, candidate: { ...record.candidate, snr: 999 } };
   assert.equal(await verifyReplay(tampered, hash), false);
+});
+
+test("buildReplayManifest is self-contained and internally consistent", async () => {
+  const record = buildReplayRecord(base);
+  const m = await buildReplayManifest(
+    { name: "HD 39091", tic: 261136679, sector: 1 },
+    { bucket: "stpubdata", key: "mast/hlsp/tess-spoc/x.fits", expectedByteSha256: "beef", byteLength: 164160 },
+    record,
+  );
+  assert.equal(m.schema, REPLAY_MANIFEST_SCHEMA);
+  assert.equal(m.discoveryClaim, false);
+  assert.equal(m.replayHash, await replayHash(record), "manifest hash = record hash");
+  assert.equal(m.retrieval.url, "https://stpubdata.s3.amazonaws.com/mast/hlsp/tess-spoc/x.fits", "url derived from bucket+key");
+  assert.equal(m.verifySteps.length, 5);
+  assert.ok(m.verifySteps.every((s) => !/undefined|\[object/.test(s)), "no placeholder leakage in steps");
+  assert.equal(await verifyManifest(m), true, "manifest verifies against itself");
+});
+
+test("verifyManifest rejects a tampered record", async () => {
+  const record = buildReplayRecord(base);
+  const m = await buildReplayManifest(
+    { name: "X", tic: 1, sector: 1 },
+    { bucket: "b", key: "k", expectedByteSha256: "aa", byteLength: 10 },
+    record,
+  );
+  const tampered = { ...m, record: { ...m.record, candidate: { ...m.record.candidate, snr: 1 } } };
+  assert.equal(await verifyManifest(tampered), false, "record changed but replayHash stale -> invalid");
 });

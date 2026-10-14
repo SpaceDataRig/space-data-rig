@@ -465,6 +465,14 @@ audit artifact, no verdict/bundle-hash/money-path change, nothing anchored, clai
 
 Reproduce: `npm run p50:replay -- --repeats 3 --tmag 10 --sector 1`.
 
+P55 (roadmap priority 5) turns that proof into a PUBLISHED, code-free audit artifact: `scripts/p55-replay-manifest.ts`
+emits `web/replay-manifest.json`, a self-contained manifest (public S3 bucket + key + fetch URL, the byte SHA-256,
+the deterministic record, its replay hash, and five ordered verification steps) so anyone can recompute the anchored
+number without our code -- fetch the object, check its SHA, run the named detector + params, compare the hash. It is
+derived entirely from the committed P50 report and cross-checked to reproduce the SAME replay hash
+(`98ea2ad0...`), so the published artifact provably matches the audited run. Pure provenance: it gates nothing and
+changes no verdict / bundle hash / money path. Reproduce: `npm run p55:replay-manifest`.
+
 ---
 
 ## 18. A reviewer's acceptance test: crowded-field localization + a labelled negative class (P51)
@@ -647,6 +655,7 @@ npm run p51:crowding          # crowding-stratified blend-veto acceptance re-val
 npm run p52:negative-class    # labelled-negative-class constructibility from public data -> reports/p52-*
 npm run p53:psf-diff-imaging  # PSF-model double-difference vs the naive centroid on confirmed planets -> reports/p53-*
 npm run p54:selection-function # selection-function skeleton (geometry x dilution x completeness) on the P47 grid -> reports/p54-*
+npm run p55:replay-manifest    # publish a code-free third-party replay manifest -> web/replay-manifest.json
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

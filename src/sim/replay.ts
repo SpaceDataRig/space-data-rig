@@ -71,3 +71,67 @@ export function replayHash(record: ReplayRecord): Promise<string> {
 export async function verifyReplay(record: ReplayRecord, expectedHash: string): Promise<boolean> {
   return (await replayHash(record)) === expectedHash;
 }
+
+// ---- self-contained, third-party-verifiable replay manifest (roadmap priority 5) ---------
+//
+// P50 PROVED the chain is deterministic. This turns that proof into a PUBLISHED AUDIT ARTIFACT: a
+// single JSON file that lets anyone recompute our anchored number WITHOUT reading our code -- they
+// fetch the named public S3 object, check its SHA-256, run the documented detector + params, and
+// compare the replay hash. The manifest carries the retrieval recipe, the deterministic record, its
+// hash, and the verification steps. It adds no capability and gates nothing; it is pure provenance.
+
+export const REPLAY_MANIFEST_SCHEMA = "space-data-rig/replay-manifest@1";
+
+export interface ReplayRetrieval {
+  /** public, anonymous S3 bucket (no token, no AWS account). */
+  bucket: string;
+  /** object key within the bucket. */
+  key: string;
+  /** full anonymous HTTPS URL to fetch the raw bytes. */
+  url: string;
+  /** SHA-256 the fetched bytes must match before replaying (proves the SAME input). */
+  expectedByteSha256: string;
+  byteLength: number;
+}
+
+export interface ReplayManifest {
+  schema: typeof REPLAY_MANIFEST_SCHEMA;
+  target: { name: string; tic: number; sector: number };
+  retrieval: ReplayRetrieval;
+  record: ReplayRecord;
+  /** SHA-256 over the canonical record; recomputable from `record` alone. */
+  replayHash: string;
+  /** ordered, code-free instructions an auditor can follow. */
+  verifySteps: string[];
+  discoveryClaim: false;
+}
+
+/** Assemble a self-contained manifest from a retrieval recipe + a deterministic replay record. */
+export async function buildReplayManifest(
+  target: { name: string; tic: number; sector: number },
+  retrieval: Omit<ReplayRetrieval, "url"> & { url?: string },
+  record: ReplayRecord,
+): Promise<ReplayManifest> {
+  const url = retrieval.url ?? `https://${retrieval.bucket}.s3.amazonaws.com/${retrieval.key}`;
+  const hash = await replayHash(record);
+  return {
+    schema: REPLAY_MANIFEST_SCHEMA,
+    target,
+    retrieval: { bucket: retrieval.bucket, key: retrieval.key, url, expectedByteSha256: retrieval.expectedByteSha256, byteLength: retrieval.byteLength },
+    record,
+    replayHash: hash,
+    verifySteps: [
+      `1. GET ${url} (anonymous; no token).`,
+      `2. sha256 the bytes; it must equal ${retrieval.expectedByteSha256} (proves the same input).`,
+      `3. Parse the FITS light curve and compute the canonical data hash; it must equal ${record.dataHash}.`,
+      `4. Run ${record.algorithm} with params ${canonicalJson(record.params)} to recover the candidate.`,
+      `5. Canonical-JSON-encode this manifest's "record" (key-sorted) and sha256 it; it must equal the replayHash field ${hash}.`,
+    ],
+    discoveryClaim: false,
+  };
+}
+
+/** Recompute the record hash from the manifest and confirm it matches the stated replayHash. */
+export async function verifyManifest(manifest: ReplayManifest): Promise<boolean> {
+  return (await replayHash(manifest.record)) === manifest.replayHash;
+}

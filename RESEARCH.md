@@ -371,7 +371,29 @@ Reproduce: `npm run p46:coherence -- --hosts 6 --maxsectors 3 --tmag 11`.
 
 ---
 
-## 14. Honest limitations
+## 14. A two-dimensional completeness map on real light curves (P47)
+
+Earlier completeness (p1-real-completeness, p33-scale-roc) was reported *marginally* -- recovery vs depth,
+or vs period, one at a time. Turning detections into occurrence rates needs the *joint* efficiency
+surface with error bars, so we built `src/sim/completenessGrid.ts`: it bins injection-recovery trials
+into a period x depth grid with **Wilson score intervals** per cell (honest at small counts and at
+k=0, where the naive normal interval breaks), and interpolates the depth at which each period bin
+crosses 50% completeness. `scripts/p47-completeness-grid.ts` runs it on real data -- **960** injected
+transits across **20** real TESS-SPOC light curves under a stated a-priori selection function.
+
+The map behaves exactly as physics requires: completeness falls with both period and depth. The 50%
+depth threshold is **~300 ppm at 1.5-3 d**, rises to **~360 ppm at 5 d** and **~1850 ppm at 8 d**, and
+**11 d is not reachable within a single sector** (the row is empty because two of its transits do not
+fit a ~27-day baseline) -- reported as an empty cell, not a fabricated number. This is a positive
+result: a real, per-(period,depth) detection-efficiency map usable downstream. Honest limit: the host
+sample is bright and planet-bearing (catalog-derived), so this is detector efficiency on real
+photometry, not an unbiased survey selection function.
+
+Reproduce: `npm run p47:completeness-grid -- --targets 20 --tmag 11 --trials 2 --min-snr 7`.
+
+---
+
+## 15. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -400,14 +422,14 @@ Reproduce: `npm run p46:coherence -- --hosts 6 --maxsectors 3 --tmag 11`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 15. Reproducibility
+## 16. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 308 unit tests
+npm test                     # 316 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -419,6 +441,7 @@ npm run p43:window-alias     # window-alias risk on real curves -> reports/p43-*
 npm run p44:diff-imaging     # difference-imaging localization calibration -> reports/p44-*
 npm run p45:fp-probability   # blended-EB false-positive probability characterisation -> reports/p45-*
 npm run p46:coherence        # multi-year O-C coherence on real known planets -> reports/p46-*
+npm run p47:completeness-grid # 2-D period x depth completeness map on real curves -> reports/p47-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

@@ -33,6 +33,7 @@ const p43 = load("reports/p43-window-alias.json");
 const p44 = load("reports/p44-diff-imaging.json");
 const p45 = load("reports/p45-fp-probability.json");
 const p46 = load("reports/p46-coherence.json");
+const p47 = load("reports/p47-completeness-grid.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -172,6 +173,15 @@ const payload = {
     python: { label: "wotan + astropy BLS (independent stack)", ...pythonValidation },
   },
   falsePositiveControl,
+  detectionEfficiency: {
+    label: "2-D period x depth completeness map on real light curves (P47)",
+    nHosts: p47.meta.nHosts,
+    totalInjections: p47.totalInjections,
+    periodBinsReaching50: p47.periodBinsReaching50,
+    thresholdDepth50: p47.thresholdDepth50,
+    selectionFunction: p47.meta.selectionFunction,
+    discoveryClaim: false,
+  },
   compute,
 };
 

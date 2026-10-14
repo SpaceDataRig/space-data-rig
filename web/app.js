@@ -1035,6 +1035,11 @@ function renderResearch(r) {
     const two = (row.bySectors || []).find((b) => b.sectors === 2);
     return `<tr><td>${row.stars.toLocaleString()} stars</td><td>${two ? two.cpuHours.toFixed(1) : "-"} CPU-h</td></tr>`;
   }).join("");
+  const de = r.detectionEfficiency;
+  const deRows = de ? (de.thresholdDepth50 || []).map((t) => {
+    const pMid = ((t.periodLo + t.periodHi) / 2).toFixed(1);
+    return `<tr><td>${pMid} d</td><td>${t.depthPpm == null ? "not reached" : t.depthPpm + " ppm"}</td></tr>`;
+  }).join("") : "";
   el.innerHTML =
     `<figure class="research-figure"><img loading="lazy" src="/results-figure.svg" alt="Completeness vs depth for three independent estimators, and blind purity as true/false positive counts." /></figure>` +
     `<div class="research-grid">` +
@@ -1063,6 +1068,9 @@ function renderResearch(r) {
     `</div>` +
     `<h3 class="research-sub">Completeness vs injected depth (three independent estimators)</h3>` +
     `<table class="research-table"><thead><tr><th>depth</th><th>TypeScript BLS</th><th>PDM</th><th>Python astropy BLS</th></tr></thead><tbody>${rows}</tbody></table>` +
+    (de ? `<h3 class="research-sub">Detection efficiency: 50%-completeness depth vs period (2-D grid, real curves)</h3>` +
+      `<table class="research-table"><thead><tr><th>period</th><th>depth for 50% recovery</th></tr></thead><tbody>${deRows}</tbody></table>` +
+      `<p class="rc-note">${de.totalInjections} injected transits across ${de.nHosts} real TESS-SPOC light curves; each grid cell carries a Wilson 95% interval. Hosts are bright and planet-bearing, so this is detector efficiency on real photometry, not an unbiased survey selection. Longer periods need deeper transits; ${de.periodBinsReaching50}/${(de.thresholdDepth50 || []).length} period bins reach 50% within a single-sector baseline.</p>` : ``) +
     `<p class="research-note">${esc(r.note)}</p>`;
 }
 function seedResearchFeed(r) {

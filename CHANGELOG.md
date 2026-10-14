@@ -8,6 +8,11 @@ Keep a Changelog and adheres to Semantic Versioning.
 ### Research -- LLM hypothesis closed loop, CI scaling, dashboard, and an English-only X auto-post channel (2026-10-14)
 - P60 (`scripts/p60-joint-vs-single.ts`): joint multi-sector vs per-sector BLS re-find A/B on real curves --
   joint gives no detectability advantage over per-sector search; roadmap priority 1 closed negative.
+- P62 (`scripts/p62-phase-aligned-joint.ts`): targeted mechanistic follow-up to P60 (the reviewer's phase-alignment
+  fix) on the SAME 20 planets. Four arms: single 6/20, naive-joint 6/20, REFINED (per-sector seed -> narrow joint
+  fold) 4/20 -- WORSE, and ORACLE (truth-seed ceiling) 10/20. Verdict `NO-LIFT-JOINT-NOT-A-FREE-LUNCH`: the
+  long-baseline fold doubles re-find only with a correct period; a blind single-sector seed is usually the wrong
+  period on multi-planet hosts, so seed acquisition (not the fold) is the wall. Written into RESEARCH limitations.
 - `createSpocSectorFetcher` (`src/data/mastS3.ts`): one bounded pool + memo shared across TESS sectors for
   concurrent multi-sector fetch; `tests/mastS3.test.ts` asserts the concurrency cap.
 - P61 LLM hypothesis closed loop (`src/ai/hypothesis.ts`, `src/detect/hypothesisTests.ts`,

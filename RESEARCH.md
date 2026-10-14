@@ -718,13 +718,38 @@ for the keys-free deterministic 2x2 the CI runs).
 
 ---
 
-## 24. Honest limitations
+## 24. Does phase-aligned joint folding rescue the joint search? Measured: no -- the seed, not the fold, is the wall (P62)
+
+P60 found joint == single re-find (6/20) and the per-planet rows showed the misses were PERIOD MISMATCH, not low
+SNR. The reviewer's fix -- detect per-sector first, then run a narrow, high-oversample (phase-aligned) joint fold
+around that seed -- is exactly `npm run p62:phase-aligned-joint`, a strict A/B on the SAME 20 P60 planets with four
+arms: SINGLE (best per-sector BLS), NAIVE-JOINT (full-range stitched BLS), REFINED (stitched BLS re-run only inside
++-10% of the best single-sector period -- the phase-aligned refinement), and ORACLE (identical but seeded at
+catalog truth, as a diagnostic ceiling that isolates "bad seed" from "the fold cannot recover").
+
+Measured (20 confirmed planets): SINGLE 6/20, NAIVE-JOINT 6/20, REFINED (data seed) **4/20 -- worse**, and ORACLE
+(truth seed) **10/20**. Refinement fixed 1 naive-miss but broke 3; corroborated at the refined ephemeris 3/20. The
+oracle-minus-refined gap of 6 localises the failure exactly: the long-baseline fold CAN double the re-find when
+handed a correct period, but a BLIND single-sector seed is usually the WRONG period on these multi-planet systems
+(the BLS peak locks onto a neighbouring planet or a harmonic), so constraining the fold to that bad seed drags it
+below even the naive wide scan. Verdict `NO-LIFT-JOINT-NOT-A-FREE-LUNCH`: for a pipeline that cannot peek at truth,
+the joint fold is not the bottleneck -- reliable seed acquisition is. Positive control on known planets; nothing
+gated, anchored or deployed; discoveryClaim false.
+
+---
+
+## 25. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
 - **A longer baseline is not a free completeness lever.** P41 measures that naively stitching extra sectors does not
   raise - and for short, already-resolved periods slightly lowers - injection-recovery completeness; baseline length
   buys period *resolution*, not short-period SNR, unless the cross-sector fold stays phase-coherent.
+- **Joint multi-sector search is not a free lunch -- and P62 shows it is the SEED, not the fold.** On the same 20
+  known planets, phase-aligned refinement (per-sector seed -> narrow joint fold) re-finds only 4/20 vs 6/20 for
+  the single/naive baselines, yet a truth-seeded oracle reaches 10/20: the long-baseline fold recovers 2x WITH a
+  correct period, but a blind single-sector seed is often the wrong period on multi-planet hosts, so the binding
+  constraint for a blind pipeline is reliable seed acquisition, not alignment. There is no free joint-search lift.
 - **The coherent-systematics null is a complement, not a second win.** P42 shows that after common-mode subtraction
   it adds ~0 discrimination (AUC gain -0.005) at 100% planet safety; its large FP cut is on un-subtracted data.
 - **Window aliasing is not a driver on TESS FFI.** P43 measures the 1 c/d spectral window at ~0.012 (essentially
@@ -757,7 +782,7 @@ for the keys-free deterministic 2x2 the CI runs).
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 25. Reproducibility
+## 26. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
@@ -766,6 +791,7 @@ npm ci
 npm run typecheck:all        # Node + worker targets
 npm test                     # 392 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
+npm run p62:phase-aligned-joint # phase-aligned joint-fold A/B -> reports/p62-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
 npm run p39:instrumental-fp  # systematics-aware FP null + FDR -> reports/p39-*

@@ -1,0 +1,74 @@
+name: x-post (auto-publish an English status update on a milestone push)
+
+# Fully-automated, TEXT-ONLY, ENGLISH-ONLY posting to X via the X API v2 (scripts/post-x-text.ts). On every
+# push to main that changes a published research artifact, it posts ONE English line derived from the commit
+# subject plus short project links. No image (AI illustration is generated only inside an agent session, not
+# in CI -- the operator opted for text-only automation). No Chinese (the workflow strips non-ASCII and the
+# script refuses non-ASCII, so English-only is enforced twice).
+
+# Loop / spam guards:
+#  - Only fires on pushes that touch reports/**.md or web/research.json or CHANGELOG.md (real deliverables),
+#    not on code/doc edits.
+#  - `if: github.actor != 'github-actions[bot]'` skips the CI publish-back commits (they are pushed by the
+#    Actions token), so a regenerated report does NOT trigger a second post.
+#  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- so this workflow is inert until
+#    an operator opts in by adding real X API credentials in repo Settings > Actions secrets. Nothing here
+#    can post without them, and no key ever enters the repo.
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "override the English post text (blank = derive from the latest commit subject)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "reports/**/*.md"
+      - "web/research.json"
+      - "CHANGELOG.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: x-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compose English-only text from the commit and post via X API v2
+        env:
+          OVERRIDE_TEXT: ${{ github.event.inputs.text }}
+          # credentials come ONLY from secrets; absent -> the script dry-runs and sends nothing
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: |
+          if [ -n "$OVERRIDE_TEXT" ]; then
+            TEXT="$OVERRIDE_TEXT"
+          else
+            SUBJECT="$(git log -1 --pretty=%s | tr -cd '\11\12\15\40-\176')"
+            TEXT="${SUBJECT} - spacedatarig.app - github.com/SpaceDataRig/space-data-rig"
+          fi
+          # strip any non-ASCII once more; English-only is enforced in the script too
+          TEXT="$(printf '%s' "$TEXT" | tr -cd '\11\12\15\40-\176')"
+          npm run x:post -- --text "$TEXT"

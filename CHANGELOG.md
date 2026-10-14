@@ -45,6 +45,9 @@ Keep a Changelog and adheres to Semantic Versioning.
   third-party claim -> run the full independent audit + mission-critic with current gates -> report pass/fail",
   not on-chain. Both sample external claims cap at rejected/needs-more-data, neither passes the accepted-only
   gate; discoveryClaim/anchored/safeToGate false.
+- Milestone figure (`scripts/p66-milestone-figure.ts` -> `web/milestone-figure.svg`): a single shareable 2x2 panel
+  synthesizing P62/P63/P64/P65. Re-derives ONLY numbers already published in `reports/` (no network, no re-analysis,
+  not read by the analysis core or bundle so hashes are unchanged); served as a static asset, byte-level ASCII clean.
 - Dashboard: P62 joint, P63 soft score, P64 telemetry and P65 external audit distilled into
   `web/research.json` (`scripts/p38-research-bundle.ts`) and rendered in the FP-control card.
 

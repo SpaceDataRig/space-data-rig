@@ -821,6 +821,7 @@ npm run p59:offtarget-subset      # catch-rate on the localization-addressable (
 npm run p60:joint-vs-single        # joint multi-sector vs single-sector re-find A/B head-to-head on known planets -> reports/p60-*
 npm run p61:llm-hypothesis         # LLM proposes a falsifiable hypothesis + picks a test; rig measures it -> reports/p61-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
+npm run p66:milestone-figure # P62-P65 milestone figure      -> web/milestone-figure.svg
 ```
 
 The Python cross-pipeline harness runs in the `crosscheck-python` CI workflow and publishes its measured report back

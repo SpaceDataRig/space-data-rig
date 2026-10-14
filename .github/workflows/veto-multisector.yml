@@ -1,0 +1,88 @@
+name: veto-multisector (joint search + true-veto 2x2, large-scale)
+
+# Roadmap item 5 (make large-scale measurements a routine CI product, not a manual local run), extended to the
+# newest analyses. The joint-vs-single re-find A/B (p60) and the real true-veto 2x2 on the token-free labelled
+# negative class (p58 phase-refined, p59 localization-addressable subset) each download real TESS SPOC light
+# curves / target-pixel cubes + Gaia neighborhoods per target, so at the sample sizes that matter they are
+# network- and time-bound on a dev laptop. A CI runner runs the SAME scripts reproducibly and PUBLISHES the
+# measured reports back into the repository (reports/p60-*, reports/p58-*, reports/p59-*) so the numbers are
+# publicly readable without artifact authentication and regenerable by anyone -- exactly the pattern scale-roc
+# already uses for p33. Sample sizes default to the committed reports so a run is comparable to the checked-in
+# numbers. Nothing here gates, anchors, claims, or deploys -- it measures and reports; discoveryClaim stays
+# structurally false and safeToGate stays false (the pixel-localization veto is deliberately kept INERT).
+
+on:
+  workflow_dispatch:
+    inputs:
+      joint_targets:
+        description: "confirmed multi-sector planets to A/B in the joint-vs-single re-find (p60)"
+        required: true
+        default: "20"
+      veto_per_class:
+        description: "negatives AND positives to attempt in the phase-refined true-veto 2x2 (p58; p59 follows it)"
+        required: true
+        default: "24"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p60-joint-vs-single.ts
+      - scripts/p58-veto-2x2-scaled.ts
+      - scripts/p59-offtarget-subset.ts
+      - .github/workflows/veto-multisector.yml
+
+permissions:
+  contents: write
+
+# One heavy sweep at a time; never cancel a running sweep (its published report is the artifact we want).
+concurrency:
+  group: veto-multisector
+  cancel-in-progress: false
+
+jobs:
+  veto-multisector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Joint multi-sector vs single-sector re-find A/B (p60)
+        env:
+          JOINT_TARGETS: ${{ github.event.inputs.joint_targets || '20' }}
+        run: npm run p60:joint-vs-single -- --targets "$JOINT_TARGETS" --maxsectors 4 --tmag 11 --minsnr 7 --tol 5
+
+      - name: Phase-refined true-veto 2x2 on the labelled negative class (p58)
+        env:
+          VETO_PER_CLASS: ${{ github.event.inputs.veto_per_class || '24' }}
+        run: npm run p58:veto-2x2 -- --neg "$VETO_PER_CLASS" --pos "$VETO_PER_CLASS"
+
+      - name: Localization-addressable subset veto (p59, reads the p58 report)
+        run: npm run p59:offtarget-subset
+
+      - name: Publish measured reports back to the repo
+        if: always()
+        run: |
+          if ls reports/p60-joint-vs-single.md reports/p58-veto-2x2.md reports/p59-offtarget-subset.md >/dev/null 2>&1; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p60-joint-vs-single.md reports/p60-joint-vs-single.json \
+                    reports/p58-veto-2x2.md reports/p58-veto-2x2.json \
+                    reports/p59-offtarget-subset.md reports/p59-offtarget-subset.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Roadmap-5: publish joint-search + true-veto 2x2 reports (run $GITHUB_RUN_ID, CI-measured)"
+              git push origin HEAD:main
+            else
+              echo "reports unchanged; nothing to publish"
+            fi
+          else
+            echo "no reports produced; nothing to publish"
+          fi

@@ -246,12 +246,12 @@ per-target SPOC path has no shared-cadence ensemble, so the field stays absent a
 byte-for-byte unchanged. **Nothing is deployed and no live verdict changes**; wiring a real ensemble into the
 edge/Node callers (and deploying) is a separate, parity-gated, operator-authorized step.
 
-**At scale, across sectors, and honestly bounded (P42).** P42 re-runs the control across three TGLC sectors (450
+**At scale, across sectors, and honestly bounded (P42).** P42 re-runs the control across four TGLC sectors (800
 curves) in the production subtract-then-gate posture and adds a threshold-free metric: a Mann-Whitney AUC of the
 systematics-aware FAP vs the per-star noise FAP over a labelled pool (injected planets vs quiet-curve survivors). The
 honest result tempers the P39 headline: once subtraction has removed the coherent bulk, the systematics-aware null
-adds **almost nothing further** (FP 111 -> 104; AUC 0.554 noise vs 0.550 sys, a gain of -0.005) while keeping **100%
-(49/49)** of injected planets. The 61% -> 16% win belongs to the *un-subtracted* data. So the coherent null is a
+adds **nothing further at all** (FP 199 -> 196; AUC 0.548 noise vs 0.548 sys, a gain of 0.000) while keeping **100%
+(79/79)** of injected planets. The 61% -> 16% win belongs to the *un-subtracted* data. So the coherent null is a
 certified-safe **complement and safety net**, not a second independent lever: subtraction is the primary fix, and the
 residual FP after it is each star's own variability -- the single-sector purity ceiling (P31/P33).
 

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p49-blind-test.ts",
+    "protocol": "sealed-key injection-recovery blind test",
+    "detector": "iterativeBls under production gate (SNR>=7, depth-regime screen), maxSignals=3",
+    "wantStars": 30,
+    "injectFrac": 0.5,
+    "periodPrior": [
+      2,
+      8
+    ],
+    "depthPrior": [
+      1000,
+      2000,
+      4000
+    ],
+    "seed": 7,
+    "note": "precision is a lower bound: a detection not matching the planted planet counts FP even if it is the host's own real planet. Single stitched baseline => corroboratedSectors=1, so a 2-sector bar accepts nothing (falseAccepts 0 by rule)."
+  },
+  "curves": 30,
+  "injected": 13,
+  "null": 17,
+  "detections": 30,
+  "raw": {
+    "nCurves": 30,
+    "nInjected": 13,
+    "nNull": 17,
+    "nDetections": 30,
+    "tp": 10,
+    "fn": 3,
+    "fp": 20,
+    "tn": 8,
+    "recall": 0.7692307692307693,
+    "recallCI": [
+      0.49743126004873084,
+      0.918206209075343
+    ],
+    "precision": 0.3333333333333333,
+    "precisionCI": [
+      0.19230295526846194,
+      0.5122027418616973
+    ],
+    "fpPerNullCurve": 0.7647058823529411,
+    "accepted": 30,
+    "acceptedTp": 10,
+    "falseAccepts": 20,
+    "acceptedPrecision": 0.3333333333333333,
+    "needsMoreData": 0,
+    "discoveryClaim": false
+  },
+  "capped": {
+    "nCurves": 30,
+    "nInjected": 13,
+    "nNull": 17,
+    "nDetections": 30,
+    "tp": 10,
+    "fn": 3,
+    "fp": 20,
+    "tn": 8,
+    "recall": 0.7692307692307693,
+    "recallCI": [
+      0.49743126004873084,
+      0.918206209075343
+    ],
+    "precision": 0.3333333333333333,
+    "precisionCI": [
+      0.19230295526846194,
+      0.5122027418616973
+    ],
+    "fpPerNullCurve": 0.7647058823529411,
+    "accepted": 0,
+    "acceptedTp": 0,
+    "falseAccepts": 0,
+    "acceptedPrecision": null,
+    "needsMoreData": 30,
+    "discoveryClaim": false
+  },
+  "discoveryClaim": false
+}

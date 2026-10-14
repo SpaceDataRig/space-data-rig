@@ -50,7 +50,9 @@ export function wilsonInterval(k: number, n: number, z = 1.96): [number, number]
   const denom = 1 + z2 / n;
   const centre = (phat + z2 / (2 * n)) / denom;
   const half = (z / denom) * Math.sqrt((phat * (1 - phat)) / n + z2 / (4 * n * n));
-  return [Math.max(0, centre - half), Math.min(1, centre + half)];
+  // at k==n the Wilson upper bound is exactly 1; snap it (float round-off otherwise yields 0.9999...).
+  const hi = k >= n ? 1 : Math.min(1, centre + half);
+  return [Math.max(0, centre - half), hi];
 }
 
 /** Bin a trial into [periodIndex, depthIndex] using ascending edges; returns null if out of range. */

@@ -415,7 +415,32 @@ Reproduce: `npm run p48:novelty-check`.
 
 ---
 
-## 16. Honest limitations
+## 16. Can we trust the detector's own verdicts blind? A formal blind test (P49)
+
+Everything above measures the detector when we tell it what to look for. The honest end-to-end question is:
+when the detector does NOT know the answer, how good are its calls? `src/sim/blindTest.ts` scores a
+sealed-key injection-recovery blind test -- a hidden answer key (which curves have a planted planet, at what
+period) that the detector never sees, matched against its gated detections to give a full confusion matrix,
+recall and precision with Wilson 95% intervals, the FP rate per null curve, and the corroboration-capped
+acceptance. `scripts/p49-blind-test.ts` runs it on **30** real TESS-SPOC curves (**13** planted / **17** null,
+period 2-8 d, depth 1000-4000 ppm) through the production gate (`iterativeBls`, SNR>=7, depth-regime screen).
+
+Blind operating point: **recall 76.9% [49.7, 91.8]** (consistent with the P47 completeness map), but
+**precision only 33.3% [19.2, 51.2]** -- two thirds of the detector's single-sector flags are not the planted
+planet (and this is a lower bound, since some "false positives" are the host's own real planets), with **0.76**
+false positives per null curve. That is the honest, quantified reason this is not a discovery instrument.
+
+The decisive safety number is the corroboration cap: our curves are a single stitched baseline
+(`corroboratedSectors=1`), so under a 2-sector acceptance bar **0 detections are accepted and 0 are
+false-accepts** -- the pipeline structurally refuses to wave a single-sector signal through to the money path.
+A blind test that recovers ~77% but accepts nothing uncorroborated is exactly the behaviour we want from a
+system that must not over-claim. Positive control only; nothing gated, anchored, claimed, or deployed.
+
+Reproduce: `npm run p49:blind-test -- --stars 30 --maxsectors 2 --seed 7`.
+
+---
+
+## 17. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -444,14 +469,14 @@ Reproduce: `npm run p48:novelty-check`.
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 17. Reproducibility
+## 18. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 326 unit tests
+npm test                     # 335 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -465,6 +490,7 @@ npm run p45:fp-probability   # blended-EB false-positive probability characteris
 npm run p46:coherence        # multi-year O-C coherence on real known planets -> reports/p46-*
 npm run p47:completeness-grid # 2-D period x depth completeness map on real curves -> reports/p47-*
 npm run p48:novelty-check     # board-candidate novelty vs the NASA Exoplanet Archive -> reports/p48-*
+npm run p49:blind-test        # formal sealed-key blind test (precision/recall) -> reports/p49-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

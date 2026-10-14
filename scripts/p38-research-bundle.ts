@@ -34,6 +34,7 @@ const p44 = load("reports/p44-diff-imaging.json");
 const p45 = load("reports/p45-fp-probability.json");
 const p46 = load("reports/p46-coherence.json");
 const p47 = load("reports/p47-completeness-grid.json");
+const p49 = load("reports/p49-blind-test.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -180,6 +181,21 @@ const payload = {
     periodBinsReaching50: p47.periodBinsReaching50,
     thresholdDepth50: p47.thresholdDepth50,
     selectionFunction: p47.meta.selectionFunction,
+    discoveryClaim: false,
+  },
+  blindTest: {
+    label: "sealed-key blind test of the detector on real curves (P49)",
+    curves: p49.curves,
+    injected: p49.injected,
+    nullCurves: p49.null,
+    detections: p49.detections,
+    recall: p49.raw.recall,
+    recallCI: p49.raw.recallCI,
+    precision: p49.raw.precision,
+    precisionCI: p49.raw.precisionCI,
+    fpPerNullCurve: p49.raw.fpPerNullCurve,
+    acceptedUnderBar: p49.capped.accepted,
+    falseAcceptsUnderBar: p49.capped.falseAccepts,
     discoveryClaim: false,
   },
   compute,

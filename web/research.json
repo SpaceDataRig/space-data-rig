@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T02:37:06.598Z",
+  "generatedAt": "2026-10-14T03:47:00.965Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -241,6 +241,27 @@
       }
     ],
     "selectionFunction": "unique TIC hosts from the confirmed-planet catalog at Tmag<=11, first SPOC light curve with >=200 points among up to 3 sectors containing the coordinate; injection grid period=[1.5,3,5.25,8,11.25]d x depth=[300,550,950,1850,3750,7000]ppm x 2 trials, recovered = BLS(SNR>=7) period matched within 2%. NOTE: hosts are planet-bearing and bright, so this is detector efficiency on real photometry, not an unbiased survey selection.",
+    "discoveryClaim": false
+  },
+  "blindTest": {
+    "label": "sealed-key blind test of the detector on real curves (P49)",
+    "curves": 30,
+    "injected": 13,
+    "nullCurves": 17,
+    "detections": 30,
+    "recall": 0.7692307692307693,
+    "recallCI": [
+      0.49743126004873084,
+      0.918206209075343
+    ],
+    "precision": 0.3333333333333333,
+    "precisionCI": [
+      0.19230295526846194,
+      0.5122027418616973
+    ],
+    "fpPerNullCurve": 0.7647058823529411,
+    "acceptedUnderBar": 0,
+    "falseAcceptsUnderBar": 0,
     "discoveryClaim": false
   },
   "compute": {

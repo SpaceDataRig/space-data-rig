@@ -1025,7 +1025,7 @@ async function loadResearch() {
 function renderResearch(r) {
   const el = $("#research-body");
   if (!el) return;
-  const s = r.survey, cv = r.crossValidation, cm = r.compute, fpc = r.falsePositiveControl;
+  const s = r.survey, cv = r.crossValidation, cm = r.compute, fpc = r.falsePositiveControl, bt = r.blindTest;
   const depths = s.depthsPpm || [];
   const rows = depths.map((d, i) => {
     const ts = s.completeness[i], pdm = cv.pdm.completeness[i], py = cv.python.completeness[i];
@@ -1047,6 +1047,7 @@ function renderResearch(r) {
         `<div class="rc-metric"><span class="k">real host stars</span><span class="v">${s.stars}</span></div>` +
         `<div class="rc-metric"><span class="k">blind purity (lower bound)</span><span class="v">${pct(s.purity)}</span></div>` +
         `<div class="rc-metric"><span class="k">TP / FP on real curves</span><span class="v">${s.nullTP} / ${s.nullFP}</span></div>` +
+        (bt ? `<div class="rc-metric"><span class="k">sealed-key blind test</span><span class="v">recall ${pct(bt.recall)} &middot; precision ${pct(bt.precision)} &middot; false-accepts ${bt.falseAcceptsUnderBar}</span></div>` : ``) +
         `<p class="rc-note">Iterative box-fit BLS under the production gate, on real TESS-SPOC photometry (seed ${s.seed}, injected P=${s.injPeriodDays} d).</p></div>` +
       `<div class="research-card"><h3>Independent cross-checks</h3>` +
         `<div class="rc-metric"><span class="k">PDM period agreement</span><span class="v">${cv.pdm.agreement.agree}/${cv.pdm.agreement.comparable} (${pct(cv.pdm.agreement.rate)})</span></div>` +

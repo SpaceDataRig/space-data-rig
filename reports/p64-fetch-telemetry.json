@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p64-fetch-telemetry.ts",
+    "hosts": 8,
+    "maxSectors": 4,
+    "concurrency": 4,
+    "data": "real TESS-SPOC public S3 (token-free)",
+    "note": "measured cache-hit rate + download-cost telemetry for the multi-sector helper; not a discovery claim; nothing gated."
+  },
+  "coldPass": {
+    "curves": 23,
+    "stats": {
+      "byteRequests": 24,
+      "cacheHits": 7,
+      "cacheMisses": 17,
+      "cacheHitRate": 0.2916666666666667,
+      "downloadMs": 18054,
+      "meanMissMs": 1062,
+      "estSavedMs": 7434
+    },
+    "wallMs": 7714
+  },
+  "warmPass": {
+    "curves": 23,
+    "hits": 24,
+    "misses": 0,
+    "hitRate": 1,
+    "wallMs": 77
+  },
+  "cumulative": {
+    "byteRequests": 48,
+    "cacheHits": 31,
+    "cacheMisses": 17,
+    "cacheHitRate": 0.6458333333333334,
+    "downloadMs": 18054,
+    "meanMissMs": 1062,
+    "estSavedMs": 32922
+  },
+  "bottleneck": "download",
+  "verdict": "WARM-CACHE-FREE: a repeat sweep served 100% of byte requests from cache (misses 0, 77ms vs 7714ms cold) -- the per-key cache makes multi-study re-fetch effectively free, which is the measured case for using the helper broadly in research before any production decision.",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

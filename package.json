@@ -71,6 +71,7 @@
     "p62:phase-aligned-joint": "tsx scripts/p62-phase-aligned-joint.ts",
     "p61:llm-hypothesis": "tsx scripts/p61-llm-hypothesis-loop.ts",
     "p63:soft-score": "tsx scripts/p63-soft-score.ts",
+    "p64:fetch-telemetry": "tsx scripts/p64-fetch-telemetry.ts",
     "x:post": "tsx scripts/post-x-text.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",

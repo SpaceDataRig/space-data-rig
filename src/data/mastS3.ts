@@ -191,11 +191,44 @@ function spocRealLabel(key: string): string {
  */
 export function createSpocSectorFetcher(opts: SpocSectorFetcherOptions = {}) {
   const byteCache = new Map<string, Promise<Uint8Array | null>>();
-  const getBytes = (key: string): Promise<Uint8Array | null> => {
-    let p = byteCache.get(key);
-    if (!p) { p = fetchSpocBytes(key, opts); byteCache.set(key, p); }
-    return p;
+  // Lightweight telemetry so the roadmap can decide, on MEASURED evidence, whether the concurrent+cached
+  // multi-sector helper is worth promoting toward production: cache-hit rate + estimated download time saved.
+  let byteRequests = 0;
+  let cacheHits = 0;
+  let cacheMisses = 0;
+  let missMsTotal = 0;
+  const getBytes = async (key: string): Promise<Uint8Array | null> => {
+    byteRequests++;
+    const cached = byteCache.get(key);
+    if (cached) { cacheHits++; return cached; }
+    const t0 = Date.now();
+    const p = fetchSpocBytes(key, opts);
+    cacheMisses++;
+    byteCache.set(key, p);
+    try {
+      const r = await p;
+      missMsTotal += Date.now() - t0;
+      return r;
+    } catch (e) {
+      missMsTotal += Date.now() - t0;
+      throw e;
+    }
   };
+  /** Cumulative byte-fetch telemetry for this fetcher instance (per-key cache). */
+  function fetchStats() {
+    const meanMissMs = cacheMisses > 0 ? missMsTotal / cacheMisses : 0;
+    return {
+      byteRequests,
+      cacheHits,
+      cacheMisses,
+      cacheHitRate: byteRequests > 0 ? cacheHits / byteRequests : 0,
+      downloadMs: Math.round(missMsTotal),
+      meanMissMs: Math.round(meanMissMs),
+      // the download time a cache hit avoids; an ESTIMATE using the measured mean miss latency (not a claim of a
+      // wall-clock saving on a single run, since concurrent fetches overlap).
+      estSavedMs: Math.round(cacheHits * meanMissMs),
+    };
+  }
 
   /** Fetch + parse ONE (TIC, sector) SPOC curve; null on miss/parse failure. Byte-cached by key. */
   async function fetchOneCurve(tic: number, sector: number, targetId: string): Promise<LightCurve | null> {
@@ -230,7 +263,7 @@ export function createSpocSectorFetcher(opts: SpocSectorFetcherOptions = {}) {
     return out.filter((x): x is LightCurve => x !== null);
   }
 
-  return { fetchOneCurve, fetchSectors };
+  return { fetchOneCurve, fetchSectors, fetchStats };
 }
 
 function medianOf(xs: number[]): number {

@@ -63,6 +63,7 @@
     "p53:psf-diff-imaging": "tsx scripts/p53-psf-diff-imaging.ts",
     "p54:selection-function": "tsx scripts/p54-selection-function.ts",
     "p55:replay-manifest": "tsx scripts/p55-replay-manifest.ts",
+    "p56:real-selection": "tsx scripts/p56-real-selection.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",
     "p36:export-fixtures": "tsx scripts/p36-export-fixtures.ts",

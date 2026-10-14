@@ -590,6 +590,16 @@ the public panel for that reason. discoveryClaim: false.
 
 Reproduce: `npm run p54:selection-function`.
 
+P56 then applies the same composition to REAL data: for 18 confirmed-planet hosts it pulls the star's
+radius/mass from the NASA Archive and measures the aperture dilution from Gaia DR3 (both token-free),
+and builds a per-target selection function. Honest finding: this bright confirmed sample is
+dilution-clean -- neighbour counts reach the teens but the companions are faint, so the flux-weighted
+dilution stays ~1.000 (0/18 with a measurable contaminant; the worst inflates the true 50% depth from
+300 to 301 ppm). The denominator is therefore dominated by the geometric transit probability (0.13-0.39
+across real stellar parameters) and completeness; the dilution window would matter in crowded / faint
+fields the confirmed catalogue under-represents. Still a measured denominator, not an occurrence rate
+(no unbiased detections). Reproduce: `npm run p56:real-selection -- --hosts 18 --tmag 11`.
+
 ---
 
 ## 22. Honest limitations
@@ -656,6 +666,7 @@ npm run p52:negative-class    # labelled-negative-class constructibility from pu
 npm run p53:psf-diff-imaging  # PSF-model double-difference vs the naive centroid on confirmed planets -> reports/p53-*
 npm run p54:selection-function # selection-function skeleton (geometry x dilution x completeness) on the P47 grid -> reports/p54-*
 npm run p55:replay-manifest    # publish a code-free third-party replay manifest -> web/replay-manifest.json
+npm run p56:real-selection     # per-target selection function on real Gaia dilution + Archive stellar params -> reports/p56-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p47-completeness-grid.ts",
+    "selectionFunction": "unique TIC hosts from the confirmed-planet catalog at Tmag<=11, first SPOC light curve with >=200 points among up to 3 sectors containing the coordinate; injection grid period=[1.5,3,5.25,8,11.25]d x depth=[300,550,950,1850,3750,7000]ppm x 2 trials, recovered = BLS(SNR>=7) period matched within 2%. NOTE: hosts are planet-bearing and bright, so this is detector efficiency on real photometry, not an unbiased survey selection.",
+    "tmag": 11,
+    "minSnr": 7,
+    "trialsPerPoint": 2,
+    "minPoints": 200,
+    "nHosts": 20,
+    "periodEdges": [
+      1,
+      2,
+      4,
+      6.5,
+      9.5,
+      13
+    ],
+    "depthEdges": [
+      200,
+      400,
+      700,
+      1200,
+      2500,
+      5000,
+      9000
+    ],
+    "data": "real TESS-SPOC light curves; injected transits; same preprocess+BLS detector as production"
+  },
+  "totalInjections": 960,
+  "outsideBins": 0,
+  "cells": [
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 200,
+      "depthHi": 400,
+      "n": 40,
+      "k": 34,
+      "completeness": 0.85,
+      "ciLow": 0.7093,
+      "ciHigh": 0.9294
+    },
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 400,
+      "depthHi": 700,
+      "n": 40,
+      "k": 35,
+      "completeness": 0.875,
+      "ciLow": 0.7389,
+      "ciHigh": 0.9454
+    },
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 700,
+      "depthHi": 1200,
+      "n": 40,
+      "k": 38,
+      "completeness": 0.95,
+      "ciLow": 0.835,
+      "ciHigh": 0.9862
+    },
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 1200,
+      "depthHi": 2500,
+      "n": 40,
+      "k": 38,
+      "completeness": 0.95,
+      "ciLow": 0.835,
+      "ciHigh": 0.9862
+    },
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 2500,
+      "depthHi": 5000,
+      "n": 40,
+      "k": 40,
+      "completeness": 1,
+      "ciLow": 0.9124,
+      "ciHigh": 1
+    },
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthLo": 5000,
+      "depthHi": 9000,
+      "n": 40,
+      "k": 40,
+      "completeness": 1,
+      "ciLow": 0.9124,
+      "ciHigh": 1
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 200,
+      "depthHi": 400,
+      "n": 40,
+      "k": 28,
+      "completeness": 0.7,
+      "ciLow": 0.5457,
+      "ciHigh": 0.8193
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 400,
+      "depthHi": 700,
+      "n": 40,
+      "k": 32,
+      "completeness": 0.8,
+      "ciLow": 0.6524,
+      "ciHigh": 0.895
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 700,
+      "depthHi": 1200,
+      "n": 40,
+      "k": 34,
+      "completeness": 0.85,
+      "ciLow": 0.7093,
+      "ciHigh": 0.9294
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 1200,
+      "depthHi": 2500,
+      "n": 40,
+      "k": 36,
+      "completeness": 0.9,
+      "ciLow": 0.7695,
+      "ciHigh": 0.9604
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 2500,
+      "depthHi": 5000,
+      "n": 40,
+      "k": 38,
+      "completeness": 0.95,
+      "ciLow": 0.835,
+      "ciHigh": 0.9862
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthLo": 5000,
+      "depthHi": 9000,
+      "n": 40,
+      "k": 40,
+      "completeness": 1,
+      "ciLow": 0.9124,
+      "ciHigh": 1
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 200,
+      "depthHi": 400,
+      "n": 40,
+      "k": 18,
+      "completeness": 0.45,
+      "ciLow": 0.3071,
+      "ciHigh": 0.6017
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 400,
+      "depthHi": 700,
+      "n": 40,
+      "k": 26,
+      "completeness": 0.65,
+      "ciLow": 0.4951,
+      "ciHigh": 0.7787
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 700,
+      "depthHi": 1200,
+      "n": 40,
+      "k": 29,
+      "completeness": 0.725,
+      "ciLow": 0.5716,
+      "ciHigh": 0.8389
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 1200,
+      "depthHi": 2500,
+      "n": 40,
+      "k": 32,
+      "completeness": 0.8,
+      "ciLow": 0.6524,
+      "ciHigh": 0.895
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 2500,
+      "depthHi": 5000,
+      "n": 40,
+      "k": 34,
+      "completeness": 0.85,
+      "ciLow": 0.7093,
+      "ciHigh": 0.9294
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthLo": 5000,
+      "depthHi": 9000,
+      "n": 40,
+      "k": 35,
+      "completeness": 0.875,
+      "ciLow": 0.7389,
+      "ciHigh": 0.9454
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 200,
+      "depthHi": 400,
+      "n": 40,
+      "k": 5,
+      "completeness": 0.125,
+      "ciLow": 0.0546,
+      "ciHigh": 0.2611
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 400,
+      "depthHi": 700,
+      "n": 40,
+      "k": 13,
+      "completeness": 0.325,
+      "ciLow": 0.2008,
+      "ciHigh": 0.4798
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 700,
+      "depthHi": 1200,
+      "n": 40,
+      "k": 15,
+      "completeness": 0.375,
+      "ciLow": 0.2422,
+      "ciHigh": 0.5297
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 1200,
+      "depthHi": 2500,
+      "n": 40,
+      "k": 20,
+      "completeness": 0.5,
+      "ciLow": 0.352,
+      "ciHigh": 0.648
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 2500,
+      "depthHi": 5000,
+      "n": 40,
+      "k": 26,
+      "completeness": 0.65,
+      "ciLow": 0.4951,
+      "ciHigh": 0.7787
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthLo": 5000,
+      "depthHi": 9000,
+      "n": 40,
+      "k": 26,
+      "completeness": 0.65,
+      "ciLow": 0.4951,
+      "ciHigh": 0.7787
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 200,
+      "depthHi": 400,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 400,
+      "depthHi": 700,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 700,
+      "depthHi": 1200,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 1200,
+      "depthHi": 2500,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 2500,
+      "depthHi": 5000,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthLo": 5000,
+      "depthHi": 9000,
+      "n": 0,
+      "k": 0,
+      "completeness": null,
+      "ciLow": null,
+      "ciHigh": null
+    }
+  ],
+  "thresholdDepth50": [
+    {
+      "periodLo": 1,
+      "periodHi": 2,
+      "depthPpm": 300
+    },
+    {
+      "periodLo": 2,
+      "periodHi": 4,
+      "depthPpm": 300
+    },
+    {
+      "periodLo": 4,
+      "periodHi": 6.5,
+      "depthPpm": 363
+    },
+    {
+      "periodLo": 6.5,
+      "periodHi": 9.5,
+      "depthPpm": 1850
+    },
+    {
+      "periodLo": 9.5,
+      "periodHi": 13,
+      "depthPpm": null
+    }
+  ],
+  "periodBinsReaching50": 4,
+  "discoveryClaim": false
+}

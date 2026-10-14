@@ -31,6 +31,7 @@ const p40 = load("reports/p40-fp-safety.json");
 const p42 = load("reports/p42-fp-scale.json");
 const p43 = load("reports/p43-window-alias.json");
 const p44 = load("reports/p44-diff-imaging.json");
+const p53 = load("reports/p53-psf-diff-imaging.json");
 const p45 = load("reports/p45-fp-probability.json");
 const p46 = load("reports/p46-coherence.json");
 const p47 = load("reports/p47-completeness-grid.json");
@@ -131,6 +132,20 @@ const falsePositiveControl = {
     falseKillsAt2Arcsec: (p44.thresholdSweep.find((s: any) => s.thresholdArcsec === 2.0) || { falseKills: null }).falseKills,
     centroidShiftMaxArcsec: p44.legacyShiftMaxArcsec,
     safeToGate: p44.safeToGate,
+  },
+  psfDoubleDifference: {
+    label: "PSF-model double-difference imaging vs the naive centroid (P53, roadmap priority 2)",
+    confirmedPlanets: p53.n,
+    psfFalseKillsAt2Arcsec: (p53.psfSweep.find((s: any) => s.thresholdArcsec === 2.0) || { falseKills: null }).falseKills,
+    naiveFalseKillsAt2Arcsec: p53.naiveFalseKillsAt2Arcsec,
+    psfOffsetMedianArcsec: p53.psfOffsetArcsec.p50,
+    onTargetCalls: p53.psfVerdictCounts.onTarget,
+    offTargetCalls: p53.psfVerdictCounts.offTarget,
+    inconclusiveCalls: p53.psfVerdictCounts.inconclusive,
+    centroidShiftMaxArcsec: p53.legacyShiftMaxArcsec,
+    powerUnproven: p53.powerUnproven,
+    safeToGate: p53.safeToGate,
+    discoveryClaim: false,
   },
   blendProbability: {
     label: "measured-Gaia blended-EB false-positive probability (P45)",
@@ -243,5 +258,6 @@ console.log(`  completeness TS: ${completenessTS.map((c) => (c.rate * 100).toFix
 console.log(`  PDM agreement: ${pdmAgreement.agree}/${pdmAgreement.comparable}; Python purity ${pythonValidation.purity}`);
 console.log(`  FP control: raw FP ${(falsePositiveControl.coherentNull.rawFpRateByGate.snr * 100).toFixed(0)}% -> ${(falsePositiveControl.coherentNull.rawFpRateByGate.sysFap * 100).toFixed(0)}% (sysFAP); AUC ${falsePositiveControl.scaleMultiSector.aucNoise.toFixed(3)} noise vs ${falsePositiveControl.scaleMultiSector.aucSys.toFixed(3)} sys; safety ${falsePositiveControl.safetyCert.declined}/${falsePositiveControl.safetyCert.detected} declined; window median ${falsePositiveControl.windowAlias.dailyWindowMedian}`);
 console.log(`  pixel vetting (P44): diff-image offset median ${falsePositiveControl.pixelVetting.diffImageOffsetMedianArcsec}" on ${falsePositiveControl.pixelVetting.confirmedPlanets} confirmed planets, safeToGate=${falsePositiveControl.pixelVetting.safeToGate}`);
+console.log(`  PSF double-difference (P53): false-kills ${falsePositiveControl.psfDoubleDifference.psfFalseKillsAt2Arcsec}/${falsePositiveControl.psfDoubleDifference.confirmedPlanets} vs naive ${falsePositiveControl.psfDoubleDifference.naiveFalseKillsAt2Arcsec}, safeToGate=${falsePositiveControl.psfDoubleDifference.safeToGate}, powerUnproven=${falsePositiveControl.psfDoubleDifference.powerUnproven}`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

@@ -142,7 +142,7 @@ async function main() {
   // labelled negative class (blocked: see scripts/p52). We therefore report zero-false-kills as an
   // improvement over the naive centroid (P44) but keep safeToGate=false until power is validated.
   const noFalseKills = psfZeroKill;
-  const powerUnproven = psfOffTargetCalls === 0; // cannot measure true-veto power on positives only
+  const powerUnproven = true; // positives-only calibration: any off-target call here is a false kill, never a caught blend; true-veto power needs a labelled negative class (P52)
   const canGate = false; // conservative: no false kills AND power proven would be required
   const verdict = noFalseKills && powerUnproven
     ? "P53-NO-FALSE-KILLS-BUT-POWER-UNPROVEN (PSF veto killed 0 confirmed planets at every threshold, vs " + naiveKillsAt2 + "/" + rows.length + " false-kills for the naive centroid at 2.0" + String.fromCharCode(34) + "; but on positives-only it cannot show it catches a real blend -- needs a labelled negative class, P52)"

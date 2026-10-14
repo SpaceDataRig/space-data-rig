@@ -6,31 +6,31 @@ ephemerides. Modules: `src/detect/psfDiffImaging.ts` (under test) vs `src/detect
 (naive, shown unsafe in P44). A confirmed planet transits its host, so any off-target veto is a
 FALSE KILL; one false kill disqualifies the gate (measure-before-gate).
 
-Measured on **15** confirmed planets:
+Measured on **16** confirmed planets:
 
 | metric (arcsec) | min | p50 | p90 | max |
 |---|---|---|---|---|
-| PSF-model offset | 0.00 | 19.36 | 54.60 | 73.50 |
-| naive diff-image offset | 11.41 | 20.33 | 28.85 | 29.51 |
+| PSF-model offset | 0.00 | 23.48 | 54.60 | 73.50 |
+| naive diff-image offset | 11.41 | 20.54 | 28.85 | 29.51 |
 | full-aperture centroid shift | 0.02 | 0.17 | 0.85 | 1.02 |
 
-At 2.0" the PSF judge forms an opinion on 6/15 planets (naive: 6/15).
-PSF verdicts at 2.0": on-target 5, off-target 1, inconclusive 9.
+At 2.0" the PSF judge forms an opinion on 6/16 planets (naive: 6/16).
+PSF verdicts at 2.0": on-target 5, off-target 1, inconclusive 10.
 
 ## False-kill sweep (a confirmed planet wrongly vetoed disqualifies the gate)
 
 | threshold (arcsec) | PSF-model false-kills | naive false-kills |
 |---|---|---|
-| 0.5 | 1/15 | 6/15 |
-| 1.0 | 1/15 | 6/15 |
-| 1.5 | 1/15 | 6/15 |
-| 2.0 | 1/15 | 6/15 |
-| 3.0 | 1/15 | 6/15 |
-| 5.0 | 1/15 | 6/15 |
+| 0.5 | 1/16 | 6/16 |
+| 1.0 | 1/16 | 6/16 |
+| 1.5 | 1/16 | 6/16 |
+| 2.0 | 1/16 | 6/16 |
+| 3.0 | 1/16 | 6/16 |
+| 5.0 | 1/16 | 6/16 |
 
 ## Reading (honest)
 
-On 15 confirmed planets the PSF-model double-difference vetoed **1** at 2.0", down from
+On 16 confirmed planets the PSF-model double-difference vetoed **1** at 2.0", down from
 **6** for the naive difference-image centroid (P44) on the SAME cubes -- a large reduction, so the
 PSF-gradient nuisance plus the displaced-PSF deltaChi2 gate genuinely tames the failure mode that made
 the naive centroid unsafe (coherent pointing / focus structure masquerading as an off-axis source).

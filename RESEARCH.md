@@ -530,7 +530,36 @@ Reproduce: `npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --l
 
 ---
 
-## 20. Honest limitations
+## 20. Does a PSF-model double-difference fix the naive centroid? Measured: much closer, still not safe (P53)
+
+P44 ended with a concrete prescription: the naive difference-image centroid fails because coherent pointing /
+focus structure in the in-minus-out residual drags a flux-weighted centroid off the star, and a real gain "would
+need PSF-model double-difference imaging." `src/detect/psfDiffImaging.ts` builds exactly that. It estimates the
+target PSF from the steady out-of-transit image, then fits the SIGNED difference image as a point source PLUS a
+smooth nuisance plane PLUS the spatial derivatives of the target PSF (gx, gy) -- the basis functions that absorb a
+coherent pointing shift -- and decides by MODEL COMPARISON: how much better does a *displaced* point source fit
+than one pinned on the star (deltaChi2)? A real transit is on the star, so moving the point source gains little;
+a pointing wobble is soaked up by the gx/gy nuisance at every position, so it gains little too; only a genuine
+off-axis blend makes a displaced PSF fit dramatically better. The judge is conservative: it calls on-target when
+the drop sits at the star, and refuses to veto a large offset unless a displaced source wins by a deltaChi2 floor.
+
+`scripts/p53-psf-diff-imaging.ts` calibrates it on the SAME real SPOC cubes as P44. On **16** confirmed planets
+(all truly on-target, so every off-target call is a false kill):
+
+- **False-kills drop from 6/16 (naive centroid) to 1/16 (PSF model)** at every threshold -- a large, real
+  improvement: the P44 failure mode is largely tamed, and some planets with a 20-73" raw PSF offset are now
+  correctly spared because their deltaChi2 is ~0 (a displaced source does not actually fit better).
+- **But it is NOT zero**, so by the measure-before-gate rule it is still **not safe to gate** -- one confirmed
+  planet is still mis-vetoed. And because every target is a positive, this calibration **cannot measure veto
+  POWER** (catching a real blend) at all -- that still needs the labelled negative class P52 showed is blocked on
+  access. So the honest verdict is `P53-NOT-SAFE-TO-GATE`: a genuine step forward over the naive method, kept
+  research-only, `safeToGate: false`, nothing gated / anchored / deployed.
+
+Reproduce: `npm run p53:psf-diff-imaging -- --targets 24 --tmag 11 --boot 120`.
+
+---
+
+## 21. Honest limitations
 
 - **Baselines are short.** Public few-sector TESS-SPOC curves give ~27-54 days per star; long-period and shallow
   planets are coverage-limited, and the ~82% completeness plateau is a property of that data, not a fixable bug.
@@ -543,8 +572,10 @@ Reproduce: `npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --l
   closed); the residual false positives are systematics and stellar variability, not daily aliases.
 - **Difference imaging is not a shortcut over the centroid shift.** P44 measures that a naive in-minus-out
   difference-image centroid mislocalizes confirmed planets by 11-45 arcsec on real SPOC pixels (a systematic, not just
-  noise), so it is not safe to veto; the full-aperture centroid shift (<= 0.6") remains the pixel lever. A real gain
-  would need PSF-model double-difference imaging.
+  noise), so it is not safe to veto; the full-aperture centroid shift (<= 0.6") remains the pixel lever. P53 then BUILT
+  the PSF-model double-difference that prescription asked for and measured it: confirmed-planet false-kills fall from
+  6/16 (naive) to 1/16 -- a real improvement that largely tames the coherent-structure failure -- but still not zero,
+  so it is not yet safe to gate, and its true-veto power stays unproven without a labelled negative class.
 - **The false-positive probability is a prior, not a verdict.** P45 showed the measured-Gaia blend term does not
   false-alarm on bright uncrowded confirmed planets (0/16 above P(FP)=0.5); P51 re-tested it on a crowded, low-|b|
   sample (15/24 crowded, up to 34 neighbours) and P(FP) STILL sits at 0.020 with 0 above 0.5 -- crowding adds
@@ -564,14 +595,14 @@ Reproduce: `npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --l
 - **No discovery is claimed.** These are characterizations of a search's operating point plus independent checks of
   it. Confirmation requires follow-up data this pipeline does not generate.
 
-## 21. Reproducibility
+## 22. Reproducibility
 
 Everything is deterministic given a seed and the public archives:
 
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 352 unit tests
+npm test                     # 361 unit tests
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
@@ -589,6 +620,7 @@ npm run p49:blind-test        # formal sealed-key blind test (precision/recall) 
 npm run p50:replay            # end-to-end deterministic replay from raw S3 bytes -> reports/p50-*
 npm run p51:crowding          # crowding-stratified blend-veto acceptance re-validation -> reports/p51-*
 npm run p52:negative-class    # labelled-negative-class constructibility from public data -> reports/p52-*
+npm run p53:psf-diff-imaging  # PSF-model double-difference vs the naive centroid on confirmed planets -> reports/p53-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 ```
 

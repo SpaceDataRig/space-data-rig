@@ -9,16 +9,16 @@
     "module": "src/detect/psfDiffImaging.ts",
     "comparedWith": "src/detect/diffImaging.ts (naive, P44)"
   },
-  "n": 15,
+  "n": 16,
   "psfOffsetArcsec": {
     "min": 0,
-    "p50": 19.361043360315097,
+    "p50": 23.478713763747738,
     "p90": 54.59999999999997,
     "max": 73.49999999999996
   },
   "naiveOffsetArcsec": {
     "min": 11.406575269571984,
-    "p50": 20.330871409905328,
+    "p50": 20.543449135115665,
     "p90": 28.850061752956677,
     "max": 29.508050411864104
   },
@@ -33,7 +33,7 @@
   "psfVerdictCounts": {
     "onTarget": 5,
     "offTarget": 1,
-    "inconclusive": 9
+    "inconclusive": 10
   },
   "naiveFalseKillsAt2Arcsec": 6,
   "psfSweep": [
@@ -89,7 +89,7 @@
     }
   ],
   "noFalseKills": false,
-  "powerUnproven": false,
+  "powerUnproven": true,
   "safeToGate": false,
   "verdict": "P53-NOT-SAFE-TO-GATE (a PSF threshold still killed a confirmed planet)",
   "discoveryClaim": false,
@@ -159,6 +159,17 @@
       "naiveOffsetArcsec": 14.221092293607686,
       "naiveDropSnr": 5.1287911265971635,
       "legacyShiftArcsec": 0.07221819148719893
+    },
+    {
+      "name": "HD 25463 c",
+      "tic": 407966340,
+      "sector": 32,
+      "psfOffsetArcsec": 53.9908325551662,
+      "psfDeltaChi2": 0.42060958354728584,
+      "psfAmpSnr": 0.9667467339174644,
+      "naiveOffsetArcsec": 20.717478389171017,
+      "naiveDropSnr": 1.451115355627289,
+      "legacyShiftArcsec": 0.1312938742729796
     },
     {
       "name": "TOI-5789 c",
@@ -267,7 +278,7 @@
     },
     {
       "name": "HR 858 d",
-      "why": "too few in/out cadences to localize (13/819)"
+      "why": "no SPOC target-pixel product in any covering sector"
     },
     {
       "name": "HD 63433 c",
@@ -280,10 +291,6 @@
     {
       "name": "HD 50554 d",
       "why": "too few in/out cadences to localize (33/3113)"
-    },
-    {
-      "name": "HD 25463 c",
-      "why": "too few in/out cadences to localize (22/1121)"
     },
     {
       "name": "HD 25463 b",

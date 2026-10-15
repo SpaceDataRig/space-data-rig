@@ -33,6 +33,17 @@ candidate. All three are now addressed on real data.
   the external claim to 0.002-0.065% across >=2 sectors. First independent external validations for the project
   (a first CHECK supporting a candidate, NOT a discovery or TRICERATOPS-grade validation; alias risk noted). No
   gate moved. `reports/p80-external-validation.{md,json}`.
+- P81 `src/candidate/triceratopsLite.ts` (+ 5 offline tests: neighbour contrasts, dilution-corrected depth,
+  harmonic-alias counting, monotone alias-risk grading) + `scripts/p81-triceratops-lite.ts`
+  (`npm run p81:triceratops-lite`): grades the P80 validations closer to TRICERATOPS by adding three discriminants
+  the detector never saw -- a real Gaia DR3 21-inch neighbour census -> dilution + blend EB FPP
+  (benchmark.daveBlendedFpp on actual flux contrasts), harmonic-alias accounting, and the multi-sector centroid
+  F-test (faithful to eumemic, run on real pixel cubes at the recovered ephemeris) -- folded with the P78 empirical
+  false-coincidence base into a per-candidate alias-risk grade. On real data: of the 14 blind validations, 5/9
+  confirmed-planet (KP) controls reach the strict TRICERATOPS-grade bar (blend FPP<1e-3 + centroid on-target + low
+  alias) but 0/5 still-uncertain CP candidates do (heavy blends or centroid not localisable at this depth on public
+  FFI) -- the same bar cleanly separates known planets from unconfirmed claims. First-order, not full TRICERATOPS;
+  discoveryClaim false, safeToGate false. `reports/p81-triceratops-lite.{md,json}`.
 
 ### P77: faithful re-port of eumemic's centroid F-test, measured on our data -- closes the P74 follow-up (2026-10-15)
 

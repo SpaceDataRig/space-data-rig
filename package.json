@@ -77,6 +77,7 @@
     "p68:discriminator-roc": "tsx scripts/p68-discriminator-roc.ts",
     "p70:llm-ablation": "tsx scripts/p70-llm-ablation.ts",
     "p69:rednoise-significance": "tsx scripts/p69-rednoise-significance.ts",
+    "p71:audit-positive-control": "tsx scripts/p71-audit-positive-control.ts",
     "p66:milestone-figure": "tsx scripts/p66-milestone-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",

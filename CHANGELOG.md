@@ -28,6 +28,13 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   plainly that the commit rate is partly machine-generated under a sampling-and-gate review model, and that Dependabot
   PRs are opened automatically but merged only by the owner -- CI-action bumps after a green run, production-dependency
   bumps (next to the money path) only after explicit review. Docs only.
+- **Brittle external-data deps (#7)**: added `src/data/dataTier.ts` as the single canonical schema contract --
+  the real-vs-stand-in discriminator, the requested `pscomppars` column list (now the one source of truth for
+  `fetchConfirmedPlanets`), and the required ExoFOP TOI header names -- pinned by `tests/schemaContract.test.ts`,
+  so an upstream column rename or a source-label change turns into a red test instead of a silently mislabelled
+  card or an all-`tic=0` table. In the process the contract test caught a real silent degradation: ExoFOP
+  `parseToiTable` coerced a missing key column to `Number("")=0` and emitted garbage rows; it now fails closed
+  (returns []) when the row-key column is gone. Docs/pure code only; no verdict/bundle-hash/money path.
 - Locked by `tests/narrate.test.ts` (5 offline cases).
 
 ### Research -- borrowing vetting levers from a real TESS survey, measured before gated (P73-P76) (2026-10-15)

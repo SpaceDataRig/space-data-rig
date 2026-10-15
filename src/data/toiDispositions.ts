@@ -104,6 +104,10 @@ export function parseToiTable(text: string): ToiRecord[] {
     srad: col("stellar radius (r_sun)"), smass: col("stellar mass (m_sun)"),
     sectors: col("sectors"), tess: col("tess disposition"), tfop: col("tfopwg disposition"),
   };
+  // Fail CLOSED if the row-key column is renamed/removed upstream. Without it every tic would coerce
+  // Number("")=0 and we would silently emit garbage rows all filed under star "0" -- the exact brittle
+  // degradation a schema-contract test must catch. An empty result tells callers the source is unavailable.
+  if (i.tic < 0) return [];
   const get = (c: string[], k: number) => (k >= 0 ? (c[k] ?? "").trim() : "");
   const out: ToiRecord[] = [];
   for (let r = 1; r < recs.length; r++) {

@@ -6,6 +6,7 @@
 // pipeline is provable offline (clearly labeled as fallback).
 
 import type { ArchivePlanet } from "../core/types.ts";
+import { PSOMPPARS_COLUMNS } from "./dataTier.ts";
 
 const TAP_SYNC = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 
@@ -78,8 +79,9 @@ function parseTicId(value: unknown): number | undefined {
 export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promise<ArchiveFetchResult> {
   const maxTmag = o.maxTmag ?? 11;
   const limit = o.limit ?? 50;
-  const cols =
-    "pl_name,hostname,pl_orbper,pl_trandep,pl_trandur,pl_tranmid,pl_rade,st_rad,st_mass,ra,dec,tic_id,sy_tmag,discoverymethod";
+  // The requested columns come from the single schema-contract constant (src/data/dataTier.ts) that
+  // tests/schemaContract.test.ts pins, so a field we read can never drift from a field we request.
+  const cols = PSOMPPARS_COLUMNS.join(",");
   // NOTE: NASA's Cloudflare WAF 403s queries with spaces around comparison
   // operators or `is not null`; keep the WHERE compact and filter nulls in JS.
   let where = `discoverymethod='Transit' and sy_tmag<${maxTmag}`;

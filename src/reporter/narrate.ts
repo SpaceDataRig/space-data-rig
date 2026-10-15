@@ -11,6 +11,7 @@
 
 import type { Finding, RigEvent, SeatName } from "../core/types.ts";
 import { wilsonInterval } from "../sim/completenessGrid.ts";
+import { isRealPhotometry } from "../data/dataTier.ts";
 
 /** Trader-facing label + color for a verdict (used by the findings board). */
 export function verdictBadge(verdict: Finding["verdict"]): { label: string; tone: "good" | "warn" | "bad" } {
@@ -72,10 +73,10 @@ export function narrateFinding(
   const planetYear = c.periodDays;
 
   // Data-source honesty (HANDOFF red line): every user-facing headline must say whether its
-  // photons are real TESS photometry or a reproducible stand-in. Same /real photometry/i
-  // discriminator the provenance panel uses -- BOTH branches are labelled, never a hardcoded stand-in.
-  const src = opts?.lightCurveSource ?? "";
-  const prov = /real photometry/i.test(src) ? "[real TESS photometry] " : "[stand-in synthetic curve] ";
+  // photons are real TESS photometry or a reproducible stand-in. Uses the single canonical
+  // discriminator (src/data/dataTier.ts), schema-pinned by tests/schemaContract.test.ts -- BOTH
+  // branches are labelled, never a hardcoded stand-in.
+  const prov = isRealPhotometry(opts?.lightCurveSource) ? "[real TESS photometry] " : "[stand-in synthetic curve] ";
 
   let headline: string;
   if (f.verdict === "accepted") {

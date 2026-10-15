@@ -9,16 +9,21 @@
 //   - run the detector BLIND (the claim's ephemeris is NEVER fed to it; it searches periods 1-13 d),
 //     SECTOR BY SECTOR on the claim's own real SPOC sectors, and group detections by period across
 //     independent sectors (corroboration = number of distinct sectors).
-//   - INDEPENDENTLY CONFIRM (src/detect -> src/candidate/independentValidation.ts) a claim when some
+//   - INDEPENDENTLY CONFIRM (src/candidate/independentValidation.ts) a claim when some
 //     corroboration>=minCorr blind cluster matches its period within tol. The detection path and the external
 //     claim are independent, so agreement is confirmation, not the detector echoing the input.
+//
+// DEPTH STRATIFICATION (audit-10 #5): the headline numbers come from the EASIEST subset (deep + bright +
+// multi-sector). To stop that from being read as a universal rate, we ALSO run a HARDER tier at shallow depths
+// (default 300-1000 ppm) -- shallow transits are the hard regime, and a low/zero validation there is expected
+// and reported, not hidden. Every tier carries its own selection conditions in the headline.
 //
 // Honest limits: period-only corroboration still admits aliases (P78: 2-sector accepted precision ~47%), so a
 // CP "confirmation" is a first independent CHECK that materially supports a candidate -- NOT a discovery or a
 // validation to TRICERATOPS precision. Research only: no worker import, no verdict, no bundle hash, no money
 // path; nothing gated or claimed. discoveryClaim false, safeToGate false.
 //
-// Usage: npm run p80:external-validation [-- --kp 10 --cp 8 --sectors 4 --tmag 11 --min-depth 3000 --tol 0.02 --min-corr 2]
+// Usage: npm run p80:external-validation [-- --kp 10 --cp 8 --sectors 4 --tmag 11 --min-depth 3000 --tol 0.02 --min-corr 2 --hard 1 --hard-min 300 --hard-max 1000 --hard-cp 10]
 
 import { iterativeBls } from "../src/detect/iterative.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
@@ -45,7 +50,15 @@ const minDepth = num("min-depth", 3000);
 const TOL = num("tol", 0.02);
 const MIN_CORR = Math.round(num("min-corr", 2));
 const minPeriod = 1, maxPeriod = 13;
+// Harder (shallow-depth) tier. Same brightness / period / sector bar, only the depth is lowered -- shallow
+// transits are where a blind per-sector search loses power, so this tier is expected to validate less.
+const doHard = num("hard", 1) > 0;
+const hardMin = num("hard-min", 300);
+const hardMax = num("hard-max", 1000);
+const hardKp = Math.max(0, Math.round(num("hard-kp", 6)));
+const hardCp = Math.max(0, Math.round(num("hard-cp", 10)));
 
+type Tier = "easy" | "hard";
 interface Cluster { periodDays: number; corroboratedSectors: number; depthPpm: number; }
 interface Hit { sector: number; periodDays: number; depthPpm: number; }
 
@@ -93,18 +106,25 @@ function bestConfirmation(claim: ToiRecord, clusters: Cluster[]) {
   return best;
 }
 
+interface Row { tier: Tier; tic: number; toi: string; disposition: string; claimPeriod: number; depthPpm: number; tessMag: number; nSectors: number; maxCorr: number; recoveredPeriod?: number; validated: boolean; relDiff?: number; reason: string; }
+
 async function main(): Promise<void> {
-  console.log(`P80 external-candidate independent validation. Detector BLIND (1-13d, claim ephemeris never fed), per-sector corroboration>=${MIN_CORR}, period tol ${(TOL * 100).toFixed(0)}%. Claims from ExoFOP: KP<=${wantKp}, CP<=${wantCp}, tmag<=${tmagCap}, depth>=${minDepth}ppm, >=2 sectors.`);
+  const easyCond = `EASIEST subset (deep+bright): depth>=${minDepth} ppm, Tmag<=${tmagCap}, 2-8 d, >=2 sectors`;
+  const hardCond = doHard ? `HARDER subset (shallow): depth ${hardMin}-${hardMax} ppm, Tmag<=${tmagCap}, 2-8 d, >=2 sectors` : "(hard tier disabled)";
+  console.log(`P80 external-candidate independent validation. Detector BLIND (1-13d, claim ephemeris never fed), per-sector corroboration>=${MIN_CORR}, period tol ${(TOL * 100).toFixed(0)}%.`);
+  console.log(`  tiers -> easy: ${easyCond} (KP<=${wantKp}, CP<=${wantCp}); hard: ${hardCond}${doHard ? ` (KP<=${hardKp}, CP<=${hardCp})` : ""}`);
   const records = await fetchToiTable();
   if (!records.length) { console.log("ExoFOP TOI table unavailable (network). Nothing to validate."); process.exitCode = 1; return; }
 
-  const usable = (r: ToiRecord) => isPlaceable(r) && Number.isFinite(r.depthPpm) && r.depthPpm >= minDepth && r.periodDays >= 2 && r.periodDays <= 8 && r.sectors.length >= 2 && Number.isFinite(r.tessMag) && r.tessMag <= tmagCap;
+  const usableIn = (r: ToiRecord, lo: number, hi: number) => isPlaceable(r) && Number.isFinite(r.depthPpm) && r.depthPpm >= lo && r.depthPpm <= hi && r.periodDays >= 2 && r.periodDays <= 8 && r.sectors.length >= 2 && Number.isFinite(r.tessMag) && r.tessMag <= tmagCap;
   const isKP = (r: ToiRecord) => (r.tfopwgDisposition || "").toUpperCase() === "KP" || (r.tessDisposition || "").toUpperCase() === "KP";
   const isCP = (r: ToiRecord) => (r.tfopwgDisposition || "").toUpperCase() === "CP" || (r.tessDisposition || "").toUpperCase() === "CP";
   const brightestUnique = (rows: ToiRecord[]) => { const seen = new Set<number>(); const out: ToiRecord[] = []; for (const r of [...rows].sort((a, b) => a.tessMag - b.tessMag)) { if (seen.has(r.tic)) continue; seen.add(r.tic); out.push(r); } return out; };
-  const kp = brightestUnique(records.filter((r) => usable(r) && isKP(r))).slice(0, wantKp);
-  const cp = brightestUnique(records.filter((r) => usable(r) && isCP(r))).slice(0, wantCp);
-  console.log(`claim pools: ${kp.length} KP (confirmed-planet positive controls), ${cp.length} CP (still-uncertain external candidates)`);
+  // hard tier is CP-focused (that is the point: shallow, still-uncertain external candidates), KP only as a sparse control.
+  const pools: { tier: Tier; kp: ToiRecord[]; cp: ToiRecord[] }[] = [
+    { tier: "easy", kp: brightestUnique(records.filter((r) => usableIn(r, minDepth, Infinity) && isKP(r))).slice(0, wantKp), cp: brightestUnique(records.filter((r) => usableIn(r, minDepth, Infinity) && isCP(r))).slice(0, wantCp) },
+  ];
+  if (doHard) pools.push({ tier: "hard", kp: brightestUnique(records.filter((r) => usableIn(r, hardMin, hardMax) && isKP(r))).slice(0, hardKp), cp: brightestUnique(records.filter((r) => usableIn(r, hardMin, hardMax) && isCP(r))).slice(0, hardCp) });
 
   const clusterCache = new Map<number, { clusters: Cluster[]; nSectors: number }>();
   async function clustersFor(rec: ToiRecord) {
@@ -115,54 +135,72 @@ async function main(): Promise<void> {
     return c;
   }
 
-  interface Row { tic: number; toi: string; disposition: string; claimPeriod: number; depthPpm: number; tessMag: number; nSectors: number; maxCorr: number; recoveredPeriod?: number; validated: boolean; relDiff?: number; reason: string; }
   const rows: Row[] = [];
-  for (const pool of [kp, cp]) {
-    for (const rec of pool) {
-      const { clusters, nSectors } = await clustersFor(rec);
-      const maxCorr = Math.max(0, ...clusters.map((c) => c.corroboratedSectors));
-      const best = bestConfirmation(rec, clusters);
-      const row: Row = {
-        tic: rec.tic, toi: rec.toi, disposition: (rec.tfopwgDisposition || rec.tessDisposition || "?").toUpperCase(),
-        claimPeriod: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), tessMag: rec.tessMag, nSectors, maxCorr,
-        validated: !!best, recoveredPeriod: best ? Number(best.cluster.periodDays.toFixed(5)) : undefined, relDiff: best ? Number((best.result.relPeriodDiff * 100).toFixed(3)) : undefined,
-        reason: best ? best.result.reason : (maxCorr >= MIN_CORR ? `no corroboration>=${MIN_CORR} cluster within ${(TOL * 100).toFixed(0)}% of claim (best corr ${maxCorr})` : `no period corroborated in >=${MIN_CORR} sectors (best ${maxCorr})`),
-      };
-      rows.push(row);
-      console.log(`  [${row.disposition}] TIC ${rec.tic} ${rec.toi} P=${row.claimPeriod}d sectors ${nSectors} maxCorr ${maxCorr} -> ${row.validated ? `VALIDATED (rec ${row.recoveredPeriod}d, off ${row.relDiff}%)` : "not validated"}`);
+  for (const p of pools) {
+    console.log(`\n[${p.tier.toUpperCase()} tier] pools: ${p.kp.length} KP controls, ${p.cp.length} CP uncertain-external`);
+    for (const pool of [p.kp, p.cp]) {
+      for (const rec of pool) {
+        const { clusters, nSectors } = await clustersFor(rec);
+        const maxCorr = Math.max(0, ...clusters.map((c) => c.corroboratedSectors));
+        const best = bestConfirmation(rec, clusters);
+        const row: Row = {
+          tier: p.tier, tic: rec.tic, toi: rec.toi, disposition: (rec.tfopwgDisposition || rec.tessDisposition || "?").toUpperCase(),
+          claimPeriod: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), tessMag: rec.tessMag, nSectors, maxCorr,
+          validated: !!best, recoveredPeriod: best ? Number(best.cluster.periodDays.toFixed(5)) : undefined, relDiff: best ? Number((best.result.relPeriodDiff * 100).toFixed(3)) : undefined,
+          reason: best ? best.result.reason : (maxCorr >= MIN_CORR ? `no corroboration>=${MIN_CORR} cluster within ${(TOL * 100).toFixed(0)}% of claim (best corr ${maxCorr})` : `no period corroborated in >=${MIN_CORR} sectors (best ${maxCorr})`),
+        };
+        rows.push(row);
+        console.log(`  [${p.tier}/${row.disposition}] TIC ${rec.tic} ${rec.toi} P=${row.claimPeriod}d depth ${row.depthPpm}ppm sectors ${nSectors} maxCorr ${maxCorr} -> ${row.validated ? `VALIDATED (rec ${row.recoveredPeriod}d, off ${row.relDiff}%)` : "not validated"}`);
+      }
     }
   }
 
-  const kpRows = rows.filter((r) => r.disposition === "KP");
-  const cpRows = rows.filter((r) => r.disposition === "CP");
-  const kpValid = kpRows.filter((r) => r.validated).length;
-  const cpValid = cpRows.filter((r) => r.validated).length;
-  console.log(`\nRESULT: KP positive-controls independently validated ${kpValid}/${kpRows.length}; CP (uncertain external) validated ${cpValid}/${cpRows.length}.`);
-  const total = rows.length, totalValid = rows.filter((r) => r.validated).length;
+  function stats(tier: Tier) {
+    const rs = rows.filter((r) => r.tier === tier);
+    const kp = rs.filter((r) => r.disposition === "KP");
+    const cp = rs.filter((r) => r.disposition === "CP");
+    return { tested: rs.length, validated: rs.filter((r) => r.validated).length, kpTested: kp.length, kpValid: kp.filter((r) => r.validated).length, cpTested: cp.length, cpValid: cp.filter((r) => r.validated).length };
+  }
+  const easy = stats("easy");
+  const hard = stats("hard");
+
+  console.log(`\nEASY  (${easyCond}): KP ${easy.kpValid}/${easy.kpTested} controls, CP ${easy.cpValid}/${easy.cpTested} uncertain-external validated.`);
+  if (doHard) console.log(`HARD  (${hardCond}): KP ${hard.kpValid}/${hard.kpTested} controls, CP ${hard.cpValid}/${hard.cpTested} uncertain-external validated.`);
 
   let verdict: string;
-  if (!total) verdict = "NO-IN-SCOPE-CLAIMS: no KP/CP met the deep+bright+multi-sector filters (network or coverage). Nothing validated; not a refutation. Measure-only.";
-  else if (kpRows.length && kpValid < Math.ceil(kpRows.length * 0.5)) verdict = `MACHINERY-WEAK: only ${kpValid}/${kpRows.length} KP controls validated on real per-sector data -- blind corroboration at this sensitivity confirms fewer than half the KNOWN planets, so it cannot responsibly validate external claims. CP ${cpValid}/${cpRows.length}.`;
-  else if (cpValid > 0) verdict = `CAPABILITY-DEMONSTRATED: blind, catalog-never-fed per-sector detection independently reproduced ${cpValid}/${cpRows.length} still-uncertain CP candidates (and ${kpValid}/${kpRows.length} KP controls). First independent external validations for this project -- a first CHECK supporting a candidate, not a discovery nor TRICERATOPS-grade validation. safeToGate stays false.`;
-  else verdict = `MACHINERY-WORKS-ON-CONTROLS: ${kpValid}/${kpRows.length} KP controls independently validated (proving the pipeline can confirm an external claim it never saw the ephemeris for), but ${cpValid}/${cpRows.length} CP candidates met the >=${MIN_CORR}-sector + ${(TOL * 100).toFixed(0)}% bar -- the uncertain external claims stayed unconfirmed at this sensitivity (aliases/systematics, P78). Not a refutation. Measure-only.`;
+  if (!easy.tested) verdict = "NO-IN-SCOPE-CLAIMS: no KP/CP met the deep+bright+multi-sector filters (network or coverage). Nothing validated; not a refutation. Measure-only.";
+  else if (easy.kpTested && easy.kpValid < Math.ceil(easy.kpTested * 0.5)) verdict = `MACHINERY-WEAK: on the EASIEST subset only ${easy.kpValid}/${easy.kpTested} KP controls validated on real per-sector data -- blind corroboration at this sensitivity confirms fewer than half the KNOWN planets, so it cannot responsibly validate external claims. CP ${easy.cpValid}/${easy.cpTested}.`;
+  else if (easy.cpValid > 0) verdict = `CAPABILITY-DEMONSTRATED (EASIEST subset only): blind, catalog-never-fed per-sector detection independently reproduced ${easy.cpValid}/${easy.cpTested} still-uncertain CP candidates and ${easy.kpValid}/${easy.kpTested} KP controls under ${easyCond}. This rate is NOT universal -- on the HARDER shallow tier (${hardCond}) CP validated ${hard.cpValid}/${hard.cpTested}. A CP confirmation is a first CHECK supporting a candidate, not a discovery nor TRICERATOPS-grade validation. safeToGate stays false.`;
+  else verdict = `MACHINERY-WORKS-ON-CONTROLS: ${easy.kpValid}/${easy.kpTested} KP controls independently validated on the EASIEST subset, but ${easy.cpValid}/${easy.cpTested} CP candidates met the >=${MIN_CORR}-sector + ${(TOL * 100).toFixed(0)}% bar (harder shallow tier CP ${hard.cpValid}/${hard.cpTested}) -- the uncertain external claims stayed unconfirmed at this sensitivity (aliases/systematics, P78). Not a refutation. Measure-only.`;
   console.log(`VERDICT: ${verdict}`);
 
   mkdirSync("reports", { recursive: true });
+  const tierTable = (label: string, cond: string, s: ReturnType<typeof stats>) => [
+    `### ${label} -- ${cond}`,
+    "",
+    "| disposition | tested | independently validated |",
+    "|---|---|---|",
+    `| KP (confirmed-planet control) | ${s.kpTested} | ${s.kpValid} |`,
+    `| CP (candidate, uncertain external) | ${s.cpTested} | ${s.cpValid} |`,
+    "",
+  ];
   const json = {
     meta: {
       generatedBy: "scripts/p80-external-validation.ts", protocol: "BLIND per-sector detection (claim ephemeris never fed); corroboration>=minCorr independent sectors + period tol; external claims from ExoFOP (KP controls, CP uncertain)",
-      wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, detector: "iterativeBls under production gate (depth-regime), maxSignals=3/sector",
-      note: "period-only corroboration admits aliases (P78: 2-sector precision ~47%); a CP confirmation is a first independent check, not a discovery. KP rows are positive controls. discoveryClaim false, safeToGate false.",
+      wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR,
+      easyCondition: easyCond, hardCondition: doHard ? hardCond : null, hardTier: { min: hardMin, max: hardMax, wantKp: hardKp, wantCp: hardCp, enabled: doHard },
+      detector: "iterativeBls under production gate (depth-regime), maxSignals=3/sector",
+      note: "headline rates are from the EASIEST (deep+bright) subset and are NOT universal; the harder shallow-depth tier is reported alongside. period-only corroboration admits aliases (P78: 2-sector precision ~47%); a CP confirmation is a first independent check, not a discovery. KP rows are positive controls. discoveryClaim false, safeToGate false.",
     },
-    totals: { tested: total, validated: totalValid, kpTested: kpRows.length, kpValidated: kpValid, cpTested: cpRows.length, cpValidated: cpValid },
+    totals: { tested: rows.length, validated: rows.filter((r) => r.validated).length, kpTested: easy.kpTested, kpValidated: easy.kpValid, cpTested: easy.cpTested, cpValidated: easy.cpValid, hardCpTested: hard.cpTested, hardCpValidated: hard.cpValid, easy, hard },
     rows, verdict, discoveryClaim: false, safeToGate: false,
   };
   writeFileSync("reports/p80-external-validation.json", JSON.stringify(json, null, 2) + "\n");
 
   const md = [
-    "# P80 external-candidate independent validation (audit finding 9, gap 3)",
+    "# P80 external-candidate independent validation (audit finding 9, gap 3; depth-stratified per audit-10 #5)",
     "",
-    `Reproduce: \`npm run p80:external-validation -- --kp ${wantKp} --cp ${wantCp} --sectors ${sectorCap} --min-depth ${minDepth} --tol ${TOL} --min-corr ${MIN_CORR}\``,
+    `Reproduce: \`npm run p80:external-validation -- --kp ${wantKp} --cp ${wantCp} --sectors ${sectorCap} --min-depth ${minDepth} --tol ${TOL} --min-corr ${MIN_CORR} --hard ${doHard ? 1 : 0} --hard-min ${hardMin} --hard-max ${hardMax} --hard-cp ${hardCp}\``,
     "",
     "Closes the structural gap behind the old 0/2: P65 audits an outside claim while running the detector",
     "blind on an empty catalog, so it can never self-corroborate. Here we build an INDEPENDENT validation",
@@ -171,14 +209,14 @@ async function main(): Promise<void> {
     "when that blind detection matches its period. KP rows are positive controls; CP rows are still-uncertain",
     "EXTERNAL candidates -- a genuine validation attempt, not a self-check.",
     "",
-    "| disposition | tested | independently validated |",
-    "|---|---|---|",
-    `| KP (confirmed-planet control) | ${kpRows.length} | ${kpValid} |`,
-    `| CP (candidate, uncertain external) | ${cpRows.length} | ${cpValid} |`,
+    "The headline numbers are NOT a universal rate: they come from the EASIEST (deep+bright) subset. A harder",
+    "shallow-depth tier is reported right below so the easy number is not over-generalised (audit-10 #5).",
     "",
-    "| host (TIC) | TOI | disp | claim P (d) | sectors | maxCorr | recovered P (d) | off % | validated |",
-    "|---|---|---|---|---|---|---|---|---|",
-    ...rows.map((r) => `| ${r.tic} | ${r.toi} | ${r.disposition} | ${r.claimPeriod} | ${r.nSectors} | ${r.maxCorr} | ${r.recoveredPeriod ?? "-"} | ${r.relDiff ?? "-"} | ${r.validated ? "YES" : "no"} |`),
+    ...tierTable("EASY tier (headline subset)", easyCond, easy),
+    ...(doHard ? tierTable("HARD tier (shallow depth)", hardCond, hard) : []),
+    "| host (TIC) | TOI | tier | disp | claim P (d) | depth ppm | sectors | maxCorr | recovered P (d) | off % | validated |",
+    "|---|---|---|---|---|---|---|---|---|---|---|",
+    ...rows.map((r) => `| ${r.tic} | ${r.toi} | ${r.tier} | ${r.disposition} | ${r.claimPeriod} | ${r.depthPpm} | ${r.nSectors} | ${r.maxCorr} | ${r.recoveredPeriod ?? "-"} | ${r.relDiff ?? "-"} | ${r.validated ? "YES" : "no"} |`),
     "",
     `**VERDICT: ${verdict}**`,
     "",

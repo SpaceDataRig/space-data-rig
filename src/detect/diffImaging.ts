@@ -296,3 +296,83 @@ export function judgeLocalization(loc: SourceLocalization | null, thresholdArcse
     reason: `offset ${loc.offsetArcsec.toFixed(2)}" exceeds ${thresholdArcsec}" but its 1sigma bound (${lowerBound.toFixed(2)}") does not -- not significant enough to veto`,
   };
 }
+
+// ---- multi-sector centroid-consistency (borrowed from the eumemic/exoplanets cross-sector centroid test) ----
+// A single difference image can point at the wrong spot by chance (systematic, cosmic ray), which is exactly
+// how the P44/P57 single-image veto false-killed real planets. The external survey instead measures the
+// varied-source offset in EVERY sector that has transits and asks whether the offsets point CONSISTENTLY away
+// from the target: a genuine off-target blend drags the centroid the SAME way in every sector, while noise
+// scatters the directions and cancels. This is pure, deterministic and side-effect free; RESEARCH-ONLY.
+
+/** One sector's varied-source offset relative to the starlight centroid, in arcsec (dx = (source-target).x*scale). */
+export interface VectorOffset {
+  dxArcsec: number;
+  dyArcsec: number;
+}
+
+export interface ConsistencyResult {
+  n: number; // usable sectors
+  meanMagArcsec: number; // mean per-sector offset magnitude
+  resultantArcsec: number; // magnitude of the MEAN offset vector (coherent part)
+  consistencyR: number; // resultant / meanMag, in [0,1]: 1 = all sectors point the same way, 0 = cancel
+  rayleighP: number; // Rayleigh test p on the offset ANGLES (small = directions non-uniform / coherent)
+  determined: boolean; // true only when at least one finite offset was supplied
+}
+
+/**
+ * Combine per-sector varied-source offsets into a cross-sector consistency test. The mean VECTOR cancels
+ * random per-sector errors, so a large resultant with high R (coherent directions across sectors) is the
+ * signature of a real off-target source; an incoherent set of offsets -- however large each one is -- is not.
+ * Returns NaNs / determined=false when given no usable offsets. Never mutates its input.
+ */
+export function multiSectorCentroidConsistency(offsets: VectorOffset[]): ConsistencyResult {
+  const valid = offsets.filter((o) => Number.isFinite(o.dxArcsec) && Number.isFinite(o.dyArcsec));
+  const n = valid.length;
+  if (n === 0) return { n: 0, meanMagArcsec: NaN, resultantArcsec: NaN, consistencyR: NaN, rayleighP: NaN, determined: false };
+  let sumMag = 0;
+  let mx = 0;
+  let my = 0;
+  let ux = 0;
+  let uy = 0;
+  for (const o of valid) {
+    const m = Math.hypot(o.dxArcsec, o.dyArcsec);
+    sumMag += m;
+    mx += o.dxArcsec;
+    my += o.dyArcsec;
+    if (m > 0) {
+      ux += o.dxArcsec / m;
+      uy += o.dyArcsec / m;
+    }
+  }
+  const meanMagArcsec = sumMag / n;
+  const resultantArcsec = Math.hypot(mx, my) / n;
+  const consistencyR = meanMagArcsec > 0 ? resultantArcsec / meanMagArcsec : 0;
+  const rBar = Math.hypot(ux, uy) / n; // unit-vector resultant length over the offset directions
+  const rayleighP = n >= 2 ? Math.exp(-n * rBar * rBar) : (n === 1 ? 0 : NaN);
+  return { n, meanMagArcsec, resultantArcsec, consistencyR, rayleighP, determined: true };
+}
+
+export interface ConsistencyVerdict {
+  rejectTarget: boolean;
+  reason: string;
+}
+
+/**
+ * Conservative cross-sector judge, mirroring the external survey's p<0.001 rejection bar: reject the target
+ * (call the dip off-target) only when there are >= minSectors sectors, their mean offset is larger than
+ * thresholdArcsec, the directions are coherent (consistencyR >= minR) AND the Rayleigh test is significant
+ * (p < pMax). Anything less is "keep" -- a false kill of a real planet is worse than a missed blend.
+ */
+export function judgeConsistency(res: ConsistencyResult, thresholdArcsec = 1.0, opts: { minSectors?: number; minR?: number; pMax?: number } = {}): ConsistencyVerdict {
+  const minSectors = opts.minSectors ?? 2;
+  const minR = opts.minR ?? 0.5;
+  const pMax = opts.pMax ?? 0.001;
+  if (!res.determined) return { rejectTarget: false, reason: "no usable per-sector offsets" };
+  if (res.n < minSectors) return { rejectTarget: false, reason: `only ${res.n} sector(s) usable (< ${minSectors}): cannot test cross-sector consistency` };
+  const coherent = res.consistencyR >= minR && res.rayleighP <= pMax;
+  const large = res.resultantArcsec > thresholdArcsec;
+  if (coherent && large) {
+    return { rejectTarget: true, reason: `mean offset ${res.resultantArcsec.toFixed(2)}" over ${res.n} sectors, directions coherent (R ${res.consistencyR.toFixed(2)}, Rayleigh p ${res.rayleighP.toExponential(1)}) -- off-target source` };
+  }
+  return { rejectTarget: false, reason: `resultant ${res.resultantArcsec.toFixed(2)}" R ${Number.isFinite(res.consistencyR) ? res.consistencyR.toFixed(2) : "n/a"} p ${Number.isFinite(res.rayleighP) ? res.rayleighP.toExponential(1) : "n/a"}: ${large ? "large but incoherent (noise)" : "small"} -- keeping target` };
+}

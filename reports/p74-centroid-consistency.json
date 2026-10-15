@@ -1,0 +1,409 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p74-centroid-consistency.ts",
+    "gateArcsec": 2,
+    "minSnr": 5,
+    "maxSectors": 5,
+    "tmagCap": 11,
+    "boot": 120,
+    "consistencyBar": "reject target only if >=2 usable sectors, mean offset > gate, consistencyR >= 0.5, Rayleigh p <= 0.001",
+    "labelSource": "public ExoFOP TOI table (token-free); KP=known planet (must keep), FP/EB=blend (should veto)",
+    "detector": "src/detect/diffImaging.ts localizeTransitSource per sector; SINGLE = P57 naive judge; MULTI = multiSectorCentroidConsistency + judgeConsistency",
+    "caveat": "FP/EB labels mix off-target blends (catchable by localization) with on-target EBs (not); blend power is a LOWER bound, known-planet false-veto is the load-bearing number."
+  },
+  "population": {
+    "tableRows": 8151,
+    "labelledNegatives": 1319,
+    "labelledPositives": 598,
+    "sampledNeg": 16,
+    "sampledPos": 16,
+    "usable": 28,
+    "usableNeg": 12,
+    "usablePos": 16,
+    "skipped": 4
+  },
+  "single": {
+    "safeToGate": false,
+    "cm": {
+      "trueVeto": 6,
+      "missedBlend": 6,
+      "falseVeto": 9,
+      "trueKeep": 7
+    },
+    "vetoPower": 0.5,
+    "falseVetoRate": 0.5625,
+    "auc": 0.46875
+  },
+  "multi": {
+    "safeToGate": false,
+    "cm": {
+      "trueVeto": 0,
+      "missedBlend": 12,
+      "falseVeto": 0,
+      "trueKeep": 16
+    },
+    "vetoPower": 0,
+    "vetoPowerCI": [
+      0,
+      0.2425007574992425
+    ],
+    "falseVetoRate": 0,
+    "falseVetoCI": [
+      0,
+      0.19361341827271994
+    ],
+    "auc": 0.4947916666666667
+  },
+  "effect": {
+    "falseKillsFixed": 9,
+    "multiFalseKills": 0,
+    "singleFalseKills": 9,
+    "powerLost": 0.5
+  },
+  "offsets": {
+    "planetSingleP50": 25.816956558483454,
+    "planetMultiP50": 2.9890727194081115,
+    "blendMultiP50": 3.8647098226486
+  },
+  "cases": [
+    {
+      "tic": 283722336,
+      "label": "known-planet",
+      "tessMag": 4.6278,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 50.828,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 283722336,
+      "label": "known-planet",
+      "tessMag": 4.6278,
+      "nUsable": 1,
+      "consistencyR": 1,
+      "rayleighP": 0,
+      "singleOffset": 57.877,
+      "multiResultant": 57.877,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 136916387,
+      "label": "known-planet",
+      "tessMag": 5.0494,
+      "nUsable": 2,
+      "consistencyR": 1,
+      "rayleighP": 0.1354,
+      "singleOffset": 39.968,
+      "multiResultant": 35.208,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 136916387,
+      "label": "known-planet",
+      "tessMag": 5.0494,
+      "nUsable": 2,
+      "consistencyR": 0.077,
+      "rayleighP": 0.9892,
+      "singleOffset": 39.534,
+      "multiResultant": 2.989,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 332064670,
+      "label": "known-planet",
+      "tessMag": 5.2058,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 26.997,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 256364928,
+      "label": "known-planet",
+      "tessMag": 6.8481,
+      "nUsable": 2,
+      "consistencyR": 0.333,
+      "rayleighP": 0.8552,
+      "singleOffset": 9.235,
+      "multiResultant": 2.589,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 82308728,
+      "label": "known-planet",
+      "tessMag": 6.9859,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 19.136,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 420814525,
+      "label": "known-planet",
+      "tessMag": 7.1274,
+      "nUsable": 1,
+      "consistencyR": 1,
+      "rayleighP": 0,
+      "singleOffset": 4.177,
+      "multiResultant": 4.177,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 55092869,
+      "label": "known-planet",
+      "tessMag": 7.3212,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 19.313,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 286923464,
+      "label": "known-planet",
+      "tessMag": 7.4556,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 21.097,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 69679391,
+      "label": "known-planet",
+      "tessMag": 7.55216,
+      "nUsable": 5,
+      "consistencyR": 0.64,
+      "rayleighP": 0.2252,
+      "singleOffset": 15.372,
+      "multiResultant": 5.017,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 16740101,
+      "label": "known-planet",
+      "tessMag": 7.58204,
+      "nUsable": 5,
+      "consistencyR": 0.277,
+      "rayleighP": 0.9032,
+      "singleOffset": 11.503,
+      "multiResultant": 1.645,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 255930614,
+      "label": "known-planet",
+      "tessMag": 7.6262,
+      "nUsable": 2,
+      "consistencyR": 0.291,
+      "rayleighP": 0.9399,
+      "singleOffset": 27.158,
+      "multiResultant": 4.481,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 302773669,
+      "label": "known-planet",
+      "tessMag": 7.6353,
+      "nUsable": 4,
+      "consistencyR": 0.95,
+      "rayleighP": 0.02904,
+      "singleOffset": 27.215,
+      "multiResultant": 21.373,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 69747919,
+      "label": "known-planet",
+      "tessMag": 7.7275,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 25.817,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 129979528,
+      "label": "known-planet",
+      "tessMag": 7.87611,
+      "nUsable": 1,
+      "consistencyR": 1,
+      "rayleighP": 0,
+      "singleOffset": 12.673,
+      "multiResultant": 3.14,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 297967252,
+      "label": "blend-or-fp",
+      "tessMag": 5.5324,
+      "nUsable": 3,
+      "consistencyR": 0.18,
+      "rayleighP": 0.8613,
+      "singleOffset": 22.908,
+      "multiResultant": 3.865,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 458856474,
+      "label": "blend-or-fp",
+      "tessMag": 5.666,
+      "nUsable": 1,
+      "consistencyR": 1,
+      "rayleighP": 0,
+      "singleOffset": 36.229,
+      "multiResultant": 36.229,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 412961700,
+      "label": "blend-or-fp",
+      "tessMag": 6.725,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 20.844,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 20182165,
+      "label": "blend-or-fp",
+      "tessMag": 7.0166,
+      "nUsable": 3,
+      "consistencyR": 0.997,
+      "rayleighP": 0.052,
+      "singleOffset": 15.621,
+      "multiResultant": 9.663,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 364107753,
+      "label": "blend-or-fp",
+      "tessMag": 7.0514,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 25.441,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 207084429,
+      "label": "blend-or-fp",
+      "tessMag": 7.1995,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 28.483,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 269450900,
+      "label": "blend-or-fp",
+      "tessMag": 7.3163,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 31.582,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 138017750,
+      "label": "blend-or-fp",
+      "tessMag": 7.42812,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 24.259,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 270238522,
+      "label": "blend-or-fp",
+      "tessMag": 7.5586,
+      "nUsable": 0,
+      "consistencyR": null,
+      "rayleighP": null,
+      "singleOffset": 19.502,
+      "multiResultant": 0,
+      "singleVeto": false,
+      "multiVeto": false
+    },
+    {
+      "tic": 451599528,
+      "label": "blend-or-fp",
+      "tessMag": 7.5622,
+      "nUsable": 2,
+      "consistencyR": 0.71,
+      "rayleighP": 0.3761,
+      "singleOffset": 16.479,
+      "multiResultant": 10,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 97700520,
+      "label": "blend-or-fp",
+      "tessMag": 7.6095,
+      "nUsable": 1,
+      "consistencyR": 1,
+      "rayleighP": 0,
+      "singleOffset": 6.404,
+      "multiResultant": 6.404,
+      "singleVeto": true,
+      "multiVeto": false
+    },
+    {
+      "tic": 96246348,
+      "label": "blend-or-fp",
+      "tessMag": 7.678,
+      "nUsable": 3,
+      "consistencyR": 0.848,
+      "rayleighP": 0.4276,
+      "singleOffset": 17.638,
+      "multiResultant": 7.035,
+      "singleVeto": true,
+      "multiVeto": false
+    }
+  ],
+  "verdict": "COHERENCE-SAVES-PLANETS-BUT-NO-POWER",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

@@ -82,6 +82,7 @@
     "p72:followups-figure": "tsx scripts/p72-followups-figure.ts",
     "figure:borrowed": "tsx scripts/borrowed-figure.ts",
     "figure:inverted-fp": "tsx scripts/p75-inverted-figure.ts",
+    "figure:borrowed-round": "tsx scripts/borrowed-round-figure.ts",
     "p73:masked-recovery": "tsx scripts/p73-masked-recovery.ts",
     "p74:centroid-consistency": "tsx scripts/p74-centroid-consistency.ts",
     "p75:inverted-fp": "tsx scripts/p75-inverted-fp.ts",

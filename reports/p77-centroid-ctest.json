@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p77-centroid-ctest.ts",
+    "wantPos": 14,
+    "wantNeg": 14,
+    "tmagCap": 11,
+    "maxSectors": 6,
+    "MIN_SNR": 5,
+    "boot": 120,
+    "alpha": 0.001,
+    "DUR": 2,
+    "data": "real TESS-SPOC target-pixel cubes, per-sector difference-image centroid offsets (east/north arcsec); ExoFOP KP/FP/EB labels; token-free public S3",
+    "note": "faithful re-port of eumemic's centroid F-test (src/detect/centroidFtest.ts); target-hypothesis rejection only, no per-neighbour fit; measure-before-gate."
+  },
+  "counts": {
+    "usable": 28,
+    "testable": 9,
+    "planetsTestable": 6,
+    "blendsTestable": 3,
+    "skip": 0
+  },
+  "planets": {
+    "rejectAtAlpha": 2,
+    "rejectAt01": 2,
+    "n": 6,
+    "meanOffsetP50Arcsec": 7.995946595023266
+  },
+  "blends": {
+    "catchAtAlpha": 0,
+    "catchAt01": 0,
+    "n": 3,
+    "meanOffsetP50Arcsec": 9.66323329142185
+  },
+  "eumemicReference": {
+    "planetFalseReject": "0/565 at p<0.001 (3/565 at p<0.01)",
+    "blendCatch": "127/175 (73%) at p<0.001; 38% within 15 arcsec",
+    "source": "eumemic/exoplanets validation/centroid_sectors.md"
+  },
+  "cases": [
+    {
+      "tic": 283722336,
+      "toi": "1469.01",
+      "label": "known-planet",
+      "tessMag": 4.6278,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 283722336,
+      "toi": "1469.02",
+      "label": "known-planet",
+      "tessMag": 4.6278,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 136916387,
+      "toi": "2011.01",
+      "label": "known-planet",
+      "tessMag": 5.0494,
+      "nUsed": 2,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 35.21,
+      "pTarget": 0.0008060662108323386
+    },
+    {
+      "tic": 136916387,
+      "toi": "2011.02",
+      "label": "known-planet",
+      "tessMag": 5.0494,
+      "nUsed": 2,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 2.99,
+      "pTarget": 0.9940134496252192
+    },
+    {
+      "tic": 332064670,
+      "toi": "1773.01",
+      "label": "known-planet",
+      "tessMag": 5.2058,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 256364928,
+      "toi": "4470.01",
+      "label": "known-planet",
+      "tessMag": 6.8481,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 82308728,
+      "toi": "1821.01",
+      "label": "known-planet",
+      "tessMag": 6.9859,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 420814525,
+      "toi": "5972.01",
+      "label": "known-planet",
+      "tessMag": 7.1274,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 55092869,
+      "toi": "664.01",
+      "label": "known-planet",
+      "tessMag": 7.3212,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 286923464,
+      "toi": "1271.01",
+      "label": "known-planet",
+      "tessMag": 7.4556,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 69679391,
+      "toi": "1151.01",
+      "label": "known-planet",
+      "tessMag": 7.55216,
+      "nUsed": 4,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 4.79,
+      "pTarget": 0.397522931687995
+    },
+    {
+      "tic": 16740101,
+      "toi": "1150.01",
+      "label": "known-planet",
+      "tessMag": 7.58204,
+      "nUsed": 3,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 2.73,
+      "pTarget": 0.7967976308437967
+    },
+    {
+      "tic": 255930614,
+      "toi": "2024.01",
+      "label": "known-planet",
+      "tessMag": 7.6262,
+      "nUsed": 3,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 8,
+      "pTarget": 0.5763006316511444
+    },
+    {
+      "tic": 302773669,
+      "toi": "1573.01",
+      "label": "known-planet",
+      "tessMag": 7.6353,
+      "nUsed": 5,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 21.93,
+      "pTarget": 0.0009531773768187745
+    },
+    {
+      "tic": 297967252,
+      "toi": "1025.01",
+      "label": "blend-or-fp",
+      "tessMag": 5.5324,
+      "nUsed": 4,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 1.84,
+      "pTarget": 0.971765982283118
+    },
+    {
+      "tic": 458856474,
+      "toi": "1978.01",
+      "label": "blend-or-fp",
+      "tessMag": 5.666,
+      "nUsed": 1,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 354006740,
+      "toi": "1665.01",
+      "label": "blend-or-fp",
+      "tessMag": 6.4018,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 412961700,
+      "toi": "589.01",
+      "label": "blend-or-fp",
+      "tessMag": 6.725,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 374908020,
+      "toi": "1029.01",
+      "label": "blend-or-fp",
+      "tessMag": 6.841,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 20182165,
+      "toi": "1830.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.0166,
+      "nUsed": 3,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 9.66,
+      "pTarget": 0.054983735769398336
+    },
+    {
+      "tic": 364107753,
+      "toi": "909.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.0514,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 141663464,
+      "toi": "1962.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.185,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 207084429,
+      "toi": "381.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.1995,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 269450900,
+      "toi": "1127.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.3163,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 138017750,
+      "toi": "1608.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.42812,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 270238522,
+      "toi": "1514.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.5586,
+      "nUsed": 0,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    },
+    {
+      "tic": 451599528,
+      "toi": "1104.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.5622,
+      "nUsed": 2,
+      "nDropped": 0,
+      "testable": true,
+      "meanOffsetArcsec": 10,
+      "pTarget": 0.5104034178912302
+    },
+    {
+      "tic": 97700520,
+      "toi": "1013.01",
+      "label": "blend-or-fp",
+      "tessMag": 7.6095,
+      "nUsed": 1,
+      "nDropped": 0,
+      "testable": false,
+      "meanOffsetArcsec": null,
+      "pTarget": 1
+    }
+  ],
+  "verdict": "MEASURED-TINY (n=9 testable): known-planet false-reject 2/6 at p<0.001; blend catch 0/3. Non-zero false-rejects, n is far below their 565/175, so this is a smoke-test of the faithful re-port, NOT a re-validation. safeToGate stays false.",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

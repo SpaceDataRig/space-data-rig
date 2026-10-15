@@ -5,6 +5,18 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### P77: faithful re-port of eumemic's centroid F-test, measured on our data -- closes the P74 follow-up (2026-10-15)
+
+- `src/detect/centroidFtest.ts`: a faithful implementation of the author's statistic (`F = n(n-1)|mean-s|^2 / RSS`,
+  per-axis scatter floored at 1", >=2 sectors, offsets beyond 60" dropped; df1=2 so p = `(1 + F/(n-1))^-(n-1)`),
+  built from their `validation/centroid_sectors.md` rather than guessed. Pure + offline, with `targetCentroidP` /
+  `neighbourCanCauseDip` helpers and 7 hand-checked tests. No verdict / bundle hash / money path; nothing gated.
+- `scripts/p77-centroid-ctest.ts` (`npm run p77:centroid-ctest`) runs it on real SPOC cubes. Of 28 bright ExoFOP
+  targets only 9 were testable (>=2 sectors -- our short-baseline limit); the F-test false-rejected 2/6 known planets
+  at p<0.001 (vs eumemic's 0/565) and caught 0/3 labelled blends (ours are on-target EBs). Honest read: the statistic
+  is correct, but our difference-image localization is too coarse (the 2 false-rejects had spurious 22"/35" offsets)
+  and our sample too small to re-validate or gate on it. safeToGate/discoveryClaim false. `reports/p77-centroid-ctest.{md,json}`.
+
 ### Audit remediation -- honesty copy, positioning, test discovery, data contracts, rate limiting (2026-10-15)
 A third-party audit raised nine findings; this round addresses the ones fixable in code/docs without touching the
 verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.

@@ -5,6 +5,30 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![status: live](https://img.shields.io/badge/status-live-brightgreen)](https://spacedatarig.app)
 
+## At a glance
+
+A **five-stage deterministic pipeline** (data-fetch -> anomaly-scout -> sim-runner ->
+mission-critic -> reporter) that runs a fully reproducible TESS transit-detection loop: real
+confirmed-planet parameters from the NASA Exoplanet Archive in, a deterministic Box-Least-Squares
+search and injection-recovery statistics through, a **hash-sealed reproducible bundle** anchored on
+Solana mainnet out. The deciding math is plain code, not a model; the live LLM layer is advisory
+narration only (about 2% of the code, and removing it changes zero verdicts -- measured at P70).
+
+- **It is a closed-loop self-test, not a planet hunt.** It proves the machinery recovers a known
+  signal from noise. `discoveryClaim` is false and `safeToGate` is false, everywhere, by design.
+- **Honest ceilings, reported as-is.** On real TESS data at scale (P82, 425 curves): blind recall
+  86.2%, accepted-call precision 42.2% (a coherent-systematics wall a bigger sample narrows but
+  does not remove); external blind validation KP 182/234, CP 104/179 (easiest subsets, named); the
+  centroid F-test caught 0/56 blends because 71% of targets never localise -- pixel-baseline-bound,
+  not a statistic problem.
+- **Independently auditable.** Same manifest content -> same `scienceHash`; the timestamped
+  `bundleHash` is anchored on-chain and anyone can re-read the memo with no trust in our database.
+- **Under review, and answering it.** A point-by-point ledger of the audit-10 review -- criticism,
+  fix, verification, and the residual risk that remains -- is in [RESPONSE-TO-AUDIT.md](RESPONSE-TO-AUDIT.md).
+
+The long, detailed README below is intentionally kept as auditable context; read it when you want
+the specifics, this panel when you want the one-page truth.
+
 **Project health & governance (all verifiable, none of it a claim of size):** automated
 checks run on every push/PR ([CI](https://github.com/SpaceDataRig/space-data-rig/actions));
 reproducible versions are tagged and released

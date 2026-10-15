@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p84-centroid-diagnosis.ts",
+    "checkpoint": "out/scaled/centroid.jsonl",
+    "alpha": 0.001,
+    "eumemicReference": {
+      "planetFalseReject": "0/565 at p<0.001",
+      "blendCatch": "127/175 (73%); 38% within 15 arcsec"
+    },
+    "note": "decomposes the P82 centroid result into COVERAGE (localisable fraction) vs POWER (F-test discrimination); research-only; discoveryClaim false, safeToGate false."
+  },
+  "planets": {
+    "rows": 108,
+    "testable": 53,
+    "testableFrac": 0.49074074074074076,
+    "notTestable": 55,
+    "notTestableNUsed0": 33,
+    "coverageLossFrac": 0.3055555555555556,
+    "caught": 0,
+    "falseReject": 1,
+    "medianViableNeighbours": 17,
+    "medianPTarget": 0.622,
+    "medianBestNeighbourP": 0.0134,
+    "testableWithNeighbour": 53,
+    "pTargetBelowAlpha": 1,
+    "bestNeighbourBelowAlpha": 15
+  },
+  "blends": {
+    "rows": 392,
+    "testable": 56,
+    "testableFrac": 0.14285714285714285,
+    "notTestable": 336,
+    "notTestableNUsed0": 278,
+    "coverageLossFrac": 0.7091836734693877,
+    "caught": 0,
+    "falseReject": 0,
+    "medianViableNeighbours": 18,
+    "medianPTarget": 0.505,
+    "medianBestNeighbourP": 0.0707,
+    "testableWithNeighbour": 56,
+    "pTargetBelowAlpha": 0,
+    "bestNeighbourBelowAlpha": 2
+  },
+  "verdict": "PIXEL-BASELINE-BOUND: real blends fail two ways at once -- (A) 71% of blend targets never yield >=2 localisable sector offsets (target-pixel-cube coverage collapse), and (B) among the 56 measurable blends the F-test catches 0 because the offset cloud matches NEITHER the target (median pTarget 0.505) NOR any viable contaminant (median bestNeighbourP 0.0707), both far above alpha 0.001. Meanwhile known planets false-reject only 1/53. The F-test statistic is fine; OUR per-sector centroid localisation (WCS / centroid precision / sector alignment) is too noisy/biased to move a real blend off-target -- the audit's suspected branch. Fixing the pixel baseline has chain-wide payoff (P44/P53/P57/P59), not just this gate. Measures only.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

@@ -94,6 +94,7 @@
     "p80:external-validation": "tsx scripts/p80-external-validation.ts",
     "p81:triceratops-lite": "tsx scripts/p81-triceratops-lite.ts",
     "p82:scaled": "tsx scripts/p82-scaled-validation.ts",
+    "p84:centroid-diagnosis": "tsx scripts/p84-centroid-diagnosis.ts",
     "figure:round": "tsx scripts/deploy-retest-round-figure.ts",
     "figure:audit9": "tsx scripts/audit9-round-figure.ts",
     "figure:audit9c": "tsx scripts/audit9-complete-figure.ts",

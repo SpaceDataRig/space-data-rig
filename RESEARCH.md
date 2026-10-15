@@ -993,5 +993,36 @@ discoveryClaim / safeToGate stay structurally false throughout.
 
 ---
 
+## 30. Making the science meaningful: the audit-9 benchmark, blind test, and independent external validation (P78 / P79 / P80)
+
+A third-party audit (finding 9) said the work is scientifically meaningful only with (a) a quantitative
+benchmark against TCE/DAVE/TPM, (b) a blind test on more real sectors/stars rather than stand-in + tiny, and
+(c) at least one external candidate independently validated (then 0/2). We cannot run those tools' production
+pipelines, so we re-implemented each one's headline statistic (`src/detect/benchmark.ts`, 8 offline tests) and
+applied it to numbers our own pipeline measured on real TESS-SPOC photometry:
+
+- **Benchmark (P79).** We fit a TPM-style (Burke 2015) completeness logistic to OUR injection-recovery grid
+  (not Burke's Kepler coefficients) and ran the TCE BLS SNR + >=3-transit / SNR>=7 acceptance predicate on the
+  same cells. Cells the TCE rule would ACCEPT average 74% measured completeness; cells it would REJECT average
+  0% -- our detector's completeness tracks the standard BLS/TCE detection limit on real data.
+- **Multi-sector blind test (P78).** P49 stitched sectors and hard-set corroboration to 1, so its 2-sector
+  acceptance bar accepted nothing by construction. We run the detector SECTOR BY SECTOR on 24 real hosts (10
+  injected / 14 null) and count corroboration as distinct sectors at the same period. Under a 2-sector bar the
+  accepted recall is 8/10 (real planets clear it) but 9 false accepts survive and accepted precision is only 47%
+  (raw 16%). Honest: cross-sector period-only corroboration is necessary but NOT sufficient -- coherent
+  systematics/aliases recur across sectors -- so it cannot alone carry a discovery claim.
+- **Independent external validation (P80).** The old 0/2 was structural: the P65 critic audits an outside claim on
+  an EMPTY catalog, so it can never self-corroborate. New non-circular path (`src/candidate/independentValidation.ts`,
+  5 offline tests): ingest EXTERNAL claims from the anonymous ExoFOP table, run the detector BLIND (the claim's
+  ephemeris is never fed; it searches 1-13 d) SECTOR BY SECTOR, corroborate a period across independent sectors,
+  and confirm a claim only when that blind detection matches it. On real SPOC data: 9/11 confirmed-planet (KP)
+  positive controls validated AND **5/9 still-uncertain candidate-planets (CP) independently validated**, recovered
+  periods matching the external claim to 0.002-0.065% across >=2 sectors. This is a FIRST independent check
+  supporting a candidate -- not a discovery, not TRICERATOPS-grade validation (period-only corroboration admits
+  aliases). `reports/p78-blind-multisector.{md,json}`, `reports/p79-benchmark.{md,json}`,
+  `reports/p80-external-validation.{md,json}`. Measure-only; discoveryClaim / safeToGate false throughout.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

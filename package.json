@@ -91,6 +91,7 @@
     "p77:centroid-ctest": "tsx scripts/p77-centroid-ctest.ts",
     "p78:blind-multisector": "tsx scripts/p78-blind-multisector.ts",
     "p79:benchmark": "tsx scripts/p79-benchmark.ts",
+    "p80:external-validation": "tsx scripts/p80-external-validation.ts",
     "figure:round": "tsx scripts/deploy-retest-round-figure.ts",
     "figure:audit9": "tsx scripts/audit9-round-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",

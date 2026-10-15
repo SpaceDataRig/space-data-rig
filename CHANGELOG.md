@@ -8,7 +8,7 @@ Keep a Changelog and adheres to Semantic Versioning.
 ### Audit-9 science-meaning program -- multi-sector blind test + TCE/DAVE/TPM benchmark (2026-10-15)
 The external audit said the work is meaningful only with (a) a quantitative benchmark against TCE/DAVE/TPM,
 (b) a blind test on more real sectors/stars (not stand-in + tiny), and (c) an externally-independently-validated
-candidate. First two are addressed here; (c) is in progress.
+candidate. All three are now addressed on real data.
 
 - P79 `src/detect/benchmark.ts` + `scripts/p79-benchmark.ts` (`npm run p79:benchmark`, offline): re-implements the
   headline statistic of each named tool -- TCE BLS SNR + the >=3-transit / SNR>=7 / depth-band acceptance,
@@ -23,6 +23,16 @@ candidate. First two are addressed here; (c) is in progress.
   accepted precision only 47% (raw precision 16%). Honest finding: cross-sector period-only corroboration is
   necessary but NOT sufficient -- coherent systematics/aliases recur across sectors -- so it cannot alone carry a
   discovery claim. `reports/p78-blind-multisector.{md,json}`.
+- P80 `src/candidate/independentValidation.ts` (+ 5 offline tests) + `scripts/p80-external-validation.ts`
+  (`npm run p80:external-validation`): closes gap (c), which was STRUCTURAL -- the P65 critic audits an outside
+  claim on an EMPTY catalog so it can never self-corroborate (hence 0/2). New non-circular path: ingest EXTERNAL
+  claims from the anonymous ExoFOP table, run the detector BLIND (the claim's ephemeris is never fed; it searches
+  1-13d) SECTOR BY SECTOR, corroborate a period across independent sectors, and confirm a claim only when that
+  blind detection matches it. On real SPOC data: 9/11 confirmed-planet (KP) positive controls validated (machinery
+  works) AND **5/9 still-uncertain candidate-planets (CP) independently validated** -- recovered periods matching
+  the external claim to 0.002-0.065% across >=2 sectors. First independent external validations for the project
+  (a first CHECK supporting a candidate, NOT a discovery or TRICERATOPS-grade validation; alias risk noted). No
+  gate moved. `reports/p80-external-validation.{md,json}`.
 
 ### P77: faithful re-port of eumemic's centroid F-test, measured on our data -- closes the P74 follow-up (2026-10-15)
 

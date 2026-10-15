@@ -16,6 +16,7 @@ import { RigRunWorkflow } from "./workflow.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
 import { verifyBundle } from "../bundle/bundle.ts";
 import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
+import { createFixedWindowLimiter, clientRateKey } from "../core/rateLimit.ts";
 import { seatRole } from "../reporter/narrate.ts";
 import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
@@ -324,10 +325,19 @@ app.get("/api/bundles/:id/artifact/:name", async (c) => {
   return c.body(text, 200, { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
 });
 
+// Abuse brake on the state-changing endpoints (audit #8). Limits are generous for the owner but tight
+// enough that one hammering client cannot exhaust compute or drain the fee wallet; the limiter fails OPEN,
+// so a limiter fault never denies the operator their own run/anchor. It gates BEFORE auth, throttling even
+// unauthenticated floods. This changes no verdict, bundle hash, or money logic -- it only sheds excess load.
+const runLimiter = createFixedWindowLimiter({ limit: 10, windowMs: 60_000 });
+const anchorLimiter = createFixedWindowLimiter({ limit: 30, windowMs: 60_000 });
+
 // Kick off a durable pipeline run. The DO claims the single-run slot (409 when busy,
 // mirroring the Node guard), then a Workflow instance is created with the authoritative
 // runId and returns immediately -- progress streams to the browser over the DO WebSocket.
 app.post("/api/run", async (c) => {
+  const _rl = runLimiter.check(clientRateKey(c.req.raw.headers));
+  if (!_rl.ok) return c.json({ error: "rate-limited: too many run requests, slow down", retryAfterSec: Math.max(1, Math.ceil(_rl.retryAfterMs / 1000)) }, 429);
   if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   // Public endpoint: keep the clamps tight. Every target is a durable workflow branch and
@@ -377,6 +387,8 @@ app.post("/api/run", async (c) => {
 // The transaction is built + submitted INSIDE the DO (serialised fee-payer, wall-clock
 // I/O); this route just relays the outcome and maps it to an HTTP status.
 app.post("/api/anchor/:id", async (c) => {
+  const _rl = anchorLimiter.check(clientRateKey(c.req.raw.headers));
+  if (!_rl.ok) return c.json({ error: "rate-limited: too many anchor requests, slow down", retryAfterSec: Math.max(1, Math.ceil(_rl.retryAfterMs / 1000)) }, 429);
   if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id") ?? "");
   if (!id) return c.json({ error: "finding not found" }, 404);
@@ -391,6 +403,8 @@ app.post("/api/anchor/:id", async (c) => {
 // (finding, deliberationHash): a prior successful tx is replayed without spending fees
 // again. dryRun previews the memo without touching the chain or the keypair.
 app.post("/api/anchor/:id/deliberation", async (c) => {
+  const _rl = anchorLimiter.check(clientRateKey(c.req.raw.headers));
+  if (!_rl.ok) return c.json({ error: "rate-limited: too many anchor requests, slow down", retryAfterSec: Math.max(1, Math.ceil(_rl.retryAfterMs / 1000)) }, 429);
   if (!isAdminAuthorized(c.req.header("authorization"), c.env.ADMIN_TOKEN)) return c.json(ADMIN_UNAUTHORIZED, 401);
   const id = safeName(c.req.param("id") ?? "");
   if (!id) return c.json({ error: "finding not found" }, 404);

@@ -35,6 +35,13 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   card or an all-`tic=0` table. In the process the contract test caught a real silent degradation: ExoFOP
   `parseToiTable` coerced a missing key column to `Number("")=0` and emitted garbage rows; it now fails closed
   (returns []) when the row-key column is gone. Docs/pure code only; no verdict/bundle-hash/money path.
+- **Unauthenticated / unthrottled mutation endpoints (#8)**: the admin gate already existed but is opt-in (open
+  when `ADMIN_TOKEN` is unset). Added a coarse per-client rate limiter (`src/core/rateLimit.ts`, fixed window keyed
+  on `cf-connecting-ip`, returns 429 + `retryAfterSec`, deliberately fail-open) on `POST /api/run`, `POST
+  /api/anchor/:id` and `POST /api/anchor/:id/deliberation`, gating BEFORE auth so unauthenticated floods are shed too.
+  SECURITY.md documents it and re-stresses that setting `ADMIN_TOKEN` is the real fee-wallet protection. No verdict /
+  bundle-hash / money-path logic changed; **not deployed** and the secret remains the operator's to set. Offline tests
+  in `tests/rateLimit.test.ts` (5 cases).
 - Locked by `tests/narrate.test.ts` (5 offline cases).
 
 ### Correction -- we mis-described eumemic's centroid check; attribution fixed (2026-10-15)

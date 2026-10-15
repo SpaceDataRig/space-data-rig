@@ -31,6 +31,13 @@ you wish) before any public disclosure.
   silently broken by this code -- operators close the hole by setting the secret.
   Read endpoints and the public dashboard are unaffected; the autonomous cron path
   runs inside the Worker and does not call these HTTP routes, so it keeps working.
+- In addition to the admin gate, `POST /api/run` and `POST /api/anchor/*` now carry a
+  coarse per-client rate limiter (fixed window, keyed on `cf-connecting-ip`), returning
+  `429` with a `retryAfterSec` once a single client exceeds the window (audit finding #8).
+  It is deliberately an abuse brake, not a precise distributed quota -- each Worker isolate
+  keeps its own counters and it fails OPEN so a limiter fault never locks the operator out.
+  It does not change any verdict, bundle hash, or the money logic; the real protection for
+  the fee wallet remains setting `ADMIN_TOKEN`.
 - RPC endpoints configured for anchoring embed provider API keys in their URL
   path by design (hosted providers). The codebase treats every user-visible
   error string, event-log entry and ledger field for these URLs as required to

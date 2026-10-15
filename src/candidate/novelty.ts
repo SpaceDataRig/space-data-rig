@@ -18,11 +18,11 @@ export interface SkyPos {
   dec: number; // degrees
 }
 
-export type CatalogKind = "toi" | "confirmed";
+export type CatalogKind = "toi" | "confirmed" | "exofop";
 
 export interface CatalogEntry {
   label: string; // e.g. "TOI-1011.01" or "TOI-1011 b"
-  kind: CatalogKind;
+  kind: CatalogKind; // "toi"/"confirmed" = NASA Archive; "exofop" = ExoFOP-TESS TOI/CTOI table (community disposition)
   ra: number;
   dec: number;
   tic?: number; // host TIC when the row carries one

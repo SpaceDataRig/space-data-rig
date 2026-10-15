@@ -89,3 +89,15 @@ test("matching is deterministic for identical inputs", () => {
   const b = disposition(cand, entries, { radiusArcsec: 30 });
   assert.deepEqual(a, b);
 });
+
+test("exofop-kind rows match like any catalog and can flip a novel candidate to announced", () => {
+  // Only an ExoFOP TOI/CTOI row sits near the candidate; Archive tables are empty here.
+  const archive: CatalogEntry[] = [];
+  const exofop: CatalogEntry[] = [{ label: "1234.01 [FP]", kind: "exofop", ra: 10.0005, dec: 10, tic: 777, periodDays: 5.01 }];
+  const novelOnArchive = disposition(cand, archive, { radiusArcsec: 30 });
+  const withExofop = disposition(cand, [...archive, ...exofop], { radiusArcsec: 30 });
+  assert.equal(novelOnArchive.novelLocation, true); // nothing in the Archive -> appears novel
+  assert.equal(withExofop.novelLocation, false); // ExoFOP announces it -> no longer novel
+  assert.equal(withExofop.samePeriodAnnounced, true); // and at our period
+  assert.equal(withExofop.discoveryClaim, false);
+});

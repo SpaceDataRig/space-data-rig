@@ -20,6 +20,8 @@ const C = { bg: "#0b1220", teal: "#5ad1a8", blue: "#8fc6ff", amber: "#e0a458", a
 const s = p.summary;
 const n: number = s.n;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
+// Escape text for XML/SVG: a literal '<' or '&' is illegal in an SVG text node and breaks the whole document.
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const W = 960, H = 520;
 const cw = 444, ch = 300;
@@ -28,15 +30,15 @@ const bandY = 384, bandH = 118;
 
 function card(x: number, y: number, title: string, sub: string): string {
   return `<rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="10" fill="${C.card}" stroke="${C.edge}"/>`
-    + `<text x="${x + 16}" y="${y + 26}" fill="${C.title}" font-size="14.5" font-weight="700">${title}</text>`
-    + `<text x="${x + 16}" y="${y + 43}" fill="${C.text}" font-size="10.5">${sub}</text>`;
+    + `<text x="${x + 16}" y="${y + 26}" fill="${C.title}" font-size="14.5" font-weight="700">${esc(title)}</text>`
+    + `<text x="${x + 16}" y="${y + 43}" fill="${C.text}" font-size="10.5">${esc(sub)}</text>`;
 }
 function line(x: number, y: number, txt: string, col = C.text, weight = "400", size = 10.5): string {
-  return `<text x="${x}" y="${y}" fill="${col}" font-size="${size}" font-weight="${weight}">${txt}</text>`;
+  return `<text x="${x}" y="${y}" fill="${col}" font-size="${size}" font-weight="${weight}">${esc(txt)}</text>`;
 }
 function big(cx: number, cy: number, val: string, lbl: string, col: string): string {
-  return `<text x="${cx}" y="${cy}" fill="${col}" font-size="30" font-weight="700" text-anchor="middle">${val}</text>`
-    + `<text x="${cx}" y="${cy + 16}" fill="${C.text}" font-size="10.5" text-anchor="middle">${lbl}</text>`;
+  return `<text x="${cx}" y="${cy}" fill="${col}" font-size="30" font-weight="700" text-anchor="middle">${esc(val)}</text>`
+    + `<text x="${cx}" y="${cy + 16}" fill="${C.text}" font-size="10.5" text-anchor="middle">${esc(lbl)}</text>`;
 }
 
 let A = "", B = "";

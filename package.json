@@ -103,6 +103,7 @@
     "figure:p82-audit10": "tsx scripts/p82-audit10-figure.ts",
     "figure:p82": "tsx scripts/p82-scaleup-figure.ts",
     "figure:p82-results": "tsx scripts/p82-results-figure.ts",
+    "figure:audit10-response": "tsx scripts/audit10-response-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",

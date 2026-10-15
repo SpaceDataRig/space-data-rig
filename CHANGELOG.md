@@ -24,6 +24,10 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   coverage, line floor 85 against the measured ~95%). CI now runs typecheck + lint + tests-with-coverage as blocking,
   with `npm audit` and `format:check` advisory until a one-time repo-wide format is agreed. Fixed the broken
   indentation in `package.json` scripts.
+- **Collaboration status (#6)**: `GOVERNANCE.md` gains a "Maintenance cadence and dependency updates" section stating
+  plainly that the commit rate is partly machine-generated under a sampling-and-gate review model, and that Dependabot
+  PRs are opened automatically but merged only by the owner -- CI-action bumps after a green run, production-dependency
+  bumps (next to the money path) only after explicit review. Docs only.
 - Locked by `tests/narrate.test.ts` (5 offline cases).
 
 ### Research -- borrowing vetting levers from a real TESS survey, measured before gated (P73-P76) (2026-10-15)

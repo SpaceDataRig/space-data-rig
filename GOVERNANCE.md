@@ -51,6 +51,25 @@ review is actively encouraged: the pipeline is built so that any reported findin
 reproducible from public data and a hash-sealed bundle, so third parties can verify
 our claims independently rather than take them on trust.
 
+## Maintenance cadence and dependency updates
+
+Two facts a reviewer should know up front, stated plainly rather than dressed up:
+
+- **Commit cadence is high and partly machine-generated.** Long stretches of commits land
+  at a rate beyond what a single human could line-by-line review. They are the output of the
+  AI coding agent working under the owner's direction; the owner's review is therefore
+  *sampling-and-gate-based* (every increment must pass `typecheck:all`, the full test suite,
+  a non-ASCII byte check and a secret scan before it is pushed) rather than a manual read of
+  each diff. This is disclosed, not hidden -- judge the project by its automated checks and
+  reproducible results, not by commit count.
+- **Dependabot PRs are opened automatically but merged only by the owner, deliberately.**
+  `.github/dependabot.yml` keeps npm and GitHub Actions fresh. A bump that touches only CI
+  actions (e.g. `actions/checkout`, `actions/setup-node`) is low-risk and merged after CI
+  passes. A bump to the **production dependency group** (which includes `@solana/web3.js` and
+  the HTTP server) sits next to the money path, so it is held for explicit review against the
+  test suite before merging -- an unattended green Dependabot PR is *not* auto-accepted. If you
+  see an open Dependabot PR, its being unmerged means it is queued for that review, not ignored.
+
 ## Amendments
 
 Changes to this governance document are made by pull request and reviewed like any

@@ -1,0 +1,33 @@
+name: Anchor verify (read-only)
+
+# audit-10 #9: a keyless, read-only integration check on the money-adjacent SEND path. It re-reads the most
+# recent Solana mainnet anchors straight from the chain and confirms each memo still contains its bundle hash.
+# No fee payer, no secret, nothing is sent -- it can only read. Deliberately separate from CI/npm test, which
+# must stay network-free. A scheduled failure means a recent anchor no longer verifies -- investigate the send path.
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # daily ~03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify recent on-chain anchors (keyless, read-only)
+        # vars.SOLANA_RPC_READONLY is optional: an operator-supplied keyless RPC avoids public-endpoint rate
+        # limits. Unset -> the script falls back to the public mainnet endpoint.
+        run: npm run p9:anchor-verify -- --count 5 --rpc "${{ vars.SOLANA_RPC_READONLY }}"

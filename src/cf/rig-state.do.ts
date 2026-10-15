@@ -57,8 +57,21 @@ const SNAPSHOT_KEY = "state/rig.json";
 
 type Json = Record<string, unknown>;
 
+// Outcome of an anchorFinding call (HTTP-mapped by the Worker route). Shared by the method and the
+// per-finding in-flight serialisation lock below so a concurrent duplicate call can await the same result.
+type AnchorFindingResult = {
+  ok: boolean; memo?: string; signature?: string; slot?: number; error?: string;
+  httpStatus: number; dryRun?: boolean; alreadyAnchored?: boolean;
+};
+
 export class RigStateDO extends DurableObject<Env> {
   private artifacts!: R2ArtifactStore;
+  // audit-10 #7: per-finding in-flight anchors. A Durable Object serves requests CONCURRENTLY, and the
+  // ledger idempotency check is separated from the mainnet spend by awaits -- so two rapid calls for the
+  // SAME finding (double-click / retry / script) could both pass the guard and pay SOL twice. Anchors are
+  // chained through this map so a concurrent same-finding call reuses the in-flight outcome instead of
+  // starting a second spend. Cleared in a finally; only guards the real (non-dryRun) spend path.
+  private readonly anchorInFlight = new Map<string, Promise<AnchorFindingResult>>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -521,7 +534,7 @@ export class RigStateDO extends DurableObject<Env> {
   async anchorFinding(
     findingId: string,
     opts?: { dryRun?: boolean },
-  ): Promise<{ ok: boolean; memo?: string; signature?: string; slot?: number; error?: string; httpStatus: number; dryRun?: boolean; alreadyAnchored?: boolean }> {
+  ): Promise<AnchorFindingResult> {
     const f = this.getFinding(findingId);
     if (!f) return { ok: false, httpStatus: 404, error: "finding not found" };
     if (!f.bundleHash) return { ok: false, httpStatus: 400, error: "finding has no bundle hash yet (run the reporter first)" };
@@ -539,59 +552,80 @@ export class RigStateDO extends DurableObject<Env> {
     if (!this.env.SOLANA_KEYPAIR)
       return { ok: false, memo, httpStatus: 400, error: "no SOLANA_KEYPAIR secret configured on the Worker (set it with: wrangler secret put SOLANA_KEYPAIR)" };
 
-    // Idempotency guard: the same bundle hash is anchored at most once -- repeat calls
-    // (double clicks, retries, scripts) must never spend mainnet fees again. Return the
-    // existing receipt and re-stamp the finding/bundle card in case an older re-run
-    // cleared the solanaTx field before merge-preservation existed.
-    const prior = this.row<{ data: string }>(`SELECT data FROM ledger WHERE finding_id = ?`, findingId);
-    if (prior) {
-      const e = JSON.parse(prior.data) as LedgerEntry;
-      if (e.status === "anchored" && e.signature && e.bundleHash === f.bundleHash) {
-        if (f.solanaTx !== e.signature) {
-          await this.updateFinding(findingId, { solanaTx: e.signature });
-          await this.updateBundle(findingId, { solanaTx: e.signature });
+    // Narrow here (outer scope, after the guards above) so the runAnchor closure below captures plain
+    // strings -- TS does not carry this.env / f property-narrowing into a separate function body.
+    const bundleHash = f.bundleHash;
+    const keypairSecret = this.env.SOLANA_KEYPAIR;
+
+    // Serialise anchors for the SAME finding (audit-10 #7): a concurrent same-finding call awaits the
+    // in-flight result rather than starting a second mainnet spend. The ledger guard inside stays as the
+    // cross-invocation idempotency (an already-anchored bundle hash); this lock closes the intra-flight race
+    // where two calls both pass that guard before either has paid.
+    const inFlight = this.anchorInFlight.get(findingId);
+    if (inFlight) return await inFlight;
+    const runAnchor = async (): Promise<AnchorFindingResult> => {
+      // Idempotency guard: the same bundle hash is anchored at most once -- repeat calls
+      // (double clicks, retries, scripts) must never spend mainnet fees again. Return the
+      // existing receipt and re-stamp the finding/bundle card in case an older re-run
+      // cleared the solanaTx field before merge-preservation existed.
+      const prior = this.row<{ data: string }>(`SELECT data FROM ledger WHERE finding_id = ?`, findingId);
+      if (prior) {
+        const e = JSON.parse(prior.data) as LedgerEntry;
+        if (e.status === "anchored" && e.signature && e.bundleHash === f.bundleHash) {
+          if (f.solanaTx !== e.signature) {
+            await this.updateFinding(findingId, { solanaTx: e.signature });
+            await this.updateBundle(findingId, { solanaTx: e.signature });
+          }
+          return { ok: true, memo, signature: e.signature, slot: e.slot, httpStatus: 200, alreadyAnchored: true };
         }
-        return { ok: true, memo, signature: e.signature, slot: e.slot, httpStatus: 200, alreadyAnchored: true };
       }
-    }
 
-    const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
-    await this.emitEvent("reporter", "info", `Anchoring ${findingId} on Solana mainnet...`);
+      const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
+      await this.emitEvent("reporter", "info", `Anchoring ${findingId} on Solana mainnet...`);
 
-    let res: AnchorCoreResult;
-    try {
-      const kp = await keypairFromSecretJson(this.env.SOLANA_KEYPAIR);
-      res = await anchorOnEndpoints(endpoints, kp, findingId, f.bundleHash, { commitment: "confirmed" });
-    } catch (e) {
-      res = { ok: false, memo, error: e instanceof Error ? e.message : String(e) };
-    }
+      let res: AnchorCoreResult;
+      try {
+        const kp = await keypairFromSecretJson(keypairSecret);
+        res = await anchorOnEndpoints(endpoints, kp, findingId, bundleHash, { commitment: "confirmed" });
+      } catch (e) {
+        res = { ok: false, memo, error: e instanceof Error ? e.message : String(e) };
+      }
 
-    const entry: LedgerEntry = {
-      findingId,
-      bundleHash: f.bundleHash,
-      memo,
-      status: res.ok ? "anchored" : "failed",
-      signature: res.signature,
-      slot: res.slot,
-      publicKey: res.publicKey,
-      explorerUrl: res.signature ? explorerUrl(res.signature) : undefined,
-      error: res.error,
-      anchoredAt: res.ok ? new Date().toISOString() : undefined,
+      const entry: LedgerEntry = {
+        findingId,
+        bundleHash,
+        memo,
+        status: res.ok ? "anchored" : "failed",
+        signature: res.signature,
+        slot: res.slot,
+        publicKey: res.publicKey,
+        explorerUrl: res.signature ? explorerUrl(res.signature) : undefined,
+        error: res.error,
+        anchoredAt: res.ok ? new Date().toISOString() : undefined,
+      };
+      await this.upsertLedger(entry);
+
+      if (res.ok && res.signature) {
+        await this.updateFinding(findingId, { solanaTx: res.signature });
+        await this.updateBundle(findingId, { solanaTx: res.signature });
+      }
+      await this.emitEvent(
+        "reporter",
+        res.ok ? "result" : "warn",
+        res.ok && res.signature
+          ? `Anchored ${findingId} on mainnet: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}).`
+          : `Anchor failed for ${findingId}: ${res.error ?? "unknown"} -- the bundle hash is still valid off-chain.`,
+      );
+      return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
     };
-    await this.upsertLedger(entry);
 
-    if (res.ok && res.signature) {
-      await this.updateFinding(findingId, { solanaTx: res.signature });
-      await this.updateBundle(findingId, { solanaTx: res.signature });
+    const p = runAnchor();
+    this.anchorInFlight.set(findingId, p);
+    try {
+      return await p;
+    } finally {
+      if (this.anchorInFlight.get(findingId) === p) this.anchorInFlight.delete(findingId);
     }
-    await this.emitEvent(
-      "reporter",
-      res.ok ? "result" : "warn",
-      res.ok && res.signature
-        ? `Anchored ${findingId} on mainnet: tx ${res.signature.slice(0, 16)}... (slot ${res.slot}).`
-        : `Anchor failed for ${findingId}: ${res.error ?? "unknown"} -- the bundle hash is still valid off-chain.`,
-    );
-    return { ok: res.ok, memo, signature: res.signature, slot: res.slot, error: res.error, httpStatus: 200 };
   }
 
   /**

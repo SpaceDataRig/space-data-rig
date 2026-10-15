@@ -1,4 +1,4 @@
-// Admin-gate tests (audit #1): the opt-in bearer-token authorization for mutating endpoints.
+// Admin-gate tests (audit #1; default-deny per audit-10 #7): bearer-token authorization for mutating endpoints.
 // Pure + offline. Run with: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -20,10 +20,10 @@ test("bearerToken extracts the token and ignores other schemes", () => {
   assert.equal(bearerToken(""), null);
 });
 
-test("the gate is OPEN when no admin token is configured (opt-in rollout)", () => {
-  assert.equal(isAdminAuthorized(undefined, undefined), true);
-  assert.equal(isAdminAuthorized(undefined, ""), true);
-  assert.equal(isAdminAuthorized("Bearer whatever", ""), true);
+test("the gate is CLOSED by default when no admin token is configured (default-deny, audit-10 #7)", () => {
+  assert.equal(isAdminAuthorized(undefined, undefined), false);
+  assert.equal(isAdminAuthorized(undefined, ""), false);
+  assert.equal(isAdminAuthorized("Bearer whatever", ""), false, "no secret set -> nothing is authorized");
 });
 
 test("when a token is configured, only an exact bearer match is authorized", () => {

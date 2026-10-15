@@ -1,4 +1,4 @@
-// Opt-in admin authorization for the STATE-CHANGING endpoints (audit issue #1).
+// Bearer-token admin authorization for the STATE-CHANGING endpoints (audit issue #1; default-deny per audit-10 #7).
 //
 // WHY. CORS only stops a cross-origin browser CSRF; it does nothing against a direct request to
 // the public port. Without a gate, anyone who can reach the host could POST /api/run (spend compute
@@ -6,10 +6,12 @@
 // the fee wallet). For a project whose headline is a budget-gated autonomous loop, an unauthenticated
 // mutation endpoint is the most glaring gap.
 //
-// ROLLOUT SAFETY. The gate is OPT-IN so the code can ship without silently breaking the live
-// dashboard: when ADMIN_TOKEN is unset/empty the endpoints behave exactly as before. The operator
-// closes the hole by setting a secret (`wrangler secret put ADMIN_TOKEN` / ADMIN_TOKEN in .env);
-// from then on every mutating request must carry `Authorization: Bearer <token>`.
+// DEFAULT-DENY posture (audit-10 #7). The gate is now DENY-BY-DEFAULT: when ADMIN_TOKEN is
+// unset/empty the state-changing endpoints are CLOSED (401), so this code can never be deployed
+// leaving /api/run and /api/anchor/* open. The operator ENABLES mutations by setting a secret
+// (`wrangler secret put ADMIN_TOKEN` / ADMIN_TOKEN in .env); from then on every mutating request
+// must carry `Authorization: Bearer <token>`. A live instance with no ADMIN_TOKEN set therefore
+// rejects run/anchor calls rather than honouring them -- fail closed, not open.
 //
 // Pure + runtime-agnostic (no node:crypto): the comparison is constant-time to avoid leaking the
 // secret through a timing side channel.
@@ -33,11 +35,11 @@ export function bearerToken(header: string | null | undefined): string | null {
 
 /**
  * Whether a request is authorized for a mutating endpoint.
- *  - expected unset/empty  -> open (opt-in; today's behaviour preserved until a secret is set).
+ *  - expected unset/empty  -> DENY (default-deny: no secret configured, mutations are closed).
  *  - expected set          -> require an exact `Bearer` match (constant-time).
  */
 export function isAdminAuthorized(authHeader: string | null | undefined, expected: string | undefined): boolean {
-  if (!expected || expected.length === 0) return true;
+  if (!expected || expected.length === 0) return false;
   const got = bearerToken(authHeader);
   return got != null && timingSafeEqualStr(got, expected);
 }

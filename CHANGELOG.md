@@ -28,8 +28,19 @@ money/CI ones were built and await an integrated deploy; one was blocked by the 
   (an embedded-quote escaping bug reused the prior commit text); the diff -- 5 files at 7887121 -- is the #1 work.
 - P82 scaled run: blind 425 curves (recall 86.2%, accepted precision 42.2%), external KP 182/234 + CP 104/179
   (strict TRICERATOPS-grade 1/234 & 5/179), centroid planet false-reject 1/53 vs blend catch 0/56.
-- #3 (run official TRICERATOPS via pip) is BLOCKED: this environment has no Python/pip; the FPP maths is already
-  reimplemented natively (`daveBlendedFpp`). #7/#8/#9/#10/#11 in progress.
+- #7 Deny-by-default admin gate (`isAdminAuthorized` returns false when no token is set) + a per-finding
+  in-flight anchor lock that stops a same-run re-entrant SOL double-spend; `SECURITY.md` published. Commit c905d3f.
+  DEPLOY-PENDING: takes effect in production only once deployed with ADMIN_TOKEN set.
+- #9 Keyless read-only on-chain verification `scripts/p9-anchor-live-verify.ts` + daily workflow: re-reads recent
+  mainnet anchors straight from the chain and confirms each memo still matches its bundleHash. Smoke 3/3 OK. Commit 1896fbf.
+- #11 `npm run lint` -> `eslint --max-warnings 0` (0 warnings tree-wide) + coverage gate widened to enforce
+  `--test-coverage-branches=75` (measured line 95.8 / branch 80.4 / fn 91.8). Commit 500a986.
+- #8 Weekly upstream live-probe `scripts/p8-live-probe.ts` + workflow (NASA/ExoFOP/Gaia minimal read-only queries,
+  asserts consumed fields + row counts, opens an issue on a schema/row-count drift). Local smoke PASS 3/3. Commit 9c857d4.
+- #10 `RESPONSE-TO-AUDIT.md`: four-column ledger (criticism -> fix -> verification -> residual risk) for all eleven
+  items; README gained a one-page "At a glance" front (long-form kept as auditable context). Commit fe87fb5.
+- #3 (run official TRICERATOPS via pip) remains BLOCKED: this environment has no Python/pip; the FPP maths is already
+  reimplemented natively (`daveBlendedFpp`). All other items shipped; #1/#7 await deploy.
 
 ### Audit-9 science-meaning program -- multi-sector blind test + TCE/DAVE/TPM benchmark (2026-10-15)
 The external audit said the work is meaningful only with (a) a quantitative benchmark against TCE/DAVE/TPM,

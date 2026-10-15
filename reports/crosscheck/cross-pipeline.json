@@ -39,7 +39,8 @@
     },
     "wotan": {
       "method": "biweight",
-      "windowDays": 1.0
+      "windowDays": 1.0,
+      "injectDetrend": "trend computed once per curve on the real flux and reused to detrend each injected curve (inj/trend == flat*model); avoids 6 wotan fits per curve"
     },
     "blsPeriodRangeDays": [
       1.0,
@@ -53,7 +54,7 @@
       "wotan": "imported",
       "transitleastsquares": "2.0.1"
     },
-    "wallClockSec": 3225.8,
+    "wallClockSec": 3798.6,
     "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing."
   },
   "summary": {
@@ -79,14 +80,14 @@
         "rate": 0.667
       },
       "2000": {
-        "recovered": 10,
+        "recovered": 9,
         "errors": 0,
-        "rate": 0.833
+        "rate": 0.75
       },
       "4000": {
-        "recovered": 12,
+        "recovered": 11,
         "errors": 0,
-        "rate": 1.0
+        "rate": 0.917
       },
       "8000": {
         "recovered": 12,
@@ -96,9 +97,9 @@
     },
     "blsCompletenessByDepthRaw": {
       "300": {
-        "recovered": 4,
+        "recovered": 3,
         "errors": 0,
-        "rate": 0.333
+        "rate": 0.25
       },
       "500": {
         "recovered": 6,
@@ -116,24 +117,19 @@
         "rate": 0.667
       },
       "4000": {
+        "recovered": 9,
+        "errors": 0,
+        "rate": 0.75
+      },
+      "8000": {
         "recovered": 10,
         "errors": 0,
         "rate": 0.833
-      },
-      "8000": {
-        "recovered": 11,
-        "errors": 0,
-        "rate": 0.917
       }
     },
     "injectErrors": {
-      "totalCells": 72,
-      "distinct": [
-        {
-          "message": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-          "count": 72
-        }
-      ]
+      "totalCells": 0,
+      "distinct": []
     },
     "tlsNullPeriods": {
       "HD 39091": null,
@@ -181,51 +177,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -286.3,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -205.1,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -482.3,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -380.1,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -982.3,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -388.4,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1982.3,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -388.4,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3982.4,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -388.4,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7982.5,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -388.4,
           "rawBestPeriod": 2.9997607384601284,
           "detrendedBestPeriod": 2.9997607384601284
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 24.41
+      "injectErrors": {},
+      "perCurveSec": 24.93
     },
     {
       "host": "HR 858",
@@ -259,51 +248,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -259.5,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -67.8,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -459.5,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -71.4,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -959.5,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -71.4,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1959.6,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -71.4,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3959.6,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -71.4,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7959.8,
-          "rawBestPeriod": 3.000480522580896,
-          "detrendedBestPeriod": 3.000480522580896
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -71.4,
+          "rawBestPeriod": 2.9995967766416816,
+          "detrendedBestPeriod": 2.9995967766416816
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 3.24
+      "injectErrors": {},
+      "perCurveSec": 3.81
     },
     {
       "host": "HD 63433",
@@ -331,56 +313,49 @@
         "500": false,
         "1000": false,
         "2000": false,
-        "4000": true,
+        "4000": false,
         "8000": true
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -149.5,
-          "rawBestPeriod": 5.714635078487569,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -44.4,
+          "rawBestPeriod": 5.75040162892971,
           "detrendedBestPeriod": 11.37437323848415
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -234.3,
-          "rawBestPeriod": 5.714635078487569,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -44.4,
+          "rawBestPeriod": 5.75040162892971,
           "detrendedBestPeriod": 11.37437323848415
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -234.3,
-          "rawBestPeriod": 5.714635078487569,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -44.4,
+          "rawBestPeriod": 5.75040162892971,
           "detrendedBestPeriod": 11.37437323848415
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -234.3,
-          "rawBestPeriod": 5.762423511246096,
-          "detrendedBestPeriod": 3.0014637642704525
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -44.4,
+          "rawBestPeriod": 5.75040162892971,
+          "detrendedBestPeriod": 2.998198918517738
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -493.5,
-          "rawBestPeriod": 5.9361669595913815,
-          "detrendedBestPeriod": 3.0014637642704525
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -418.6,
+          "rawBestPeriod": 5.75040162892971,
+          "detrendedBestPeriod": 2.998198918517738
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3249.0,
-          "rawBestPeriod": 5.9361669595913815,
-          "detrendedBestPeriod": 3.0014637642704525
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -1028.7,
+          "rawBestPeriod": 5.923410004638064,
+          "detrendedBestPeriod": 2.998198918517738
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 0.84
+      "injectErrors": {},
+      "perCurveSec": 0.97
     },
     {
       "host": "HD 25463",
@@ -391,7 +366,7 @@
         7.0491423
       ],
       "null": {
-        "periodDays": 7.049075362573019,
+        "periodDays": 7.0490539696435315,
         "classification": "TP"
       },
       "nullTlsPeriodDays": null,
@@ -413,51 +388,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -238.6,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -118.6,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -435.8,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -122.4,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -935.8,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -122.4,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1935.9,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -132.8,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3936.0,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -166.3,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7936.2,
-          "rawBestPeriod": 2.9999175653648043,
-          "detrendedBestPeriod": 2.9999175653648043
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -177.1,
+          "rawBestPeriod": 3.0000105584413967,
+          "detrendedBestPeriod": 3.0000105584413967
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 773.23
+      "injectErrors": {},
+      "perCurveSec": 909.62
     },
     {
       "host": "AU Mic",
@@ -467,7 +435,7 @@
         8.463446
       ],
       "null": {
-        "periodDays": 4.82442069265028,
+        "periodDays": 4.824517723432446,
         "classification": "FP"
       },
       "nullTlsPeriodDays": null,
@@ -476,7 +444,7 @@
         "500": false,
         "1000": false,
         "2000": false,
-        "4000": true,
+        "4000": false,
         "8000": true
       },
       "blsRecByDepthRaw": {
@@ -489,51 +457,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -154.5,
-          "rawBestPeriod": 4.836200655644856,
-          "detrendedBestPeriod": 4.82442069265028
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -126.3,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 4.824517723432446
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -310.1,
-          "rawBestPeriod": 4.836200655644856,
-          "detrendedBestPeriod": 4.82442069265028
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -194.7,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 4.824517723432446
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -649.6,
-          "rawBestPeriod": 4.836200655644856,
-          "detrendedBestPeriod": 4.82442069265028
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -464.1,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 4.824517723432446
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1336.1,
-          "rawBestPeriod": 4.836200655644856,
-          "detrendedBestPeriod": 4.82442069265028
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -860.9,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 4.824517723432446
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3312.5,
-          "rawBestPeriod": 4.836200655644856,
-          "detrendedBestPeriod": 2.999962046205414
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -1738.2,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 4.824517723432446
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -6594.6,
-          "rawBestPeriod": 4.9029790345665125,
-          "detrendedBestPeriod": 2.999962046205414
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -2950.0,
+          "rawBestPeriod": 4.836189821975035,
+          "detrendedBestPeriod": 3.0000037336717558
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 735.79
+      "injectErrors": {},
+      "perCurveSec": 858.33
     },
     {
       "host": "TOI-480",
@@ -565,51 +526,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -203.7,
-          "rawBestPeriod": 8.419150880251085,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -105.2,
+          "rawBestPeriod": 8.323994370134162,
+          "detrendedBestPeriod": 2.9999515954168388
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -386.9,
-          "rawBestPeriod": 2.9999476925539215,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -164.1,
+          "rawBestPeriod": 2.9999515954168388,
+          "detrendedBestPeriod": 2.9999554982899115
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -886.9,
-          "rawBestPeriod": 2.9999476925539215,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -210.7,
+          "rawBestPeriod": 2.9999554982899115,
+          "detrendedBestPeriod": 2.9999554982899115
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1887.1,
-          "rawBestPeriod": 2.9999476925539215,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -210.7,
+          "rawBestPeriod": 2.9999554982899115,
+          "detrendedBestPeriod": 2.9999554982899115
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3887.3,
-          "rawBestPeriod": 2.9999476925539215,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -210.7,
+          "rawBestPeriod": 2.9999554982899115,
+          "detrendedBestPeriod": 2.9999554982899115
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7887.8,
-          "rawBestPeriod": 2.9999476925539215,
-          "detrendedBestPeriod": 2.9999476925539215
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -230.5,
+          "rawBestPeriod": 2.9999554982899115,
+          "detrendedBestPeriod": 2.9999554982899115
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 758.97
+      "injectErrors": {},
+      "perCurveSec": 894.16
     },
     {
       "host": "GJ 143",
@@ -641,51 +595,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -243.9,
-          "rawBestPeriod": 10.476068190618083,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -166.2,
+          "rawBestPeriod": 10.467371931613998,
           "detrendedBestPeriod": 2.9996841926804336
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -421.3,
-          "rawBestPeriod": 10.476068190618083,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -277.2,
+          "rawBestPeriod": 10.467371931613998,
           "detrendedBestPeriod": 2.9996841926804336
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -902.0,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -517.2,
           "rawBestPeriod": 2.9996841926804336,
           "detrendedBestPeriod": 2.9996841926804336
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1902.1,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -754.5,
           "rawBestPeriod": 2.9996841926804336,
           "detrendedBestPeriod": 2.9996841926804336
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3902.2,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -2525.7,
           "rawBestPeriod": 2.9996841926804336,
           "detrendedBestPeriod": 2.9996841926804336
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7902.5,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -6106.0,
           "rawBestPeriod": 2.9996841926804336,
           "detrendedBestPeriod": 2.9996841926804336
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 4.43
+      "injectErrors": {},
+      "perCurveSec": 4.91
     },
     {
       "host": "HD 1397",
@@ -695,7 +642,7 @@
         11.53533
       ],
       "null": {
-        "periodDays": 11.540106386279984,
+        "periodDays": 11.529546545545228,
         "classification": "TP"
       },
       "nullTlsPeriodDays": null,
@@ -703,7 +650,7 @@
         "300": false,
         "500": false,
         "1000": false,
-        "2000": true,
+        "2000": false,
         "4000": true,
         "8000": true
       },
@@ -717,51 +664,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -251.9,
-          "rawBestPeriod": 11.540106386279984,
-          "detrendedBestPeriod": 11.540106386279984
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -133.7,
+          "rawBestPeriod": 11.529546545545228,
+          "detrendedBestPeriod": 11.529546545545228
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -451.9,
-          "rawBestPeriod": 11.540106386279984,
-          "detrendedBestPeriod": 11.540106386279984
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -237.7,
+          "rawBestPeriod": 11.529546545545228,
+          "detrendedBestPeriod": 11.529546545545228
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -951.9,
-          "rawBestPeriod": 11.540106386279984,
-          "detrendedBestPeriod": 11.519006012828584
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -573.2,
+          "rawBestPeriod": 11.529546545545228,
+          "detrendedBestPeriod": 11.529546545545228
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1951.1,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -1347.2,
           "rawBestPeriod": 3.00008115246089,
-          "detrendedBestPeriod": 3.00008115246089
+          "detrendedBestPeriod": 11.529546545545228
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3951.2,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -2884.6,
           "rawBestPeriod": 3.00008115246089,
           "detrendedBestPeriod": 3.00008115246089
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7951.3,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -5762.0,
           "rawBestPeriod": 3.00008115246089,
           "detrendedBestPeriod": 3.00008115246089
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 4.21
+      "injectErrors": {},
+      "perCurveSec": 4.64
     },
     {
       "host": "TOI-5739",
@@ -771,7 +711,7 @@
         8.430524
       ],
       "null": {
-        "periodDays": 5.080669365529911,
+        "periodDays": 5.091226078075535,
         "classification": "FP"
       },
       "nullTlsPeriodDays": null,
@@ -784,7 +724,7 @@
         "8000": true
       },
       "blsRecByDepthRaw": {
-        "300": true,
+        "300": false,
         "500": true,
         "1000": true,
         "2000": true,
@@ -793,51 +733,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -273.5,
-          "rawBestPeriod": 3.0017792577330558,
-          "detrendedBestPeriod": 3.0017792577330558
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -215.3,
+          "rawBestPeriod": 7.286543521976265,
+          "detrendedBestPeriod": 6.001545295664886
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -407.2,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -286.6,
           "rawBestPeriod": 3.0017792577330558,
           "detrendedBestPeriod": 3.0017792577330558
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -907.2,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -302.5,
           "rawBestPeriod": 3.0017792577330558,
           "detrendedBestPeriod": 3.0017792577330558
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1907.4,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -302.5,
           "rawBestPeriod": 3.0017792577330558,
           "detrendedBestPeriod": 3.0017792577330558
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3907.6,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -302.5,
           "rawBestPeriod": 3.0017792577330558,
           "detrendedBestPeriod": 3.0017792577330558
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7908.1,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -302.5,
           "rawBestPeriod": 3.0017792577330558,
           "detrendedBestPeriod": 3.0017792577330558
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 0.71
+      "injectErrors": {},
+      "perCurveSec": 0.81
     },
     {
       "host": "KELT-11",
@@ -847,7 +780,7 @@
         4.73620865
       ],
       "null": {
-        "periodDays": 4.727361585122145,
+        "periodDays": 4.737149317044172,
         "classification": "TP"
       },
       "nullTlsPeriodDays": null,
@@ -869,51 +802,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -232.6,
-          "rawBestPeriod": 4.727361585122145,
-          "detrendedBestPeriod": 4.727361585122145
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -93.7,
+          "rawBestPeriod": 4.737149317044172,
+          "detrendedBestPeriod": 4.737149317044172
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -415.3,
-          "rawBestPeriod": 4.727361585122145,
-          "detrendedBestPeriod": 4.727361585122145
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -174.7,
+          "rawBestPeriod": 4.737149317044172,
+          "detrendedBestPeriod": 4.737149317044172
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -915.4,
-          "rawBestPeriod": 4.727361585122145,
-          "detrendedBestPeriod": 4.727361585122145
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -174.7,
+          "rawBestPeriod": 4.737149317044172,
+          "detrendedBestPeriod": 4.737149317044172
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1915.5,
-          "rawBestPeriod": 4.727361585122145,
-          "detrendedBestPeriod": 4.727361585122145
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -311.2,
+          "rawBestPeriod": 4.737149317044172,
+          "detrendedBestPeriod": 4.737149317044172
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3889.9,
-          "rawBestPeriod": 3.0026549962172178,
-          "detrendedBestPeriod": 3.0026549962172178
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -311.2,
+          "rawBestPeriod": 2.998719609056449,
+          "detrendedBestPeriod": 2.998719609056449
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7890.6,
-          "rawBestPeriod": 3.0026549962172178,
-          "detrendedBestPeriod": 3.0026549962172178
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -311.2,
+          "rawBestPeriod": 2.998719609056449,
+          "detrendedBestPeriod": 2.998719609056449
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 0.67
+      "injectErrors": {},
+      "perCurveSec": 0.75
     },
     {
       "host": "HD 86226",
@@ -923,7 +849,7 @@
         3.98442
       ],
       "null": {
-        "periodDays": 3.984645277291434,
+        "periodDays": 3.9846672935545913,
         "classification": "TP"
       },
       "nullTlsPeriodDays": null,
@@ -945,51 +871,44 @@
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -239.4,
-          "rawBestPeriod": 3.984645277291434,
-          "detrendedBestPeriod": 3.984645277291434
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -109.8,
+          "rawBestPeriod": 3.9846672935545913,
+          "detrendedBestPeriod": 3.9846672935545913
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -408.0,
-          "rawBestPeriod": 2.9999269388682412,
-          "detrendedBestPeriod": 2.9999269388682412
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -125.1,
+          "rawBestPeriod": 2.9999560570487174,
+          "detrendedBestPeriod": 2.9999560570487174
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -908.1,
-          "rawBestPeriod": 2.9999269388682412,
-          "detrendedBestPeriod": 2.9999269388682412
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -125.1,
+          "rawBestPeriod": 2.9999560570487174,
+          "detrendedBestPeriod": 2.9999560570487174
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1908.2,
-          "rawBestPeriod": 2.9999269388682412,
-          "detrendedBestPeriod": 2.9999269388682412
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -125.1,
+          "rawBestPeriod": 2.9999560570487174,
+          "detrendedBestPeriod": 2.9999560570487174
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -3908.4,
-          "rawBestPeriod": 2.9999269388682412,
-          "detrendedBestPeriod": 2.9999269388682412
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -132.2,
+          "rawBestPeriod": 2.9999560570487174,
+          "detrendedBestPeriod": 2.9999560570487174
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -7908.8,
-          "rawBestPeriod": 2.9999269388682412,
-          "detrendedBestPeriod": 2.9999269388682412
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -179.9,
+          "rawBestPeriod": 2.9999560570487174,
+          "detrendedBestPeriod": 2.9999560570487174
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 691.42
+      "injectErrors": {},
+      "perCurveSec": 827.85
     },
     {
       "host": "HD 207496",
@@ -1017,55 +936,48 @@
         "1000": false,
         "2000": false,
         "4000": false,
-        "8000": true
+        "8000": false
       },
       "injectDiag": {
         "300": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -149.9,
-          "rawBestPeriod": 11.5650369991655,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -91.5,
+          "rawBestPeriod": 11.564831733971468,
           "detrendedBestPeriod": 12.587868209686077
         },
         "500": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -182.4,
-          "rawBestPeriod": 11.925287342906797,
-          "detrendedBestPeriod": 12.587868209686077
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -163.3,
+          "rawBestPeriod": 11.564831733971468,
+          "detrendedBestPeriod": 12.656821488123555
         },
         "1000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -483.4,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -310.3,
           "rawBestPeriod": 11.925287342906797,
-          "detrendedBestPeriod": 2.9999454044100373
+          "detrendedBestPeriod": 2.9999315925021905
         },
         "2000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -1483.4,
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -589.0,
           "rawBestPeriod": 11.925287342906797,
-          "detrendedBestPeriod": 2.9999454044100373
+          "detrendedBestPeriod": 2.9999315925021905
         },
         "4000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -2905.6,
-          "rawBestPeriod": 11.903501590884465,
-          "detrendedBestPeriod": 2.9999454044100373
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -2554.4,
+          "rawBestPeriod": 11.90393652582865,
+          "detrendedBestPeriod": 2.9999315925021905
         },
         "8000": {
-          "injectionModel": "box-fallback",
-          "measuredInjectedPpm": -5809.2,
-          "rawBestPeriod": 3.0000006533132684,
-          "detrendedBestPeriod": 2.9999454044100373
+          "injectionModel": "batman",
+          "measuredInjectedPpm": -4438.3,
+          "rawBestPeriod": 11.90393652582865,
+          "detrendedBestPeriod": 2.9999315925021905
         }
       },
-      "injectErrors": {
-        "300": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "500": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "1000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "2000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "4000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given",
-        "8000": "inject_batman: TypeError: TransitModel.light_curve() takes 2 positional arguments but 3 were given"
-      },
-      "perCurveSec": 225.59
+      "injectErrors": {},
+      "perCurveSec": 265.79
     }
   ]
 }

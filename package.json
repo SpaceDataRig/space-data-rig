@@ -99,6 +99,7 @@
     "figure:audit9": "tsx scripts/audit9-round-figure.ts",
     "figure:audit9c": "tsx scripts/audit9-complete-figure.ts",
     "figure:p81": "tsx scripts/p81-round-figure.ts",
+    "figure:p82-audit10": "tsx scripts/p82-audit10-figure.ts",
     "figure:p82": "tsx scripts/p82-scaleup-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",

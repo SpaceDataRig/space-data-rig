@@ -5,6 +5,32 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-10 response + P82 scaled validation (2026-10-15)
+A second external audit listed 11 prioritised items. The safe research ones are shipped now; production/
+money/CI ones were built and await an integrated deploy; one was blocked by the local environment.
+
+- #2 P81 report-layer guardrails: a Gaia census that is unavailable now prints `undetermined` (was `NaN`) and is
+  excluded from every rate; a de-diluted depth past the 10% physical cap is flagged `inconsistent`, excluded from
+  grading, and reported as a blend-contradiction EVIDENCE section; VERDICT states the denominator. Commit 47e5701.
+- #5 P80 depth-stratification: the headline now names its EASIEST subset (deep+bright) and a harder 300-1000 ppm
+  tier is reported in the same run so the easy rate is never over-generalised. Commit 4061b0f.
+- #6 Reusable inverted planet-free null `src/detect/invertedNull.ts` (+3 tests); P75 imports it. README now leads
+  with the measured result: the AR(1) gate signs off 75% of pure-noise bumps at FAP<0.05 vs nominal 5%
+  (model-free block 31%, n=16). Commit 68802bb.
+- #4 P84 `scripts/p84-centroid-diagnosis.ts`: decomposes the scaled centroid result into COVERAGE vs POWER and
+  concludes PIXEL-BASELINE-BOUND (71% of blend targets never localise; measurable blends match neither target nor
+  contaminant) -- the statistic is fine, our per-sector centroid localisation is the limiter (chain payoff for
+  P44/P53/P57/P59). Commit 70578d5.
+- #1 Bundle integrity of the reproducibility claim: `hashScience()` splits the stable CONTENT ADDRESS from the
+  timestamped `bundleHash` commitment (purely additive -- no existing bundle, hash, or verdict changes); new
+  anchor memos append scienceHash (verify still matches the bundleHash at position 2). README's "same inputs ->
+  same hash" line corrected to state it is a timestamped commitment. NOTE: this commit's message was mislabelled
+  (an embedded-quote escaping bug reused the prior commit text); the diff -- 5 files at 7887121 -- is the #1 work.
+- P82 scaled run: blind 425 curves (recall 86.2%, accepted precision 42.2%), external KP 182/234 + CP 104/179
+  (strict TRICERATOPS-grade 1/234 & 5/179), centroid planet false-reject 1/53 vs blend catch 0/56.
+- #3 (run official TRICERATOPS via pip) is BLOCKED: this environment has no Python/pip; the FPP maths is already
+  reimplemented natively (`daveBlendedFpp`). #7/#8/#9/#10/#11 in progress.
+
 ### Audit-9 science-meaning program -- multi-sector blind test + TCE/DAVE/TPM benchmark (2026-10-15)
 The external audit said the work is meaningful only with (a) a quantitative benchmark against TCE/DAVE/TPM,
 (b) a blind test on more real sectors/stars (not stand-in + tiny), and (c) an externally-independently-validated

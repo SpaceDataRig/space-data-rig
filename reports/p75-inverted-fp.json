@@ -9,7 +9,7 @@
     "fapBar": 0.05,
     "searchMaxDays": 40,
     "padFrac": 0.5,
-    "data": "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, multi-sector stitched, token-free public S3",
+    "data": "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3",
     "note": "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false."
   },
   "summary": {

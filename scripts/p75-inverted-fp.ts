@@ -185,7 +185,7 @@ async function main(): Promise<void> {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: { generatedBy: "scripts/p75-inverted-fp.ts", n, nNull, trials, maxSectors, seed, fapBar: FAP_BAR, searchMaxDays: SEARCH_MAX, padFrac,
-      data: "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, multi-sector stitched, token-free public S3",
+      data: "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3",
       note: "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false." },
     summary: { ar1FalseAlarms: ar1Fp, blockFalseAlarms: blockFp, n, ar1FpRate: ar1Fp / n, blockFpRate: blockFp / n, flips, meanDeltaFap: meanDelta, quiet: quiet.length, red: red.length, redFlips, quietFlips },
     verdict: ar1Over && bothPermissive ? "GATE-OPTIMISTIC-ON-REAL-NOISE" : ar1Over ? "MILD-AR1-OPTIMISM" : "GATE-CALIBRATED",

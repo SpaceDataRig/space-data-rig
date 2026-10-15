@@ -5,6 +5,20 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit remediation -- honesty copy, positioning, test discovery, data contracts, rate limiting (2026-10-15)
+A third-party audit raised nine findings; this round addresses the ones fixable in code/docs without touching the
+verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
+- **#3 user-facing over-claim** (`src/reporter/narrate.ts`): the accepted badge is now `RECOVERED` (was `CONFIRMED`,
+  byte-agreeing with the frontend), the headline no longer says "Confirmed: a planet", and every headline labels its
+  photons as `[real TESS photometry]` vs `[stand-in synthetic curve]` -- enforcing HANDOFF's own "label real vs stand-in
+  in every user artifact" rule at the loudest surface, not just the manifest.
+- **#4 optimistic recovery caliber** (narration + `Finding.recoveryTrials`): the re-injection number is now shown with its
+  trial count and a 95% Wilson CI and framed as a *conditional* targeted re-injection, explicitly not blind-search
+  capability. narration is excluded from `buildManifest`, so no bundle hash or verdict moved.
+- **#1 AI-vs-pipeline framing** (README / RESEARCH): a plain-language note that the five seats are deterministic
+  TypeScript stages, `src/ai/` is ~2% and advisory only, and P70 measured that removing the models changes zero verdicts.
+- Locked by `tests/narrate.test.ts` (5 offline cases).
+
 ### Research -- borrowing vetting levers from a real TESS survey, measured before gated (P73-P76) (2026-10-15)
 - P73 masked sibling recovery (`scripts/p73-masked-recovery.ts`): ports eumemic's `--mask-tois` lever. Masking each
   host's OTHER catalogued planets lifts the blind joint re-find 6->7/20 (net +1, zero regressions) but stays far under

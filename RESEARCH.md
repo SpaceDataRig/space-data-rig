@@ -61,6 +61,14 @@ is a **research instrument**: it measures and reports. It does not, and structur
   planet of that host. A genuine planet that is not yet confirmed counts as a false positive, so the true purity is
   >= what we report. This is intentional: we would rather under-claim than over-claim.
 - **Measure-before-gate.** No number is promoted into a claim until it is measured from a reproducible run.
+- **The engine is deterministic; the AI is advisory.** The five seats are stages of a TypeScript pipeline and every
+  verdict is computed by plain code. The LLM layer (`src/ai/`, ~2% of the code) only narrates results; P70
+  (`scripts/p70-llm-ablation.ts`) measured that removing it changes zero verdicts. We call it an "AI team" for
+  readability, not because a model does the astronomy.
+- **User-facing labels carry the provenance.** Every headline and card says whether its photons are `real TESS
+  photometry` or a `stand-in synthetic curve`, and every recovery figure is shown with its trial count and a Wilson
+  CI (a conditional targeted re-injection, not blind-search capability) -- the honesty rule is enforced in the product
+  copy, not only in the manifest.
 
 ---
 

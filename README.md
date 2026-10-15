@@ -31,6 +31,16 @@ simulation, has a critic seat cross-match candidates against the catalog, and pa
 every verdict into a **hash-sealed reproducible bundle** anchored on **Solana mainnet**
 as tamper-evident provenance.
 
+**About the "five-seat AI team" framing, stated plainly.** The five seats are *stages of a
+deterministic TypeScript pipeline* (data-fetch -> anomaly-scout -> sim-runner -> mission-critic
+-> reporter); the math that actually decides a verdict is plain code, not a model. A live LLM
+layer exists but is **advisory narration only**: `src/ai/` is roughly 2% of the codebase, and we
+measured it (P70, `scripts/p70-llm-ablation.ts`) -- removing the models changes **zero** gate or
+verdict outcomes, and the deterministic verdict is computed byte-identically before and after any
+model is called. So the "AI team" is a presentation device for a real, reproducible science engine
+(product = deterministic pipeline + hash-sealed bundle + web dashboard), not a claim that a model is
+doing the astronomy.
+
 **What this is, plainly -- and what it is not.** This is a science-grade *closed-loop
 self-test*: the pipeline proves it can recover a known signal from noise, and it is **not**
 claiming to discover new planets. The data-fetch seat resolves each target's light curve

@@ -5,6 +5,25 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-9 science-meaning program -- multi-sector blind test + TCE/DAVE/TPM benchmark (2026-10-15)
+The external audit said the work is meaningful only with (a) a quantitative benchmark against TCE/DAVE/TPM,
+(b) a blind test on more real sectors/stars (not stand-in + tiny), and (c) an externally-independently-validated
+candidate. First two are addressed here; (c) is in progress.
+
+- P79 `src/detect/benchmark.ts` + `scripts/p79-benchmark.ts` (`npm run p79:benchmark`, offline): re-implements the
+  headline statistic of each named tool -- TCE BLS SNR + the >=3-transit / SNR>=7 / depth-band acceptance,
+  DAVE/TRICERATOPS blend FPP, and a TPM (Burke 2015) logistic completeness model FIT TO OUR OWN p47 grid (not
+  Burke's Kepler coefficients). Result: cells the TCE rule accepts average 74% measured completeness vs 0% for
+  cells it rejects -- our detector's completeness tracks the standard BLS/TCE detection limit on real photometry.
+  8 offline tests.
+- P78 `scripts/p78-blind-multisector.ts` (`npm run p78:blind-multisector`): a real multi-sector blind test that
+  runs the detector SECTOR BY SECTOR (P49 stitched sectors and forced corroboratedSectors=1, so its 2-sector bar
+  accepted nothing by construction). On 24 bright SPOC hosts (10 injected / 14 null, 55 period-clusters): under a
+  2-sector corroboration bar the accepted recall is 8/10 (real planets DO clear it) but false-accepts are 9 and
+  accepted precision only 47% (raw precision 16%). Honest finding: cross-sector period-only corroboration is
+  necessary but NOT sufficient -- coherent systematics/aliases recur across sectors -- so it cannot alone carry a
+  discovery claim. `reports/p78-blind-multisector.{md,json}`.
+
 ### P77: faithful re-port of eumemic's centroid F-test, measured on our data -- closes the P74 follow-up (2026-10-15)
 
 - `src/detect/centroidFtest.ts`: a faithful implementation of the author's statistic (`F = n(n-1)|mean-s|^2 / RSS`,

@@ -881,7 +881,16 @@ $("#run-form").addEventListener("submit", async (e) => {
   } catch (err) { setRunningUI(false, `error: ${err.message}`); }
 });
 
-runBtnEl.addEventListener("click", () => { $("#run-form").scrollIntoView({ behavior: "smooth", block: "center" }); runSubmitEl.focus(); });
+// The MISSION CONTROL form (#run-form) lives in the Findings view, which is display:none on the default
+// landing view -- so an earlier handler that only did scrollIntoView/focus on the hidden form was a no-op
+// and the top-right "Launch run" looked dead. Navigate to #/findings first (letting the router reveal it),
+// then bring the form into view + focus submit AFTER the router's showView has run (it scrolls to top).
+runBtnEl.addEventListener("click", () => {
+  const focusForm = () => { const f = $("#run-form"); if (f) f.scrollIntoView({ behavior: "smooth", block: "center" }); if (runSubmitEl) runSubmitEl.focus(); };
+  if (currentView() === "findings") { focusForm(); return; }
+  location.hash = "#/findings"; // fires the hashchange router -> showView("findings")
+  setTimeout(focusForm, 80);     // run after showView so its window.scrollTo(0,0) does not cancel the scroll
+});
 boardMoreEl.addEventListener("click", () => { boardExpanded = !boardExpanded; renderBoard(); });
 $("#ledger-refresh").addEventListener("click", loadLedger);
 

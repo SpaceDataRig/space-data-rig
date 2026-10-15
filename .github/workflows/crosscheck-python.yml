@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 90   # headroom; the wotan trend-reuse optimization (see cross_pipeline.py) cut the dominant
                           # detrending cost ~7x (84 -> 12 biweight fits), but CI machine speed varies run to run.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:

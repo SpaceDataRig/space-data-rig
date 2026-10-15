@@ -185,6 +185,7 @@ export async function report(input: ReportInput): Promise<ReportOutput> {
     verdictReason: review.reason,
     crossmatch: review.crossmatch,
     recoveryConfidence: input.confidence?.confidence,
+    recoveryTrials: input.confidence ? { nTrials: input.confidence.nTrials, nRecovered: input.confidence.nRecovered } : undefined,
     score: review.score,
     ephemeris: input.ephemeris,
     createdAt: new Date().toISOString(),
@@ -219,7 +220,7 @@ export async function report(input: ReportInput): Promise<ReportOutput> {
   });
 
   finding.bundleHash = composed.hash;
-  const narration = narrateFinding(finding);
+  const narration = narrateFinding(finding, { lightCurveSource: input.lightCurveSource });
   finding.narration = { headline: narration.headline, explainer: narration.explainer };
 
   return { finding, composed, artifacts };

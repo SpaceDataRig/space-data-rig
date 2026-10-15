@@ -54,6 +54,12 @@ export interface Finding {
   };
   /** sim-runner injection-recovery confidence for this signal (0..1). */
   recoveryConfidence?: number;
+  /**
+   * Trial counts behind recoveryConfidence (targeted re-injection Monte Carlo), so the
+   * UI can show the number with its sample size + binomial CI instead of a bare integer
+   * percent. Not part of the bundle manifest, so adding it moves no bundle hash.
+   */
+  recoveryTrials?: { nTrials: number; nRecovered: number };
   /** mission-critic composite score (0..100), used to rank the findings board. */
   score?: number;
   /** sim-runner predicted next transits (falsifiable follow-up targets). */

@@ -80,6 +80,7 @@
     "p71:audit-positive-control": "tsx scripts/p71-audit-positive-control.ts",
     "p66:milestone-figure": "tsx scripts/p66-milestone-figure.ts",
     "p72:followups-figure": "tsx scripts/p72-followups-figure.ts",
+    "figure:borrowed": "tsx scripts/borrowed-figure.ts",
     "p73:masked-recovery": "tsx scripts/p73-masked-recovery.ts",
     "p74:centroid-consistency": "tsx scripts/p74-centroid-consistency.ts",
     "x:post": "tsx scripts/post-x-text.ts",

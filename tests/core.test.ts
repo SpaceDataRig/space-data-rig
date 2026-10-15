@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { canonicalJson, sha256Hex } from "../src/bundle/bundle.ts";
+import { canonicalJson, sha256Hex, hashManifest, hashScience, type BundleManifest } from "../src/bundle/bundle.ts";
 import {
   DEFAULT_RPC,
   MEMO_PREFIX,
@@ -49,6 +49,26 @@ test("buildMemo emits the versioned three-field pipe format", () => {
   const memo = buildMemo("F-HR-858-b", hash);
   assert.equal(memo, `${MEMO_PREFIX}|F-HR-858-b|${hash}`);
   assert.equal(memo.split("|").length, 3);
+});
+
+test("buildMemo appends a scienceHash as a 4th field without disturbing the bundleHash position", () => {
+  const hash = "f".repeat(64);
+  const sci = "e".repeat(64);
+  const memo = buildMemo("F-HR-858-b", hash, sci);
+  assert.equal(memo, `${MEMO_PREFIX}|F-HR-858-b|${hash}|${sci}`);
+  assert.equal(memo.split("|")[2], hash); // on-chain verify matches on the bundleHash at position 2
+  assert.ok(memo.includes(hash)); // substring check is unaffected by the appended field
+});
+
+test("hashScience is content-addressed (stable across createdAt/runId) while bundleHash is a timestamped commitment", async () => {
+  const base = {
+    schema: "space-data-rig/bundle@1", findingId: "F-1", targetId: "T", createdAt: "2020-01-01T00:00:00Z", runId: "run-A",
+    codeVersion: "v1", candidate: { periodDays: 3, epochBjd: 2459000, durationHours: 2, depthPpt: 1, depthFrac: 0.001, snr: 12, power: 1, nPointsInTransit: 5 },
+    verdict: "detected", verdictReason: "r", crossmatch: {}, artifacts: [],
+  } as unknown as BundleManifest;
+  const later = { ...base, createdAt: "2026-05-05T00:00:00Z", runId: "run-B" };
+  assert.equal(await hashScience(base), await hashScience(later)); // identical science -> identical content address
+  assert.notEqual(await hashManifest(base), await hashManifest(later)); // but the timestamped bundle hashes differ
 });
 
 test("buildDeliberationMemo uses a distinct prefix so it never collides with the science bundle memo", () => {

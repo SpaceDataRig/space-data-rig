@@ -114,6 +114,23 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
   return sha256Hex(canonicalJson(manifest));
 }
 
+/**
+ * Content-addressed SCIENCE hash: the manifest hash computed with the two RUN-VOLATILE
+ * fields (createdAt, runId) normalised to empty. Two runs that recover the SAME science
+ * (identical candidate numbers, verdict, checks, data provenance, artifact hashes) but at
+ * different times / run ids therefore share one scienceHash while carrying DIFFERENT
+ * bundleHashes. This is the distinction the reproducibility claim needs:
+ *   - bundleHash is a TIMESTAMPED COMMITMENT (it binds the analysis to the moment it ran);
+ *   - scienceHash is a CONTENT ADDRESS (it identifies the science itself across runs).
+ * It does NOT alter bundleHash or the stored manifest -- purely additive -- so no existing
+ * bundle, verdict, or on-chain anchor changes. verify on-chain still matches on bundleHash
+ * (the commitment); cross-run comparison uses scienceHash.
+ */
+export async function hashScience(manifest: BundleManifest): Promise<string> {
+  const normalized: BundleManifest = { ...manifest, createdAt: "", runId: "" };
+  return sha256Hex(canonicalJson(normalized));
+}
+
 export interface BuildBundleInput {
   finding: Finding;
   runId: string;

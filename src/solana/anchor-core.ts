@@ -43,9 +43,16 @@ export const OBSERVE_MEMO_PREFIX = "sdr:observe:1";
 /** Public endpoints tried (in order) after the operator's private RPC(s). */
 export const PUBLIC_FALLBACK_RPCS = ["https://api.mainnet-beta.solana.com"];
 
-/** Compact, parseable on-chain provenance record. */
-export function buildMemo(findingId: string, bundleHash: string): string {
-  return `${MEMO_PREFIX}|${findingId}|${bundleHash}`;
+/**
+ * Compact, parseable on-chain provenance record. The third field is ALWAYS the bundleHash
+ * (the timestamped commitment) at position 2, so verifyOnEndpoints' substring check on the
+ * bundleHash is unaffected whether or not a scienceHash is appended. When a caller supplies
+ * `scienceHash` it is appended as a 4th field (`sdr:1|<id>|<bundleHash>|<scienceHash>`) so a new
+ * anchor also carries the stable content address for cross-run comparison -- old 2-field callers
+ * (and every historical anchor) produce the identical memo as before. Purely additive.
+ */
+export function buildMemo(findingId: string, bundleHash: string, scienceHash?: string): string {
+  return scienceHash ? `${MEMO_PREFIX}|${findingId}|${bundleHash}|${scienceHash}` : `${MEMO_PREFIX}|${findingId}|${bundleHash}`;
 }
 
 /** On-chain record for a sealed deliberation receipt (integrity of model commentary). */

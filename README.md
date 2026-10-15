@@ -97,8 +97,15 @@ verifiable happens. Space Data Rig is built to be the opposite:
 - **It is honest about uncertainty.** Every signal is replayed through fresh simulated
   noise; the fraction of times the pipeline recovers it is reported as a *recovery
   confidence*, and a critic seat can reject or watchlist a weak signal.
-- **It is reproducible.** The same inputs always produce the same bundle hash
-  (SHA-256 over a canonical, key-sorted JSON manifest).
+- **It is reproducible -- stated precisely.** The same manifest content always hashes
+  identically (SHA-256 over a canonical, key-sorted JSON serialization). But the bundle hash
+  is a *timestamped commitment*, not a content-address id: it folds in run-volatile fields
+  (`createdAt`, `runId`), so re-running the same science yields the same numbers yet a
+  different bundle hash by design. For a stable content address we also expose `scienceHash`
+  (the manifest hash with those run-volatile fields normalised out) -- two runs that recover
+  identical science share one `scienceHash` while carrying distinct bundle hashes. New
+  on-chain memos append the `scienceHash` (verification still matches the bundle-hash
+  commitment; cross-run comparison uses the content address).
 - **It is independently auditable.** The bundle hash is written to Solana mainnet inside
   an SPL Memo transaction; anyone can re-read the chain and confirm the memo matches,
   with no trust in our database.

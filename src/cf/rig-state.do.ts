@@ -32,6 +32,7 @@ import {
   type SeatState,
 } from "../core/state-types.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
+import { hashScience } from "../bundle/bundle.ts";
 import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
 import {
@@ -525,7 +526,15 @@ export class RigStateDO extends DurableObject<Env> {
     if (!f) return { ok: false, httpStatus: 404, error: "finding not found" };
     if (!f.bundleHash) return { ok: false, httpStatus: 400, error: "finding has no bundle hash yet (run the reporter first)" };
 
-    const memo = buildMemo(findingId, f.bundleHash);
+    // Best-effort content-addressed science hash for cross-run comparison; the bundleHash stays the
+    // verifiable on-chain commitment at memo position 2, so verification is unaffected. Any failure to
+    // read/recompute the stored manifest just yields the classic 3-field memo -- it never blocks an anchor.
+    let scienceHash: string | undefined;
+    try {
+      const mtxt = await this.artifacts.getText(`bundles/${findingId}/manifest.json`);
+      if (mtxt) scienceHash = await hashScience(JSON.parse(mtxt));
+    } catch { /* provenance nicety only */ }
+    const memo = buildMemo(findingId, f.bundleHash, scienceHash);
     if (opts?.dryRun) return { ok: true, memo, dryRun: true, httpStatus: 200 };
     if (!this.env.SOLANA_KEYPAIR)
       return { ok: false, memo, httpStatus: 400, error: "no SOLANA_KEYPAIR secret configured on the Worker (set it with: wrangler secret put SOLANA_KEYPAIR)" };

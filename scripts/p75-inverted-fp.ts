@@ -28,7 +28,7 @@
 // Run: npm run p75:inverted-fp [-- --targets 20 --nnull 100 --trials 120 --seed 7 --maxsectors 4]
 
 import { preprocess } from "../src/detect/detrend.ts";
-import { inTransitMask } from "../src/detect/iterative.ts";
+import { invertCurve, maskKnownTransits } from "../src/detect/invertedNull.ts";
 import { bls } from "../src/detect/bls.ts";
 import { calibratedFap } from "../src/detect/significance.ts";
 import { estimateFap } from "../src/detect/fap.ts";
@@ -70,23 +70,7 @@ async function fetchStitched(tic: number, sectors: number[], name: string): Prom
   return stitchLightCurves(parts) ?? parts[0];
 }
 
-/** Reflect the flux about its median: every dip becomes a bump, every bump a dip. Returns a fresh curve. */
-function invert(lc: LightCurve): LightCurve {
-  const vals = lc.points.map((p) => p.flux).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
-  const med = vals.length ? vals[Math.floor(vals.length / 2)] : 1;
-  return { ...lc, points: lc.points.map((p) => ({ ...p, flux: Number.isFinite(p.flux) ? 2 * med - p.flux : p.flux })) };
-}
-
-/** Drop every cadence that is in-transit for any of the host's catalogued planets (widened by padFrac). */
-function maskPlanets(lc: LightCurve, planets: { period: number; epoch: number; durDays: number }[]): LightCurve {
-  const times = lc.points.map((p) => p.time);
-  const drop = times.map(() => false);
-  for (const s of planets) {
-    const m = inTransitMask(times, s.period, s.epoch, s.durDays, padFrac);
-    for (let i = 0; i < m.length; i++) if (m[i]) drop[i] = true;
-  }
-  return { ...lc, points: lc.points.filter((_, i) => !drop[i]) };
-}
+// invert + planet-masking now live in the reusable src/detect/invertedNull.ts (audit-10 #6); this study imports them.
 
 interface Row {
   name: string; rho: number; bucket: "quiet" | "red"; bumpSnr: number; bumpPeriod: number; nPlanetsMasked: number; searchMax: number;
@@ -134,8 +118,8 @@ async function main(): Promise<void> {
     const searchMax = Math.min(baseline / 3, SEARCH_MAX); // need >= ~3 transits to test a fold
     if (!(searchMax > 1.5)) { console.log(`  ${c.name.padEnd(18)} baseline too short to search (${baseline.toFixed(0)}d)`); continue; }
 
-    const inv = invert(preprocess(lc, 0.5));
-    const residual = maskPlanets(inv, c.masks);
+    const inv = invertCurve(preprocess(lc, 0.5));
+    const residual = maskKnownTransits(inv, c.masks, padFrac);
     if (residual.points.length < 120) { console.log(`  ${c.name.padEnd(18)} too few cadences after masking`); continue; }
     let b; try { b = bls(residual, { minPeriodDays: 1.5, maxPeriodDays: searchMax }); } catch { continue; }
     // Only a POSITIVE (transit-like) dip is a candidate the gate could sign off; a negative peak is a residual

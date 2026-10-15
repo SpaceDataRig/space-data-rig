@@ -41,6 +41,16 @@ model is called. So the "AI team" is a presentation device for a real, reproduci
 (product = deterministic pipeline + hash-sealed bundle + web dashboard), not a claim that a model is
 doing the astronomy.
 
+**A finding we would lead with (P75).** On a *planet-free null built by construction* -- real
+TESS-SPOC light curves reflected about their median (inverted) with every catalogued transit
+masked, so any surviving positive dip can only be noise or systematics -- our production AR(1)
+significance gate signs off **75% of pure-noise bumps at FAP<0.05, versus a nominal 5%** (a
+model-free block bootstrap flags only 31% and overturns 7 of the 16). On this small calibration
+sample (n=16) the AR(1) null is measurably *optimistic* on real systematics tails; we report and
+re-test it rather than silently recalibrate, and it stays measured-not-gated (threshold unchanged).
+The null generator is now a reusable, unit-tested product (`src/detect/invertedNull.ts`), and the
+dual AR(1)/model-free study is `scripts/p75-inverted-fp.ts`.
+
 **What this is, plainly -- and what it is not.** This is a science-grade *closed-loop
 self-test*: the pipeline proves it can recover a known signal from noise, and it is **not**
 claiming to discover new planets. The data-fetch seat resolves each target's light curve

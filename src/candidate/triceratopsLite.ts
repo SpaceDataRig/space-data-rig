@@ -26,6 +26,17 @@ export function dilutionCorrectedDepthPpm(observedDepthPpm: number, dilutionFact
   return observedDepthPpm / dilutionFactor;
 }
 
+/**
+ * A de-diluted (corrected) transit depth beyond this many ppm is physically implausible for any transiting body
+ * (a planet is a few percent at most; even >10% is not a planet). If dividing an observed depth by a tiny Gaia
+ * dilution factor drives the corrected depth past this cap, the neighbour census and the observed depth are
+ * mutually INCONSISTENT. That contradiction is itself evidence of an unresolved blend (or an unreliable census),
+ * not a clean planet, so such a candidate must be flagged and excluded from a favourable grade rather than shown
+ * as a blank/NaN. */
+export function depthPhysicallyInconsistent(correctedDepthPpm: number, capPpm = 100_000): boolean {
+  return Number.isFinite(correctedDepthPpm) && correctedDepthPpm > capPpm;
+}
+
 // Harmonic ratios that produce the classic BLS period aliases (half / double / third / 3-over-2 ...).
 const ALIAS_RATIOS = [2, 3, 1 / 2, 1 / 3, 3 / 2, 2 / 3];
 

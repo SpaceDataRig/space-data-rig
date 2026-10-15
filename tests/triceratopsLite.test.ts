@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { neighborContrasts, dilutionCorrectedDepthPpm, countHarmonicSiblings, aliasRiskLevel } from "../src/candidate/triceratopsLite.ts";
+import { neighborContrasts, dilutionCorrectedDepthPpm, countHarmonicSiblings, aliasRiskLevel, depthPhysicallyInconsistent } from "../src/candidate/triceratopsLite.ts";
 
 test("neighborContrasts orders by flux ratio and converts magnitude deltas", () => {
   const cs = neighborContrasts(10, [10, 12, 15]); // host 10; neighbours at +2 and +5 mag
@@ -41,4 +41,12 @@ test("an unmeasured centroid cannot upgrade a candidate to low", () => {
   const r = aliasRiskLevel({ harmonicSiblings: 0, falseCoincidenceBase: 0, centroidOnTarget: null, blendFpp: 1e-5 });
   assert.notEqual(r.level, "low");
   assert.match(r.note, /centroid not measured/);
+});
+
+test("a de-diluted depth past the physical cap is flagged inconsistent (blend contradiction)", () => {
+  assert.equal(depthPhysicallyInconsistent(1_751_435), true); // 9209 ppm / 0.0053 -> ~175%: impossible for a planet
+  assert.equal(depthPhysicallyInconsistent(120_000), true); // >10% default cap
+  assert.equal(depthPhysicallyInconsistent(30_000), false); // 3% is fine
+  assert.equal(depthPhysicallyInconsistent(NaN), false); // undetermined is not "inconsistent"
+  assert.equal(depthPhysicallyInconsistent(60_000, 50_000), true); // custom cap honoured
 });

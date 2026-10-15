@@ -32,7 +32,7 @@ import { targetCentroidP } from "../src/detect/centroidFtest.ts";
 import { fetchGaiaNeighborhood, angularSepArcsec } from "../src/data/gaiaDilution.ts";
 import { daveBlendedFpp } from "../src/detect/benchmark.ts";
 import { independentlyConfirmed } from "../src/candidate/independentValidation.ts";
-import { neighborContrasts, dilutionCorrectedDepthPpm, countHarmonicSiblings, aliasRiskLevel } from "../src/candidate/triceratopsLite.ts";
+import { neighborContrasts, dilutionCorrectedDepthPpm, countHarmonicSiblings, aliasRiskLevel, depthPhysicallyInconsistent } from "../src/candidate/triceratopsLite.ts";
 import type { LightCurve } from "../src/core/types.ts";
 
 function num(name: string, d: number): number {
@@ -156,7 +156,7 @@ async function main(): Promise<void> {
     cache.set(rec.tic, c); return c;
   }
 
-  interface Row { tic: number; toi: string; disp: string; periodDays: number; depthPpm: number; maxCorr: number; validated: boolean; dilution: number; nInAperture: number; blendFpp: number; correctedDepthPpm: number; harmonicSiblings: number; centroidP: number | null; centroidOnTarget: boolean | null; aliasLevel: string; aliasNote: string; tricGrade: boolean }
+  interface Row { tic: number; toi: string; disp: string; periodDays: number; depthPpm: number; maxCorr: number; validated: boolean; censusDetermined: boolean; dilution: number; nInAperture: number; blendFpp: number; correctedDepthPpm: number; inconsistent: boolean; harmonicSiblings: number; centroidP: number | null; centroidOnTarget: boolean | null; aliasLevel: string; aliasNote: string; tricGrade: boolean }
   const rows: Row[] = [];
   let centroidBudget = maxCentroid;
   for (const pool of [kp, cp]) {
@@ -167,16 +167,18 @@ async function main(): Promise<void> {
       for (const cl of corr) { const r = independentlyConfirmed({ periodDays: cl.periodDays, corroboratedSectors: cl.corroboratedSectors }, { id: rec.toi, periodDays: rec.periodDays, disposition: rec.tfopwgDisposition }, { periodTolFrac: TOL, minCorroboration: MIN_CORR }); if (r.validated && (!best || r.relPeriodDiff < best.rel)) best = { cl, rel: r.relPeriodDiff }; }
       const disp = (rec.tfopwgDisposition || rec.tessDisposition || "?").toUpperCase();
       const maxCorr = Math.max(0, ...clusters.map((c) => c.corroboratedSectors));
-      if (!best) { rows.push({ tic: rec.tic, toi: rec.toi, disp, periodDays: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), maxCorr, validated: false, dilution: NaN, nInAperture: 0, blendFpp: NaN, correctedDepthPpm: NaN, harmonicSiblings: 0, centroidP: null, centroidOnTarget: null, aliasLevel: "n/a", aliasNote: "not validated (P80 stage)", tricGrade: false }); console.log(`  [${disp}] TIC ${rec.tic} not validated (maxCorr ${maxCorr})`); continue; }
+      if (!best) { rows.push({ tic: rec.tic, toi: rec.toi, disp, periodDays: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), maxCorr, validated: false, censusDetermined: false, dilution: NaN, nInAperture: 0, blendFpp: NaN, correctedDepthPpm: NaN, inconsistent: false, harmonicSiblings: 0, centroidP: null, centroidOnTarget: null, aliasLevel: "n/a", aliasNote: "not validated (P80 stage)", tricGrade: false }); console.log(`  [${disp}] TIC ${rec.tic} not validated (maxCorr ${maxCorr})`); continue; }
       const validated = true;
       const matchedPeriod = best.cl.periodDays;
       const census = await blendCensus(rec.ra, rec.dec, rec.depthPpm, rec.periodDays);
       const harmonicSiblings = countHarmonicSiblings(matchedPeriod, corr.map((c) => c.periodDays));
       let centroidP: number | null = null, centroidOnTarget: boolean | null = null;
       if (DO_CENTROID && centroidBudget > 0) { centroidBudget--; const cc = await centroidCheck(rec.tic, rec.sectors, `TIC ${rec.tic} ${rec.toi}`, rec.periodDays, rec.epochBjd); centroidOnTarget = cc.testable ? cc.p >= ALPHA : null; centroidP = cc.testable ? Number(cc.p.toExponential(2)) : null; }
+      const corrected = census.determined ? Math.round(dilutionCorrectedDepthPpm(rec.depthPpm, census.dilutionFactor)) : NaN;
+      const inconsistent = depthPhysicallyInconsistent(corrected);
       const alias = aliasRiskLevel({ harmonicSiblings, falseCoincidenceBase: fcBase, centroidOnTarget, blendFpp: census.determined ? census.blendFpp : 1 });
-      const tricGrade = census.determined && census.blendFpp < 1e-3 && centroidOnTarget !== false && alias.level === "low";
-      rows.push({ tic: rec.tic, toi: rec.toi, disp, periodDays: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), maxCorr, validated, dilution: census.determined ? Number(census.dilutionFactor.toFixed(4)) : NaN, nInAperture: census.nInAperture, blendFpp: census.determined ? Number(census.blendFpp.toExponential(2)) : NaN, correctedDepthPpm: census.determined ? Math.round(dilutionCorrectedDepthPpm(rec.depthPpm, census.dilutionFactor)) : NaN, harmonicSiblings, centroidP, centroidOnTarget, aliasLevel: alias.level, aliasNote: `${census.contrastNote}; ${alias.note}`, tricGrade });
+      const tricGrade = census.determined && !inconsistent && census.blendFpp < 1e-3 && centroidOnTarget !== false && alias.level === "low";
+      rows.push({ tic: rec.tic, toi: rec.toi, disp, periodDays: Number(rec.periodDays.toFixed(5)), depthPpm: Math.round(rec.depthPpm), maxCorr, validated, censusDetermined: census.determined, dilution: census.determined ? Number(census.dilutionFactor.toFixed(4)) : NaN, nInAperture: census.nInAperture, blendFpp: census.determined ? Number(census.blendFpp.toExponential(2)) : NaN, correctedDepthPpm: corrected, inconsistent, harmonicSiblings, centroidP, centroidOnTarget, aliasLevel: alias.level, aliasNote: `${census.contrastNote}; ${alias.note}`, tricGrade });
       console.log(`  [${disp}] TIC ${rec.tic} VALIDATED rec ${matchedPeriod.toFixed(4)}d | dil ${census.determined ? census.dilutionFactor.toFixed(3) : "n/a"} nb${census.nInAperture} fpp ${census.determined ? census.blendFpp.toExponential(1) : "n/a"} | alias peaks ${harmonicSiblings} | centroid ${centroidOnTarget === null ? "n/a" : centroidOnTarget ? "on-target" : "OFF-target"} | risk ${alias.level}${tricGrade ? " [TRICERATOPS-grade]" : ""}`);
     }
   }
@@ -184,21 +186,33 @@ async function main(): Promise<void> {
   const cpValid = rows.filter((r) => r.disp === "CP" && r.validated);
   const kpValid = rows.filter((r) => r.disp === "KP" && r.validated);
   const cpGrade = cpValid.filter((r) => r.tricGrade).length;
+  const kpGrade = kpValid.filter((r) => r.tricGrade).length;
   const cpLowOrMod = cpValid.filter((r) => r.aliasLevel === "low" || r.aliasLevel === "moderate").length;
   const totalValid = rows.filter((r) => r.validated).length;
+  const determined = rows.filter((r) => r.validated && r.censusDetermined).length;
+  const undetermined = totalValid - determined;
+  const contradict = rows.filter((r) => r.validated && r.inconsistent);
   console.log(`\nRESULT: ${totalValid} validated; KP controls ${kpValid.length}, CP uncertain-external ${cpValid.length}; of CP: blendFPP<1e-3 & centroid-on-target & low alias = ${cpGrade}, alias low/moderate = ${cpLowOrMod}.`);
+  console.log(`Census determined for ${determined}/${totalValid} (${undetermined} undetermined: Gaia unavailable); ${contradict.length} have a physically inconsistent de-diluted depth (>10%) -> excluded from grading, kept as blend evidence.`);
   const verdict = totalValid === 0
     ? "NO-VALIDATIONS: nothing cleared the P80 corroboration+period stage on this sample; nothing to grade. Measure-only."
-    : `GRADED: ${totalValid} blind validations carried forward. For the ${cpValid.length} still-uncertain EXTERNAL (CP) candidates, blend-FPP + harmonic-alias + multi-sector centroid F-test now quantify the residual risk P78 only bounded statistically; ${cpGrade} reach TRICERATOPS-grade (blendFPP<1e-3, centroid not off-target, low alias). Still first-order checks, NOT discoveries or full TRICERATOPS; safeToGate false.`;
+    : `GRADED: ${totalValid} blind validations carried forward; blend census DETERMINED for ${determined}/${totalValid} (${undetermined} undetermined: Gaia unavailable). Among them ${contradict.length} show a de-diluted depth over the 10% physical cap -- the census and the observed depth contradict each other, which is itself unresolved-blend evidence -- so they are EXCLUDED from grading. For the ${cpValid.length} still-uncertain EXTERNAL (CP) candidates, blend-FPP + harmonic-alias + multi-sector centroid F-test now quantify the residual risk P78 only bounded statistically; ${cpGrade} reach TRICERATOPS-grade (and KP controls ${kpGrade}). First-order checks, NOT discoveries or full TRICERATOPS; safeToGate false.`;
   console.log(`VERDICT: ${verdict}`);
 
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: { generatedBy: "scripts/p81-triceratops-lite.ts", protocol: "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test", wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, apertureArcsec: APERTURE, centroidAlpha: ALPHA, centroidEnabled: DO_CENTROID, falseCoincidenceBase: fcBase, ebPriorShortPeriod: 0.015, note: "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false." },
-    totals: { validated: totalValid, kpValidated: kpValid.length, cpValidated: cpValid.length, cpTricGrade: cpGrade, cpLowOrModerate: cpLowOrMod },
+    totals: { validated: totalValid, kpValidated: kpValid.length, cpValidated: cpValid.length, cpTricGrade: cpGrade, kpTricGrade: kpGrade, cpLowOrModerate: cpLowOrMod, censusDetermined: determined, censusUndetermined: undetermined, inconsistentDepth: contradict.length },
     rows, verdict, discoveryClaim: false, safeToGate: false,
   };
   writeFileSync("reports/p81-triceratops-lite.json", JSON.stringify(json, null, 2) + "\n");
+  const contradictionLines = contradict.length
+    ? [
+      `**Blend contradictions (${contradict.length}) -- the de-diluted depth exceeds the 10% physical cap, so the Gaia census and the observed depth are mutually inconsistent (an unresolved blend, NOT a clean planet). These are excluded from grading and reported as evidence:**`,
+      ...contradict.map((r) => `- host ${r.tic} (${r.disp} TOI ${r.toi}): observed ${r.depthPpm} ppm at dilution ${r.dilution} -> corrected ${r.correctedDepthPpm} ppm = ${(r.correctedDepthPpm / 1e4).toFixed(1)}% of the star.`),
+      "",
+    ]
+    : ["**No de-diluted depth exceeded the 10% physical cap on this sample.**", ""];
   const md = [
     "# P81 TRICERATOPS-grade upgrade of the P80 external-candidate validation (audit finding 9, gap 3)",
     "",
@@ -213,9 +227,12 @@ async function main(): Promise<void> {
     "",
     "| host (TIC) | TOI | disp | P (d) | depth ppm | dilution | nNb | blend FPP | corrected depth | alias peaks | centroid on-target | alias risk | TRIC-grade |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|",
-    ...rows.map((r) => `| ${r.tic} | ${r.toi} | ${r.disp} | ${r.periodDays} | ${r.depthPpm} | ${r.dilution} | ${r.nInAperture} | ${r.blendFpp} | ${r.correctedDepthPpm} | ${r.harmonicSiblings} | ${r.centroidOnTarget === null ? "n/a" : r.centroidOnTarget ? "yes" : "NO"} | ${r.aliasLevel} | ${r.tricGrade ? "YES" : "-"} |`),
+    ...rows.map((r) => `| ${r.tic} | ${r.toi} | ${r.disp} | ${r.periodDays} | ${r.depthPpm} | ${r.censusDetermined ? r.dilution : "undetermined"} | ${r.nInAperture} | ${r.censusDetermined ? r.blendFpp : "undetermined"} | ${r.censusDetermined ? (r.inconsistent ? `${r.correctedDepthPpm} (!)` : r.correctedDepthPpm) : "undetermined"} | ${r.harmonicSiblings} | ${r.centroidOnTarget === null ? "n/a" : r.centroidOnTarget ? "yes" : "NO"} | ${r.aliasLevel} | ${r.tricGrade ? "YES" : "-"} |`),
     "",
-    `**CP (uncertain external): ${cpValid.length} validated, ${cpGrade} reach TRICERATOPS-grade (blendFPP<1e-3 + centroid not off-target + low alias).**`,
+    `**CP (uncertain external): ${cpValid.length} validated, ${cpGrade} reach TRICERATOPS-grade (blendFPP<1e-3 + centroid not off-target + low alias, inconsistent depth excluded).**`,
+    "",
+    `**Blend census determined for ${determined}/${totalValid} validated candidates; ${undetermined} undetermined (Gaia unavailable, shown as \`undetermined\` rather than \`NaN\`, and not counted in any rate).**`,
+    ...contradictionLines,
     "",
     `**VERDICT: ${verdict}**`,
     "",

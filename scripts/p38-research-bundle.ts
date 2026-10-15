@@ -47,6 +47,11 @@ const p62 = load("reports/p62-phase-aligned-joint.json");
 const p63 = load("reports/p63-soft-score.json");
 const p64 = load("reports/p64-fetch-telemetry.json");
 const p65 = load("reports/p65-external-audit.json");
+const p67 = load("reports/p67-seed-precision.json");
+const p68 = load("reports/p68-discriminator-roc.json");
+const p69 = load("reports/p69-rednoise-significance.json");
+const p70 = load("reports/p70-llm-ablation.json");
+const p71 = load("reports/p71-audit-positive-control.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -310,6 +315,16 @@ const payload = {
     caveat: "reviews third-party candidates on public data; the critic runs BLIND so an unconfirmed/external claim caps at needs-more-data and never passes the accepted-only money gate. Not anchored, not on-chain.",
     anchored: false, discoveryClaim: false,
   },
+  followupStudiesP67P71: {
+    label: "targeted follow-ups to the review: seed recall (P67), discriminator ROC (P68), red-noise FAP (P69), LLM ablation (P70), accept-path control (P71)",
+    seedP67: { naivePeak: p67.seedHit.naivePeak.count, iterTop1: p67.seedHit.iterativeTop1.count, iterTopK: p67.seedHit.iterativeTopK.count, n: p67.seedHit.iterativeTopK.n, bottleneck: p67.bottleneck },
+    rocP68: { bestTest: p68.bestTest, bestAuc: p68.bestAuc, anyGateable: !!p68.anyGateable },
+    redNoiseP69: { noiseLike: p69.summary.noiseLike, flipsNoise: p69.summary.flipsNoise, meanDeltaNoise: p69.summary.meanDeltaNoise, excess: p69.summary.meanExcessAtLastLag },
+    llmP70: { decisionsChangedByLLM: p70.structuralAblation.decisionsChangedByLLM, llmDecisionValue: p70.llmDecisionValue, modelQualityOff: !!p70.modelQuality.off, blendUnderFlagged: p70.modelQuality.off ? null : `${p70.modelQuality.blendUnderFlagged}/${p70.modelQuality.nBlends}` },
+    acceptPathP71: { blindAccepted: p71.summary.blindAccepted, corroborationAccepted: p71.summary.corroborationAccepted, n: p71.meta.n, reachable: !!p71.reachability },
+    caveat: "all re-derived from the committed P67-P71 reports; no new analysis. Seed recall barely lifts over a single BLS peak (P67 confirms P62); no vetting discriminator clears the blends-from-planets corner at ANY threshold (P68); the AR(1)-model significance null is more permissive than a model-free reference on real noise (P69); the LLM changes zero decisions and under-flags blends (P70); the accepted branch IS reachable only when a known planet is corroborated by the catalog (P71).",
+    safeToGate: false, discoveryClaim: false,
+  },
   blindTest: {
     label: "sealed-key blind test of the detector on real curves (P49)",
     curves: p49.curves,
@@ -340,4 +355,5 @@ console.log(`  true-veto 2x2 (P58/P59): ${payload.trueVetoAcceptance.usableCases
 console.log(`  LLM hypothesis loop (P61): ${payload.llmHypothesisLoop.nPositives} planets + ${payload.llmHypothesisLoop.nNegatives} labelled blends, ${payload.llmHypothesisLoop.tests.length} tests, gateable-via-loop=${payload.llmHypothesisLoop.gateableViaLoop}; safeToGate=false`);
 console.log(`  P62 joint(single/naive/refined/oracle): ${p62.singleRefind.count}/${p62.naiveJointRefind.count}/${p62.refinedRefind.count}/${p62.oracleRefind.count} of ${p62.meta.n} (bottleneck ${p62.bottleneck}); P63 soft false-veto ${(p63.operatingPoint.falseVetoRate * 100).toFixed(0)}% / catch ${(p63.operatingPoint.blendCatchRate * 100).toFixed(0)}%; P64 warm cache hit ${(p64.warmPass.hitRate * 100).toFixed(0)}% (${p64.warmPass.wallMs}ms vs ${p64.coldPass.wallMs}ms cold); P65 external passes ${payload.externalAuditP65.passes}/${p65.meta.nClaims}; discoveryClaim false`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
+console.log(`  P67 seed (naive/iter-top1/iter-topK): ${payload.followupStudiesP67P71.seedP67.naivePeak}/${payload.followupStudiesP67P71.seedP67.iterTop1}/${payload.followupStudiesP67P71.seedP67.iterTopK} of ${payload.followupStudiesP67P71.seedP67.n}; P68 best AUC ${payload.followupStudiesP67P71.rocP68.bestAuc?.toFixed(2)} (${payload.followupStudiesP67P71.rocP68.bestTest}) gateable=${payload.followupStudiesP67P71.rocP68.anyGateable}; P69 AR1-permissive flips ${payload.followupStudiesP67P71.redNoiseP69.flipsNoise}/${payload.followupStudiesP67P71.redNoiseP69.noiseLike}; P70 LLM decisions-changed ${payload.followupStudiesP67P71.llmP70.decisionsChangedByLLM}; P71 accepted blind/corroborated ${payload.followupStudiesP67P71.acceptPathP71.blindAccepted}/${payload.followupStudiesP67P71.acceptPathP71.corroborationAccepted} of ${payload.followupStudiesP67P71.acceptPathP71.n}; discoveryClaim false`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

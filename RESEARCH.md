@@ -750,6 +750,16 @@ gated, anchored or deployed; discoveryClaim false.
   the single/naive baselines, yet a truth-seeded oracle reaches 10/20: the long-baseline fold recovers 2x WITH a
   correct period, but a blind single-sector seed is often the wrong period on multi-planet hosts, so the binding
   constraint for a blind pipeline is reliable seed acquisition, not alignment. There is no free joint-search lift.
+  **P67 hardens this against the production detector:** seeding the refinement from `iterativeBls` (mask-and-refind,
+  top-k) instead of a single BLS peak lifts blind seed-hit only 4->5 of 20 (refined re-find 4->5 of 20), because
+  iterative extraction records just 0-1 signals on these few-sector multi-planet hosts -- so the wall is real, not a
+  single-peak artifact.
+- **The AR(1)-model significance null is a measured-optimism concern, not yet corrected.** The production
+  `calibratedFap` gate matches only a star's lag-1 autocorrelation. P69 measures that on transit-masked real
+  residuals the model-free block bootstrap is strictly more conservative: 5/8 noise-like bumps clear FAP<0.05 under
+  AR(1) but not under a null that keeps the real residual tails, and `excessAtLastLag` is ~0 -- so the optimism is in
+  the null's noise WEIGHTS (heavy tails), not long-memory / active stars. It is flagged for follow-up (a clean test
+  needs planet-free real windows, not masked multi-planet curves); no threshold was re-tuned.
 - **The coherent-systematics null is a complement, not a second win.** P42 shows that after common-mode subtraction
   it adds ~0 discrimination (AUC gain -0.005) at 100% planet safety; its large FP cut is on un-subtracted data.
 - **Window aliasing is not a driver on TESS FFI.** P43 measures the 1 c/d spectral window at ~0.012 (essentially
@@ -789,12 +799,17 @@ Everything is deterministic given a seed and the public archives:
 ```
 npm ci
 npm run typecheck:all        # Node + worker targets
-npm test                     # 402 unit tests
+npm test                     # 405 unit tests (incl. the network-free offline-replay fixture integrity test)
 npm run p33:scale-roc        # completeness/purity at scale  -> reports/p33-*
 npm run p62:phase-aligned-joint # phase-aligned joint-fold A/B -> reports/p62-*
 npm run p63:soft-score          # soft blend-likelihood + published false-kill rate -> reports/p63-*
 npm run p64:fetch-telemetry     # multi-sector fetch cache-hit / download telemetry -> reports/p64-*
 npm run p65:external-audit      # submit a third-party claim -> full critic + gates, pass/fail -> reports/p65-*
+npm run p67:seed-precision      # iterative-vs-naive seed recall on known planets -> reports/p67-*
+npm run p68:discriminator-roc   # full-threshold ROC/AUC of vetting tools (offline) -> reports/p68-*
+npm run p69:rednoise-significance # AR(1)-model vs model-free FAP on real residuals -> reports/p69-*
+npm run p70:llm-ablation        # does the LLM change any decision; model quality -> reports/p70-*
+npm run p71:audit-positive-control # is the accepted branch reachable (blind vs corroboration) -> reports/p71-*
 npm run p35:pdm-crosscheck   # independent period finder     -> reports/p35-*
 npm run p34:cost-model       # compute model from p33        -> reports/p34-*
 npm run p39:instrumental-fp  # systematics-aware FP null + FDR -> reports/p39-*
@@ -822,6 +837,7 @@ npm run p60:joint-vs-single        # joint multi-sector vs single-sector re-find
 npm run p61:llm-hypothesis         # LLM proposes a falsifiable hypothesis + picks a test; rig measures it -> reports/p61-*
 npm run p37:figure           # this report's figure          -> web/results-figure.svg
 npm run p66:milestone-figure # P62-P65 milestone figure      -> web/milestone-figure.svg
+npm run p72:followups-figure # P67-P71 follow-ups figure      -> web/followups-figure.svg
 ```
 
 The Python cross-pipeline harness runs in the `crosscheck-python` CI workflow and publishes its measured report back
@@ -855,6 +871,54 @@ Three roadmap follow-ups that turn the veto studies and the data layer into reus
 All five new panel surfaces (the P61 9-test menu, P62, P63, P64, P65) are distilled from the committed reports by
 `scripts/p38-research-bundle.ts` and rendered on the live dashboard; nothing here gates a verdict or touches a
 money path.
+
+---
+
+## 28. Chasing the P62 bottleneck and the veto gate: five targeted follow-ups (P67 / P68 / P69 / P70 / P71)
+
+A second review round asked us to test whether the negative results were real limits or artifacts of how the
+studies were built. Each follow-up is a measure-before-gate probe on real photometry or a deterministic offline
+re-derivation; none touches the money path.
+
+- **P67 seed precision** (`scripts/p67-seed-precision.ts`). P62 blamed "seed acquisition" but seeded its
+  refinement from a NAIVE single-sector BLS peak, while the production detector is `iterativeBls` (ranked top-k
+  signals). Re-scoring the SAME 20 known planets: seed-hit (does the seeder put the true period on the table within
+  5%) is naive 4/20, iterativeBls top-1 5/20, iterative top-3 (any) 5/20; refined re-find naive 4 / iter-top1 5 /
+  oracle 10 of 20. Verdict `MODEST-SEED-LIFT` -- the stronger detector barely beats a single peak (+5 pp, inside
+  overlapping Wilson CIs) because `iterativeBls` records 0-1 signals on these few-sector multi-planet hosts. So the
+  P62 "blind seed is often the wrong period" is NOT a single-peak artifact; the wall is confirmed against the real
+  detector.
+- **P68 discriminator ROC** (`scripts/p68-discriminator-roc.ts`). P61 collapsed every vetting tool to a binary at
+  one cut; this sweeps the FULL threshold (offline re-derivation of the committed P61 continuous metrics) with a
+  Mann-Whitney AUC and the best blend catch at a zero / 5% / 10% known-planet false-kill budget. Best separator
+  shape-coherence AUC 0.69, and at ZERO false-kill no tool catches blends above chance (odd/even 1/17, secondary 1/17,
+  psf 1/5, gaia-dilution 0.47 -- below chance). Verdict `NO-GATE-CONFIRMED`: at any threshold that catches blends it
+  false-kills known planets -- the light-curve/pixel tools CANNOT self-validate a candidate, only rank it.
+- **P69 red-noise significance** (`scripts/p69-rednoise-significance.ts`). The production gate (`calibratedFap`) uses
+  an AR(1)-model null; is AR(1) faithful to real residual tails? Masking the transit on known hosts and comparing the
+  AR(1)-model FAP to a model-free block bootstrap (same real noise) on the residual bump: on the 8 noise-like residuals
+  5/8 would clear FAP<0.05 under AR(1) but not under the model-free null (mean FAP delta +0.27), and `excessAtLastLag`
+  is ~0 (not redder than AR(1), and the effect is not active-star-specific). Verdict `AR1-MODEL-NULL-TOO-PERMISSIVE` --
+  a flagged calibration concern. Caveat: transit-masked multi-planet residuals keep real sibling signals (max resSnr
+  1172), so a clean calibration needs planet-free real windows; re-tunes no threshold.
+- **P70 LLM ablation** (`scripts/p70-llm-ablation.ts`, models live). Two-part answer: (1) removing the LLM changes NO
+  decision -- the per-test 2x2 / gate flags come only from `runHypothesisTest`; verified by recompute, decisionsChanged
+  = 0 on every usable target. (2) the models under-flag blends -- they called a labelled blend "planet" on 3/3 while
+  the deterministic tests caught 1/3. Verdict `LLM-DECISION-VALUE-ZERO`: the model is a hypothesis BROKER, not an
+  arbiter, and stays advisory.
+- **P71 audit positive control** (`scripts/p71-audit-positive-control.ts`). Is P65's "0/2 pass" a dead gate? Scoring
+  the SAME detected candidate BLIND (catalog=[], as P65 does) vs CORROBORATED (catalog=archive) on 14 known planets:
+  BLIND accepted 0/14 (all needs-more-data), CORROBORATED accepted 8/14. Verdict `ACCEPT-PATH-REACHABLE`: the accept
+  branch fires the instant a genuine signal is corroborated, and P65 caps novel claims at needs-more-data purely
+  because they run blind by design -- a safety property, not a bug.
+- **offline replay** (`tests/offlineReplay.test.ts`). The 12 committed real-SPOC fixture curves are SHA-256 pinned and
+  the JS `detectTransit` chain replays known-planet periods from those frozen bytes with zero network (6/12 reproduce
+  within 2%; the rest alias -- the P67 seed story), plus a determinism guard. Closes the roadmap's "network-free
+  reproduction" item on the JS side.
+
+All five (P67-P71) plus the P62-P65 round are distilled from committed reports by `scripts/p38-research-bundle.ts`
+into `web/research.json` and rendered on the live dashboard. discoveryClaim / safeToGate stay structurally false
+throughout; no verdict, bundle hash or money path is touched.
 
 ---
 

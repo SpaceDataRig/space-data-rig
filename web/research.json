@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-14T17:27:05.921Z",
+  "generatedAt": "2026-10-15T01:15:16.224Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -484,6 +484,42 @@
     ],
     "caveat": "reviews third-party candidates on public data; the critic runs BLIND so an unconfirmed/external claim caps at needs-more-data and never passes the accepted-only money gate. Not anchored, not on-chain.",
     "anchored": false,
+    "discoveryClaim": false
+  },
+  "followupStudiesP67P71": {
+    "label": "targeted follow-ups to the review: seed recall (P67), discriminator ROC (P68), red-noise FAP (P69), LLM ablation (P70), accept-path control (P71)",
+    "seedP67": {
+      "naivePeak": 4,
+      "iterTop1": 5,
+      "iterTopK": 5,
+      "n": 20,
+      "bottleneck": "partially-seed-acquisition"
+    },
+    "rocP68": {
+      "bestTest": "shape-coherence",
+      "bestAuc": 0.6934523809523809,
+      "anyGateable": false
+    },
+    "redNoiseP69": {
+      "noiseLike": 8,
+      "flipsNoise": 5,
+      "meanDeltaNoise": 0.2660891089108911,
+      "excess": -0.01402247451672806
+    },
+    "llmP70": {
+      "decisionsChangedByLLM": 0,
+      "llmDecisionValue": "zero",
+      "modelQualityOff": false,
+      "blendUnderFlagged": "3/3"
+    },
+    "acceptPathP71": {
+      "blindAccepted": 0,
+      "corroborationAccepted": 8,
+      "n": 14,
+      "reachable": true
+    },
+    "caveat": "all re-derived from the committed P67-P71 reports; no new analysis. Seed recall barely lifts over a single BLS peak (P67 confirms P62); no vetting discriminator clears the blends-from-planets corner at ANY threshold (P68); the AR(1)-model significance null is more permissive than a model-free reference on real noise (P69); the LLM changes zero decisions and under-flags blends (P70); the accepted branch IS reachable only when a known planet is corroborated by the catalog (P71).",
+    "safeToGate": false,
     "discoveryClaim": false
   },
   "blindTest": {

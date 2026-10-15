@@ -797,8 +797,11 @@ function deriveModels(turns) {
 }
 
 function setRunningUI(running, msg) {
+  // Only the SUBMIT button reflects run state. The top-right "Launch run" (#run-btn) is a pure
+  // NAVIGATION control -- it just reveals the Findings view + form -- so it must NEVER be disabled,
+  // otherwise an active OR zombie (stuck running=true) run greys it out and it looks dead. Actual
+  // double-run safety stays server-side: /api/run returns 409 while a run is active (30-min stale takeover).
   runSubmitEl.disabled = running;
-  runBtnEl.disabled = running;
   runSubmitEl.textContent = running ? "Deliberating..." : "Run pipeline";
   if (msg != null) runStatusEl.textContent = msg;
 }
@@ -1034,7 +1037,7 @@ async function loadResearch() {
 function renderResearch(r) {
   const el = $("#research-body");
   if (!el) return;
-  const s = r.survey, cv = r.crossValidation, cm = r.compute, fpc = r.falsePositiveControl, bt = r.blindTest;
+  const s = r.survey, cv = r.crossValidation, cm = r.compute, fpc = r.falsePositiveControl, bt = r.blindTest, fu = r.followupStudiesP67P71;
   const depths = s.depthsPpm || [];
   const rows = depths.map((d, i) => {
     const ts = s.completeness[i], pdm = cv.pdm.completeness[i], py = cv.python.completeness[i];
@@ -1084,6 +1087,7 @@ function renderResearch(r) {
         (r.softBlendScoreP63 ? `<div class="rc-metric"><span class="k">soft blend score (advisory)</span><span class="v">at ${(r.softBlendScoreP63.atThreshold * 100).toFixed(0)} flags ${pct(r.softBlendScoreP63.falseVetoRate)} of known planets, catches ${pct(r.softBlendScoreP63.blendCatchRate)} of blends &middot; a score, not a gate</span></div>` : ``) +
         (r.fetchTelemetryP64 ? `<div class="rc-metric"><span class="k">multi-sector fetch cache (P64)</span><span class="v">warm hit ${pct(r.fetchTelemetryP64.warmHitRate)} (${r.fetchTelemetryP64.warmWallMs}ms vs ${r.fetchTelemetryP64.coldWallMs}ms cold) &middot; download is the bottleneck</span></div>` : ``) +
         (r.externalAuditP65 ? `<div class="rc-metric"><span class="k">external audit entry (P65)</span><span class="v">${r.externalAuditP65.passes}/${r.externalAuditP65.nClaims} third-party claims pass the accepted-only gate &middot; research mode, not anchored</span></div>` : ``) +
+        (fu ? `<div class="rc-metric"><span class="k">review follow-ups (P67-P71)</span><span class="v">seed naive ${fu.seedP67.naivePeak}/iter ${fu.seedP67.iterTopK} of ${fu.seedP67.n} &middot; best veto AUC ${fu.rocP68.bestAuc ? fu.rocP68.bestAuc.toFixed(2) : "?"} (${fu.rocP68.anyGateable ? "gate?" : "no gate"}) &middot; AR(1) null permissive ${fu.redNoiseP69.flipsNoise}/${fu.redNoiseP69.noiseLike} &middot; LLM changed ${fu.llmP70.decisionsChangedByLLM} decisions &middot; accept path reachable ${fu.acceptPathP71.blindAccepted}->${fu.acceptPathP71.corroborationAccepted}/${fu.acceptPathP71.n}</span></div>` : ``) +
         `<p class="rc-note">A coherent-systematics null cuts raw FP ${pct(fpc.coherentNull.rawFpRateByGate.snr)}&rarr;${pct(fpc.coherentNull.rawFpRateByGate.sysFap)}; after common-mode subtraction it stays a zero-cost safety net (AUC gain ~0, ${esc(fpc.scaleMultiSector.injectedKeptCount)} planets kept). Window aliasing is closed on TESS (median ${fpc.windowAlias.dailyWindowMedian}). A naive difference-image centroid mislocalizes confirmed planets (median ${fpc.pixelVetting ? fpc.pixelVetting.diffImageOffsetMedianArcsec.toFixed(0) : "?}"}, ${fpc.pixelVetting ? fpc.pixelVetting.falseKillsAt2Arcsec : "?"} false-kills) so it is not safe to gate; the full-aperture centroid shift (<= ${fpc.pixelVetting ? fpc.pixelVetting.centroidShiftMaxArcsec.toFixed(1) : "0.6"}") remains the robust pixel veto.</p></div>` : ``) +
     `</div>` +
     `<h3 class="research-sub">Completeness vs injected depth (three independent estimators)</h3>` +

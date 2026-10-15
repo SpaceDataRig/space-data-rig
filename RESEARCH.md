@@ -942,11 +942,19 @@ port each one and MEASURE it on our own data with positive controls -- the same 
   Verdict `MODEST-SIBLING-LIFT` -- neighbour-lock is only part of the seed wall; the rest is intrinsic alias/noise
   confusion. The MASK arms consume ground-truth sibling ephemerides, so they are an ASSISTED ceiling, not a blind win.
 - **P74 multi-sector centroid consistency** (`scripts/p74-centroid-consistency.ts` + a reusable pure module
-  `multiSectorCentroidConsistency` in `src/detect/diffImaging.ts`, 7 offline tests). eumemic measures the difference-image
-  offset in EVERY sector and only rejects when the directions COHERENTLY point off-target. Scored on 28 real SPOC
-  targets (16 known planets, 12 FP/EB blends): cross-sector coherence removes all 9/16 single-sector known-planet
-  false-kills, but blend-catch power collapses 50% -> 0% and AUC 0.495 is chance. Verdict
-  `COHERENCE-SAVES-PLANETS-BUT-NO-POWER` -- safe to KEEP as a diagnostic, not safe to gate. `safeToGate=false`.
+  `multiSectorCentroidConsistency` in `src/detect/diffImaging.ts`, 7 offline tests). **Attribution corrected after the
+  eumemic author (@dysmemic) replied to us.** eumemic's real cross-sector centroid check is NOT a "same-direction"
+  test: it runs an **F-test on the mean offset across sectors** (per-axis scatter floored at 1") **against the target
+  AND against every star within 2' bright enough to cause the dip**; on its calibration set it rejected **0/565 known
+  planets** at p<0.001 and caught **73% of 175 TOIs** whose signal comes from a neighbour (38% when that star is within
+  15") -- see `validation/centroid_sectors.md` in their repo. What WE implemented is a simpler, weaker **directional-
+  coherence (Rayleigh) statistic** that only asks whether the offsets point consistently off-target; it does NOT
+  reproduce their per-contaminant F-test. On our 28 real SPOC targets (16 known planets, 12 FP/EB blends) our coherence
+  variant removes all 9/16 single-sector known-planet false-kills but blend power collapses 50% -> 0% (AUC 0.495,
+  chance). The verdict `COHERENCE-SAVES-PLANETS-BUT-NO-POWER` is therefore a judgment about OUR variant, not about
+  eumemic's method -- theirs, which we have NOT faithfully ported, is exactly the design that reaches a safe-to-gate
+  profile. A faithful re-port (F-test vs each 2' Gaia neighbour with the 1" floor) is logged as follow-up work.
+  `safeToGate=false`.
 - **P75 inverted-curve empirical FP rate** (`scripts/p75-inverted-fp.ts`). The clean null P69 asked for: INVERT a real
   curve (dips become bumps) and MASK every catalogued planet (single sector, exact ephemeris), keep only a positive
   transit-like residual dip -- a false alarm by construction. On 16 such curves the production AR(1) gate signs off

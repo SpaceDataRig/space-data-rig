@@ -297,8 +297,12 @@ export function judgeLocalization(loc: SourceLocalization | null, thresholdArcse
   };
 }
 
-// ---- multi-sector centroid-consistency (borrowed from the eumemic/exoplanets cross-sector centroid test) ----
-// A single difference image can point at the wrong spot by chance (systematic, cosmic ray), which is exactly
+// ---- multi-sector centroid-consistency (INSPIRED BY the eumemic/exoplanets cross-sector centroid check) ----
+// NOTE (attribution, corrected after the eumemic author replied): THEIR method is an F-test on the MEAN offset
+// across sectors (scatter floored at 1"/axis) against the target AND every star within 2' bright enough to cause
+// the dip. What follows here is a DIFFERENT, simpler statistic -- a directional-coherence (Rayleigh) test -- that
+// only asks whether the offsets point consistently off-target. It is not a faithful port and does not evaluate
+// their F-test. A single difference image can point at the wrong spot by chance (systematic, cosmic ray), which is exactly
 // how the P44/P57 single-image veto false-killed real planets. The external survey instead measures the
 // varied-source offset in EVERY sector that has transits and asks whether the offsets point CONSISTENTLY away
 // from the target: a genuine off-target blend drags the centroid the SAME way in every sector, while noise

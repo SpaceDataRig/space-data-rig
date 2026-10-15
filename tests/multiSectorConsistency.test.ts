@@ -1,5 +1,7 @@
-// Offline tests for the multi-sector centroid-consistency statistic (P74, borrowed from the
-// eumemic/exoplanets cross-sector centroid test). Everything is synthetic and deterministic.
+// Offline tests for the multi-sector centroid-consistency statistic (P74). This is OUR directional-coherence
+// (Rayleigh) variant, inspired by -- but NOT identical to -- eumemic's cross-sector centroid check, whose real
+// method is an F-test on the mean offset against each star within 2' (see validation/centroid_sectors.md). The
+// tests below exercise our variant only. Everything is synthetic and deterministic.
 // The whole point is that a coherent off-target offset survives vector-averaging while random
 // per-sector errors cancel -- so the test both rejects a consistent blend and refuses to kill a
 // planet whose per-sector offsets are large but incoherent.

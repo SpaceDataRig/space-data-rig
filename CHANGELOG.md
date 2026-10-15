@@ -37,6 +37,17 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   (returns []) when the row-key column is gone. Docs/pure code only; no verdict/bundle-hash/money path.
 - Locked by `tests/narrate.test.ts` (5 offline cases).
 
+### Correction -- we mis-described eumemic's centroid check; attribution fixed (2026-10-15)
+The eumemic/exoplanets author (@dysmemic) replied to our thank-you note with a correction: their cross-sector
+centroid check is NOT a "does the offset point the same way in every sector" test. It runs an **F-test on the mean
+offset across sectors** (per-axis scatter floored at 1") against the target **and every star within 2' bright enough
+to cause the dip**, reporting **0/565 known planets rejected at p<0.001** and **73% of 175 neighbour-blended TOIs
+caught** (38% within 15") -- see their `validation/centroid_sectors.md`. Our P74 implemented a different, simpler
+**directional-coherence (Rayleigh)** statistic, so `COHERENCE-SAVES-PLANETS-BUT-NO-POWER` is a verdict about OUR
+variant, not a judgment of their method. We corrected the attribution in RESEARCH.md, the P74 script + report,
+`diffImaging.ts` and the offline test's comments, the dashboard card, and the round figure, and logged a faithful
+F-test re-port as follow-up. Numbers unchanged; docs/labels only; nothing gated.
+
 ### Research -- borrowing vetting levers from a real TESS survey, measured before gated (P73-P76) (2026-10-15)
 - P73 masked sibling recovery (`scripts/p73-masked-recovery.ts`): ports eumemic's `--mask-tois` lever. Masking each
   host's OTHER catalogued planets lifts the blind joint re-find 6->7/20 (net +1, zero regressions) but stays far under

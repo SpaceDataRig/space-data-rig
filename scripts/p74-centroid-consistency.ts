@@ -1,15 +1,18 @@
-// P74 - MULTI-SECTOR CENTROID CONSISTENCY (borrowed from the eumemic/exoplanets "centroids in every sector"
-// test): does requiring the varied-source offset to point CONSISTENTLY away from the target across every
-// sector drive the known-planet false-kill to ~0 while keeping blend-catch power -- where the P44/P57/P58
-// SINGLE-sector centroid veto failed?
+// P74 - MULTI-SECTOR CENTROID CONSISTENCY (INSPIRED BY the eumemic/exoplanets cross-sector centroid check;
+// attribution corrected after the author replied: THEIR real method is an F-test on the MEAN offset against each
+// star within 2', NOT a same-direction test -- this script is OUR OWN directional-coherence (Rayleigh) variant, a
+// different and weaker statistic): does requiring the varied-source offset to point CONSISTENTLY away from the
+// target across every sector drive the known-planet false-kill to ~0 while keeping blend-catch power -- where the
+// P44/P57/P58 SINGLE-sector centroid veto failed?
 //
 // WHY THIS EXISTS. P53/P57/P58/P59 proved the single difference-image centroid veto is NOT safe to gate: it
 // false-killed a known planet (PSF 1/16) or half of them (naive 8/16). The failure mode is that ONE aperture
-// can point at the wrong place from a coherent systematic. The external survey's fix: measure the offset in
-// EVERY sector with transits and only reject when the offsets COHERENTLY point away (a real off-target blend
-// drags the centroid the same way in all sectors; a systematic scatters and cancels). On 565 known planets
-// they report the target is NEVER rejected at p<0.001. We have never measured that consistency statistic
-// against our own labelled 2x2. This closes it: it re-scores the SAME naive per-cadence offset, but combined
+// can point at the wrong place from a coherent systematic. eumemic's actual fix (per the author) is an F-test on
+// the MEAN offset across sectors (1"/axis scatter floor) against the target AND every star within 2' bright enough
+// to cause the dip -- on 565 known planets they report 0 false-rejections at p<0.001. This script does NOT port
+// that F-test; it implements a simpler directional-coherence (Rayleigh) statistic (reject only when the offsets
+// point consistently off-target). We have never run their F-test against our own labelled 2x2. This scores OUR
+// coherence variant: it re-scores the SAME naive per-cadence offset, but combined
 // across sectors via multiSectorCentroidConsistency / judgeConsistency, against the single-sector baseline.
 //
 // POSITIVE + NEGATIVE CLASS (token-free, exactly as P57): public ExoFOP TOI table -- KP rows = known planets
@@ -158,9 +161,9 @@ async function main() {
   const multiPower = multiV.metrics.vetoPower ?? 0;
   const powerLost = (singleV.metrics.vetoPower ?? 0) - multiPower;
   const verdict = multiV.safeToGate
-    ? `GATE-WORTHY: the multi-sector consistency test catches ${multiPower.toFixed(2)} of labelled blends at ZERO known-planet false-kills -- the borrowed cross-sector idea is the pixel lever the P44/P57 single image could not be. REPORTED only; wiring it into a gate is a separate, explicitly approved step.`
+    ? `GATE-WORTHY: the multi-sector consistency test catches ${multiPower.toFixed(2)} of labelled blends at ZERO known-planet false-kills -- a cross-sector consistency idea (this coherence variant, or eumemic's stronger per-contaminant F-test) is the pixel lever the P44/P57 single image could not be. REPORTED only; wiring it into a gate is a separate, explicitly approved step.`
     : killsFixed > 0 && multiV.metrics.cm.falseVeto === 0 && multiPower === 0
-      ? `COHERENCE-SAVES-PLANETS-BUT-NO-POWER: requiring the offsets to point coherently off-target (>=2 sectors, Rayleigh p<=0.001) removed ALL ${killsFixed} single-sector known-planet false-kills (${singleV.metrics.cm.falseVeto}->0 of ${measuredPos.length}), but on few-sector SPOC cubes the SAME coherence bar also rejects 0 blends -- power ${singleV.metrics.vetoPower?.toFixed(2)}->0, AUC ${multiV.auc?.toFixed(2)} (chance). The statistic is now SAFE but NON-DISCRIMINATING: eumemic kept its power only because it had many more sectors and a per-sector centroid refit. Not gateable; stays advisory.`
+      ? `COHERENCE-SAVES-PLANETS-BUT-NO-POWER: requiring the offsets to point coherently off-target (>=2 sectors, Rayleigh p<=0.001) removed ALL ${killsFixed} single-sector known-planet false-kills (${singleV.metrics.cm.falseVeto}->0 of ${measuredPos.length}), but on few-sector SPOC cubes the SAME coherence bar also rejects 0 blends -- power ${singleV.metrics.vetoPower?.toFixed(2)}->0, AUC ${multiV.auc?.toFixed(2)} (chance). The statistic is now SAFE but NON-DISCRIMINATING -- and note this is OUR directional-coherence (Rayleigh) variant, NOT eumemic's per-contaminant F-test (they test the mean offset against each star within 2', which is what holds their power; we have not ported it). Not gateable; stays advisory.`
       : killsFixed > 0 && multiV.metrics.cm.falseVeto === 0
         ? `CONSISTENCY-REMOVES-FALSE-KILLS: cross-sector coherence drove known-planet kills ${singleV.metrics.cm.falseVeto}->0 while still catching ${multiPower.toFixed(2)} of blends, but power is under the 0.5 bar (labels mix on-target EBs, a lower bound) -- not yet gateable, safely advisory.`
         : killsFixed > 0

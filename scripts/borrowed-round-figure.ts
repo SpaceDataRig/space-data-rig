@@ -57,12 +57,12 @@ let A = "", B = "", Cd = "", D = "";
 // P74: cross-sector centroid coherence.
 {
   const x = cols[1], y = rows[0];
-  let s = card(x, y, "P74", "Coherent centroid veto", "offset direction must agree across every sector", C.teal);
+  let s = card(x, y, "P74", "Coherent centroid veto (our variant)", "OUR test: offset direction must agree across sectors", C.teal);
   s += big(x + 120, y + 108, `${p74.single.cm.falseVeto}->${p74.multi.cm.falseVeto}`, "known-planet false-kills /16", C.teal);
   s += big(x + 330, y + 108, `${pct(p74.single.vetoPower)}->${pct(p74.multi.vetoPower)}`, "blend-catch power", C.fp);
   s += line(x + 16, y + 150, `Coherence cleared ${p74.effect.falseKillsFixed} false-kills but AUC ${p74.multi.auc.toFixed(2)} = chance.`);
   s += line(x + 16, y + 170, "It saves planets and catches nothing new -- a diagnostic.");
-  s += line(x + 16, y + ch - 14, "COHERENCE-SAVES-PLANETS-BUT-NO-POWER - not a gate.", C.fp, "600");
+  s += line(x + 16, y + ch - 14, "Coherence-saves-planets-no-power; NOT their per-star F-test.", C.fp, "600");
   B = s;
 }
 // P75: inverted-curve empirical FP rate.

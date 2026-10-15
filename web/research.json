@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-15T05:28:47.414Z",
+  "generatedAt": "2026-10-15T07:09:15.876Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -523,7 +523,7 @@
     "discoveryClaim": false
   },
   "borrowedRoundP73P76": {
-    "label": "techniques borrowed from a real TESS survey (eumemic/exoplanets), measured on our own chain: sibling masking (P73), cross-sector centroid coherence (P74), inverted-curve false-alarm null (P75), multi-source novelty (P76)",
+    "label": "techniques inspired by a real TESS survey (eumemic/exoplanets), measured on our own chain: sibling masking (P73), a cross-sector centroid-coherence variant (P74 -- our Rayleigh statistic, NOT their per-contaminant F-test), inverted-curve false-alarm null (P75), multi-source novelty (P76)",
     "maskedRecoveryP73": {
       "single": 4,
       "naiveJoint": 6,

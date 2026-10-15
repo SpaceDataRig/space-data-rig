@@ -330,7 +330,7 @@ const payload = {
     safeToGate: false, discoveryClaim: false,
   },
   borrowedRoundP73P76: {
-    label: "techniques borrowed from a real TESS survey (eumemic/exoplanets), measured on our own chain: sibling masking (P73), cross-sector centroid coherence (P74), inverted-curve false-alarm null (P75), multi-source novelty (P76)",
+    label: "techniques inspired by a real TESS survey (eumemic/exoplanets), measured on our own chain: sibling masking (P73), a cross-sector centroid-coherence variant (P74 -- our Rayleigh statistic, NOT their per-contaminant F-test), inverted-curve false-alarm null (P75), multi-source novelty (P76)",
     maskedRecoveryP73: { single: p73.refind.single, naiveJoint: p73.refind.naiveJoint, maskJoint: p73.refind.maskJoint.count, oracle: p73.refind.oracle, n: p73.refind.n, netMask: p73.paired.netMask, verdict: p73.verdict },
     centroidCoherenceP74: { singleFalseKills: p74.single.cm.falseVeto, multiFalseKills: p74.multi.cm.falseVeto, singlePower: p74.single.vetoPower, multiPower: p74.multi.vetoPower, multiAuc: p74.multi.auc, falseKillsFixed: p74.effect.falseKillsFixed, safeToGate: p74.safeToGate },
     invertedFapP75: { ar1Fp: p75.summary.ar1FalseAlarms, blockFp: p75.summary.blockFalseAlarms, n: p75.summary.n, flips: p75.summary.flips, meanDeltaFap: p75.summary.meanDeltaFap, verdict: p75.verdict },

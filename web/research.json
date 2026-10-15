@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-15T07:09:15.876Z",
+  "generatedAt": "2026-10-15T11:18:32.343Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -128,13 +128,13 @@
         },
         {
           "depthPpm": 2000,
-          "recovered": 10,
-          "rate": 0.8333333333333334
+          "recovered": 9,
+          "rate": 0.75
         },
         {
           "depthPpm": 4000,
-          "recovered": 12,
-          "rate": 1
+          "recovered": 11,
+          "rate": 0.9166666666666666
         },
         {
           "depthPpm": 8000,
@@ -579,6 +579,40 @@
     "fpPerNullCurve": 0.7647058823529411,
     "acceptedUnderBar": 0,
     "falseAcceptsUnderBar": 0,
+    "discoveryClaim": false
+  },
+  "audit9P78P81": {
+    "label": "audit-9 science-meaning program: TCE/DAVE/TPM benchmark, real multi-sector blind test, independent external validation, TRICERATOPS-grade blend+alias check (P78-P81)",
+    "benchmarkP79": {
+      "tceAcceptCompleteness": 0.742,
+      "tceRejectCompleteness": 0
+    },
+    "blindP78": {
+      "hosts": 24,
+      "injected": 10,
+      "nullCurves": 14,
+      "rawPrecision": 0.16363636363636364,
+      "acceptedRecallUnderBar": 8,
+      "falseAcceptsUnderBar": 9,
+      "acceptedPrecisionUnderBar": 0.47058823529411764
+    },
+    "externalValidationP80": {
+      "kpTested": 11,
+      "kpValidated": 9,
+      "cpTested": 9,
+      "cpValidated": 5
+    },
+    "triceratopsLiteP81": {
+      "validated": 14,
+      "kpValidated": 9,
+      "cpValidated": 5,
+      "kpTricGrade": 5,
+      "cpTricGrade": 0,
+      "cpLowOrModerate": 2,
+      "falseCoincidenceBase": 0.5294117647058824
+    },
+    "caveat": "All re-derived from the committed P78-P81 reports; no new analysis, no hardcoded numbers. Our detector's completeness tracks the standard BLS/TCE limit (P79: TCE-accept grid cells average 74% measured completeness vs 0% for reject cells). A real per-sector blind test (P78) shows 2-sector corroboration is necessary but not sufficient (accepted precision ~47%). P80 independently validated external ExoFOP claims via a blind, ephemeris-never-fed corroboration match (0/2 -> KP 9/11 controls, CP 5/9 uncertain candidates). P81 grades those closer to TRICERATOPS (Gaia blend FPP + harmonic alias + multi-sector centroid F-test): the strict bar separates known planets (5/9 KP) from unconfirmed candidates (0/5 CP). First-order checks, not discoveries; discoveryClaim false, safeToGate false.",
+    "safeToGate": false,
     "discoveryClaim": false
   },
   "compute": {

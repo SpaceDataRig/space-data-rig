@@ -56,6 +56,10 @@ const p73 = load("reports/p73-masked-recovery.json");
 const p74 = load("reports/p74-centroid-consistency.json");
 const p75 = load("reports/p75-inverted-fp.json");
 const p76 = load("reports/p76-multisource-novelty.json");
+const p78 = load("reports/p78-blind-multisector.json");
+const p79 = load("reports/p79-benchmark.json");
+const p80 = load("reports/p80-external-validation.json");
+const p81 = load("reports/p81-triceratops-lite.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -352,6 +356,15 @@ const payload = {
     acceptedUnderBar: p49.capped.accepted,
     falseAcceptsUnderBar: p49.capped.falseAccepts,
     discoveryClaim: false,
+  },
+  audit9P78P81: {
+    label: "audit-9 science-meaning program: TCE/DAVE/TPM benchmark, real multi-sector blind test, independent external validation, TRICERATOPS-grade blend+alias check (P78-P81)",
+    benchmarkP79: { tceAcceptCompleteness: p79.tceAgreement.measuredCompletenessWhenTceAccepts, tceRejectCompleteness: p79.tceAgreement.measuredCompletenessWhenTceRejects },
+    blindP78: { hosts: p78.hosts, injected: p78.injected, nullCurves: p78.null, rawPrecision: p78.raw.precision, acceptedRecallUnderBar: p78.capped.acceptedTp, falseAcceptsUnderBar: p78.capped.falseAccepts, acceptedPrecisionUnderBar: p78.capped.acceptedPrecision },
+    externalValidationP80: { kpTested: p80.totals.kpTested, kpValidated: p80.totals.kpValidated, cpTested: p80.totals.cpTested, cpValidated: p80.totals.cpValidated },
+    triceratopsLiteP81: { validated: p81.totals.validated, kpValidated: p81.totals.kpValidated, cpValidated: p81.totals.cpValidated, kpTricGrade: (p81.rows || []).filter((x: any) => x.disp === "KP" && x.tricGrade).length, cpTricGrade: p81.totals.cpTricGrade, cpLowOrModerate: p81.totals.cpLowOrModerate, falseCoincidenceBase: p81.meta.falseCoincidenceBase },
+    caveat: "All re-derived from the committed P78-P81 reports; no new analysis, no hardcoded numbers. Our detector's completeness tracks the standard BLS/TCE limit (P79: TCE-accept grid cells average 74% measured completeness vs 0% for reject cells). A real per-sector blind test (P78) shows 2-sector corroboration is necessary but not sufficient (accepted precision ~47%). P80 independently validated external ExoFOP claims via a blind, ephemeris-never-fed corroboration match (0/2 -> KP 9/11 controls, CP 5/9 uncertain candidates). P81 grades those closer to TRICERATOPS (Gaia blend FPP + harmonic alias + multi-sector centroid F-test): the strict bar separates known planets (5/9 KP) from unconfirmed candidates (0/5 CP). First-order checks, not discoveries; discoveryClaim false, safeToGate false.",
+    safeToGate: false, discoveryClaim: false,
   },
   compute,
 };

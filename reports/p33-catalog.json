@@ -30,7 +30,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 7333
+      "perCurveMs": 8545
     },
     {
       "host": "HR 858",
@@ -46,7 +46,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2139
+      "perCurveMs": 2493
     },
     {
       "host": "HD 63433",
@@ -62,7 +62,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 345
+      "perCurveMs": 414
     },
     {
       "host": "HD 25463",
@@ -78,7 +78,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 85342
+      "perCurveMs": 102211
     },
     {
       "host": "AU Mic",
@@ -94,7 +94,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 29987
+      "perCurveMs": 35660
     },
     {
       "host": "TOI-480",
@@ -110,7 +110,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 72159
+      "perCurveMs": 86821
     },
     {
       "host": "GJ 143",
@@ -126,7 +126,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2376
+      "perCurveMs": 2805
     },
     {
       "host": "HD 1397",
@@ -142,7 +142,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4522
+      "perCurveMs": 5292
     },
     {
       "host": "TOI-5739",
@@ -158,7 +158,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 584
+      "perCurveMs": 701
     },
     {
       "host": "KELT-11",
@@ -174,7 +174,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 907
+      "perCurveMs": 1092
     },
     {
       "host": "HD 86226",
@@ -190,7 +190,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 65446
+      "perCurveMs": 78184
     },
     {
       "host": "HD 207496",
@@ -206,7 +206,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 44272
+      "perCurveMs": 53539
     },
     {
       "host": "HD 213885",
@@ -222,7 +222,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 5696
+      "perCurveMs": 6958
     },
     {
       "host": "TOI-6054",
@@ -238,7 +238,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1050
+      "perCurveMs": 1269
     },
     {
       "host": "KELT-20",
@@ -254,7 +254,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 87610
+      "perCurveMs": 105417
     },
     {
       "host": "KELT-9",
@@ -270,7 +270,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2975
+      "perCurveMs": 3522
     },
     {
       "host": "TOI-1776",
@@ -286,7 +286,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 755
+      "perCurveMs": 914
     },
     {
       "host": "HD 110067",
@@ -302,7 +302,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 526
+      "perCurveMs": 639
     },
     {
       "host": "GJ 341",
@@ -318,7 +318,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1862
+      "perCurveMs": 2248
     },
     {
       "host": "K2-167",
@@ -334,7 +334,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 67445
+      "perCurveMs": 80296
     },
     {
       "host": "HD 22946",
@@ -350,7 +350,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3126
+      "perCurveMs": 3709
     },
     {
       "host": "HIP 94235",
@@ -366,7 +366,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 959
+      "perCurveMs": 1177
     },
     {
       "host": "Kepler-21",
@@ -382,7 +382,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 62209
+      "perCurveMs": 75101
     },
     {
       "host": "TOI-1860",
@@ -398,7 +398,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 1273
+      "perCurveMs": 1532
     },
     {
       "host": "TOI-2134",
@@ -414,7 +414,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 51224
+      "perCurveMs": 62166
     },
     {
       "host": "TOI-1431",
@@ -430,7 +430,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4031
+      "perCurveMs": 4808
     },
     {
       "host": "DS Tuc A",
@@ -446,7 +446,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 29326
+      "perCurveMs": 35414
     },
     {
       "host": "HD 202772 A",
@@ -462,7 +462,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1911
+      "perCurveMs": 2330
     },
     {
       "host": "WASP-33",
@@ -478,7 +478,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 748
+      "perCurveMs": 908
     },
     {
       "host": "TOI-4443",
@@ -494,7 +494,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 40100
+      "perCurveMs": 48914
     },
     {
       "host": "KELT-24",
@@ -510,7 +510,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 12917
+      "perCurveMs": 15572
     },
     {
       "host": "HD 63935",
@@ -526,7 +526,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 84529
+      "perCurveMs": 102718
     },
     {
       "host": "TOI-128",
@@ -542,7 +542,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4583
+      "perCurveMs": 5534
     },
     {
       "host": "MASCARA-4",
@@ -558,7 +558,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2760
+      "perCurveMs": 3313
     },
     {
       "host": "Kepler-444",
@@ -574,7 +574,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 78018
+      "perCurveMs": 94517
     },
     {
       "host": "TOI-262",
@@ -590,7 +590,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 77467
+      "perCurveMs": 92941
     },
     {
       "host": "KELT-7",
@@ -606,7 +606,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1106
+      "perCurveMs": 1304
     },
     {
       "host": "TOI-431",
@@ -622,7 +622,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3713
+      "perCurveMs": 4466
     },
     {
       "host": "HD 18599",
@@ -638,7 +638,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2808
+      "perCurveMs": 3335
     },
     {
       "host": "TOI-1011",
@@ -654,7 +654,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 81961
+      "perCurveMs": 98698
     },
     {
       "host": "TOI-1718",
@@ -670,7 +670,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1033
+      "perCurveMs": 1250
     },
     {
       "host": "TOI-2540",
@@ -686,7 +686,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 36761
+      "perCurveMs": 42702
     },
     {
       "host": "HAT-P-2",
@@ -702,7 +702,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4255
+      "perCurveMs": 4884
     },
     {
       "host": "HD 191939",
@@ -718,7 +718,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2979
+      "perCurveMs": 3579
     },
     {
       "host": "HD 6061",
@@ -734,7 +734,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 506
+      "perCurveMs": 618
     },
     {
       "host": "HD 15337",
@@ -750,7 +750,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3297
+      "perCurveMs": 3922
     },
     {
       "host": "Kepler-408",
@@ -766,7 +766,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2305
+      "perCurveMs": 2777
     },
     {
       "host": "TOI-1736",
@@ -782,7 +782,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3712
+      "perCurveMs": 4442
     },
     {
       "host": "TOI-1799",
@@ -798,7 +798,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 622
+      "perCurveMs": 761
     },
     {
       "host": "TOI-2076",
@@ -814,7 +814,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 10654
+      "perCurveMs": 12813
     },
     {
       "host": "HD 235088",
@@ -830,7 +830,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1924
+      "perCurveMs": 2330
     },
     {
       "host": "HD 152843",
@@ -846,7 +846,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1035
+      "perCurveMs": 1267
     },
     {
       "host": "HD 77946",
@@ -862,7 +862,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1079
+      "perCurveMs": 1315
     },
     {
       "host": "TOI-248",
@@ -878,7 +878,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2506
+      "perCurveMs": 3009
     },
     {
       "host": "HAT-P-11",
@@ -894,7 +894,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2689
+      "perCurveMs": 3217
     },
     {
       "host": "TOI-5734",
@@ -910,7 +910,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 387
+      "perCurveMs": 471
     },
     {
       "host": "TOI-2145",
@@ -926,7 +926,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3769
+      "perCurveMs": 4530
     },
     {
       "host": "TOI-622",
@@ -942,7 +942,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3166
+      "perCurveMs": 3824
     },
     {
       "host": "TOI-2287",
@@ -958,7 +958,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 6557
+      "perCurveMs": 7882
     },
     {
       "host": "TOI-5531",
@@ -974,7 +974,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 709
+      "perCurveMs": 862
     },
     {
       "host": "TOI-201",
@@ -990,7 +990,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4417
+      "perCurveMs": 5247
     },
     {
       "host": "HD 73583",
@@ -1006,7 +1006,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 61586
+      "perCurveMs": 74379
     },
     {
       "host": "HD 93963 A",
@@ -1022,7 +1022,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 970
+      "perCurveMs": 1172
     },
     {
       "host": "TOI-836",
@@ -1038,7 +1038,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 34918
+      "perCurveMs": 42536
     },
     {
       "host": "HD 108236",
@@ -1054,7 +1054,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3073
+      "perCurveMs": 3700
     },
     {
       "host": "TOI-778",
@@ -1070,7 +1070,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 78544
+      "perCurveMs": 94822
     },
     {
       "host": "TOI-3493",
@@ -1086,7 +1086,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2362
+      "perCurveMs": 2913
     },
     {
       "host": "TOI-2458",
@@ -1102,7 +1102,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2936
+      "perCurveMs": 3591
     },
     {
       "host": "HD 109833",
@@ -1118,7 +1118,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 2839
+      "perCurveMs": 3386
     },
     {
       "host": "GJ 357",
@@ -1134,7 +1134,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 62206
+      "perCurveMs": 74340
     },
     {
       "host": "TOI-1518",
@@ -1150,7 +1150,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3809
+      "perCurveMs": 4533
     },
     {
       "host": "HD 23472",
@@ -1166,7 +1166,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4682
+      "perCurveMs": 5505
     },
     {
       "host": "HD 307842",
@@ -1182,7 +1182,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3160
+      "perCurveMs": 3782
     },
     {
       "host": "HD 110082",
@@ -1198,7 +1198,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 1583
+      "perCurveMs": 1884
     },
     {
       "host": "TOI-6098",
@@ -1214,7 +1214,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3131
+      "perCurveMs": 3804
     },
     {
       "host": "TOI-3353",
@@ -1230,7 +1230,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 3941
+      "perCurveMs": 4706
     },
     {
       "host": "TOI-1408",
@@ -1246,7 +1246,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2702
+      "perCurveMs": 3265
     },
     {
       "host": "TOI-1716",
@@ -1262,7 +1262,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1073
+      "perCurveMs": 1305
     },
     {
       "host": "TOI-733",
@@ -1278,7 +1278,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 76126
+      "perCurveMs": 91410
     },
     {
       "host": "LTT 1445 A",
@@ -1294,7 +1294,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 47587
+      "perCurveMs": 56784
     },
     {
       "host": "WASP-166",
@@ -1310,7 +1310,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 62337
+      "perCurveMs": 74392
     },
     {
       "host": "HD 15906",
@@ -1326,7 +1326,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 37543
+      "perCurveMs": 45596
     },
     {
       "host": "TOI-2545",
@@ -1342,7 +1342,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 73076
+      "perCurveMs": 88322
     },
     {
       "host": "TIC 65612701",
@@ -1358,7 +1358,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3297
+      "perCurveMs": 3932
     },
     {
       "host": "WASP-99",
@@ -1374,7 +1374,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 73868
+      "perCurveMs": 88584
     },
     {
       "host": "TOI-1136",
@@ -1390,7 +1390,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 1477
+      "perCurveMs": 1796
     },
     {
       "host": "TOI-2018",
@@ -1406,7 +1406,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 875
+      "perCurveMs": 1075
     },
     {
       "host": "TOI-512",
@@ -1422,7 +1422,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3352
+      "perCurveMs": 4038
     },
     {
       "host": "TOI-1630",
@@ -1438,7 +1438,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1872
+      "perCurveMs": 2268
     },
     {
       "host": "HIP 113103",
@@ -1454,7 +1454,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 27434
+      "perCurveMs": 33074
     },
     {
       "host": "TIC 139702105",
@@ -1470,7 +1470,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 81459
+      "perCurveMs": 98502
     },
     {
       "host": "TOI-4495",
@@ -1486,7 +1486,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79251
+      "perCurveMs": 96263
     },
     {
       "host": "HAT-P-22",
@@ -1502,7 +1502,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1076
+      "perCurveMs": 1315
     },
     {
       "host": "TOI-2427",
@@ -1518,7 +1518,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 1017
+      "perCurveMs": 1264
     },
     {
       "host": "TOI-1052",
@@ -1534,7 +1534,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 25234
+      "perCurveMs": 30109
     },
     {
       "host": "WASP-76",
@@ -1550,7 +1550,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2595
+      "perCurveMs": 3192
     },
     {
       "host": "TOI-1135",
@@ -1566,7 +1566,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 3527
+      "perCurveMs": 4298
     },
     {
       "host": "TOI-1333",
@@ -1582,7 +1582,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 1214
+      "perCurveMs": 1477
     },
     {
       "host": "TOI-261",
@@ -1598,7 +1598,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 71172
+      "perCurveMs": 86410
     },
     {
       "host": "TOI-6729",
@@ -1614,7 +1614,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 21573
+      "perCurveMs": 25909
     },
     {
       "host": "WASP-7",
@@ -1630,7 +1630,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2343
+      "perCurveMs": 2930
     },
     {
       "host": "TOI-1416",
@@ -1646,7 +1646,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 7909
+      "perCurveMs": 9601
     },
     {
       "host": "TOI-1411",
@@ -1662,7 +1662,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 12450
+      "perCurveMs": 15099
     },
     {
       "host": "TOI-286",
@@ -1678,7 +1678,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3738
+      "perCurveMs": 4498
     },
     {
       "host": "TOI-2497",
@@ -1694,7 +1694,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79965
+      "perCurveMs": 97694
     },
     {
       "host": "HIP 97166",
@@ -1710,7 +1710,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4076
+      "perCurveMs": 4943
     },
     {
       "host": "WASP-8",
@@ -1726,7 +1726,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79329
+      "perCurveMs": 96295
     },
     {
       "host": "TOI-5726",
@@ -1742,7 +1742,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 11520
+      "perCurveMs": 13925
     },
     {
       "host": "HD 219666",
@@ -1758,7 +1758,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1822
+      "perCurveMs": 2283
     },
     {
       "host": "HAT-P-60",
@@ -1774,7 +1774,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 797
+      "perCurveMs": 983
     },
     {
       "host": "TOI-1789",
@@ -1790,7 +1790,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1108
+      "perCurveMs": 1368
     },
     {
       "host": "HIP 67522",
@@ -1806,7 +1806,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 45242
+      "perCurveMs": 55785
     },
     {
       "host": "HD 2685",
@@ -1822,7 +1822,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 77581
+      "perCurveMs": 93493
     },
     {
       "host": "TOI-682",
@@ -1838,7 +1838,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79525
+      "perCurveMs": 96589
     },
     {
       "host": "L 168-9",
@@ -1854,7 +1854,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 836
+      "perCurveMs": 1031
     },
     {
       "host": "TOI-2211",
@@ -1870,7 +1870,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2625
+      "perCurveMs": 3239
     },
     {
       "host": "TOI-880",
@@ -1886,7 +1886,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 76474
+      "perCurveMs": 93301
     },
     {
       "host": "TOI-5997",
@@ -1902,7 +1902,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3712
+      "perCurveMs": 4496
     },
     {
       "host": "TOI-1842",
@@ -1918,7 +1918,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 734
+      "perCurveMs": 901
     },
     {
       "host": "TOI-421",
@@ -1934,7 +1934,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3546
+      "perCurveMs": 4293
     },
     {
       "host": "TOI-677",
@@ -1950,7 +1950,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3455
+      "perCurveMs": 4168
     },
     {
       "host": "TOI-1836",
@@ -1966,7 +1966,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 12717
+      "perCurveMs": 15271
     },
     {
       "host": "TOI-6038 A",
@@ -1982,7 +1982,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 858
+      "perCurveMs": 1044
     },
     {
       "host": "TOI-251",
@@ -1998,7 +1998,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 27482
+      "perCurveMs": 33425
     },
     {
       "host": "HAT-P-70",
@@ -2014,7 +2014,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 73404
+      "perCurveMs": 88889
     },
     {
       "host": "TOI-1772",
@@ -2030,7 +2030,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 648
+      "perCurveMs": 785
     },
     {
       "host": "TOI-697",
@@ -2046,7 +2046,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3699
+      "perCurveMs": 4493
     },
     {
       "host": "TOI-815",
@@ -2062,7 +2062,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 32792
+      "perCurveMs": 40102
     },
     {
       "host": "TOI-139",
@@ -2078,7 +2078,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1400
+      "perCurveMs": 1723
     },
     {
       "host": "GJ 238",
@@ -2094,7 +2094,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4796
+      "perCurveMs": 5700
     },
     {
       "host": "TOI-883",
@@ -2110,7 +2110,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 76220
+      "perCurveMs": 93075
     },
     {
       "host": "TOI-481",
@@ -2126,7 +2126,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 5240
+      "perCurveMs": 6311
     },
     {
       "host": "Kepler-93",
@@ -2142,7 +2142,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 66708
+      "perCurveMs": 81274
     },
     {
       "host": "L 98-59",
@@ -2158,7 +2158,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 7970
+      "perCurveMs": 9556
     },
     {
       "host": "KELT-3",
@@ -2174,7 +2174,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1235
+      "perCurveMs": 1516
     },
     {
       "host": "XO-3",
@@ -2190,7 +2190,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1109
+      "perCurveMs": 1348
     },
     {
       "host": "TOI-205",
@@ -2206,7 +2206,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3183
+      "perCurveMs": 3809
     },
     {
       "host": "HIP 8152",
@@ -2222,7 +2222,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79092
+      "perCurveMs": 95311
     },
     {
       "host": "HD 110113",
@@ -2238,7 +2238,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 50978
+      "perCurveMs": 62462
     },
     {
       "host": "TOI-1432",
@@ -2254,7 +2254,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1562
+      "perCurveMs": 1911
     },
     {
       "host": "TOI-1670",
@@ -2270,7 +2270,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3553
+      "perCurveMs": 4302
     },
     {
       "host": "WASP-131",
@@ -2286,7 +2286,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 539
+      "perCurveMs": 659
     },
     {
       "host": "TOI-1062",
@@ -2302,7 +2302,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 14170
+      "perCurveMs": 16848
     },
     {
       "host": "WASP-136",
@@ -2318,7 +2318,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2018
+      "perCurveMs": 2475
     },
     {
       "host": "GJ 3090",
@@ -2334,7 +2334,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3792
+      "perCurveMs": 4576
     },
     {
       "host": "WASP-95",
@@ -2350,7 +2350,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 70829
+      "perCurveMs": 85015
     },
     {
       "host": "Kepler-68",
@@ -2366,7 +2366,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3121
+      "perCurveMs": 3743
     },
     {
       "host": "TOI-1722",
@@ -2382,7 +2382,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 514
+      "perCurveMs": 629
     },
     {
       "host": "TOI-561",
@@ -2398,7 +2398,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 67620
+      "perCurveMs": 81537
     },
     {
       "host": "TOI-763",
@@ -2414,7 +2414,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 78553
+      "perCurveMs": 94997
     },
     {
       "host": "TOI-1669",
@@ -2430,7 +2430,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3911
+      "perCurveMs": 4644
     },
     {
       "host": "WASP-82",
@@ -2446,7 +2446,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 978
+      "perCurveMs": 1175
     },
     {
       "host": "HAT-P-14",
@@ -2462,7 +2462,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3906
+      "perCurveMs": 4698
     },
     {
       "host": "TOI-1659",
@@ -2478,7 +2478,7 @@
         "4000": false,
         "8000": false
       },
-      "perCurveMs": 3130
+      "perCurveMs": 3767
     },
     {
       "host": "TOI-1648",
@@ -2494,7 +2494,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2364
+      "perCurveMs": 2809
     },
     {
       "host": "TOI-426",
@@ -2510,7 +2510,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 33254
+      "perCurveMs": 40768
     },
     {
       "host": "TOI-5788",
@@ -2526,7 +2526,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 84750
+      "perCurveMs": 102878
     },
     {
       "host": "TOI-6651",
@@ -2542,7 +2542,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 738
+      "perCurveMs": 899
     },
     {
       "host": "HAT-P-69",
@@ -2558,7 +2558,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 84869
+      "perCurveMs": 102718
     },
     {
       "host": "TOI-913",
@@ -2574,7 +2574,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3898
+      "perCurveMs": 4657
     },
     {
       "host": "WASP-77 A",
@@ -2590,7 +2590,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 85033
+      "perCurveMs": 101940
     },
     {
       "host": "WASP-127",
@@ -2606,7 +2606,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 71448
+      "perCurveMs": 87005
     },
     {
       "host": "TOI-4492",
@@ -2622,7 +2622,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2725
+      "perCurveMs": 3293
     },
     {
       "host": "HAT-P-67",
@@ -2638,7 +2638,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 5793
+      "perCurveMs": 6987
     },
     {
       "host": "WASP-117",
@@ -2654,7 +2654,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3513
+      "perCurveMs": 4204
     },
     {
       "host": "WASP-94 A",
@@ -2670,7 +2670,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 89606
+      "perCurveMs": 107908
     },
     {
       "host": "TOI-544",
@@ -2686,7 +2686,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 56339
+      "perCurveMs": 69024
     },
     {
       "host": "Kepler-1869",
@@ -2702,7 +2702,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 78127
+      "perCurveMs": 95500
     },
     {
       "host": "KELT-19 A",
@@ -2718,7 +2718,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 84280
+      "perCurveMs": 102928
     },
     {
       "host": "TOI-6647",
@@ -2734,7 +2734,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 688
+      "perCurveMs": 838
     },
     {
       "host": "TOI-628",
@@ -2750,7 +2750,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 850
+      "perCurveMs": 1029
     },
     {
       "host": "TOI-1281",
@@ -2766,7 +2766,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4052
+      "perCurveMs": 4852
     },
     {
       "host": "K2-277",
@@ -2782,7 +2782,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 29125
+      "perCurveMs": 35681
     },
     {
       "host": "WASP-79",
@@ -2798,7 +2798,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3919
+      "perCurveMs": 4727
     },
     {
       "host": "TOI-220",
@@ -2814,7 +2814,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4646
+      "perCurveMs": 5555
     },
     {
       "host": "TOI-1794",
@@ -2830,7 +2830,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1795
+      "perCurveMs": 2189
     },
     {
       "host": "WASP-62",
@@ -2846,7 +2846,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4872
+      "perCurveMs": 5907
     },
     {
       "host": "WASP-187",
@@ -2862,7 +2862,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 711
+      "perCurveMs": 874
     },
     {
       "host": "TOI-776",
@@ -2878,7 +2878,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 70146
+      "perCurveMs": 85548
     },
     {
       "host": "HAT-P-17",
@@ -2894,7 +2894,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 819
+      "perCurveMs": 1000
     },
     {
       "host": "TOI-4324",
@@ -2910,7 +2910,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 50735
+      "perCurveMs": 61578
     },
     {
       "host": "WASP-34",
@@ -2926,7 +2926,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 79382
+      "perCurveMs": 97202
     },
     {
       "host": "KELT-23 A",
@@ -2942,7 +2942,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3295
+      "perCurveMs": 3982
     },
     {
       "host": "TOI-5786",
@@ -2958,7 +2958,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 85506
+      "perCurveMs": 104851
     },
     {
       "host": "TOI-954",
@@ -2974,7 +2974,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3897
+      "perCurveMs": 4709
     },
     {
       "host": "WASP-101",
@@ -2990,7 +2990,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 86452
+      "perCurveMs": 105138
     },
     {
       "host": "TOI-1683",
@@ -3006,7 +3006,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 949
+      "perCurveMs": 1158
     },
     {
       "host": "TOI-1739",
@@ -3022,7 +3022,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 8809
+      "perCurveMs": 10738
     },
     {
       "host": "TOI-786",
@@ -3038,7 +3038,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4824
+      "perCurveMs": 5857
     },
     {
       "host": "KELT-18",
@@ -3054,7 +3054,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 3312
+      "perCurveMs": 3998
     },
     {
       "host": "TOI-2114",
@@ -3070,7 +3070,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 2942
+      "perCurveMs": 3599
     },
     {
       "host": "KELT-6",
@@ -3086,7 +3086,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 808
+      "perCurveMs": 989
     },
     {
       "host": "TOI-1801",
@@ -3102,7 +3102,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 433
+      "perCurveMs": 533
     },
     {
       "host": "WASP-73",
@@ -3118,7 +3118,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 89589
+      "perCurveMs": 107560
     },
     {
       "host": "WASP-54",
@@ -3134,7 +3134,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 839
+      "perCurveMs": 1019
     },
     {
       "host": "HAT-P-34",
@@ -3150,7 +3150,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 927
+      "perCurveMs": 1129
     },
     {
       "host": "WASP-178",
@@ -3166,7 +3166,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 81871
+      "perCurveMs": 99509
     },
     {
       "host": "XO-6",
@@ -3182,7 +3182,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 4114
+      "perCurveMs": 4933
     },
     {
       "host": "K2-376",
@@ -3198,7 +3198,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1012
+      "perCurveMs": 1227
     },
     {
       "host": "TOI-712",
@@ -3214,7 +3214,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1333
+      "perCurveMs": 1646
     },
     {
       "host": "TOI-1768",
@@ -3230,7 +3230,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 1087
+      "perCurveMs": 1331
     },
     {
       "host": "TOI-1235",
@@ -3246,7 +3246,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 12288
+      "perCurveMs": 14746
     },
     {
       "host": "TOI-783",
@@ -3262,7 +3262,7 @@
         "4000": false,
         "8000": true
       },
-      "perCurveMs": 27628
+      "perCurveMs": 33841
     },
     {
       "host": "TOI-238",
@@ -3278,7 +3278,7 @@
         "4000": true,
         "8000": true
       },
-      "perCurveMs": 81609
+      "perCurveMs": 98004
     }
   ]
 }

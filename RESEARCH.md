@@ -143,6 +143,25 @@ publishes `reports/crosscheck/cross-pipeline.{md,json}` back into the repo.
 
 ![Independent validation on real TESS photometry](web/results-figure.svg)
 
+### 4c. What we have NOT benchmarked (the gap a paper must close)
+
+Both cross-checks above are **re-implementations of the same problem we solve** -- a general period finder (PDM) and
+a second BLS written in an unrelated language (wotan + astropy). They rule out *our own* code being the only reason
+a signal appears; they do **not** compare against the field's mature, operationally-validated transit systems. As of
+this writing we have run **no quantitative benchmark against TCE / the NASA TAP (Transit Analysis Validation
+Environment, DAVE) / Drisser's transit-probability machinery (TPM)** -- the tools whose completeness/veto curves are
+the accepted reference. Our sample is also small for occurrence-rate claims: the independent arm is 12 committed
+fixtures, the method arm 33 hosts, and the baseline studies (P41) span 27-54 days on 29 hosts -- far from a survey-
+scale selection function.
+
+The honest scope of this repo is therefore: a **reproducible, measure-before-gate harness plus a set of quantified
+NEGATIVE results** (which vetting levers do NOT discriminate on real short-baseline data), not a new detector nor a
+discovery claim. Turning it into a paper requires, as the first next step: (1) running Drisser/TPM and a DAVE-style
+threshold pass over the SAME seeded host set and publishing the completeness/veto ROC side-by-side with ours; (2)
+scaling to a large, phase-covered sample with a proper selection function; and (3) an external, non-author
+re-derivation of at least one headline curve. We state this up front rather than let the negative results imply a
+generalization they have not earned.
+
 ---
 
 ## 5. Attacking false positives at the source (P31, common-mode)

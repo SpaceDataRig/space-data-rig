@@ -43,6 +43,12 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   bundle-hash / money-path logic changed; **not deployed** and the secret remains the operator's to set. Offline tests
   in `tests/rateLimit.test.ts` (5 cases).
 - Locked by `tests/narrate.test.ts` (5 offline cases).
+- **Scientific-novelty scope (#9)**: `RESEARCH.md` section 4c states plainly that our two cross-checks are
+  same-problem re-implementations (PDM; a wotan+astropy BLS) and that we have run **no quantitative benchmark against
+  TCE / DAVE / Drisser's TPM**, with small samples (12 fixtures / 33 hosts / 27-54 d baselines); it defines the honest
+  deliverable (a reproducible harness + quantified negative results, not a new detector) and lists the concrete steps
+  to paper-grade (Drisser/TPM + DAVE-style ROC on the same hosts; a large selection function; external re-derivation).
+  Docs only. The benchmark studies themselves are follow-up research tasks, not run here.
 
 ### Correction -- we mis-described eumemic's centroid check; attribution fixed (2026-10-15)
 The eumemic/exoplanets author (@dysmemic) replied to our thank-you note with a correction: their cross-sector

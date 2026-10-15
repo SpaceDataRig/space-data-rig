@@ -22,5 +22,16 @@ jobs:
       - name: Typecheck (Node + Worker targets)
         run: npm run typecheck:all
 
-      - name: Tests
-        run: npm test
+      - name: Lint (blocking on errors)
+        run: npm run lint
+
+      - name: Tests + coverage gate (auto-discovers tests/*.test.ts)
+        run: npm run test:coverage
+
+      - name: Dependency audit (advisory -- Dependabot owns remediation)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Format check (advisory -- one-time repo-wide format pending)
+        run: npm run format:check
+        continue-on-error: true

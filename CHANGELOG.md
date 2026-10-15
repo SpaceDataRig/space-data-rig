@@ -17,6 +17,13 @@ verdict, bundle-hash or money path. Each is measured-labeled and gated by tests.
   capability. narration is excluded from `buildManifest`, so no bundle hash or verdict moved.
 - **#1 AI-vs-pipeline framing** (README / RESEARCH): a plain-language note that the five seats are deterministic
   TypeScript stages, `src/ai/` is ~2% and advisory only, and P70 measured that removing the models changes zero verdicts.
+- **Build & test hygiene** (#5): `npm test` no longer uses a hand-maintained file list (which let new tests
+  be silently skipped) -- it now auto-discovers every `tests/*.test.ts` via `scripts/run-tests.ts`, with a floor
+  guard that fails loudly if discovery ever regresses. Added ESLint (`eslint.config.js`, `npm run lint`, errors block),
+  Prettier config (`npm run format` / `format:check`), and a coverage gate (`npm run test:coverage`, Node's built-in V8
+  coverage, line floor 85 against the measured ~95%). CI now runs typecheck + lint + tests-with-coverage as blocking,
+  with `npm audit` and `format:check` advisory until a one-time repo-wide format is agreed. Fixed the broken
+  indentation in `package.json` scripts.
 - Locked by `tests/narrate.test.ts` (5 offline cases).
 
 ### Research -- borrowing vetting levers from a real TESS survey, measured before gated (P73-P76) (2026-10-15)

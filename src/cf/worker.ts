@@ -29,7 +29,7 @@ import { handleBrowserRpcProxy } from "../observe/rpcProxy.ts";
 import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
-import type { BundleRecord, DashboardState, LedgerEntry } from "../core/state-types.ts";
+import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
 
 export { RigStateDO, RigRunWorkflow };
 

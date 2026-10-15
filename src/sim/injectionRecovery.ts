@@ -7,7 +7,7 @@
 import { preprocess } from "../detect/detrend.ts";
 import { bls } from "../detect/bls.ts";
 import { resolvePeriodAlias } from "./aliasResolver.ts";
-import { generateSyntheticTransit, rng, type InjectedTruth } from "../data/synthetic.ts";
+import { generateSyntheticTransit, rng } from "../data/synthetic.ts";
 import { mainSequenceMassFromRadius } from "./transitModel.ts";
 
 export interface TrialResult {
@@ -94,7 +94,7 @@ export function runInjectionRecovery(o: BenchmarkOptions = {}): { trials: TrialR
       targetIdLabel: `INJ-${seed}`,
     });
 
-    let rec: TrialResult = {
+    const rec: TrialResult = {
       seed,
       injectedPeriod: truth.periodDays,
       requestedDepthPpm: depthPpm,

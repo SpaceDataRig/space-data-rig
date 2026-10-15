@@ -71,8 +71,8 @@ console.log("P15 INDEPENDENT REVIEW of P. Chopra's two TESS planet candidates (p
 console.log("Our rig reviews his claim independently; his ephemeris is WITHHELD from our detector. Not our discovery.\n");
 
 // A. novelty -- fetch the lists once and scan for these two TICs.
-let confirmedTics = new Set<number>();
-let toiTics = new Set<number>();
+const confirmedTics = new Set<number>();
+const toiTics = new Set<number>();
 let confirmedN = -1;
 let toiN = -1;
 try {

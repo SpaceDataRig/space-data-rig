@@ -151,7 +151,7 @@ export async function fetchToiTable(o: ToiFetchOptions = {}): Promise<ToiRecord[
       const rows = parseToiTable(text);
       if (rows.length === 0) throw new Error("empty/unparseable TOI table");
       return rows;
-    } catch (e) {
+    } catch {
       if (attempt === 2) return [];
       await new Promise((res) => setTimeout(res, 1500 * (attempt + 1)));
     } finally {

@@ -422,7 +422,6 @@ export class Orchestrator {
     if (!lc || !detection) throw new Error("missing detection");
     this.store.updateTask(task.id, { status: "simulating" });
     this.store.setSeatStatus("sim-runner", "running", `Injection-recovery replay for ${lc.targetId}`);
-    const c = detection.candidate;
     this.store.emitEvent("sim-runner", "info", `Replaying the ${lc.targetId} signal through ${this.opts.confidenceTrials} fresh noise realizations to measure how reliable it is ...`);
     await sleep(this.opts.stageDelayMs);
 

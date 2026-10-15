@@ -63,7 +63,7 @@ for (const g of [0, 0.25, 0.5, 0.75, 1.0]) {
   const y = aY(g).toFixed(1);
   aGrid += `<line x1="${aL}" y1="${y}" x2="${aR}" y2="${y}" stroke="${C.grid}"/><text x="${aL - 8}" y="${(Number(y) + 4).toFixed(1)}" fill="${C.text}" font-size="11" text-anchor="end">${(g * 100).toFixed(0)}%</text>`;
 }
-let aXLabels = depths.map((d, i) => `<text x="${aX(i).toFixed(1)}" y="${aB + 18}" fill="${C.text}" font-size="11" text-anchor="middle">${d}</text>`).join("");
+const aXLabels = depths.map((d, i) => `<text x="${aX(i).toFixed(1)}" y="${aB + 18}" fill="${C.text}" font-size="11" text-anchor="middle">${d}</text>`).join("");
 
 // Panel B bars: two groups (TS, Python), each TP + FP
 const bL = 560, bR = 910, bT = 84, bB = 322;

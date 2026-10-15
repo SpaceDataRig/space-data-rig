@@ -57,7 +57,6 @@ const REPO_ROOT = resolve(__dirname, "../..");
 const OUT_DIR = resolve(REPO_ROOT, "out");
 const WEB_DIR = resolve(REPO_ROOT, "web");
 const STATE_PATH = resolve(OUT_DIR, "state", "rig.json");
-const BUNDLES_DIR = resolve(OUT_DIR, "bundles");
 const LEDGER_PATH = resolve(OUT_DIR, "ledger.json");
 
 // Artifact reader for the bundle endpoints. Same key layout as the Workers R2 store,

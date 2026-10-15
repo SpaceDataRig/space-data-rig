@@ -30,9 +30,10 @@ if (files.length < FLOOR) {
 const wantCoverage = process.argv.includes("--coverage");
 const runnerArgs = ["--import", "tsx", "--test"];
 if (wantCoverage) {
-  // Node's built-in V8 coverage -- no third-party dependency. The measured line coverage is ~95%;
-  // the floor sits at 85 to leave headroom for runtime differences while still failing a real drop.
-  runnerArgs.push("--experimental-test-coverage", "--test-coverage-lines=85");
+  // Node's built-in V8 coverage -- no third-party dependency. Measured: line ~96%, branch ~80%, function ~92%.
+  // Floors sit at 85 (lines) / 75 (branches) to leave headroom for runtime differences while still failing a
+  // real drop. audit-10 #11 widened the gate from lines-only to also enforce BRANCH coverage.
+  runnerArgs.push("--experimental-test-coverage", "--test-coverage-lines=85", "--test-coverage-branches=75");
 }
 runnerArgs.push(...files.map((f) => join(testsDir, f)));
 

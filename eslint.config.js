@@ -35,4 +35,14 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
+  {
+    // audit-10 #11: research tooling under scripts/ leans on `any` casts for parsed JSON/CLI and keeps
+    // exploratory vars; both opinions are OFF there so `npm run lint --max-warnings 0` gates the whole tree.
+    // Production (src/) and tests keep BOTH rules strict -- src has zero no-explicit-any today.
+    files: ["scripts/**"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
 );

@@ -28,7 +28,6 @@ async function run() {
     [3, makeSector(40, 0.012)],
     [4, makeSector(60, 0.03)], // biased outlier
   ]);
-  let fetches = 0;
   const est = await robustPerSectorDepth({
     tic: 999,
     sectors,
@@ -36,7 +35,7 @@ async function run() {
     periodDays: PERIOD,
     epochBjd: EPOCH,
     starRadiusRsun: STAR_R,
-    fetchSector: async (_tic, s) => { fetches++; return curves.get(s) ?? null; },
+    fetchSector: async (_tic, s) => curves.get(s) ?? null,
   });
   assert.ok(est, "returns an estimate when >=2 sectors are characterisable");
   assert.ok(est!.nUsable >= 3, `used the tight cluster of sectors, got nUsable=${est!.nUsable}`);

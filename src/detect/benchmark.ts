@@ -136,7 +136,7 @@ export function fitTpmLogistic(points: CompletenessPoint[]): LogisticModel {
   if (!pts.length) return { b0: 0, bLogP: 0, bLogD: 0 };
   const X = pts.map((p) => [1, Math.log(p.periodDays), Math.log(p.depthPpm)] as const);
   const y = pts.map((p) => p.completeness);
-  let b: number[] = [0, -0.2, 0.3];
+  const b: number[] = [0, -0.2, 0.3];
   const lr = 0.5;
   const steps = 4000;
   for (let it = 0; it < steps; it++) {

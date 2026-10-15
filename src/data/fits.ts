@@ -53,7 +53,6 @@ function readHeaderBlock(view: DataView, start: number): { cards: string[]; next
   const cards: string[] = [];
   let pos = start;
   for (;;) {
-    let text = "";
     for (let i = 0; i < BLOCK; i += 80) {
       const card = ascii(view, pos + i, 80);
       cards.push(card);
@@ -62,7 +61,6 @@ function readHeaderBlock(view: DataView, start: number): { cards: string[]; next
       }
     }
     pos += BLOCK;
-    text = ""; // keep eslint quiet about text; headers are read card-by-card
   }
 }
 
@@ -70,13 +68,6 @@ function ascii(view: DataView, off: number, len: number): string {
   let s = "";
   for (let i = 0; i < len; i++) s += String.fromCharCode(view.getUint8(off + i));
   return s;
-}
-
-function colSize(form: string): number {
-  const t = form[0].toUpperCase();
-  if (t === "D" || t === "K") return 8;
-  if (t === "E" || t === "J" || t === "A" || t === "I" || t === "B") return 4;
-  throw new Error(`unsupported TFORM: ${form}`);
 }
 
 /** Parse a TESS light-curve FITS file; returns the first BINTABLE extension. */

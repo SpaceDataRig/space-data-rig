@@ -95,7 +95,7 @@ test("the score is deterministic for identical inputs", () => {
 });
 
 test("a baseline too short to time 3 transits is not determined", () => {
-  const { times, flux } = curve(centersAt(P, T0, T0 - 5, T0 + 5, (k) => 0), { ...BASE, tmin: T0 - 5, tmax: T0 + 5 });
+  const { times, flux } = curve(centersAt(P, T0, T0 - 5, T0 + 5, (_k) => 0), { ...BASE, tmin: T0 - 5, tmax: T0 + 5 });
   const r = multiYearCoherence(times, flux, P, T0, { durationDays: 1.2 });
   assert.equal(r.determined, false);
 });

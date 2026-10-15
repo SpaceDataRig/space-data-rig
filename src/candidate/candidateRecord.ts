@@ -111,7 +111,6 @@ export function classifyConfidence(
   const followupNeeds: string[] = [];
 
   const catalogEstablished = novelty.confirmedScanned >= 0 && novelty.toiScanned >= 0;
-  const novel = catalogEstablished && !novelty.inConfirmed && !novelty.inToi;
 
   if (!catalogEstablished) {
     reasons.push("novelty not established: the confirmed/TOI catalogs were unavailable this run, so we cannot assert the signal is new.");

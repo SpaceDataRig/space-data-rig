@@ -33,7 +33,7 @@ export function resolvePeriodAlias(
 ): AliasResult {
   const tMin = Math.min(...times);
   const tMax = Math.max(...times);
-  const baseline = baselineDays ?? tMax - tMin;
+  const _baseline = baselineDays ?? tMax - tMin; // kept for the caller-provided baselineDays arg wiring; not used in this fold
   const halfWin = Math.max(durationDays / 2, (times[1] - times[0]) * 1.5);
 
   const depthAt = (tc: number): number | null => {

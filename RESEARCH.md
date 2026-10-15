@@ -922,5 +922,41 @@ throughout; no verdict, bundle hash or money path is touched.
 
 ---
 
+## 29. Borrowing vetting levers from a real TESS survey, measured before gated (P73 / P74 / P75 / P76)
+
+The public `eumemic/exoplanets` pipeline (a real Python TESS survey that ships 660+ candidates) attacks several
+problems we already characterised, but with different levers. Rather than assume those levers help OUR chain, we
+port each one and MEASURE it on our own data with positive controls -- the same measure-before-gate discipline.
+
+- **P73 masked sibling recovery** (`scripts/p73-masked-recovery.ts`). eumemic masks every known planet (`--mask-tois`)
+  and re-searches the residual. On the P60/P62 20-planet sample, masking each host's OTHER catalogued planets lifts
+  the blind joint re-find 6 -> 7/20 (net +1: one gained, zero lost) but stays far under the truth-seeded ORACLE 11/20.
+  Verdict `MODEST-SIBLING-LIFT` -- neighbour-lock is only part of the seed wall; the rest is intrinsic alias/noise
+  confusion. The MASK arms consume ground-truth sibling ephemerides, so they are an ASSISTED ceiling, not a blind win.
+- **P74 multi-sector centroid consistency** (`scripts/p74-centroid-consistency.ts` + a reusable pure module
+  `multiSectorCentroidConsistency` in `src/detect/diffImaging.ts`, 7 offline tests). eumemic measures the difference-image
+  offset in EVERY sector and only rejects when the directions COHERENTLY point off-target. Scored on 28 real SPOC
+  targets (16 known planets, 12 FP/EB blends): cross-sector coherence removes all 9/16 single-sector known-planet
+  false-kills, but blend-catch power collapses 50% -> 0% and AUC 0.495 is chance. Verdict
+  `COHERENCE-SAVES-PLANETS-BUT-NO-POWER` -- safe to KEEP as a diagnostic, not safe to gate. `safeToGate=false`.
+- **P75 inverted-curve empirical FP rate** (`scripts/p75-inverted-fp.ts`). The clean null P69 asked for: INVERT a real
+  curve (dips become bumps) and MASK every catalogued planet (single sector, exact ephemeris), keep only a positive
+  transit-like residual dip -- a false alarm by construction. On 16 such curves the production AR(1) gate signs off
+  12/16 (75%) as significant at FAP<0.05 versus the 5% it advertises, while a model-free block bootstrap flags only
+  5/16 and overturns 7 of the AR(1) passes (mean FAP delta +0.16). Verdict `GATE-OPTIMISTIC-ON-REAL-NOISE` -- it
+  recovers P69's concern on a genuinely planet-free null. Measured only; no threshold moved.
+- **P76 multi-source novelty** (`scripts/p76-multisource-novelty.ts`). P48 checked only two Archive tables and flagged
+  that it missed ExoFOP/CTOIs. Adding the token-free ExoFOP TOI/CTOI table (8151 rows, community FP/EB/KP labels) as a
+  third catalog -- with live controls on both query paths -- moves 0/5 board candidates out of "novel" (shrink 0), so
+  the wider net CONFIRMS these positions are unannounced across Archive + ExoFOP rather than hiding a CTOI. That is a
+  statement about the catalogs, not a planet: every one is deep, single-sector, with 0 corroborating hosts. SPOC TCE
+  and the peer-reviewed literature remain uncovered (documented limitation).
+
+All four are distilled from committed reports into `web/research.json` (a dedicated "Borrowed from a real survey"
+dashboard card). Every verdict is a NEGATIVE or a calibration note; none is wired into the critic or the money path;
+discoveryClaim / safeToGate stay structurally false throughout.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

@@ -52,6 +52,10 @@ const p68 = load("reports/p68-discriminator-roc.json");
 const p69 = load("reports/p69-rednoise-significance.json");
 const p70 = load("reports/p70-llm-ablation.json");
 const p71 = load("reports/p71-audit-positive-control.json");
+const p73 = load("reports/p73-masked-recovery.json");
+const p74 = load("reports/p74-centroid-consistency.json");
+const p75 = load("reports/p75-inverted-fp.json");
+const p76 = load("reports/p76-multisource-novelty.json");
 
 const depths: number[] = p33.meta.depthsPpm;
 const N33: number = p33.rows.length;
@@ -325,6 +329,15 @@ const payload = {
     caveat: "all re-derived from the committed P67-P71 reports; no new analysis. Seed recall barely lifts over a single BLS peak (P67 confirms P62); no vetting discriminator clears the blends-from-planets corner at ANY threshold (P68); the AR(1)-model significance null is more permissive than a model-free reference on real noise (P69); the LLM changes zero decisions and under-flags blends (P70); the accepted branch IS reachable only when a known planet is corroborated by the catalog (P71).",
     safeToGate: false, discoveryClaim: false,
   },
+  borrowedRoundP73P76: {
+    label: "techniques borrowed from a real TESS survey (eumemic/exoplanets), measured on our own chain: sibling masking (P73), cross-sector centroid coherence (P74), inverted-curve false-alarm null (P75), multi-source novelty (P76)",
+    maskedRecoveryP73: { single: p73.refind.single, naiveJoint: p73.refind.naiveJoint, maskJoint: p73.refind.maskJoint.count, oracle: p73.refind.oracle, n: p73.refind.n, netMask: p73.paired.netMask, verdict: p73.verdict },
+    centroidCoherenceP74: { singleFalseKills: p74.single.cm.falseVeto, multiFalseKills: p74.multi.cm.falseVeto, singlePower: p74.single.vetoPower, multiPower: p74.multi.vetoPower, multiAuc: p74.multi.auc, falseKillsFixed: p74.effect.falseKillsFixed, safeToGate: p74.safeToGate },
+    invertedFapP75: { ar1Fp: p75.summary.ar1FalseAlarms, blockFp: p75.summary.blockFalseAlarms, n: p75.summary.n, flips: p75.summary.flips, meanDeltaFap: p75.summary.meanDeltaFap, verdict: p75.verdict },
+    multiSourceNoveltyP76: { novelArchive: p76.novelArchiveCount, novelUnion: p76.novelUnionCount, shrink: p76.shrinkCount, n: p76.nCandidates },
+    caveat: "all re-derived from the committed P73-P76 reports; positive controls on known planets / a model-free inverted null / a token-free catalog cross-check. Sibling masking gives a modest +1 re-find of 20 (P73); cross-sector coherence removes all single-sector known-planet false-kills but loses blend power (P74); the AR(1) significance gate false-alarms far above nominal on inverted planet-free noise (P75); adding the ExoFOP TOI/CTOI table changes no candidate's novelty (P76). None is wired into a gate.",
+    safeToGate: false, discoveryClaim: false,
+  },
   blindTest: {
     label: "sealed-key blind test of the detector on real curves (P49)",
     curves: p49.curves,
@@ -355,5 +368,6 @@ console.log(`  true-veto 2x2 (P58/P59): ${payload.trueVetoAcceptance.usableCases
 console.log(`  LLM hypothesis loop (P61): ${payload.llmHypothesisLoop.nPositives} planets + ${payload.llmHypothesisLoop.nNegatives} labelled blends, ${payload.llmHypothesisLoop.tests.length} tests, gateable-via-loop=${payload.llmHypothesisLoop.gateableViaLoop}; safeToGate=false`);
 console.log(`  P62 joint(single/naive/refined/oracle): ${p62.singleRefind.count}/${p62.naiveJointRefind.count}/${p62.refinedRefind.count}/${p62.oracleRefind.count} of ${p62.meta.n} (bottleneck ${p62.bottleneck}); P63 soft false-veto ${(p63.operatingPoint.falseVetoRate * 100).toFixed(0)}% / catch ${(p63.operatingPoint.blendCatchRate * 100).toFixed(0)}%; P64 warm cache hit ${(p64.warmPass.hitRate * 100).toFixed(0)}% (${p64.warmPass.wallMs}ms vs ${p64.coldPass.wallMs}ms cold); P65 external passes ${payload.externalAuditP65.passes}/${p65.meta.nClaims}; discoveryClaim false`);
 console.log(`  compute exponent p=${compute.exponentP.toFixed(2)} (R^2=${compute.r2.toFixed(2)})`);
+console.log(`  borrowed round: P73 mask ${p73.refind.naiveJoint}->${p73.refind.maskJoint.count}/${p73.refind.n} (oracle ${p73.refind.oracle}); P74 coherence false-kills ${p74.single.cm.falseVeto}->${p74.multi.cm.falseVeto} but power ${(p74.single.vetoPower * 100).toFixed(0)}%->${(p74.multi.vetoPower * 100).toFixed(0)}%; P75 AR1 FP ${p75.summary.ar1FalseAlarms}/${p75.summary.n} vs block ${p75.summary.blockFalseAlarms}/${p75.summary.n} (${p75.verdict}); P76 novel ${p76.novelArchiveCount}->${p76.novelUnionCount}/${p76.nCandidates} after ExoFOP (shrink ${p76.shrinkCount}); safeToGate=false, discoveryClaim=false`);
 console.log(`  P67 seed (naive/iter-top1/iter-topK): ${payload.followupStudiesP67P71.seedP67.naivePeak}/${payload.followupStudiesP67P71.seedP67.iterTop1}/${payload.followupStudiesP67P71.seedP67.iterTopK} of ${payload.followupStudiesP67P71.seedP67.n}; P68 best AUC ${payload.followupStudiesP67P71.rocP68.bestAuc?.toFixed(2)} (${payload.followupStudiesP67P71.rocP68.bestTest}) gateable=${payload.followupStudiesP67P71.rocP68.anyGateable}; P69 AR1-permissive flips ${payload.followupStudiesP67P71.redNoiseP69.flipsNoise}/${payload.followupStudiesP67P71.redNoiseP69.noiseLike}; P70 LLM decisions-changed ${payload.followupStudiesP67P71.llmP70.decisionsChangedByLLM}; P71 accepted blind/corroborated ${payload.followupStudiesP67P71.acceptPathP71.blindAccepted}/${payload.followupStudiesP67P71.acceptPathP71.corroborationAccepted} of ${payload.followupStudiesP67P71.acceptPathP71.n}; discoveryClaim false`);
 if (/[^\x00-\x7F]/.test(JSON.stringify(payload))) { console.log("WARNING: non-ASCII in research.json"); process.exitCode = 1; }

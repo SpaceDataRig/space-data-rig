@@ -25,6 +25,12 @@ jobs:
       - name: Lint (blocking on errors)
         run: npm run lint
 
+      # audit-6 P2: the real-MAST-FITS gates (tests/mast*, six tests) skip when out/probe-*.fits are absent,
+      # and out/ is gitignored, so on a fresh checkout they never ran. Prefetch the same public products
+      # through the production fetch code so those gates execute here; a hard download failure exits 1.
+      - name: Prefetch real MAST probe FITS (external-data gates)
+        run: npm run ci:probe-fits
+
       - name: Tests + coverage gate (auto-discovers tests/*.test.ts)
         run: npm run test:coverage
 

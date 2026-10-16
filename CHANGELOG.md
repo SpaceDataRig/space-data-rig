@@ -5,6 +5,16 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 P2: the six real-MAST-FITS gates now run in CI (2026-10-16)
+tests/mast.test.ts, tests/mastS3.test.ts and tests/mastS3Pixels.test.ts skip themselves when out/probe-lc.fits
+or out/probe-tp.fits are absent, and out/ is gitignored -- so on a fresh CI checkout the gates closest to
+external-data fragility ("real MAST FITS parses", "BLS finds the strong signal in real photometry", "the
+target-pixel cube parses") never executed. Committing ~7 MB of binary probes was rejected in favour of a CI
+prefetch step: scripts/ci-fetch-probe-fits.ts (npm run ci:probe-fits) downloads the same two public,
+token-free products through the production fetch code (curated MAST Download URI + anonymous TESS-SPOC S3
+target-pixel object) with retries, reusing any local cache; a download that still fails exits 1 so the gate
+fails loudly instead of silently skipping. .github/workflows/ci.yml runs it before the test gate.
+
 ### Audit-6 P1: the content address re-binds which photometry the science used (2026-10-16)
 The audit-4 rewrite excluded dataProvenance from scienceProjection to fix label-polluted hashing; the cost was
 that the science address no longer bound the data source, so a synthetic stand-in run through the same blind

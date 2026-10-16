@@ -1,14 +1,50 @@
 {
-  "capturedAt": "2026-10-16T03:25:27.701Z",
+  "capturedAt": "2026-10-16T09:10:48.770Z",
   "base": "https://spacedatarig.app",
   "findings": [
     {
+      "id": "F-TOI-5789-c",
+      "targetId": "TOI-5789 c",
+      "createdAt": "2026-10-16T08:32:16.907Z",
+      "verdict": "needs-more-data",
+      "verdictReason": "Plausible but under-constrained (re-injection recovery only 0%). Flag for follow-up with more sectors.",
+      "bundleHash": "3f87f120f16bb7f4c3b84d67637e54bfead8a2dd0328df83420f1aa9e9f0ac38",
+      "narration": {
+        "headline": "[real TESS photometry] Possible 13.02-day signal -- promising but unproven, needs more data.",
+        "explainer": "The star's brightness dips by about 184 parts per million once every 13.02 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is strong (SNR 16) -- clearly above the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 0/8 trials (0%, 95% Wilson CI 0-32%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: WATCHLIST -- Plausible but under-constrained (re-injection recovery only 0%). Flag for follow-up with more sectors."
+      }
+    },
+    {
+      "id": "F-HD-25463-c",
+      "targetId": "HD 25463 c",
+      "createdAt": "2026-10-16T08:31:38.541Z",
+      "verdict": "needs-more-data",
+      "verdictReason": "Plausible but under-constrained (re-injection recovery only 13%). Flag for follow-up with more sectors.",
+      "bundleHash": "05ccab2d2abc43e4332cae642bd80dad2bf5fdb434ef1c1c74b9480126f9d4c4",
+      "narration": {
+        "headline": "[real TESS photometry] Possible 7.10-day signal -- promising but unproven, needs more data.",
+        "explainer": "The star's brightness dips by about 173 parts per million once every 7.10 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is strong (SNR 14) -- clearly above the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 1/8 trials (13%, 95% Wilson CI 2-47%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: WATCHLIST -- Plausible but under-constrained (re-injection recovery only 13%). Flag for follow-up with more sectors."
+      }
+    },
+    {
+      "id": "F-HD-25463-b",
+      "targetId": "HD 25463 b",
+      "createdAt": "2026-10-16T08:30:57.106Z",
+      "verdict": "needs-more-data",
+      "verdictReason": "Plausible but under-constrained (re-injection recovery only 0%). Flag for follow-up with more sectors.",
+      "bundleHash": "b5154f20e1b527255b6beaf66a4aacd979d0566de77534e98c540d2eb2a3f424",
+      "narration": {
+        "headline": "[real TESS photometry] Possible 7.10-day signal -- promising but unproven, needs more data.",
+        "explainer": "The star's brightness dips by about 173 parts per million once every 7.10 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is strong (SNR 14) -- clearly above the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 0/8 trials (0%, 95% Wilson CI 0-32%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: WATCHLIST -- Plausible but under-constrained (re-injection recovery only 0%). Flag for follow-up with more sectors."
+      }
+    },
+    {
       "id": "F-WASP-189-b",
       "targetId": "WASP-189 b",
-      "createdAt": "2026-10-16T03:20:01.739Z",
+      "createdAt": "2026-10-16T06:06:22.776Z",
       "verdict": "accepted",
       "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 315, recovery 100%) independently cross-matches WASP-189 b (P=2.724d) at its fundamental period on evidence alone, without using any truth period.",
-      "bundleHash": "18e83d9fe79ccbbd68d9007546b3dfa0c99467f00ca50dd2e532f1256e39c286",
+      "bundleHash": "1e77d78121875729f59b86d8152de4f4c50bb1890f4001034b952f9951624ee2",
       "narration": {
         "headline": "[real TESS photometry] Recovered a 2.72-day signal matching known WASP-189 b.",
         "explainer": "The star's brightness dips by about 4381 parts per million once every 2.72 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 315) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: RECOVERED -- Blind recovery: significant, physically-consistent transit (SNR 315, recovery 100%) independently cross-matches WASP-189 b (P=2.724d) at its fundamental period on evidence alone, without using any truth period."
@@ -17,10 +53,10 @@
     {
       "id": "F-HD-50554-c",
       "targetId": "HD 50554 c",
-      "createdAt": "2026-10-16T03:19:32.703Z",
+      "createdAt": "2026-10-16T06:05:46.859Z",
       "verdict": "rejected",
       "verdictReason": "SNR 5.2 below threshold 7; signal not significant.",
-      "bundleHash": "b6bd3045e60a586441f46ef91abafe778d79cfefb1910cd6141b0b3b35febc8e",
+      "bundleHash": "21d4208373a70661d1939d4310bb4a30d485dbc664a9a05d906439eee39f1e89",
       "narration": {
         "headline": "[real TESS photometry] The 3.22-day signal did not pass scrutiny.",
         "explainer": "The star's brightness dips by about 43 parts per million once every 3.22 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is weak (SNR 5) -- barely distinguishable from noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 0/8 trials (0%, 95% Wilson CI 0-32%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: REJECTED -- SNR 5.2 below threshold 7; signal not significant."
@@ -29,10 +65,10 @@
     {
       "id": "F-HD-63433-d",
       "targetId": "HD 63433 d",
-      "createdAt": "2026-10-16T03:18:35.116Z",
+      "createdAt": "2026-10-16T06:04:47.320Z",
       "verdict": "rejected",
       "verdictReason": "False-positive vetting failed: photocenter shift 2.65 arcsec places the light off the target star (blend / background eclipsing binary).",
-      "bundleHash": "c573a046658dc1beeadacfbce4dbdcbbd3c805912e144a7882aec629fcf8db9c",
+      "bundleHash": "4c79679f9b93800c9fdf16b9b6f363fcf74bbb0abf191dbd6ded7f7c6b84463a",
       "narration": {
         "headline": "[real TESS photometry] The 13.85-day signal did not pass scrutiny.",
         "explainer": "The star's brightness dips by about 1198 parts per million once every 13.85 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 2877) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: REJECTED -- False-positive vetting failed: photocenter shift 2.65 arcsec places the light off the target star (blend / background eclipsing binary)."
@@ -41,10 +77,10 @@
     {
       "id": "F-HD-63433-b",
       "targetId": "HD 63433 b",
-      "createdAt": "2026-10-16T03:18:08.571Z",
+      "createdAt": "2026-10-16T06:04:07.855Z",
       "verdict": "rejected",
       "verdictReason": "False-positive vetting failed: photocenter shift 2.65 arcsec places the light off the target star (blend / background eclipsing binary).",
-      "bundleHash": "81f067ab813134395307175f3e590d389b9b390b0e934d943edb66fe2d341368",
+      "bundleHash": "c845524945c510023bdaf3a1dc26de77533de957e15ca8c6b41f663e856ca996",
       "narration": {
         "headline": "[real TESS photometry] The 13.85-day signal did not pass scrutiny.",
         "explainer": "The star's brightness dips by about 1235 parts per million once every 13.85 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 2877) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: REJECTED -- False-positive vetting failed: photocenter shift 2.65 arcsec places the light off the target star (blend / background eclipsing binary)."
@@ -53,10 +89,10 @@
     {
       "id": "F-HR-858-d",
       "targetId": "HR 858 d",
-      "createdAt": "2026-10-16T03:17:39.697Z",
+      "createdAt": "2026-10-16T06:03:20.067Z",
       "verdict": "accepted",
       "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
-      "bundleHash": "0a6a69de6211429004c259c246d5b94be20ffc4cb487e4db73a0deaaabfa7636",
+      "bundleHash": "7313f3ab67a075852281716a13874c4969d94ee5c5b0d99aba9b8e3d0c5e3138",
       "narration": {
         "headline": "[real TESS photometry] Recovered a 3.59-day signal matching known HR 858 b.",
         "explainer": "The star's brightness dips by about 103 parts per million once every 3.59 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 23) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: RECOVERED -- Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period."
@@ -65,10 +101,10 @@
     {
       "id": "F-HR-858-c",
       "targetId": "HR 858 c",
-      "createdAt": "2026-10-16T03:17:13.166Z",
+      "createdAt": "2026-10-16T06:02:58.484Z",
       "verdict": "accepted",
       "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
-      "bundleHash": "bd140fcf123ab681451b865ed34871ebd2a71180e80dadd75bf6190257ed869f",
+      "bundleHash": "1559222821955d9177fc2eb7ee4ee5cb76f20e0c934acdba38501f2eb9cf0bb5",
       "narration": {
         "headline": "[real TESS photometry] Recovered a 3.59-day signal matching known HR 858 b.",
         "explainer": "The star's brightness dips by about 103 parts per million once every 3.59 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 23) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: RECOVERED -- Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period."
@@ -77,10 +113,10 @@
     {
       "id": "F-HR-858-b",
       "targetId": "HR 858 b",
-      "createdAt": "2026-10-16T03:16:43.001Z",
+      "createdAt": "2026-10-16T06:02:36.516Z",
       "verdict": "accepted",
       "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
-      "bundleHash": "79a05997d2c66ac981cd2ac373cd2e86637485f90e7ba9e3b1b3fb93dbf8425f",
+      "bundleHash": "24e48b58fe2bcdb773bdf60e3d1dc84ab037804e462d03e75f0c941839863dc3",
       "narration": {
         "headline": "[real TESS photometry] Recovered a 3.59-day signal matching known HR 858 b.",
         "explainer": "The star's brightness dips by about 103 parts per million once every 3.59 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 23) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 8/8 trials (100%, 95% Wilson CI 68-100%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: RECOVERED -- Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period."
@@ -89,10 +125,10 @@
     {
       "id": "F-pi-Men-c",
       "targetId": "pi Men c",
-      "createdAt": "2026-10-16T03:16:13.407Z",
+      "createdAt": "2026-10-16T06:01:35.158Z",
       "verdict": "needs-more-data",
       "verdictReason": "Plausible but under-constrained (re-injection recovery only 13%). Flag for follow-up with more sectors.",
-      "bundleHash": "b8da83d0e8d56ec630094a2051af4192111b0d74093473ad7138b99f6482f4e6",
+      "bundleHash": "82f1584755cd0a546eedf2a91c30ef419806a4829e037e665e32aaf71b17513b",
       "narration": {
         "headline": "[real TESS photometry] Possible 6.28-day signal -- promising but unproven, needs more data.",
         "explainer": "The star's brightness dips by about 52 parts per million once every 6.28 days -- that repeating dip is the fingerprint of a planet crossing (transiting) the star. The signal is very strong (SNR 23) -- the dip towers over the noise. A targeted re-injection (search window brackets the recovered period) recovered this signal in 1/8 trials (13%, 95% Wilson CI 2-47%). This gauges how trustworthy the signal is, NOT the pipeline's blind-search capability. Mission Critic verdict: WATCHLIST -- Plausible but under-constrained (re-injection recovery only 13%). Flag for follow-up with more sectors."

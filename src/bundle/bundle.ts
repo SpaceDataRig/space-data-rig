@@ -116,7 +116,8 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
 
 /**
  * The BLIND-SCIENCE projection: exactly the evidence-driven result, and nothing that depends on WHICH
- * finding/target label it got, WHEN it ran, or HOW it was rendered or fetched. The content address
+ * finding/target label it got, WHEN it ran, or HOW it was rendered. The photometry ITSELF is bound
+ * (dataProvenance, audit-6): the same numbers computed from different bytes are different science.
  * (scienceHash) is the SHA-256 of THIS projection, so re-running the same detection -- under a different
  * findingId, a different target name, a fresh timestamp/runId, a re-fetched light curve, or re-rendered
  * plots -- collapses to ONE scienceHash and the anchor dedup can actually fire.
@@ -133,7 +134,13 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
  *   - findingId, targetId -- identity/label. The label is precisely what made the trio differ.
  *   - createdAt, runId -- when it ran. A timestamped commitment is bundleHash's job, not this one's.
  *   - codeVersion -- a re-run under a patch is still the same science when the numbers match.
- *   - dataProvenance -- lightCurveHash was unstable (a re-fetch, and a targetId mixed into computeDataHash).
+ *   - dataProvenance is INCLUDED as of audit-6 (audit-4 excluded it while lightCurveHash was still
+ *     unstable). Once computeDataHash() dropped targetId, the light-curve hash became a pure function of
+ *     the photometry bytes -- label- and timestamp-independent -- and catalogSource / lightCurveSource are
+ *     constant across the label trio (measured on live manifests), so binding it re-attaches "this science
+ *     was computed from THESE bytes" to the content address WITHOUT resurrecting the dead-dedup problem:
+ *     the live trio still collapses to ONE hash (tests/live-data-regression.test.ts), while a synthetic
+ *     stand-in can no longer share a real-data address.
  *   - artifacts -- the SVG sha256 embeds the targetId in the plot title, so it varies by label, not science.
  *   - the post-hoc / non-gating truth check -- it compares the period against the LABEL's catalog period, so
  *     it varies by target while the blind detection is identical. The project's own contract is that "the
@@ -152,6 +159,7 @@ export function scienceProjection(manifest: BundleManifest): Record<string, unkn
     aliasMultiple: manifest.aliasMultiple,
     ephemeris: manifest.ephemeris,
     crossmatch: manifest.crossmatch,
+    dataProvenance: manifest.dataProvenance,
     checks: gatingChecks,
   };
 }
@@ -167,6 +175,23 @@ export function scienceProjection(manifest: BundleManifest): Record<string, unkn
  */
 export async function hashScience(manifest: BundleManifest): Promise<string> {
   return sha256Hex(canonicalJson(scienceProjection(manifest)));
+}
+
+/**
+ * The PRE-audit-6 projection (the blind science WITHOUT dataProvenance). Kept for ONE reason: ledger rows
+ * sealed before audit-6 store a scienceHash computed without provenance, so the anchor dedup must also
+ * match on this legacy address or a re-run of already-anchored science would pay a second mainnet fee.
+ * New rows always store the provenance-bound hashScience(); this is never written to a ledger or a memo.
+ */
+export function legacyScienceProjection(manifest: BundleManifest): Record<string, unknown> {
+  const p = { ...scienceProjection(manifest) };
+  delete p.dataProvenance;
+  return p;
+}
+
+/** SHA-256 of the legacy (pre-audit-6) projection; dedup fallback only. See legacyScienceProjection. */
+export async function hashScienceLegacy(manifest: BundleManifest): Promise<string> {
+  return sha256Hex(canonicalJson(legacyScienceProjection(manifest)));
 }
 
 export interface BuildBundleInput {

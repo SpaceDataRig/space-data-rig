@@ -5,6 +5,23 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 P1: the content address re-binds which photometry the science used (2026-10-16)
+The audit-4 rewrite excluded dataProvenance from scienceProjection to fix label-polluted hashing; the cost was
+that the science address no longer bound the data source, so a synthetic stand-in run through the same blind
+detection shared the real-data address. Measured on live manifests FIRST: catalogSource and lightCurveSource
+are identical across the F-HR-858-b/c/d labels and, since computeDataHash() dropped targetId, lightCurveHash
+is label- and timestamp-independent too -- so all three fields are re-included without resurrecting the
+dead-dedup problem (the live trio still collapses to ONE hash; fixtures re-captured 2026-10-16).
+
+- scienceProjection now carries dataProvenance; a swapped lightCurveHash or a stand-in lightCurveSource moves
+  the address (new live-data assertions), while a later re-run of the same bytes keeps it.
+- Dedup safety for history: rows sealed before this change store the pre-audit-6 hash, so anchorFinding also
+  matches on hashScienceLegacy() (the legacy projection, consulted for the dedup lookup only -- never stored,
+  never placed in a memo), so already-anchored science cannot be paid for a second time after the address
+  definition changed.
+- tests/live-data-regression.test.ts gains provenance-equality/presence assertions, the stand-in-address test
+  and the legacy-fallback test, all driven by the re-captured live fixtures.
+
 ### X auto-post channel enabled via operator-supplied Actions secrets (2026-10-16)
 The CI auto-publish channel (scripts/post-x-text.ts plus .github/workflows/x-post.yml) originally shipped inert:
 with no X credentials in Actions secrets it only dry-runs and sends nothing. The operator has now added the four

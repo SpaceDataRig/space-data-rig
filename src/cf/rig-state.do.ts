@@ -32,7 +32,7 @@ import {
   type SeatState,
 } from "../core/state-types.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
-import { hashScience } from "../bundle/bundle.ts";
+import { hashScience, hashScienceLegacy } from "../bundle/bundle.ts";
 import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
 import {
@@ -577,9 +577,17 @@ export class RigStateDO extends DurableObject<Env> {
     // verifiable on-chain commitment at memo position 2, so verification is unaffected. Any failure to
     // read/recompute the stored manifest just yields the classic 3-field memo -- it never blocks an anchor.
     let scienceHash: string | undefined;
+    let legacyScienceHash: string | undefined;
     try {
       const mtxt = await this.artifacts.getText(`bundles/${findingId}/manifest.json`);
-      if (mtxt) scienceHash = await hashScience(JSON.parse(mtxt));
+      if (mtxt) {
+        const stored = JSON.parse(mtxt) as Parameters<typeof hashScience>[0];
+        scienceHash = await hashScience(stored);
+        // audit-6: rows sealed BEFORE the content address bound the photometry store the pre-audit-6
+        // hash, so also match on that legacy address or a re-run of already-anchored science would pay
+        // a second mainnet fee. Only ever consulted for the dedup lookup; never stored or put in a memo.
+        legacyScienceHash = await hashScienceLegacy(stored);
+      }
     } catch { /* provenance nicety only */ }
     const memo = buildMemo(findingId, f.bundleHash, scienceHash);
     if (opts?.dryRun) return { ok: true, memo, dryRun: true, httpStatus: 200 };
@@ -621,7 +629,8 @@ export class RigStateDO extends DurableObject<Env> {
       // signature onto this finding -- that tx's memo carries a different bundleHash, so stamping it here
       // would present an unverifiable proof (violates the anchor-stamp invariant); the card stays honestly
       // un-stamped and the deduplicated flag tells the caller why no tx was made.
-      const dupe = findAnchoredScience(this.listLedger(), scienceHash);
+      const ledgerRows = this.listLedger();
+      const dupe = findAnchoredScience(ledgerRows, scienceHash) ?? findAnchoredScience(ledgerRows, legacyScienceHash);
       if (dupe) {
         await this.emitEvent(
           "reporter",

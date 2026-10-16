@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-16T03:25:42.521Z",
+  "capturedAt": "2026-10-16T09:10:51.785Z",
   "base": "https://spacedatarig.app",
   "bundles": [
     {
@@ -8,8 +8,8 @@
         "schema": "space-data-rig/bundle@1",
         "findingId": "F-HR-858-b",
         "targetId": "HR 858 b",
-        "createdAt": "2026-10-16T03:16:43.001Z",
-        "runId": "run-20261016-031545",
+        "createdAt": "2026-10-16T06:02:36.516Z",
+        "runId": "run-20261016-060059",
         "codeVersion": "space-data-rig@0.1.1",
         "candidate": {
           "periodDays": 3.587214258080734,
@@ -90,7 +90,7 @@
         ],
         "dataProvenance": {
           "catalogSource": "nasa-tap",
-          "lightCurveHash": "7e8c95459da38ced1c617d6e24002c50b902279bbd7ff91f1823c9bbd813adcd",
+          "lightCurveHash": "650d91f6faf7ef2e3ab6f113c6f7bc7b2c7bfbf726ec7df3360265d49058ae33",
           "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
         },
         "artifacts": [
@@ -118,8 +118,8 @@
         "schema": "space-data-rig/bundle@1",
         "findingId": "F-HR-858-c",
         "targetId": "HR 858 c",
-        "createdAt": "2026-10-16T03:17:13.166Z",
-        "runId": "run-20261016-031545",
+        "createdAt": "2026-10-16T06:02:58.484Z",
+        "runId": "run-20261016-060059",
         "codeVersion": "space-data-rig@0.1.1",
         "candidate": {
           "periodDays": 3.587214258080734,
@@ -200,7 +200,7 @@
         ],
         "dataProvenance": {
           "catalogSource": "nasa-tap",
-          "lightCurveHash": "99152b8106d899a918c5619c9a6f7c324accee9e2db2ebb8c21ec597baad1fc2",
+          "lightCurveHash": "650d91f6faf7ef2e3ab6f113c6f7bc7b2c7bfbf726ec7df3360265d49058ae33",
           "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
         },
         "artifacts": [
@@ -228,8 +228,8 @@
         "schema": "space-data-rig/bundle@1",
         "findingId": "F-HR-858-d",
         "targetId": "HR 858 d",
-        "createdAt": "2026-10-16T03:17:39.697Z",
-        "runId": "run-20261016-031545",
+        "createdAt": "2026-10-16T06:03:20.067Z",
+        "runId": "run-20261016-060059",
         "codeVersion": "space-data-rig@0.1.1",
         "candidate": {
           "periodDays": 3.587214258080734,
@@ -310,7 +310,7 @@
         ],
         "dataProvenance": {
           "catalogSource": "nasa-tap",
-          "lightCurveHash": "1fce77e6486b033f9efaa2d73aa9ed1426c01a08107931ac0b11b1e1373091a9",
+          "lightCurveHash": "650d91f6faf7ef2e3ab6f113c6f7bc7b2c7bfbf726ec7df3360265d49058ae33",
           "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
         },
         "artifacts": [

@@ -11,12 +11,16 @@
 // predicates (hashScience, scienceProjection, findAnchoredScience, headlineRelabelNote) over fixtures captured
 // straight from the live site by scripts/capture-live-fixtures.ts. Re-add an identity/label field to the
 // science hash, or flip the relabel boundary back to `<`, and these assertions fail on the real bytes.
+// audit-6: the projection now BINDS dataProvenance (which photometry the science used). The fixtures were
+// re-captured after computeDataHash() dropped targetId, so the trio's lightCurveHash is label-independent;
+// these tests assert both that the trio STILL collapses to one address and that swapping the data source
+// (or its stand-in label) moves the address -- a synthetic curve can no longer share a real-data address.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { hashScience, scienceProjection, type BundleManifest } from "../src/bundle/bundle.ts";
+import { hashScience, hashScienceLegacy, scienceProjection, type BundleManifest } from "../src/bundle/bundle.ts";
 import { findAnchoredScience } from "../src/solana/anchor-core.ts";
 // The SAME module web/app.js imports, so this exercises the predicate the browser actually runs -- not a copy
 // re-implemented in the test (a copy is exactly what a string-match test amounted to before).
@@ -71,13 +75,16 @@ test("hashScience collapses the REAL identical-science trio to ONE content addre
   );
 });
 
-test("the science projection drops identity/label/render/fetch fields AND the post-hoc truth check", async () => {
+test("the science projection drops identity/label/render fields AND the post-hoc check, but KEEPS provenance", async () => {
   const [b0, b1] = manifestsFx.bundles;
   // The raw manifests really do differ on the label/render/fetch axis...
   assert.notEqual(b0.manifest.findingId, b1.manifest.findingId);
   assert.notEqual(b0.manifest.targetId, b1.manifest.targetId);
   assert.notEqual(JSON.stringify(b0.manifest.artifacts), JSON.stringify(b1.manifest.artifacts), "SVG titles embed targetId");
-  assert.notEqual(b0.manifest.dataProvenance.lightCurveHash, b1.manifest.dataProvenance.lightCurveHash);
+  // audit-6 premise, measured on live bytes: once computeDataHash() dropped targetId the light-curve hash
+  // is label-independent, so provenance can be bound into the address without breaking the collapse.
+  assert.equal(b0.manifest.dataProvenance.lightCurveHash, b1.manifest.dataProvenance.lightCurveHash);
+  assert.equal(b0.manifest.dataProvenance.lightCurveSource, b1.manifest.dataProvenance.lightCurveSource);
   // ...and even on the raw checks array: the post-hoc period-vs-truth check compares against EACH label's
   // catalog period, so it differs while the blind detection is identical. Including checks verbatim (as the
   // audit's first-pass field list did) would therefore keep the dedup dead -- the projection must filter it.
@@ -85,8 +92,9 @@ test("the science projection drops identity/label/render/fetch fields AND the po
 
   const p0 = scienceProjection(b0.manifest);
   const p1 = scienceProjection(b1.manifest);
-  for (const banned of ["findingId", "targetId", "artifacts", "dataProvenance", "createdAt", "runId", "codeVersion", "schema"])
+  for (const banned of ["findingId", "targetId", "artifacts", "createdAt", "runId", "codeVersion", "schema"])
     assert.ok(!(banned in p0), `science projection must not carry ${banned}`);
+  assert.ok("dataProvenance" in p0, "audit-6: the content address MUST bind which photometry the science used");
   assert.equal(JSON.stringify(p0), JSON.stringify(p1), "the blind-science projections are byte-identical");
 
   const keptChecks = (p0.checks as { name: string }[]).map((c) => c.name);
@@ -136,4 +144,29 @@ test("post-policy and non-'confirm' cards get NO relabel note (no false positive
   assert.ok(hatp11, "fixture must contain the boundary-day non-confirm card");
   assert.equal((hatp11.createdAt ?? "").slice(0, 10), RELABEL_POLICY_DATE);
   assert.equal(headlineRelabelNote(hatp11), "");
+});
+
+test("audit-6: swapping the photometry source moves the content address (a stand-in cannot share a real address)", async () => {
+  const m = manifestsFx.bundles[0].manifest;
+  const real = await hashScience(m);
+  const rerun = { ...m, createdAt: "2030-01-01T00:00:00Z", runId: "rerun" };
+  assert.equal(await hashScience(rerun), real, "the same bytes re-run later keep the address");
+  const standInHash = { ...m, dataProvenance: { ...m.dataProvenance, lightCurveHash: "0".repeat(64) } };
+  assert.notEqual(await hashScience(standInHash), real, "different photometry bytes must yield a different address");
+  const standInSrc = { ...m, dataProvenance: { ...m.dataProvenance, lightCurveSource: "synthetic stand-in (not real photometry)" } };
+  assert.notEqual(await hashScience(standInSrc), real, "a stand-in source label must not share the real-data address");
+});
+
+test("audit-6: rows sealed pre-audit-6 still dedup via the legacy address (no second fee for old science)", async () => {
+  const bundles = manifestsFx.bundles;
+  const legacy = await hashScienceLegacy(bundles[0].manifest);
+  const current = await hashScience(bundles[0].manifest);
+  assert.notEqual(legacy, current, "binding provenance changes the address definition");
+  // A ledger row written before audit-6 carries the legacy hash; a re-run today must still recognise it.
+  const ledger = [{ findingId: bundles[0].findingId, status: "anchored", signature: "5xOldSig", scienceHash: legacy }];
+  assert.equal(findAnchoredScience(ledger, current), null, "the new address alone must NOT match a pre-audit-6 row");
+  assert.equal(findAnchoredScience(ledger, legacy)?.findingId, bundles[0].findingId, "the legacy fallback matches it");
+  // The legacy address is itself label-independent, so the fallback cannot resurrect the dead dedup.
+  const legacyAll = await Promise.all(bundles.map((b) => hashScienceLegacy(b.manifest)));
+  assert.equal(new Set(legacyAll).size, 1, "the legacy address also collapses the trio");
 });

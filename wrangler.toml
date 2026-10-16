@@ -60,7 +60,7 @@ new_sqlite_classes = ["RigStateDO"]
 
 [[migrations]]
 tag = "v2"
-new_classes = ["RateLimitDO"]
+new_sqlite_classes = ["RateLimitDO"]
 
 # ---- R2: reproducible bundle artifacts (SVGs, manifest.json, HASH.txt) -----
 [[r2_buckets]]

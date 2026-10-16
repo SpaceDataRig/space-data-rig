@@ -93,9 +93,12 @@ export interface Env {
   /** mainnet fee-payer secret key as a JSON byte array (web3 v2). */
   SOLANA_KEYPAIR?: string;
   /**
-   * Optional admin bearer token gating the state-changing endpoints (/api/run, /api/anchor/*).
-   * Unset/empty = open (today's behaviour, so shipping this code cannot silently break the live
-   * dashboard); set it via `wrangler secret put ADMIN_TOKEN` to require `Authorization: Bearer <t>`.
+   * Admin bearer token gating the state-changing endpoints (/api/run, /api/anchor/*).
+   * DENY-BY-DEFAULT (audit-10 #7): unset/empty CLOSES those mutations (every request 401s),
+   * so this code can never ship leaving run/anchor open. Set it with `wrangler secret put
+   * ADMIN_TOKEN`; from then on a mutating request must carry `Authorization: Bearer <token>`
+   * and match exactly (constant-time). The autonomous cron does NOT use these routes, so it is
+   * unaffected; only the dashboard's manual run/anchor buttons need the token.
    */
   ADMIN_TOKEN?: string;
 }

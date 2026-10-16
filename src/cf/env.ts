@@ -7,12 +7,15 @@
 
 import type { RunParams } from "./run-types.ts";
 import type { RigStateDO } from "./rig-state.do.ts";
+import type { RateLimitDO } from "./rate-limit.do.ts";
 
 export interface Env {
   /** Static frontend assets (index.html, app.js, styles.css, space.js, vendor/three.js). */
   ASSETS: Fetcher;
   /** Authoritative rig state + real-time WebSocket fan-out. */
   RIG_STATE: DurableObjectNamespace<RigStateDO>;
+  /** Cross-isolate abuse-brake counters for the state-changing routes (audit-10 #7 residual). */
+  RIG_RATELIMIT: DurableObjectNamespace<RateLimitDO>;
   /** Reproducible bundle artifacts (SVG plots, manifest.json, HASH.txt). */
   RIG_ARTIFACTS: R2Bucket;
   /** Durable, CPU-budgeted pipeline run. */

@@ -66,6 +66,17 @@ export interface Env {
   AUTO_RESEARCH?: string;
   AUTO_RESEARCH_TARGETS?: string;
   AUTO_RESEARCH_TMAG?: string;
+  /**
+   * audit-5 (audience-legibility): when "1", the autonomous cron run rotates through a broad real target
+   * pool (known-planet re-validation + UNCONFIRMED TOI candidates) selected from a persisted survey cursor,
+   * so FINDINGS CATALOG grows across passes instead of re-running the same brightest handful in place.
+   * Any other value (default) keeps the historical brightest-top-N selection. Blind-TOI rows are labeled
+   * origin="blind-toi", capped at needs-more-data, and NEVER auto-anchored. Manual dashboard runs are
+   * always unaffected (they never set rotation). AUTO_RESEARCH_POOL is the confirmed-pool depth to fetch
+   * before windowing (default 120; roughly half that many TOI candidates are also queued).
+   */
+  AUTO_RESEARCH_ROTATION?: string;
+  AUTO_RESEARCH_POOL?: string;
   AUTO_ANCHOR?: string;
   AUTO_ANCHOR_DAILY_CAP?: string;
   /**

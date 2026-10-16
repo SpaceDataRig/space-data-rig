@@ -508,6 +508,10 @@ export default {
       offline: false,
       resume: false,
       autonomous: true,
+      // audit-5: the autonomous cron rotates through a broad real pool (known + unconfirmed TOI) so the
+      // catalog grows across passes. AUTO_RESEARCH_ROTATION gates it; off => historical top-N selection.
+      rotation: env.AUTO_RESEARCH_ROTATION === "1",
+      pool: clampInt(env.AUTO_RESEARCH_POOL, 8, 400, 120),
     };
     const claimed = await rigStub(env).startRunIfIdle(params);
     if (!claimed.ok) return; // a run is already in progress -- skip this tick

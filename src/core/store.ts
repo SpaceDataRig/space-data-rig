@@ -236,6 +236,11 @@ export class RigStore {
       findingsRejected: findings.filter((f) => f.verdict === "rejected").length,
       findingsReview: findings.filter((f) => f.verdict === "needs-more-data").length,
       bundlesAnchored: this.listBundles().filter((b) => b.solanaTx).length,
+      // Rotation is an edge (autonomous-cron) concern; the Node orchestrator does not advance a survey
+      // cursor, so it reports pass 0 here. Breadth + blind counts are still meaningful local mirrors.
+      surveyPass: 0,
+      distinctHosts: new Set(findings.map((f) => f.targetId)).size,
+      blindCandidates: findings.filter((f) => f.origin === "blind-toi").length,
     };
   }
 

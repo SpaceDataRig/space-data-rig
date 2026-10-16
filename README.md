@@ -244,7 +244,8 @@ parity.
 The rig can select, fetch and analyze real targets by itself -- with **no MAST token and no
 AWS account**. The code defaults are OFF (a stock deploy changes nothing until an operator
 opts in). **This live deployment is opted in (aggressive tier)**: `wrangler.toml` ships
-`MAST_S3=1`, `AUTO_RESEARCH=1` (an autonomous run on the every-hour cron, 8 targets), and
+`MAST_S3=1`, `AUTO_RESEARCH=1` (an autonomous run on the every-15-minute cron, 8 targets),
+`AUTO_RESEARCH_ROTATION=1` (the survey rotates through a growing real pool, see below), and
 `AUTO_ANCHOR=live` with `AUTO_ANCHOR_DAILY_CAP=100`, so accepted findings are sealed on Solana
 mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANCHOR=off` (or
 `AUTO_RESEARCH=0`) and redeploy to pause spending.
@@ -264,6 +265,18 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   previews the memo, and `live` spends real SOL only while a per-UTC-day cap
   (`AUTO_ANCHOR_DAILY_CAP`, default `0`) leaves room, and never repeats an already-anchored
   hash. On-chain anchoring therefore stays an explicit, cost-capped operator decision.
+- **A rotating survey, and honest blind candidates.** With `AUTO_RESEARCH_ROTATION=1` the autonomous run no
+  longer re-runs the same brightest handful and overwrites it in place: it rotates through a broad real pool
+  -- known-planet re-validation rows plus UNCONFIRMED TESS Objects of Interest -- chosen from a persisted pass
+  cursor (`src/survey/rotation.ts`), so FINDINGS CATALOG grows new rows across passes. Each row is labeled by
+  `origin`: `revalidation` (a known planet the pipeline re-derives and cross-checks) or `blind-toi` (an
+  unconfirmed candidate recovered from real TESS-SPOC pixels with the TOI ephemeris withheld -- the same
+  protocol as `p7:toi-survey`, which independently recovered 27/70 unconfirmed candidates at a 0.22% median
+  period error). A blind-TOI row is capped at `needs-more-data` by the critic, is never auto-anchored, and
+  reads in the UI as a gold "BLIND CANDIDATE - UNCONFIRMED" pill -- a candidate for human follow-up, never a
+  claimed discovery. The `origin` label lives only on the Finding and in DO state, never in the bundle
+  manifest, so it changes no `bundleHash`/`scienceHash` and touches no anchored row. A dashboard manual run
+  keeps the historical deterministic brightest-top-N selection.
 
 Try the chain without a token: `npm run p4:autonomous` (add `-- --targets 12 --tmag 9.5`, or a
 known SPOC star with `-- --tic 1024880 --sector 4`).

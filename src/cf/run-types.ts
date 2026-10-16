@@ -26,4 +26,14 @@ export interface RunParams {
    * manual runs keep anchoring strictly manual (spend nothing).
    */
   autonomous?: boolean;
+  /**
+   * audit-5 (audience-legibility): when true the run ROTATES through a broad real target pool
+   * (known planets re-validated + UNCONFIRMED TOI candidates) selected from a persisted survey cursor,
+   * so the catalog grows across passes instead of re-running the same brightest handful in place.
+   * Absent/false keeps the historical "brightest top-N" selection byte-for-byte -- a dashboard manual
+   * run is always predictable, only the autonomous cron sets this.
+   */
+  rotation?: boolean;
+  /** Rotating pool depth: how many confirmed + how many TOI rows to fetch before windowing (default 120/60). */
+  pool?: number;
 }

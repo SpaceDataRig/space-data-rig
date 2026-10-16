@@ -462,3 +462,20 @@ details.collapse[open] > summary.panel-head::after { content: "\2212"; }
   /* wide research tables scroll inside the card, never the page */
   .research-body { overflow-x: auto; }
 }
+
+/* ---- audit-5 rotating survey: origin pills, filter chips, live survey stats ---- */
+.survey-stats { font: 600 11.5px var(--mono); color: var(--accent); letter-spacing: 0.02em; margin: 0 0 10px; }
+.board-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.chip {
+  font: 600 11px var(--mono); letter-spacing: 0.04em; color: var(--ink-dim); cursor: pointer;
+  background: rgba(120, 180, 255, 0.06); border: 1px solid var(--edge); border-radius: 20px; padding: 5px 12px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.chip:hover { color: #cfe0f7; }
+.chip.active { color: #0b1020; background: var(--accent); border-color: var(--accent); }
+.origin-pill { font: 700 9px var(--mono); letter-spacing: 0.06em; padding: 3px 7px; border-radius: 6px; border: 1px solid currentColor; white-space: nowrap; }
+.origin-pill.known { color: var(--ink-dim); opacity: 0.82; }
+.origin-pill.blind { color: var(--gold); }
+/* let the card header wrap instead of overflowing when the origin pill is added (mobile scrollWidth guard) */
+.card-top { flex-wrap: wrap; row-gap: 6px; }
+.card-side { flex: initial; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }

@@ -69,6 +69,16 @@ export interface Finding {
   createdAt: string; // ISO timestamp
   bundleHash?: string; // SHA-256 of the reproducible analysis bundle
   solanaTx?: string; // Solana transaction signature once anchored
+  /**
+   * audit-5 (audience-legibility): what this row IS in the rotating survey. "revalidation" (or absent,
+   * for every pre-rotation row) = the pipeline re-verified a KNOWN confirmed planet; "blind-toi" = an
+   * UNCONFIRMED TESS Object of Interest that the detector recovered BLIND on real photometry (the TOI
+   * ephemeris is never shown to the detector). This is a display/provenance label ONLY -- it lives on the
+   * Finding and in DO state, and is deliberately NOT part of the bundle manifest, so adding it moves no
+   * bundleHash and never touches an already-anchored row. A blind-toi finding is capped at needs-more-data
+   * and is never auto-anchored (it is a candidate for human follow-up, not a claimed discovery).
+   */
+  origin?: "revalidation" | "blind-toi";
 }
 
 /** A unit of work flowing through the rig. */

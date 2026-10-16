@@ -244,6 +244,12 @@ export class RigStateDO extends DurableObject<Env> {
       findingsRejected: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.verdict') = 'rejected'`),
       findingsReview: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.verdict') = 'needs-more-data'`),
       bundlesAnchored: scalar(`SELECT COUNT(*) AS n FROM bundles WHERE json_extract(data,'$.solanaTx') IS NOT NULL`),
+      // audit-5 rotation/breadth counters. surveyPass comes from DO meta (advanced once per completed
+      // autonomous run); distinctHosts is the honest breadth measure; blindCandidates counts UNCONFIRMED
+      // TOI rows so the UI can never imply they are discoveries.
+      surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0,
+      distinctHosts: scalar(`SELECT COUNT(DISTINCT json_extract(data,'$.targetId')) AS n FROM findings`),
+      blindCandidates: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.origin') = 'blind-toi'`),
     };
   }
 
@@ -331,6 +337,30 @@ export class RigStateDO extends DurableObject<Env> {
   async saveSnapshot(): Promise<{ ok: boolean; key: string }> {
     await this.artifacts.put(SNAPSHOT_KEY, JSON.stringify(this.snapshot(), null, 2), "application/json");
     return { ok: true, key: SNAPSHOT_KEY };
+  }
+
+  // ---- rotation cursor (audit-5 audience-legibility) -----------------------
+  // The autonomous survey rotates through a broad real target pool so the catalog grows over time
+  // instead of re-running the same brightest handful in place. Both methods are async and return a
+  // NON-NULLABLE number (a DO RPC whose return is a union-with-undefined collapses to `never` at the
+  // stub call site). The cursor is read at run start (inside the select-targets step, so step-replay
+  // determinism comes from the Workflow's stored step result) and advanced idempotently at the end:
+  // advanceSurveyPass(runId) is a no-op for a runId it has already advanced, so a DO eviction + tail
+  // replay cannot double-count a pass.
+
+  /** Current completed survey-pass count (0 when none yet). Always a finite number. */
+  async getSurveyPass(): Promise<number> {
+    return Number(this.getMeta("surveyPass") ?? "0") || 0;
+  }
+
+  /** Advance the pass by one, once per runId. Returns the (possibly unchanged) pass count. */
+  async advanceSurveyPass(runId: string): Promise<number> {
+    const current = Number(this.getMeta("surveyPass") ?? "0") || 0;
+    if (this.getMeta("lastPassRun") === runId) return current; // already advanced for this run
+    const next = current + 1;
+    await this.setMeta("surveyPass", String(next));
+    await this.setMeta("lastPassRun", runId);
+    return next;
   }
 
   // ---- run mutex -----------------------------------------------------------

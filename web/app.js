@@ -21,6 +21,13 @@ const BADGE = {
   "needs-more-data": { label: "WATCHLIST", tone: "warn", word: "watchlist" },
   rejected: { label: "NOT RECOVERED", tone: "bad", word: "not recovered" },
 };
+// audit-5 origin pills: every catalog row is now honestly labeled as either a KNOWN-planet re-validation or
+// an UNCONFIRMED blind-TOI candidate, so the growing rotating survey can never read as "new discoveries".
+const ORIGIN_PILL = {
+  "blind-toi": { label: "BLIND CANDIDATE - UNCONFIRMED", cls: "blind" },
+  revalidation: { label: "Known-planet re-validation", cls: "known" },
+};
+function originOf(f) { return f && f.origin === "blind-toi" ? "blind-toi" : "revalidation"; }
 const colorOf = (s) => (SEAT_META[s] && SEAT_META[s].color) || "#3ae0ff";
 const glyphOf = (s) => (SEAT_META[s] && SEAT_META[s].glyph) || "AI";
 const labelOf = (s) => (SEAT_META[s] && SEAT_META[s].label) || s;
@@ -46,6 +53,8 @@ const targetHud = $("#target-hud");
 const speakerHud = $("#speaker-hud");
 const findingsCountEl = $("#findings-count");
 const boardMoreEl = $("#board-more");
+const boardFilterEl = $("#board-filter");
+const surveyStatsEl = $("#survey-stats");
 const codeVersionEl = $("#code-version");
 const runStatusEl = $("#run-status");
 const runSubmitEl = $("#run-submit");
@@ -216,6 +225,7 @@ function renderStats(stats) {
   $("#stat-rejected").textContent = stats.findingsRejected ?? 0;
   $("#stat-anchored").textContent = stats.bundlesAnchored ?? 0;
   $("#stat-done").textContent = stats.tasksDone ?? 0;
+  if (surveyStatsEl) surveyStatsEl.textContent = `survey pass ${stats.surveyPass ?? 0} - ${stats.distinctHosts ?? 0} distinct targets - ${stats.blindCandidates ?? 0} blind candidates (unconfirmed)`;
   renderFeedTicker(researchData, stats);
 }
 
@@ -250,6 +260,7 @@ function plotsHtml(id) {
 
 function cardHtml(f) {
   const badge = BADGE[f.verdict] || BADGE.rejected;
+  const pill = ORIGIN_PILL[originOf(f)];
   const headline = f.narration?.headline || f.verdictReason || "Finding";
   const relabel = headlineRelabelNote(f);
   const explainer = f.narration?.explainer || "";
@@ -258,7 +269,7 @@ function cardHtml(f) {
     ? `<span><b>tx</b> <a class="txlink" href="${esc(explorerUrl(f.solanaTx))}" target="_blank" rel="noopener">${esc(shortTx(f.solanaTx))}</a></span>`
     : `<span><b>on-chain</b> not anchored</span>`;
   return `<div class="card tone-${badge.tone}" data-id="${esc(f.id)}">
-    <div class="card-top"><span class="card-target">${esc(f.targetId)}</span><span class="card-side">${score}<span class="badge ${badge.tone}">${badge.label}</span></span></div>
+    <div class="card-top"><span class="card-target">${esc(f.targetId)}</span><span class="card-side">${score}<span class="origin-pill ${pill.cls}">${pill.label}</span><span class="badge ${badge.tone}">${badge.label}</span></span></div>
     <div class="headline">${esc(headline)}</div>
     ${relabel ? `<div class="relabel-note">${esc(relabel)}</div>` : ""}
     <div class="metrics">${metricsHtml(f)}</div>
@@ -279,26 +290,31 @@ function cardHtml(f) {
 // reveals the older rest (newest first throughout)
 const BOARD_PREVIEW = 4;
 let boardExpanded = false;
+let boardFilter = "all"; // all | revalidation | blind-toi
 
 function sortedFindings() {
   return [...findingsById.values()].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || (b.score ?? 0) - (a.score ?? 0));
 }
 function renderBoard() {
-  const list = sortedFindings();
-  if (!list.length) {
+  const all = sortedFindings();
+  const list = all.filter((f) => boardFilter === "all" || originOf(f) === boardFilter);
+  if (!all.length) {
     boardEl.classList.remove("row-of-four");
     boardEl.innerHTML = `<p class="empty">Awaiting first light. Launch a run to watch the table deliberate.</p>`;
     findingsCountEl.textContent = "0 findings";
     boardMoreEl.hidden = true;
-    return;
+  } else {
+    const shown = boardExpanded ? list : list.slice(0, BOARD_PREVIEW);
+    boardEl.classList.toggle("row-of-four", !boardExpanded);
+    boardEl.innerHTML = shown.length ? shown.map(cardHtml).join("") : `<p class="empty">No findings in this view.</p>`;
+    findingsCountEl.textContent = boardFilter === "all"
+      ? `${all.length} finding${all.length === 1 ? "" : "s"}`
+      : `${list.length} of ${all.length} findings`;
+    boardMoreEl.hidden = list.length <= BOARD_PREVIEW;
+    boardMoreEl.textContent = boardExpanded ? "Show less" : `More (+${list.length - BOARD_PREVIEW} older)`;
+    fillProvenance();
   }
-  const shown = boardExpanded ? list : list.slice(0, BOARD_PREVIEW);
-  boardEl.classList.toggle("row-of-four", !boardExpanded);
-  boardEl.innerHTML = shown.map(cardHtml).join("");
-  findingsCountEl.textContent = `${list.length} finding${list.length === 1 ? "" : "s"}`;
-  boardMoreEl.hidden = list.length <= BOARD_PREVIEW;
-  boardMoreEl.textContent = boardExpanded ? "Show less" : `More (+${list.length - BOARD_PREVIEW} older)`;
-  fillProvenance();
+  if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) chip.classList.toggle("active", chip.dataset.filter === boardFilter);
 }
 function upsertFinding(f) { findingsById.set(f.id, f); renderBoard(); }
 
@@ -922,6 +938,9 @@ runBtnEl.addEventListener("click", () => {
   setTimeout(focusForm, 80);     // run after showView so its window.scrollTo(0,0) does not cancel the scroll
 });
 boardMoreEl.addEventListener("click", () => { boardExpanded = !boardExpanded; renderBoard(); });
+if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) {
+  chip.addEventListener("click", () => { boardFilter = chip.dataset.filter; boardExpanded = false; renderBoard(); });
+}
 $("#ledger-refresh").addEventListener("click", loadLedger);
 
 boardEl.addEventListener("click", async (e) => {

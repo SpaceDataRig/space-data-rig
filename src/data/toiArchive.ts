@@ -111,6 +111,33 @@ export function getFallbackToc(o: TocQueryOptions = {}): TocFetchResult {
   return { candidates: FALLBACK_TOI.filter((c) => o.maxTmag == null || c.tmag < o.maxTmag).slice(0, limit), source: "fallback" };
 }
 
+/**
+ * audit-5: map an UNCONFIRMED TOI candidate onto the seat-level ArchivePlanet shape so the SAME runtime-agnostic
+ * 5-seat pipeline (real SPOC fetch -> BLIND BLS -> recovery -> critic -> reporter) can run it on the edge. The
+ * TOI reference period goes into pl_orbper, but detection stays BLIND (recoveryGating defaults false, so the
+ * reference is only a post-hoc cross-check -- exactly the p5/p7 protocol). pl_trandep is ALREADY ppm in the `toi`
+ * table (pscomppars normalizes percent->ppm on fetch; do NOT rescale here). The slug of `toidisplay` (e.g.
+ * "TOI-1773.01" -> findingId F-TOI-1773-01) can never collide with a confirmed findingId (F-HR-858-b). Exported
+ * and unit-tested (tests/rotation.test.ts) so the field mapping is provable offline, like mapTocRows.
+ */
+export function toiToArchivePlanet(c: TocCandidate): ArchivePlanet {
+  return {
+    pl_name: c.toidisplay,
+    hostname: c.toidisplay,
+    pl_orbper: c.periodDays,
+    pl_trandep: c.depthPpm,
+    pl_trandur: c.durationHours,
+    pl_tranmid: c.epochBjd,
+    pl_rade: c.planetRadiusEarth,
+    st_rad: c.starRadiusSun,
+    ra: c.ra,
+    dec: c.dec,
+    tic: c.tic,
+    sy_tmag: c.tmag,
+    discoverymethod: "Transit",
+  };
+}
+
 /** Fetch UNCONFIRMED candidate-transit targets from the Archive `toi` table. */
 export async function fetchTocCandidates(o: TocQueryOptions = {}): Promise<TocFetchResult> {
   const maxTmag = o.maxTmag ?? 10.5;

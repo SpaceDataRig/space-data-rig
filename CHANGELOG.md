@@ -5,6 +5,32 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-5 follow-up: the rotating survey makes the catalog grow, and the frontend explains what it is (2026-10-16)
+A reader asked why FINDINGS CATALOG always showed the same handful and whether the project was doing anything
+visible. The honest root cause: the autonomous survey selected the brightest N KNOWN planets every pass, and
+because finding ids are deterministic (`F-<target>`) + `recordFinding` is `INSERT OR REPLACE`, each pass
+OVERWROTE the same rows -- so the catalog churned in place and looked static, while the genuinely interesting
+work (blind recovery of UNCONFIRMED candidates, the p7 statistic) ran offline and never reached the site.
+
+- The autonomous run now ROTATES through a broad real pool (known-planet re-validation + UNCONFIRMED TOI
+  candidates) selected from a persisted survey cursor (`src/survey/rotation.ts` windowing; `surveyPass` in DO
+  meta, advanced once per pass, idempotent by runId), so the catalog accumulates NEW rows across passes.
+  Gated by `AUTO_RESEARCH_ROTATION`; a manual dashboard run keeps the historical brightest-top-N selection.
+- Real blind-TOI candidates run through the SAME 5-seat pipeline (`toiToArchivePlanet` maps a `TocCandidate`
+  onto the seat-level `ArchivePlanet`; the TOI ephemeris is withheld so detection stays BLIND, exactly p5/p7).
+  A TOI with no token-free SPOC photometry is SKIPPED, never given a synthetic stand-in that could fake a
+  "recovery".
+- Honesty red lines enforced in code, not prose: `Finding.origin` labels each row (`revalidation` vs
+  `blind-toi`); `critique()` caps a `blind-toi` candidate at `needs-more-data` even if the evidence would
+  accept it; the auto-anchor branch additionally refuses `origin === "blind-toi"`; and `origin` is NOT part of
+  the bundle manifest, so it moves no bundleHash/scienceHash and touches no anchored row (behavior-tested).
+- Frontend legibility: catalog cards carry an origin pill ("Known-planet re-validation" vs gold "BLIND
+  CANDIDATE - UNCONFIRMED"), filter chips (All / re-validation / blind candidates), an honest section note,
+  and a live "survey pass / distinct targets / blind candidates" counter sourced from DO state.
+- 6 new behavior tests (`tests/rotation.test.ts`): windowing determinism/wrap/growth, TOI field units, the
+  blind-TOI verdict ceiling, and the load-bearing bundleHash-invariance-under-origin check. Gates: typecheck:all
+  + worker exit 0, npm test 487/487, eslint 0, node --check web/app.js 0, non-ASCII 0, secret scan 0.
+
 ### Audit-4 follow-up: two "deployed but inert" fixes made to actually fire, plus a live-data gate (2026-10-16)
 A fourth independent review re-tested the audit-3 fixes on the LIVE site and found two of them were correct,
 unit-tested, and deployed -- but never took effect on real data, because a non-science field had been folded

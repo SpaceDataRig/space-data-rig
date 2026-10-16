@@ -113,3 +113,25 @@ also ineffective, and the ledger could not see that, because the tests asserted 
 reviewer's diagnosis is accepted in full: speed slightly outran verification. The correction is
 structural, not a promise to be more careful -- from now on a render/dedup predicate ships with a
 test that runs the REAL captured production records through the REAL function.
+
+## Fifth-round (audit-5) follow-up -- the catalog looked static
+
+A reader asked: "Why does the frontend always show the same handful, and is the project even working? The
+audience cannot feel what we do." This was not a false claim to walk back -- it was a legibility and breadth
+failure, and the honest answer required first finding the real mechanism, then fixing it without re-introducing
+the overclaiming the earlier rounds removed.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| Catalog never grows | The autonomous survey selected the brightest N KNOWN planets (`pscomppars`, tmag-sorted) every pass, and `findingId` is deterministic (`F-<target>`) + `recordFinding` is `INSERT OR REPLACE`, so each pass overwrote the same rows -- it churned in place. | The autonomous run now ROTATES a broad real pool (known re-validation + UNCONFIRMED TOI) chosen from a persisted pass cursor (`src/survey/rotation.ts`, `surveyPass` in DO meta, advanced once/pass, idempotent by runId). Gated by `AUTO_RESEARCH_ROTATION`; manual runs stay deterministic top-N. | `tests/rotation.test.ts`: windowing is deterministic, wraps, and covers a 50-pool in ~7 passes; live counters (`surveyPass`/`distinctHosts`/`blindCandidates`) surface in /api/state. | Shipped (deploy-pending). |
+| "Is it even doing anything?" | The genuinely novel work -- blind recovery of unconfirmed candidates -- ran only offline (p5/p7: 27/70 recovered blind), never in the live catalog. | Wired the real TOI table (`src/data/toiArchive.ts`) into the SAME 5-seat pipeline: `toiToArchivePlanet` runs each TOI through real SPOC fetch + BLIND BLS (ephemeris withheld). A TOI with no downlinked photometry is SKIPPED, never synthesized. | `tests/rotation.test.ts` proves the field mapping (pl_trandep stays ppm) and the blind-TOI verdict ceiling. | Shipped (deploy-pending). |
+| Danger of reading growth as "discoveries" | A bigger, livelier catalog could be misread as claiming new planets. | `Finding.origin` labels every row (`revalidation` vs `blind-toi`); `critique()` caps a blind-TOI at `needs-more-data` even when the evidence would accept; the auto-anchor branch also refuses `origin==="blind-toi"`; the UI shows a gold "BLIND CANDIDATE - UNCONFIRMED" pill + filter chips. `origin` is NOT in the bundle manifest, so no hash/anchor moves. | `tests/rotation.test.ts`: two findings identical except `origin` compose to the SAME bundleHash and the manifest carries no origin key. | Shipped (deploy-pending). |
+
+### Honesty note on audit-5
+
+The temptation with "make it look alive" is to inflate. The guard against that is structural, not a promise:
+the only new row type that could read as a discovery (blind-TOI) is capped below `accepted` in the
+runtime-agnostic critic AND blocked from the anchor branch in the workflow, and `origin` cannot reach the
+manifest -- proven by a test that composes two identical findings differing only in `origin` and asserts
+byte-identical hashes. What changed is breadth and legibility; the no-discovery red line and every existing
+anchor are untouched.

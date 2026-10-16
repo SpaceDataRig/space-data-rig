@@ -121,6 +121,13 @@ PERSECTOR = "1"
 AUTO_RESEARCH = "1"
 AUTO_RESEARCH_TARGETS = "8"
 AUTO_RESEARCH_TMAG = "10"
+# audit-5 (audience-legibility): ROTATE the autonomous survey through a broad real pool (known-planet
+# re-validation + UNCONFIRMED TOI candidates) selected by a persisted cursor, so FINDINGS CATALOG grows
+# across passes instead of overwriting the same brightest 8 in place. Blind-TOI rows are labeled
+# origin="blind-toi", capped at needs-more-data, and NEVER auto-anchored -- set to "0" + redeploy to
+# revert to the historical brightest-top-N selection. AUTO_RESEARCH_POOL is the confirmed-pool depth.
+AUTO_RESEARCH_ROTATION = "1"
+AUTO_RESEARCH_POOL = "120"
 AUTO_ANCHOR = "live"
 AUTO_ANCHOR_DAILY_CAP = "100"
 # Named-observation commissioning gate (mirrors AUTO_ANCHOR, for the sdr:observe:1 paid path). OPTED IN to

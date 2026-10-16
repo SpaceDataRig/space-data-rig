@@ -47,6 +47,8 @@ import { robustPerSectorDepth } from "../detect/perSectorRun.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
+import { fetchTocCandidates, toiToArchivePlanet } from "../data/toiArchive.ts";
+import { selectRotationWindow } from "../survey/rotation.ts";
 import { persistBundle, type EphemerisRecord } from "../bundle/bundle.ts";
 import type { ArchivePlanet, Finding, LightCurve } from "../core/types.ts";
 import type { ActiveRunSummary, BundleRecord, DashboardState } from "../core/state-types.ts";
@@ -60,6 +62,8 @@ interface TargetMeta {
   taskId: string;
   findingId: string;
   index: number;
+  /** audit-5: what this row is -- known-planet re-validation or an unconfirmed blind-TOI candidate. */
+  origin: "revalidation" | "blind-toi";
 }
 
 /** A selected target: the catalog planet + its derived identity + resume flag. */
@@ -67,6 +71,7 @@ interface TargetSel {
   planet: ArchivePlanet;
   meta: TargetMeta;
   skipped: boolean;
+  origin: "revalidation" | "blind-toi";
 }
 
 /** What data-fetch writes: the built curve, its identity, and the data hash. */
@@ -118,10 +123,10 @@ function targetName(p: ArchivePlanet, index: number): string {
   return p.pl_name ?? p.hostname ?? `TARGET-${index}`;
 }
 
-function metaFor(p: ArchivePlanet, index: number): TargetMeta {
+function metaFor(p: ArchivePlanet, index: number, origin: "revalidation" | "blind-toi" = "revalidation"): TargetMeta {
   const name = targetName(p, index);
   const s = slug(name);
-  return { name, hostName: p.hostname, taskId: `T-${s}`, findingId: `F-${s}`, index };
+  return { name, hostName: p.hostname, taskId: `T-${s}`, findingId: `F-${s}`, index, origin };
 }
 
 // ---- small R2 JSON helpers --------------------------------------------------
@@ -199,18 +204,50 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         );
 
         // pick targets with enough real parameters to build a physical light curve
-        const planets = catalog.planets
-          .filter((p) => p.pl_orbper != null && p.st_rad != null && (p.pl_rade ?? 0) > 0)
-          .slice(0, params.targets);
+        const confirmedPool = catalog.planets.filter(
+          (p) => p.pl_orbper != null && p.st_rad != null && (p.pl_rade ?? 0) > 0,
+        );
+
+        type Entry = { planet: ArchivePlanet; origin: "revalidation" | "blind-toi"; index: number };
+        let selected: Entry[] = [];
+
+        if (params.rotation && !params.offline) {
+          // audit-5: rotate a broad real pool (known planets + unconfirmed TOI candidates) by a persisted
+          // cursor, so each autonomous pass adds NEW rows instead of overwriting the same brightest handful
+          // in place. Both pools are tmag-sorted; the window depends only on (pass, targets, pool.length),
+          // so it is deterministic and step-replay-safe, and each target keeps its stable pool index.
+          const poolDepth = Math.max(params.targets, params.pool ?? 120);
+          const knownSlice: Entry[] = confirmedPool.slice(0, poolDepth).map((planet, index) => ({ planet, origin: "revalidation", index }));
+          let toiSlice: Entry[] = [];
+          try {
+            const toi = await fetchTocCandidates({ maxTmag: params.maxTmag, limit: Math.max(8, Math.round(poolDepth / 2)), excludeConfirmedHosts: true });
+            toiSlice = toi.candidates
+              .map((c) => toiToArchivePlanet(c))
+              .filter((p) => p.pl_orbper != null && p.st_rad != null && (p.pl_rade ?? 0) > 0)
+              .map((planet, i) => ({ planet, origin: "blind-toi" as const, index: knownSlice.length + i }));
+            await stub.emitEvent("data-fetch", toi.source === "nasa-tap" ? "result" : "warn", `TOI pool ready: ${toiSlice.length} unconfirmed candidates (source=${toi.source}).`);
+          } catch (e) {
+            await stub.emitEvent("data-fetch", "warn", `TOI pool unavailable this pass: ${e instanceof Error ? e.message : String(e)}; running known-only rotation.`);
+          }
+          const pool = [...knownSlice, ...toiSlice];
+          if (pool.length > 0) {
+            const pass = await stub.getSurveyPass();
+            for (const k of selectRotationWindow(pool.length, params.targets, pass)) selected.push(pool[k]);
+            const nToi = selected.filter((s) => s.origin === "blind-toi").length;
+            await stub.emitEvent("data-fetch", "info", `Rotation pass ${pass}: ${selected.length} targets (${selected.length - nToi} known re-validation + ${nToi} blind TOI candidates) from a pool of ${pool.length}.`);
+          }
+        } else {
+          selected = confirmedPool.slice(0, params.targets).map((planet, index) => ({ planet, origin: "revalidation", index }));
+        }
 
         // Build deterministic identities; register tasks and honour resume-skip.
         const targets: TargetSel[] = [];
-        for (let i = 0; i < planets.length; i++) {
-          const planet = planets[i];
-          const meta = metaFor(planet, i);
+        for (const entry of selected) {
+          const { planet, origin, index } = entry;
+          const meta = metaFor(planet, index, origin);
           const prevStatus = await stub.taskStatus(meta.taskId);
           const skip = params.resume && (prevStatus === "done" || prevStatus === "failed");
-          targets.push({ planet, meta, skipped: skip });
+          targets.push({ planet, meta, skipped: skip, origin });
           if (skip) continue;
           await stub.addTask({
             id: meta.taskId,
@@ -221,7 +258,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
             createdAt: new Date().toISOString(),
           });
         }
-        await stub.setSeatStatus("data-fetch", "idle", `${planets.length} planets loaded`);
+        await stub.setSeatStatus("data-fetch", "idle", `${selected.length} targets loaded`);
         await stub.emitEvent("data-fetch", "info", `Selected ${targets.length} targets for transit analysis.`);
         return { targets, catalogSource: catalog.source };
       },
@@ -276,6 +313,13 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           sectors.length > 0
             ? await fetchSpocLightCurve(planet.tic!, sectors, meta.name, { byteCache: spocByteCache })
             : null;
+        if (meta.origin === "blind-toi" && !spoc) {
+          // Honesty guard: a blind-TOI row is only meaningful on REAL photometry -- an independent recovery.
+          // A synthetic stand-in built from the TOI's own reference period would "recover" a signal we handed
+          // it, which is never a valid blind candidate. Skip this TOI (no finding, no anchor) rather than
+          // fabricate one, exactly as the offline p7/p5 surveys drop targets with no downlinked data.
+          throw new Error("no token-free SPOC photometry for this TOI candidate; skipped without a synthetic stand-in");
+        }
         let lc: LightCurve;
         let truthPeriodDays: number;
         if (spoc) {
@@ -498,6 +542,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           // restores the benchmark self-test that anchors the verdict on the known period.
           recoveryGating: env.RECOVERY_GATING === "1",
           vetting,
+          origin: meta.origin,
         });
         await putJson(store, `${key}/review.json`, { review } satisfies ReviewRecord);
         await stub.markSeatProcessed("mission-critic");
@@ -534,6 +579,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           catalogSource,
           dataHash: rec.dataHash,
           lightCurveSource: rec.lc.source,
+          origin: rec.meta.origin,
         });
         // persist the reproducible bundle to R2 (identical key layout to the Node fs store)
         await persistBundle(store, out.composed, out.artifacts);
@@ -564,8 +610,9 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
       // the DO's budget gate: AUTO_ANCHOR defaults to "off" (no-op) and even
       // "live" spends nothing until AUTO_ANCHOR_DAILY_CAP > 0. Manual dashboard
       // runs never reach this branch (params.autonomous is false), so anchoring
-      // stays exactly as manual as before for a launched run.
-      if (params.autonomous && reportR.value === "accepted") {
+      // stays exactly as manual as before for a launched run. A blind-TOI candidate is
+      // never anchored even if it somehow reached "accepted" (audit-5 red line).
+      if (params.autonomous && reportR.value === "accepted" && meta.origin !== "blind-toi") {
         await runSafe(step, `anchor-${i}`, async (): Promise<string> => {
           const res = await stub.autoAnchorBudgeted(meta.findingId);
           await stub.emitEvent(
@@ -600,7 +647,11 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         rejected,
         bundles: st.bundles.length,
         catalogSource,
+        toiCount: targets.filter((t) => t.origin === "blind-toi").length,
       };
+      // Advance the rotation cursor once per completed autonomous pass (idempotent by runId), so the
+      // next cron tick shows a NEW window of the pool and the catalog grows across time.
+      if (params.rotation && targets.length > 0) await stub.advanceSurveyPass(runId);
       await stub.finishRun({ summary: out });
       await stub.emitEvent(
         "reporter",

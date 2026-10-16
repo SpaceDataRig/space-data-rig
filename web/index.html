@@ -202,7 +202,13 @@
       <h2>FINDINGS CATALOG</h2>
       <span class="hint" id="findings-count">0 findings</span>
     </div>
-    <p class="findings-note">Closed-loop self-test: each signal is seeded from live NASA catalog parameters, recovered by the detector, and cross-checked against the same catalog. Verdicts validate the pipeline -- they do not claim new planets.</p>
+    <p class="findings-note">A continuously rotating, self-testing survey of real TESS photometry. Each row is one target the pipeline pulled and examined on that run, and it is honestly labeled as one of two kinds: a <b>known-planet re-validation</b> (a signal seeded from live NASA catalog parameters, re-detected and cross-checked against the same catalog -- it validates the pipeline), or a <b>blind candidate</b> (an UNCONFIRMED TESS Object of Interest the detector recovered on real pixels with its ephemeris withheld -- a candidate for human follow-up, never a claimed discovery). Verdicts validate the method; they do not claim new planets.</p>
+    <p class="survey-stats" id="survey-stats">survey pass 0 - 0 distinct targets - 0 blind candidates (unconfirmed)</p>
+    <div class="board-filter" id="board-filter">
+      <button class="chip active" data-filter="all" type="button">All</button>
+      <button class="chip" data-filter="revalidation" type="button">Known-planet re-validation</button>
+      <button class="chip" data-filter="blind-toi" type="button">Blind candidates (unconfirmed)</button>
+    </div>
     <div class="prov-bar" id="prov-bar" hidden></div>
     <div class="board" id="board"><p class="empty">Awaiting first light. Launch a run to watch the table deliberate.</p></div>
     <div class="board-foot"><button class="btn tiny ghost" id="board-more" hidden>More</button></div>

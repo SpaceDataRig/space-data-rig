@@ -130,11 +130,19 @@ export interface CritiqueInput {
   recoveryGating?: boolean;
   /** optional false-positive vetting evidence; omitted => identical review. */
   vetting?: ReviewVetting;
+  /**
+   * audit-5: "blind-toi" marks a target that is an UNCONFIRMED TOI candidate (its host was already
+   * excluded from the confirmed catalog). The honesty ceiling is applied to the verdict so such a row can
+   * NEVER be accepted -- even a chance line-of-sight catalog match must not let an unconfirmed candidate
+   * reach the accepted-only money path. Absent (the Node orchestrator, and every known-planet run) => the
+   * review is byte-for-byte unchanged.
+   */
+  origin?: "revalidation" | "blind-toi";
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, recoveryGating, vetting }: CritiqueInput): ReviewResult {
-  return reviewCandidate({
+export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, recoveryGating, vetting, origin }: CritiqueInput): ReviewResult {
+  const review = reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
     catalog,
@@ -146,6 +154,16 @@ export function critique({ detection, catalog, hostName, confidence, truthPeriod
     vetting,
     minSnr: 7,
   });
+  // Hard honesty ceiling for unconfirmed TOI candidates: a blind recovery on a host NOT in the confirmed
+  // catalog is a candidate for human follow-up, never an accepted (auto-anchorable) detection.
+  if (origin === "blind-toi" && review.verdict === "accepted") {
+    return {
+      ...review,
+      verdict: "needs-more-data",
+      reason: `Independently recovered blind on real photometry, but the host is an UNCONFIRMED TESS candidate (TOI) -- flagged for follow-up, never anchored or claimed as a discovery. (${review.reason})`,
+    };
+  }
+  return review;
 }
 
 export interface ReportInput {
@@ -160,6 +178,8 @@ export interface ReportInput {
   catalogSource?: string;
   dataHash?: string;
   lightCurveSource?: string;
+  /** audit-5: display/provenance label set on the Finding; NOT part of the manifest, so it moves no bundleHash. */
+  origin?: "revalidation" | "blind-toi";
 }
 
 export interface ReportOutput {
@@ -194,6 +214,7 @@ export async function report(input: ReportInput): Promise<ReportOutput> {
     score: review.score,
     ephemeris: input.ephemeris,
     createdAt: new Date().toISOString(),
+    origin: input.origin,
   };
 
   const svgFolded = foldedPlotSVG(c.folded ?? [], { title: `${lc.targetId} - folded @ P=${c.periodDays.toFixed(4)}d` });

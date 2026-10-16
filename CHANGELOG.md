@@ -5,6 +5,15 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 P2: ledger status corrected from "deploy-pending" to shipped + mainnet-proven (2026-10-16)
+RESPONSE-TO-AUDIT.md and this file still described the scienceHash dedup and several fixes as "Shipped
+(deploy-pending)", which was stale: as of the current deploy the Web assets and the Worker are both live at
+Workers version f4dfb1a9 on spacedatarig.app. The two dedup rows are now marked "Shipped + mainnet-proven":
+re-running the F-HR-858-b/c/d trio (one detection under three catalog labels, which now collapses to a single
+scienceHash) paid exactly ONE anchor fee for F-HR-858-b and de-duplicated c/d against it -- two mainnet fees
+saved, verified live. A dated deployment-status note supersedes the remaining deploy-pending markers, and the
+stale "Commit 34e93b8 (deploy pending)" line is corrected to "deployed, version c9af4564".
+
 ### Audit-6 P2: /health now self-proves which deployment is live (2026-10-16)
 For five rounds /health reported only codeVersion = space-data-rig@0.1.1 (the package version), so confirming
 "a deploy landed" required byte-comparing static assets and inferring line-ending differences. The Worker
@@ -189,7 +198,7 @@ now live in production (deployed behind an admin token). One item (#3) is blocke
 - #3 (run official TRICERATOPS via pip) remains BLOCKED: this environment has no Python/pip; the FPP maths is already
   reimplemented natively (`daveBlendedFpp`). All other items shipped.
 - #7 residual: abuse-brake counters moved from per-isolate to a Durable Object (`RateLimitDO`) so the limit is
-  global across isolates, with the local limiter kept as a fail-open fallback. Commit 34e93b8 (deploy pending).
+  global across isolates, with the local limiter kept as a fail-open fallback. Commit 34e93b8 (deployed, version c9af4564).
 - P85 `scripts/p85-contaminant-fit.ts`: faithful per-contaminant centroid F-test (eumemic method) reported on the
   real 500-target run -- planet false-reject 1/53, blend caught 0/56, but a neighbour explains the mean in 54/56
   viable blends (the low power is target-not-rejected, not contaminant-not-fitting), with a threshold sensitivity

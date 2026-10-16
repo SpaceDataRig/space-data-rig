@@ -5,9 +5,11 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
-### Audit-10 response + P82 scaled validation (2026-10-15)
-A second external audit listed 11 prioritised items. The safe research ones are shipped now; production/
-money/CI ones were built and await an integrated deploy; one was blocked by the local environment.
+## [0.1.1] - 2026-10-16
+
+### Audit-10 response + P82 scaled validation + production hardening (2026-10-15/16)
+A second external audit listed 11 prioritised items. All ten implementable ones are shipped; #1 and #7 are
+now live in production (deployed behind an admin token). One item (#3) is blocked by the local environment.
 
 - #2 P81 report-layer guardrails: a Gaia census that is unavailable now prints `undetermined` (was `NaN`) and is
   excluded from every rate; a de-diluted depth past the 10% physical cap is flagged `inconsistent`, excluded from
@@ -30,7 +32,8 @@ money/CI ones were built and await an integrated deploy; one was blocked by the 
   (strict TRICERATOPS-grade 1/234 & 5/179), centroid planet false-reject 1/53 vs blend catch 0/56.
 - #7 Deny-by-default admin gate (`isAdminAuthorized` returns false when no token is set) + a per-finding
   in-flight anchor lock that stops a same-run re-entrant SOL double-spend; `SECURITY.md` published. Commit c905d3f.
-  DEPLOY-PENDING: takes effect in production only once deployed with ADMIN_TOKEN set.
+  DEPLOYED (version fc6810a6): live on spacedatarig.app behind `ADMIN_TOKEN`; verified 401/401/404/200 against
+  the running site. The dashboard now prompts for the token on a 401 (commit c9a95a8).
 - #9 Keyless read-only on-chain verification `scripts/p9-anchor-live-verify.ts` + daily workflow: re-reads recent
   mainnet anchors straight from the chain and confirms each memo still matches its bundleHash. Smoke 3/3 OK. Commit 1896fbf.
 - #11 `npm run lint` -> `eslint --max-warnings 0` (0 warnings tree-wide) + coverage gate widened to enforce
@@ -40,7 +43,13 @@ money/CI ones were built and await an integrated deploy; one was blocked by the 
 - #10 `RESPONSE-TO-AUDIT.md`: four-column ledger (criticism -> fix -> verification -> residual risk) for all eleven
   items; README gained a one-page "At a glance" front (long-form kept as auditable context). Commit fe87fb5.
 - #3 (run official TRICERATOPS via pip) remains BLOCKED: this environment has no Python/pip; the FPP maths is already
-  reimplemented natively (`daveBlendedFpp`). All other items shipped; #1/#7 await deploy.
+  reimplemented natively (`daveBlendedFpp`). All other items shipped.
+- #7 residual: abuse-brake counters moved from per-isolate to a Durable Object (`RateLimitDO`) so the limit is
+  global across isolates, with the local limiter kept as a fail-open fallback. Commit 34e93b8 (deploy pending).
+- P85 `scripts/p85-contaminant-fit.ts`: faithful per-contaminant centroid F-test (eumemic method) reported on the
+  real 500-target run -- planet false-reject 1/53, blend caught 0/56, but a neighbour explains the mean in 54/56
+  viable blends (the low power is target-not-rejected, not contaminant-not-fitting), with a threshold sensitivity
+  table. Commit b8dad16. safeToGate=false, discoveryClaim=false.
 
 ### Audit-9 science-meaning program -- multi-sector blind test + TCE/DAVE/TPM benchmark (2026-10-15)
 The external audit said the work is meaningful only with (a) a quantitative benchmark against TCE/DAVE/TPM,

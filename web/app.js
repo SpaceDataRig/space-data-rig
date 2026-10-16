@@ -175,7 +175,7 @@ async function handleAnchorDelib(btn) {
   btn.disabled = true;
   if (out) { out.className = "verify-out"; out.textContent = "submitting memo to mainnet..."; }
   try {
-    const r = await fetch(`/api/anchor/${encodeURIComponent(id)}/deliberation`, { method: "POST", headers: adminHeaders(), body: "{}" });
+    const r = await adminFetch(`/api/anchor/${encodeURIComponent(id)}/deliberation`, { method: "POST", body: "{}" });
     const res = await r.json();
     if (res.ok && res.signature) {
       renderDelibAnchor(out, { anchored: true, signature: res.signature, slot: res.slot, explorerUrl: res.explorerUrl });
@@ -363,14 +363,30 @@ function renderLedger(entries) {
 // ---- data loading ----------------------------------------------------------
 async function fetchJSON(path) { const r = await fetch(path); if (!r.ok) throw new Error(`${path} ${r.status}`); return r.json(); }
 
-// Opt-in admin token for the mutating endpoints (/api/run, /api/anchor/*). When the operator has
-// gated the server with ADMIN_TOKEN, they store it once (localStorage key "sdr-admin-token") and it
-// is sent as a bearer header. Anonymous visitors omit it; the endpoints stay open until the operator
-// sets the secret server-side, so this is harmless on a public, ungated deployment.
+// Admin bearer token for the mutating endpoints (/api/run, /api/anchor/*). Since audit-10 #7 the
+// server is DENY-BY-DEFAULT: with no ADMIN_TOKEN set -- or a request that does not carry the right
+// bearer -- those endpoints return 401. The operator stores the token once (localStorage key
+// "sdr-admin-token") and it is sent as a bearer header. Read-only views never need it.
 function adminHeaders() {
   const h = { "Content-Type": "application/json" };
   try { const t = localStorage.getItem("sdr-admin-token"); if (t) h["Authorization"] = "Bearer " + t; } catch (e) { /* storage unavailable */ }
   return h;
+}
+
+// A mutating fetch that handles the deny-by-default gate gracefully: on a 401 it prompts the
+// operator to enter the admin token (so there IS an input path, not just a silent failure),
+// remembers it in this browser, and retries the call once. Anonymous visitors who dismiss the
+// prompt simply see the original 401. All three mutation call sites route through here.
+async function adminFetch(path, opts) {
+  let r = await fetch(path, { ...opts, headers: adminHeaders() });
+  if (r.status === 401) {
+    const t = window.prompt("Admin access token required for this action. Enter it to unlock (stored only in this browser):");
+    if (t && t.trim()) {
+      try { localStorage.setItem("sdr-admin-token", t.trim()); } catch (e) { /* storage unavailable */ }
+      r = await fetch(path, { ...opts, headers: adminHeaders() });
+    }
+  }
+  return r;
 }
 
 function applyState(s) {
@@ -876,7 +892,7 @@ $("#run-form").addEventListener("submit", async (e) => {
   };
   setRunningUI(true, "starting...");
   try {
-    const r = await fetch("/api/run", { method: "POST", headers: adminHeaders(), body: JSON.stringify(payload) });
+    const r = await adminFetch("/api/run", { method: "POST", body: JSON.stringify(payload) });
     const j = await r.json();
     if (!r.ok) { setRunningUI(false, j.error || "failed to start"); return; }
     lastRunning = true;
@@ -937,7 +953,7 @@ boardEl.addEventListener("click", async (e) => {
     if (!window.confirm("Anchor writes a real Solana MAINNET memo transaction and spends project SOL. Continue?")) return;
     btn.disabled = true; status.className = "verify-out"; status.textContent = "anchoring on mainnet...";
     try {
-      const r = await fetch(`/api/anchor/${encodeURIComponent(id)}`, { method: "POST", headers: adminHeaders(), body: "{}" });
+      const r = await adminFetch(`/api/anchor/${encodeURIComponent(id)}`, { method: "POST", body: "{}" });
       const res = await r.json();
       if (res.ok && res.signature) {
         status.className = "verify-out ok";

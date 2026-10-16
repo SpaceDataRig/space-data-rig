@@ -1,6 +1,7 @@
-// Audit-10 response figure -- an honest status poster for the "we worked through the audit" tweet. All-text,
-// ASCII only, deterministic. It only lists what is COMMITTED; pending/blocked items are labelled as such.
-// Usage: npm run figure:audit10-response
+// Audit-10 response figure -- the honest status poster for the "we worked through the audit" update.
+// Regenerated (C-8) to reflect the completed state: all ten implementable items shipped, #1/#7 deployed to
+// production, and only the genuinely environment-blocked / by-design-ceiling items left labelled. All-text,
+// ASCII only, deterministic. Usage: npm run figure:audit10-response
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 let texts = 0;
 const T = (x: number, y: number, s: string, size = 15, fill = "#e8ecf7", weight = "400") => {
@@ -11,58 +12,55 @@ const W = 1200, H = 720;
 const card = (x: number, y: number, w: number, h: number) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="#141b33" stroke="#26314f"/>`;
 
 const bg = `<rect width="${W}" height="${H}" fill="#0b1020"/>`;
-const head = T(28, 44, "Audit-10 response -- hardening the rig, honestly", 25, "#e8ecf7", "800")
-  + T(28, 70, "Eight audit items shipped and verified on main; the honest outstanding/blocked ones are labelled, not hidden.", 13, "#9fb0d6");
+const head = T(28, 44, "Audit-10 response -- all ten implementable items shipped", 24, "#e8ecf7", "800")
+  + T(28, 70, "Ten review items landed and verified on main; #1 and #7 are live in production. The blocked and by-design items stay labelled.", 13, "#9fb0d6");
 
-// Left: shipped
-let left = card(28, 96, 584, 380) + T(50, 130, "SHIPPED + committed", 18, "#37d39b", "800");
+// Left: shipped (10 items)
+let left = card(28, 96, 620, 574) + T(50, 126, "SHIPPED + verified on main", 18, "#37d39b", "800");
 const shipped = [
-  ["#7  Deny-by-default admin gate", "unset ADMIN_TOKEN now 401s mutations; per-finding"],
-  ["", "anchor lock stops a same-run SOL double-spend."],
-  ["#9  Keyless live chain verification", "daily job re-reads recent Solana anchors from"],
-  ["", "mainnet and confirms the memo still matches -- no secret."],
-  ["#11 Lint gates at zero warnings", "--max-warnings 0; coverage now enforces branches"],
-  ["", "(measured line 95.8 / branch 80.4 / fn 91.8)."],
-  ["#1  Split the two bundle hashes", "timestamped commitment vs a stable content"],
-  ["", "address (scienceHash); old anchors byte-identical."],
+  ["#1  Split the two bundle hashes", "timestamped commitment vs a stable content address"],
+  ["", "(scienceHash); old anchors byte-identical. LIVE on deploy."],
   ["#2  P81 report guardrails", "Gaia-unavailable -> undetermined (not NaN); a physi-"],
-  ["", "cally impossible de-diluted depth -> blend evidence."],
-  ["#5  P80 depth-stratified", "headline names its easiest subset; a harder"],
-  ["", "300-1000 ppm tier is shown alongside, even if 0/N."],
-  ["#6  Reusable inverted planet-free null", "AR(1) gate flags 75% of pure-noise bumps vs"],
-  ["", "a nominal 5% (model-free 31%, n=16) -- README lead."],
-  ["#4  Chased the centroid 2/6", "root cause: pixel-baseline-bound (71% never"],
-  ["", "localise), not the F-test -- chain payoff for P44/53."],
+  ["", "cally impossible de-diluted depth -> blend contradiction."],
+  ["#4  Chased the centroid 2/6", "root cause: pixel-baseline-bound, not the F-test."],
+  ["#5  P80 depth-stratified", "headline names its easiest subset; a harder tier shown."],
+  ["#6  Reusable inverted null", "planet-free null extracted to src/ + tested; README lead."],
+  ["#7  Deny-by-default admin gate", "unset token 401s mutations; per-finding anchor lock stops"],
+  ["", "a same-run SOL double-spend. Abuse-brake counters moved to a DO."],
+  ["#8  Weekly upstream live-probe", "keyless NASA/ExoFOP/Gaia field+row-count check; an"],
+  ["", "issue opens on a schema drift. Local smoke PASS 3/3."],
+  ["#9  Keyless on-chain re-check", "daily job re-reads recent mainnet anchors and matches"],
+  ["", "each memo to its bundle hash -- reads only, no secret."],
+  ["#10 Audit response ledger", "RESPONSE-TO-AUDIT.md (criticism -> fix -> verification"],
+  ["", "-> residual risk) + a one-page README front."],
+  ["#11 Lint + branch coverage", "--max-warnings 0; coverage floor enforces branches too."],
 ];
-let yy = 156;
+let yy = 150;
 for (const [a, b] of shipped) {
-  left += T(50, yy, a, 14, a ? "#e8ecf7" : "#9fb0d6", a ? "700" : "400");
-  left += T(66, yy + 18, b, 13, "#9fb0d6");
-  yy += 42;
+  left += T(50, yy, a, 13, "#e8ecf7", "700");
+  left += T(66, yy + 15, b, 12, "#9fb0d6");
+  yy += 32;
 }
 
 // Right-top: P82 results
-let rt = card(628, 96, 548, 208) + T(650, 130, "P82 scaled validation (real data)", 18, "#5aa9ff", "800");
-rt += T(650, 162, "Blind 425 curves (181 injected):", 14, "#9fb0d6", "600");
-rt += T(650, 184, "recall 86.2%   accepted precision 42.2%", 15);
-rt += T(650, 216, "External blind validation (ephemeris never fed):", 14, "#9fb0d6", "600");
-rt += T(650, 238, "KP 182/234   CP 104/179   strict grade 1/234 & 5/179", 15);
-rt += T(650, 270, "Centroid F-test on 500 targets:", 14, "#9fb0d6", "600");
-rt += T(650, 292, "planet false-reject 1/53   blend catch 0/56 (vs 73%)", 15);
+let rt = card(664, 96, 512, 200) + T(686, 128, "P82 scaled validation (real data)", 18, "#5aa9ff", "800");
+rt += T(686, 158, "Blind 425 curves (181 injected):", 14, "#9fb0d6", "600");
+rt += T(686, 180, "recall 86.2%   accepted precision 42.2%", 15);
+rt += T(686, 210, "External blind validation (ephemeris never fed):", 14, "#9fb0d6", "600");
+rt += T(686, 232, "KP 182/234   CP 104/179   strict grade 1/234 & 5/179", 15);
+rt += T(686, 262, "Centroid F-test on 500 targets (P85):", 14, "#9fb0d6", "600");
+rt += T(686, 284, "planet false-reject 1/53   blend catch 0/56", 15);
 
-// Right-bottom: outstanding / blocked
-let rb = card(628, 320, 548, 356) + T(650, 354, "Honestly outstanding", 18, "#f5b544", "800");
-rb += T(650, 388, "#8  Weekly upstream live-probe", 14, "#e8ecf7", "700");
-rb += T(666, 408, "(NASA TAP / ExoFOP / Gaia field+row-count checks) -- next.", 13, "#9fb0d6");
-rb += T(650, 440, "#10  RESPONSE-TO-AUDIT.md (criticism -> fix ->", 14, "#e8ecf7", "700");
-rb += T(666, 460, "verification -> residual risk) -- next.", 13, "#9fb0d6");
-rb += T(650, 492, "#3  Official TRICERATOPS cross-check", 14, "#ff6b6b", "700");
-rb += T(666, 512, "BLOCKED here: this environment has no Python/pip;", 13, "#9fb0d6");
-rb += T(666, 530, "its FPP maths is already reimplemented natively.", 13, "#9fb0d6");
-rb += T(650, 562, "DEPLOY PENDING -- #1 + #7 take effect on a deploy;", 14, "#f5b544", "700");
-rb += T(666, 582, "ADMIN_TOKEN must be set at that time. Measure-first:", 13, "#9fb0d6");
-rb += T(666, 600, "no verdict, gate, bundle hash or money path changed.", 13, "#9fb0d6");
-rb += T(650, 640, "safeToGate false   discoveryClaim false", 15, "#9fb0d6", "700");
+// Right-bottom: honestly open / blocked
+let rb = card(664, 312, 512, 254) + T(686, 344, "Honestly open", 18, "#f5b544", "800");
+rb += T(686, 376, "#3  Official TRICERATOPS cross-check", 14, "#ff6b6b", "700");
+rb += T(702, 396, "BLOCKED here: no Python/pip in this environment;", 13, "#9fb0d6");
+rb += T(702, 414, "its FPP maths is already reimplemented natively.", 13, "#9fb0d6");
+rb += T(686, 446, "By-design ceilings (not defects)", 14, "#e8ecf7", "700");
+rb += T(702, 466, "#4/#5: sample size narrows error bars, it does not", 13, "#9fb0d6");
+rb += T(702, 484, "remove the pixel-baseline or easiest-subset limits.", 13, "#9fb0d6");
+rb += T(686, 516, "DEPLOYED: #1 + #7 live on spacedatarig.app", 14, "#37d39b", "700");
+rb += T(686, 544, "safeToGate false   discoveryClaim false", 14, "#9fb0d6", "700");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
   + bg + head + left + rt + rb + `</svg>\n`;

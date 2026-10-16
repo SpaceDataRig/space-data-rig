@@ -112,6 +112,7 @@
     "figure:deploy-audit10": "tsx scripts/deploy-audit10-figure.ts",
     "figure:audit10-v011": "tsx scripts/audit10-v011-figure.ts",
     "figure:audit3": "tsx scripts/audit3-remediation-figure.ts",
+    "figure:audit4": "tsx scripts/audit4-live-gate-figure.ts",
     "figure:anchor-proof": "tsx scripts/anchor-decode-proof-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",

@@ -1,3 +1,29 @@
+# audit-6 (small): normalise EVERY text file to LF in the index AND the working tree.
+# The live site was serving CRLF while the repo stored LF (a Windows checkout with core.autocrlf re-wrote the
+# line endings on the way out), so byte-comparing deployed static assets against the repo -- ETag, size, hash --
+# lied and sent us chasing a phantom diff. Pinning eol=lf means what is committed is what gets deployed.
+* text=auto eol=lf
+
 # Keep the cross-pipeline fixtures byte-identical on every checkout (the Python harness in CI re-analyzes
 # exactly these bytes; CRLF conversion would break that guarantee).
 tests/fixtures/spoc-curves/* text eol=lf
+
+# Binary artifacts: never run EOL conversion or text diffs on them (auto-detection can mis-fire on FITS/PNG).
+*.fits binary
+*.fit binary
+*.fits.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary

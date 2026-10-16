@@ -14,6 +14,13 @@ scienceHash) paid exactly ONE anchor fee for F-HR-858-b and de-duplicated c/d ag
 saved, verified live. A dated deployment-status note supersedes the remaining deploy-pending markers, and the
 stale "Commit 34e93b8 (deploy pending)" line is corrected to "deployed, version c9af4564".
 
+### Audit-6 small: .gitattributes pins eol=lf so deployed bytes match the repo (2026-10-16)
+The live site was serving CRLF while the repo stored LF (a Windows checkout with core.autocrlf rewrote the
+line endings on the way out), so byte-comparing deployed static assets against the repo -- ETag, size, hash --
+lied and sent us chasing a phantom diff. `.gitattributes` now sets `* text=auto eol=lf`, so what is committed
+is what gets deployed regardless of the checkout platform; the existing spoc-curves fixtures rule is kept and
+binary artifacts (FITS/PNG/fonts/archives) are explicitly exempted from any EOL conversion or text diff.
+
 ### Audit-6 P2: /health now self-proves which deployment is live (2026-10-16)
 For five rounds /health reported only codeVersion = space-data-rig@0.1.1 (the package version), so confirming
 "a deploy landed" required byte-comparing static assets and inferring line-ending differences. The Worker

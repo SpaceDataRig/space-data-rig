@@ -97,6 +97,7 @@
     "p84:centroid-diagnosis": "tsx scripts/p84-centroid-diagnosis.ts",
     "p85:contaminant-fit": "tsx scripts/p85-contaminant-fit.ts",
     "p9:anchor-verify": "tsx scripts/p9-anchor-live-verify.ts",
+    "p9:decode-memo": "tsx scripts/anchor-memo-decode.ts",
     "p8:live-probe": "tsx scripts/p8-live-probe.ts",
     "figure:round": "tsx scripts/deploy-retest-round-figure.ts",
     "figure:audit9": "tsx scripts/audit9-round-figure.ts",

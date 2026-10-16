@@ -43,6 +43,7 @@ import {
   buildObserveMemo,
   endpointList,
   explorerUrl,
+  findAnchoredScience,
   keypairFromSecretJson,
   type AnchorCoreResult,
 } from "../solana/anchor-core.ts";
@@ -62,6 +63,9 @@ type Json = Record<string, unknown>;
 type AnchorFindingResult = {
   ok: boolean; memo?: string; signature?: string; slot?: number; error?: string;
   httpStatus: number; dryRun?: boolean; alreadyAnchored?: boolean;
+  /** identical-science bundle already committed on-chain: this call spent nothing and deliberately
+   *  did NOT stamp this finding (the prior tx committed a different, earlier bundleHash). */
+  deduplicated?: boolean; dedupOf?: { findingId: string; signature: string };
 };
 
 export class RigStateDO extends DurableObject<Env> {
@@ -580,6 +584,23 @@ export class RigStateDO extends DurableObject<Env> {
         }
       }
 
+      // scienceHash dedup (audit-3 P0-B): a re-run of byte-identical science gets a NEW timestamped
+      // bundleHash, so the exact-bundleHash guard above misses it and would spend a second mainnet fee
+      // (observed: three identical-content findings anchored as three txs). If ANY anchored ledger row
+      // already committed this content address, skip the spend. We deliberately do NOT copy the prior
+      // signature onto this finding -- that tx's memo carries a different bundleHash, so stamping it here
+      // would present an unverifiable proof (violates the anchor-stamp invariant); the card stays honestly
+      // un-stamped and the deduplicated flag tells the caller why no tx was made.
+      const dupe = findAnchoredScience(this.listLedger(), scienceHash);
+      if (dupe) {
+        await this.emitEvent(
+          "reporter",
+          "info",
+          `Skipped anchor for ${findingId}: identical science (content hash) already anchored as ${dupe.findingId} -- no new fee spent.`,
+        );
+        return { ok: true, memo, httpStatus: 200, alreadyAnchored: true, deduplicated: true, dedupOf: { findingId: dupe.findingId, signature: dupe.signature ?? "" } };
+      }
+
       const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);
       await this.emitEvent("reporter", "info", `Anchoring ${findingId} on Solana mainnet...`);
 
@@ -594,6 +615,7 @@ export class RigStateDO extends DurableObject<Env> {
       const entry: LedgerEntry = {
         findingId,
         bundleHash,
+        scienceHash,
         memo,
         status: res.ok ? "anchored" : "failed",
         signature: res.signature,

@@ -55,6 +55,30 @@ export function buildMemo(findingId: string, bundleHash: string, scienceHash?: s
   return scienceHash ? `${MEMO_PREFIX}|${findingId}|${bundleHash}|${scienceHash}` : `${MEMO_PREFIX}|${findingId}|${bundleHash}`;
 }
 
+/** Minimal shape the scienceHash dedup needs from a ledger row (both runtimes' LedgerEntry satisfy it). */
+export interface AnchorableLedgerRow {
+  findingId: string;
+  status: string;
+  signature?: string;
+  scienceHash?: string;
+}
+
+/**
+ * Dedup key for anchoring (audit-3 P0-B). Returns the FIRST already-anchored ledger row that carries
+ * the SAME scienceHash -- i.e. the exact same content-addressed science is already committed on-chain --
+ * so the caller can skip a second mainnet fee instead of re-anchoring an identical bundle. Deliberately
+ * conservative: with no scienceHash (best-effort content address unavailable), no signature, or a
+ * non-anchored/failed row, it returns null and the caller anchors normally. It NEVER matches on
+ * bundleHash (each run is a distinct timestamped commitment) -- only on the stable content address.
+ */
+export function findAnchoredScience(rows: AnchorableLedgerRow[], scienceHash?: string): AnchorableLedgerRow | null {
+  if (!scienceHash) return null;
+  for (const r of rows) {
+    if (r.status === "anchored" && r.signature && r.scienceHash && r.scienceHash === scienceHash) return r;
+  }
+  return null;
+}
+
 /** On-chain record for a sealed deliberation receipt (integrity of model commentary). */
 export function buildDeliberationMemo(findingId: string, deliberationHash: string): string {
   return `${DELIB_MEMO_PREFIX}|${findingId}|${deliberationHash}`;

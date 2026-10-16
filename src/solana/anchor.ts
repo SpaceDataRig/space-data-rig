@@ -65,6 +65,9 @@ export interface AnchorResult {
 export interface LedgerEntry {
   findingId: string;
   bundleHash: string;
+  /** stable content address, same dedup key as the Worker ledger entry (audit-3 P0-B); optional so
+   *  historical fs-ledger rows without it still parse. */
+  scienceHash?: string;
   memo: string;
   status: "anchored" | "pending" | "failed";
   signature?: string;

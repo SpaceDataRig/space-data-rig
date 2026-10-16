@@ -74,6 +74,9 @@ export interface ActiveRun {
 export interface LedgerEntry {
   findingId: string;
   bundleHash: string;
+  /** stable content address (audit-10 #1): the dedup key that lets an identical-science re-run
+   *  be recognised as already-anchored instead of spending a second mainnet fee (audit-3 P0-B). */
+  scienceHash?: string;
   memo?: string;
   status: "anchored" | "failed";
   signature?: string;

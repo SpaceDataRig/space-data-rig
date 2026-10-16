@@ -13,6 +13,7 @@ import {
   buildMemo,
   buildDeliberationMemo,
   buildObserveMemo,
+  findAnchoredScience,
   endpointList,
   explorerUrl,
   isDevnetRpc,
@@ -72,6 +73,22 @@ test("Node and Worker anchor paths produce the SAME memo shape for a given scien
   const without = await anchorBundleHash("F-HR-858-b", hash, { dryRun: true });
   assert.equal(without.memo, buildMemo("F-HR-858-b", hash)); // omitted -> classic 3-field, unchanged
   assert.equal(without.memo.split("|").length, 3);
+});
+
+test("findAnchoredScience dedups on the content address across findings, never on bundleHash/timestamp (audit-3 P0-B)", () => {
+  const sh = "a".repeat(64);
+  const rows = [
+    { findingId: "F-HR-858-b", status: "failed", signature: undefined, scienceHash: sh },
+    { findingId: "F-HR-858-c", status: "anchored", signature: "sigC", scienceHash: sh },
+  ];
+  assert.equal(findAnchoredScience(rows, sh)?.findingId, "F-HR-858-c"); // cross-finding match on same scienceHash
+  assert.equal(findAnchoredScience(rows, sh)?.signature, "sigC");
+  assert.equal(findAnchoredScience(rows, undefined), null); // no content address -> anchor normally
+  assert.equal(findAnchoredScience(rows, "b".repeat(64)), null); // different science -> not a dupe
+  // a failed row, even with the right scienceHash, is not a committed anchor
+  assert.equal(findAnchoredScience([{ findingId: "X", status: "failed", signature: "sigX", scienceHash: sh }], sh), null);
+  // legacy rows with no scienceHash never match (bundleHash/timestamp is not the dedup key)
+  assert.equal(findAnchoredScience([{ findingId: "Y", status: "anchored", signature: "sigY" }], sh), null);
 });
 
 test("hashScience is content-addressed (stable across createdAt/runId) while bundleHash is a timestamped commitment", async () => {

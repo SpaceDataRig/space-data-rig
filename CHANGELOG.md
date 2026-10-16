@@ -24,7 +24,11 @@ are recorded honestly as limits, not patched over.
   NOTE: this commit's subject line was mislabelled (an embedded-double-quote escaping bug reused the previous
   commit text); the diff -- `web/app.js`, `web/styles.css`, `README.md`, `tests/projection-relabel.test.ts` -- is
   the projection-relabel work described here, not the anchor-dedup text in the subject.
-- Defect C -- the live-probe's failure mode is now PROVEN offline, not just present: each probe split into a
+- Defect C (rate limiting per-isolate + fail-open) was already remediated before this review's snapshot:
+  the abuse-brake counters live in a global SQLite `RateLimitDO` (`src/cf/rate-limit.do.ts`, commit 34e93b8,
+  deployed c9af4564); `worker.ts` `rateCheck` hits the DO stub first and only fails open to a local limiter if
+  the DO call errors. Verified in live code + `wrangler.toml` (`new_sqlite_classes=["RateLimitDO"]`).
+- #10 / P1 -- the live-probe's failure mode is now PROVEN offline, not just present: each probe split into a
   fetch + pure `judge`, a `--self-test` drives drifted fixtures through the real detection logic and asserts the
   alert exit code, and 5 offline tests in `npm test` lock it in. Commit 97cddc6.
 - Audit-10 #3 corrected from *Blocked* to *Partial*: "no Python here" was false (CI runners install Python and a

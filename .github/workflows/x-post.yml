@@ -1,50 +1,49 @@
-name: x-post (auto-publish an English status update on a milestone push)
+name: x-post (hourly English digest of new commits)
 
-# Fully-automated, TEXT-ONLY, ENGLISH-ONLY posting to X via the X API v2 (scripts/post-x-text.ts). On every
-# push to main that changes a published research artifact, it posts ONE English line derived from the commit
-# subject plus short project links. No image (AI illustration is generated only inside an agent session, not
-# in CI -- the operator opted for text-only automation). No Chinese (the workflow strips non-ASCII and the
-# script refuses non-ASCII, so English-only is enforced twice).
+# audit-6: BATCHED posting. This channel used to fire on EVERY qualifying push, so a run of consecutive
+# commits produced a run of consecutive tweets (too noisy). It is now a once-an-hour DIGEST: it counts the
+# commits that landed on main since the previous digest and posts ONE English, text-only line (count + links).
+# No image (AI illustration is generated only inside an agent session, never in CI). No Chinese (the workflow
+# strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so English-only is enforced twice).
+# An hour with NO new commits posts NOTHING (no empty tweet).
 
 # Loop / spam guards:
-#  - Only fires on pushes that touch reports/**.md or web/research.json or CHANGELOG.md (real deliverables),
-#    not on code/doc edits.
-#  - `if: github.actor != 'github-actions[bot]'` skips the CI publish-back commits (they are pushed by the
-#    Actions token), so a regenerated report does NOT trigger a second post.
-#  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- so this workflow is inert until
-#    an operator opts in by adding real X API credentials in repo Settings > Actions secrets. Nothing here
-#    can post without them, and no key ever enters the repo.
+#  - No push trigger at all: committing docs/reports no longer posts per-commit; the hourly digest is the only
+#    automatic path, so N commits in an hour collapse to at most ONE tweet.
+#  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
+#  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
+#    no key ever enters the repo.
 
 on:
+  schedule:
+    - cron: "0 * * * *" # top of every hour (UTC)
   workflow_dispatch:
     inputs:
       text:
-        description: "override the English post text (blank = derive from the latest commit subject)"
+        description: "override the digest text (blank = count commits since the last digest)"
         required: false
         default: ""
-  push:
-    branches: [main]
-    paths:
-      - "reports/**/*.md"
-      - "web/research.json"
-      - "CHANGELOG.md"
+      since:
+        description: "override the look-back window start (ISO 8601, or a git date like '2 hours ago')"
+        required: false
+        default: ""
 
 permissions:
   contents: read
+  actions: read # to read this workflow's own previous run time (the digest cursor)
 
 concurrency:
   group: x-post
   cancel-in-progress: false
 
 jobs:
-  post:
-    if: github.actor != 'github-actions[bot]'
+  digest:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 1
+          fetch-depth: 0 # full history so `git log --since` can count the whole window
 
       - uses: actions/setup-node@v7
         with:
@@ -54,21 +53,44 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Compose English-only text from the commit and post via X API v2
+      - name: Count new commits since the last digest and post ONE English line
         env:
+          GH_TOKEN: ${{ github.token }}
+          CUR: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
           OVERRIDE_TEXT: ${{ github.event.inputs.text }}
+          OVERRIDE_SINCE: ${{ github.event.inputs.since }}
           # credentials come ONLY from secrets; absent -> the script dry-runs and sends nothing
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: |
+          set -uo pipefail
           if [ -n "$OVERRIDE_TEXT" ]; then
             TEXT="$OVERRIDE_TEXT"
           else
-            SUBJECT="$(git log -1 --pretty=%s | tr -cd '\11\12\15\40-\176')"
-            TEXT="${SUBJECT} - spacedatarig.app - github.com/SpaceDataRig/space-data-rig"
+            # Lower bound of the window = when the PREVIOUS completed x-post run started. This makes the digest
+            # self-healing: if an hourly tick is delayed or skipped, the next run's window simply stretches to
+            # cover the gap, so no commit is silently dropped. If the API lookup fails or there is no prior run,
+            # fall back to a ~1h window (70m so a slightly-late tick cannot leave an uncovered sliver).
+            SINCE="$OVERRIDE_SINCE"
+            if [ -z "$SINCE" ]; then
+              PREV="$(curl -sfL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$REPO/actions/workflows/x-post.yml/runs?status=completed&per_page=10" \
+                | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const r=JSON.parse(s).workflow_runs||[];const cur=process.env.CUR;const p=r.find(x=>String(x.id)!==cur);process.stdout.write(p?(p.run_started_at||p.created_at||""):"")}catch(e){process.stdout.write("")}})' || true)"
+              if [ -n "$PREV" ]; then SINCE="$PREV"; else SINCE="70 minutes ago"; fi
+            fi
+            COUNT="$(git log HEAD --no-merges --since="$SINCE" --pretty=%H | wc -l | tr -d ' ')"
+            echo "digest window since: $SINCE -> $COUNT new commit(s)"
+            if [ "$COUNT" -eq 0 ]; then
+              echo "no new commits in this window; skipping (never posts an empty tweet)"
+              exit 0
+            fi
+            NOUN="commits"; if [ "$COUNT" -eq 1 ]; then NOUN="commit"; fi
+            TEXT="$COUNT new $NOUN shipped to Space Data Rig - spacedatarig.app - github.com/SpaceDataRig/space-data-rig"
           fi
-          # strip any non-ASCII once more; English-only is enforced in the script too
+          # strip any non-ASCII once more; English-only is enforced in the posting script too
           TEXT="$(printf '%s' "$TEXT" | tr -cd '\11\12\15\40-\176')"
+          echo "posting: $TEXT"
           npm run x:post -- --text "$TEXT"

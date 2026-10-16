@@ -5,6 +5,17 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
+Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
+produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now
+a once-an-hour scheduled DIGEST (cron `0 * * * *`) that counts the commits landed on main since the previous
+digest and posts ONE English, text-only line (count + links), e.g. "3 new commits shipped to Space Data Rig -
+spacedatarig.app - github.com/SpaceDataRig/space-data-rig". An hour with no new commits posts nothing (no empty
+tweet). The look-back cursor is the previous completed run's start time (read via the Actions API), so a delayed
+or skipped tick stretches the next window instead of dropping commits; if the lookup fails it falls back to a
+~70-minute window. English-only/ASCII-only and dry-run-without-secrets behaviour are unchanged, and a manual
+workflow_dispatch can still post an override or a custom window.
+
 ### Audit-6 P2: ledger status corrected from "deploy-pending" to shipped + mainnet-proven (2026-10-16)
 RESPONSE-TO-AUDIT.md and this file still described the scienceHash dedup and several fixes as "Shipped
 (deploy-pending)", which was stale: as of the current deploy the Web assets and the Worker are both live at

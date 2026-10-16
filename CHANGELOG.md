@@ -5,6 +5,20 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### X auto-post channel enabled via operator-supplied Actions secrets (2026-10-16)
+The CI auto-publish channel (scripts/post-x-text.ts plus .github/workflows/x-post.yml) originally shipped inert:
+with no X credentials in Actions secrets it only dry-runs and sends nothing. The operator has now added the four
+X platform keys (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET) under repo Settings > Secrets
+and variables > Actions, so a qualifying push (reports/**.md, web/research.json or CHANGELOG.md) posts ONE
+English, text-only status line through the X API v2 using hand-rolled OAuth 1.0a.
+
+- English-only and text-only are enforced twice: the workflow strips non-ASCII from the composed line and the
+  posting script refuses any payload containing a non-ASCII byte, so CI can never publish Chinese or an image.
+- Loop and spam guards are unchanged: the job skips github-actions[bot] publish-back commits and is
+  concurrency-grouped, so a regenerated report cannot trigger a second post.
+- Credentials live only in Actions secrets; the repository and the workflow file contain no key material, and a
+  missing secret keeps the channel in dry-run.
+
 ### Audit-5 follow-up: the rotating survey makes the catalog grow, and the frontend explains what it is (2026-10-16)
 A reader asked why FINDINGS CATALOG always showed the same handful and whether the project was doing anything
 visible. The honest root cause: the autonomous survey selected the brightest N KNOWN planets every pass, and

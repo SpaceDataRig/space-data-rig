@@ -147,6 +147,8 @@ app.get("/health", (c) =>
     ok: true,
     service: "space-data-rig-api",
     codeVersion,
+    // audit-6 P2 parity with the Worker probe: echo the deployed commit when the operator exports it.
+    gitSha: process.env.GIT_SHA ?? "unknown",
     runId: store.runId,
     snapshotLoaded,
     running: activeRun?.running ?? false,

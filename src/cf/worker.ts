@@ -110,12 +110,17 @@ function clampFloat(v: unknown, min: number, max: number, def: number): number {
 }
 
 // Liveness / readiness probe (parity with the Node server's /health).
+// audit-6 P2: also self-prove WHICH deployment is live. codeVersion alone stayed at the package version for
+// five rounds, so "did my deploy land" needed a byte-compare of static assets; deployVersion (Workers version
+// metadata id) changes on every upload and gitSha (secret, set at deploy time) maps it to a commit.
 app.get("/health", (c) =>
   c.json({
     ok: true,
     service: "space-data-rig",
     runtime: "cloudflare-worker",
     codeVersion: c.env.CODE_VERSION ?? "unknown",
+    deployVersion: c.env.CF_VERSION_METADATA?.id ?? "unknown",
+    gitSha: c.env.GIT_SHA ?? "unknown",
   }),
 );
 

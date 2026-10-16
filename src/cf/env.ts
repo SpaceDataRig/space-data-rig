@@ -20,6 +20,12 @@ export interface Env {
   RIG_ARTIFACTS: R2Bucket;
   /** Durable, CPU-budgeted pipeline run. */
   RIG_RUN: Workflow<RunParams>;
+  /**
+   * Workers Versions metadata (wrangler.toml `version_metadata` binding): identifies WHICH deployment is
+   * live (audit-6 P2). `id` is the deployment version id surfaced on /health so one command self-proves
+   * whether a deploy actually landed.
+   */
+  CF_VERSION_METADATA?: { id: string; tag?: string; timestamp?: string };
 
   // ---- non-secret vars (wrangler.toml [vars]) ----
   CODE_VERSION?: string;
@@ -115,4 +121,10 @@ export interface Env {
    * unaffected; only the dashboard's manual run/anchor buttons need the token.
    */
   ADMIN_TOKEN?: string;
+  /**
+   * git SHA of the commit this deployment was built from (audit-6 P2). Set at deploy time with
+   * `wrangler secret put GIT_SHA`; /health echoes it so "which commit is live" is one command, not a
+   * byte-compare of static assets. Absent on deployments made before the secret existed.
+   */
+  GIT_SHA?: string;
 }

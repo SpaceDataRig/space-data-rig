@@ -5,6 +5,14 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 P2: /health now self-proves which deployment is live (2026-10-16)
+For five rounds /health reported only codeVersion = space-data-rig@0.1.1 (the package version), so confirming
+"a deploy landed" required byte-comparing static assets and inferring line-ending differences. The Worker
+probe now also returns deployVersion (the Workers Versions metadata id via a new version_metadata binding,
+which changes on every upload) and gitSha (the commit the deployment was built from, supplied at deploy time
+as the GIT_SHA secret); the Node server's /health echoes GIT_SHA for parity. One GET now answers "which
+commit is live".
+
 ### Audit-6 P2: the six real-MAST-FITS gates now run in CI (2026-10-16)
 tests/mast.test.ts, tests/mastS3.test.ts and tests/mastS3Pixels.test.ts skip themselves when out/probe-lc.fits
 or out/probe-tp.fits are absent, and out/ is gitignored -- so on a fresh CI checkout the gates closest to

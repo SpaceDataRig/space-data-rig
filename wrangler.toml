@@ -31,6 +31,10 @@ routes = [
 workers_dev = true
 preview_urls = false
 
+# audit-6 P2: Workers Versions metadata binding so /health can report WHICH deployment is live
+# (env.CF_VERSION_METADATA.id). Without it "did my deploy land" needed byte-comparing static assets.
+version_metadata = "CF_VERSION_METADATA"
+
 # ---- static assets (frontend) ---------------------------------------------
 # With run_worker_first = false (the default), a request that matches a file under
 # ./web is served straight from the asset pipeline (zero Worker CPU) -- this covers

@@ -29,6 +29,27 @@ narration only (about 2% of the code, and removing it changes zero verdicts -- m
 The long, detailed README below is intentionally kept as auditable context; read it when you want
 the specifics, this panel when you want the one-page truth.
 
+## Capability boundaries
+
+What the current architecture *cannot* do -- stated as design limits, not backlog items, so the
+"verifiable science" claim is never wider than the machine. These come from committed measurements
+(P82/P84/P85), each with its denominator named.
+
+- **Blended / multi-source-per-pixel scenes are out of scope.** The centroid-displacement
+  false-positive test caught **0/56** labelled blends on real pixel data, and P84 shows why: ~71% of
+  those targets never localise a cross-sector centroid offset at all from a single TESS pixel. This is
+  **pixel-baseline-bound, not a threshold problem** -- no cut on the existing statistic recovers the
+  capability, because the resolving information is not in the aperture-photometry baseline. Handling
+  blends requires a different photometric method (PSF fitting, or at minimum aperture correction with
+  neighbour subtraction), which is a **science-layer rebuild, not a config change.** Until that exists,
+  treat any blended system as *unsupported*, and do not read the 0/56 as "tuned wrong."
+- **Accepted-call precision plateaus near 42%.** At 425 curves the accepted-precision is 42.2%; a
+  larger sample narrows the interval but does not remove the coherent-systematics wall. Precision, not
+  recall, is the binding constraint -- stated so the 86.2% recall is not mistaken for readiness to claim.
+- **The token is not part of the science.** The $SDR named-observation payment layer is an isolated
+  commercialisation experiment; no verdict, `bundleHash`, `scienceHash`, or discovery claim reads from
+  it. It is listed here so its presence is not mistaken for a scientific credential.
+
 **Project health & governance (all verifiable, none of it a claim of size):** automated
 checks run on every push/PR ([CI](https://github.com/SpaceDataRig/space-data-rig/actions));
 reproducible versions are tagged and released

@@ -5,6 +5,33 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-3 follow-up: half-done items closed, two new defects fixed, limits made explicit (2026-10-16)
+A third independent review confirmed 8/11 audit-10 items and flagged three that were *done but only
+half-done* plus two new defects. The one-line-code-and-a-test items are shipped; the design/method items
+are recorded honestly as limits, not patched over.
+
+- Defect A -- memo shape now identical on both runtimes: `scienceHash` is threaded through the shared
+  `anchorOnEndpoints` primitive, so the Node (`anchorBundleHash`) and Worker (`anchorFinding`) paths build
+  the same memo. The prior code computed `scienceHash` on the Worker but the on-chain tx was still built
+  3-field, so the content address reached neither runtime's chain record. Contract test added. Commit f34d672.
+- Identical-science anchors are now DEDUPED by `scienceHash` before spending: a byte-identical re-run gets a
+  new timestamped `bundleHash`, so the old exact-hash guard missed it and paid a repeat mainnet fee (observed:
+  3 txs for one content). A pure `findAnchoredScience` predicate skips the spend; we do NOT copy a foreign
+  signature onto the card, preserving the anchor-stamp invariant. `scienceHash` persisted on the ledger. Commit 9dcf908.
+- Defect B -- legacy CONFIRMED cards are relabeled in the render layer (history is never rewritten): a card
+  whose stored headline says "confirm" AND predates the 2026-10-12 policy date gets a visible injection-recovery
+  note; the rule is documented under README "Display / projection layer" and guarded by a drift test. Commit be553ed.
+  NOTE: this commit's subject line was mislabelled (an embedded-double-quote escaping bug reused the previous
+  commit text); the diff -- `web/app.js`, `web/styles.css`, `README.md`, `tests/projection-relabel.test.ts` -- is
+  the projection-relabel work described here, not the anchor-dedup text in the subject.
+- Defect C -- the live-probe's failure mode is now PROVEN offline, not just present: each probe split into a
+  fetch + pure `judge`, a `--self-test` drives drifted fixtures through the real detection logic and asserts the
+  alert exit code, and 5 offline tests in `npm test` lock it in. Commit 97cddc6.
+- Audit-10 #3 corrected from *Blocked* to *Partial*: "no Python here" was false (CI runners install Python and a
+  detection-side cross-check already runs); the real blocker is the official TRICERATOPS package's own
+  `starfield`/POPS dependency, not Python. README gained an explicit "Capability boundaries" section stating the
+  blended/multi-source-per-pixel 0/56 result as a pixel-baseline-bound architecture limit, not a tuning gap.
+
 ## [0.1.1] - 2026-10-16
 
 ### Audit-10 response + P82 scaled validation + production hardening (2026-10-15/16)

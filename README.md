@@ -963,6 +963,20 @@ Events connection:
   headline, the hard numbers (period, depth in ppm, SNR, duration, recovery confidence,
   known-planet match), the plain-English explainer, the bundle hash, and the on-chain tx.
   Buttons let you open the **plots**, **verify** the bundle, and **anchor** it on mainnet.
+- **Display / projection layer (immutable bundles + honest relabeling).** Bundles are
+  sealed and append-only, so a card always renders the exact headline that was committed
+  on-chain - we never rewrite history in place. Before the 2026-10 honesty pass the
+  user-facing word for `verdict=accepted` was "Confirmed"; it is now **"Recovered"**
+  (injection-recovery: the pipeline recovered a signal it was pointed at, not an
+  independent confirmation), and every new headline is prefixed `[real TESS photometry]`
+  or `[stand-in synthetic curve]`. Because older bundles still store the old wording, the
+  **render layer derives a relabel** rather than mutating them: a card whose stored
+  headline still says "confirm" AND whose `createdAt` predates the policy date
+  (`2026-10-12`) gets a visible note - "Re-labeled under the 2026-10 display policy:
+  injection-recovery, not an independent confirmation." Post-policy cards are untouched.
+  Immutability must not mean the public history stays frozen at its most overclaiming
+  version; this rule lives in `web/app.js` (`headlineRelabelNote`) and is the single
+  source of truth for the projection.
 - **Live feed** - the raw seat event stream.
 - **On-chain ledger** - every anchoring attempt with its status and explorer link.
 

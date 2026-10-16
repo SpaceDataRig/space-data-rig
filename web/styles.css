@@ -225,6 +225,7 @@ a:hover { text-decoration: underline; }
 .badge.good { color: var(--good); } .badge.warn { color: var(--warn); } .badge.bad { color: var(--bad); }
 .score { font: 700 12px var(--mono); color: var(--tone, var(--accent)); opacity: 0.85; }
 .headline { font-size: 13.5px; color: #cfe0f7; margin: 10px 0 12px; min-height: 20px; }
+.relabel-note { font: italic 500 11px var(--mono); color: var(--warn); border-left: 2px solid var(--warn); padding: 3px 8px; margin: -6px 0 12px; opacity: 0.9; }
 .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .metric { background: rgba(120, 180, 255, 0.05); border: 1px solid var(--edge); border-radius: 9px; padding: 7px 9px; }
 .metric .k { font: 600 9px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); }

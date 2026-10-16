@@ -239,9 +239,25 @@ function plotsHtml(id) {
   return items.map(([name, cap]) => `<figure><figcaption>${cap}</figcaption><img loading="lazy" src="/api/bundles/${encodeURIComponent(id)}/artifact/${name}" alt="${cap}" /></figure>`).join("");
 }
 
+// Bundles are immutable (a design goal), so records sealed before the 2026-10 honesty pass still
+// carry their stored "Confirmed: ..." headline even though that word has been retired for new cards
+// (audit-3 defect B: older cards would otherwise look MORE overclaiming over time). The display layer
+// re-labels those legacy headlines honestly as injection-recovery. Only fires for a pre-policy card whose
+// stored text still says "confirm" -- post-policy headlines never do, so current cards are untouched.
+const RELABEL_POLICY_DATE = "2026-10-12"; // audit-10 #3: "Confirmed" -> "Recovered" for injection-recovery
+function headlineRelabelNote(f) {
+  const text = `${f.narration?.headline || ""} ${f.verdictReason || ""}`;
+  const created = (f.createdAt || "").slice(0, 10);
+  const legacy = !created || created < RELABEL_POLICY_DATE;
+  if (legacy && /confirm/i.test(text))
+    return "Re-labeled under the 2026-10 display policy: injection-recovery (the pipeline recovered a signal it was pointed at), not an independent confirmation.";
+  return "";
+}
+
 function cardHtml(f) {
   const badge = BADGE[f.verdict] || BADGE.rejected;
   const headline = f.narration?.headline || f.verdictReason || "Finding";
+  const relabel = headlineRelabelNote(f);
   const explainer = f.narration?.explainer || "";
   const score = f.score != null ? `<span class="score">${f.score}/100</span>` : "";
   const chain = f.solanaTx
@@ -250,6 +266,7 @@ function cardHtml(f) {
   return `<div class="card tone-${badge.tone}" data-id="${esc(f.id)}">
     <div class="card-top"><span class="card-target">${esc(f.targetId)}</span><span class="card-side">${score}<span class="badge ${badge.tone}">${badge.label}</span></span></div>
     <div class="headline">${esc(headline)}</div>
+    ${relabel ? `<div class="relabel-note">${esc(relabel)}</div>` : ""}
     <div class="metrics">${metricsHtml(f)}</div>
     ${explainer ? `<div class="explainer-text">${esc(explainer)}</div>` : ""}
     <div class="prov"><span><b>bundle</b> ${esc(shortHash(f.bundleHash))}</span>${chain}</div>

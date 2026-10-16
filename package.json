@@ -95,6 +95,7 @@
     "p81:triceratops-lite": "tsx scripts/p81-triceratops-lite.ts",
     "p82:scaled": "tsx scripts/p82-scaled-validation.ts",
     "p84:centroid-diagnosis": "tsx scripts/p84-centroid-diagnosis.ts",
+    "p85:contaminant-fit": "tsx scripts/p85-contaminant-fit.ts",
     "p9:anchor-verify": "tsx scripts/p9-anchor-live-verify.ts",
     "p8:live-probe": "tsx scripts/p8-live-probe.ts",
     "figure:round": "tsx scripts/deploy-retest-round-figure.ts",

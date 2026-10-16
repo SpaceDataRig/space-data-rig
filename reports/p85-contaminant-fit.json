@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "generatedFrom": "out/scaled/centroid.jsonl",
+    "rows": 500,
+    "statistic": "eumemic per-contaminant multi-sector centroid F-test (src/detect/centroidFtest.ts)",
+    "baseAlpha": 0.001
+  },
+  "coverage": {
+    "total": 500,
+    "testable": 109,
+    "notLocalised": 391,
+    "testablePct": 21.8
+  },
+  "methodChoices": {
+    "whichStarFits": "max-p across bright-enough contaminants (a neighbour 'explains' the mean offset); NOT a joint/min-p test",
+    "scatterFloor": "1\"/axis floor applied to the residual scatter AFTER the mean offset (per-axis min SS = (n-1)*floor^2)",
+    "brightnessGate": "neighbourCanCauseDip: a total eclipse of the neighbour, diluted by the host, must reach the observed depth"
+  },
+  "sensitivity": [
+    {
+      "alpha": 0.0001,
+      "planetsTestable": 53,
+      "planetFalseReject": 0,
+      "blendsTestable": 56,
+      "blendCaught": 0,
+      "blendsWithViable": 56,
+      "blendContaminantFits": 56
+    },
+    {
+      "alpha": 0.001,
+      "planetsTestable": 53,
+      "planetFalseReject": 1,
+      "blendsTestable": 56,
+      "blendCaught": 0,
+      "blendsWithViable": 56,
+      "blendContaminantFits": 54
+    },
+    {
+      "alpha": 0.01,
+      "planetsTestable": 53,
+      "planetFalseReject": 3,
+      "blendsTestable": 56,
+      "blendCaught": 2,
+      "blendsWithViable": 56,
+      "blendContaminantFits": 40
+    }
+  ],
+  "headline": {
+    "planetFalseReject": "1/53",
+    "blendCaught": "0/56",
+    "blendContaminantFitRateAmongViable": "54/56"
+  },
+  "safeToGate": false,
+  "discoveryClaim": false
+}

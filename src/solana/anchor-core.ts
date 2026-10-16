@@ -144,6 +144,13 @@ export function keypairFromSecretJson(json: string): Promise<Keypair> {
 export interface AnchorSendOptions {
   airdropSol?: number; // devnet only: how much to request if unfunded
   commitment?: "confirmed" | "finalized";
+  /**
+   * Optional stable content address appended as the memo's 4th field (audit-10 #1). When supplied,
+   * BOTH the Node and Worker anchor paths emit the identical `sdr:1|id|bundleHash|scienceHash` shape
+   * -- the memo the on-chain tx carries is built here, so threading it through this one primitive is
+   * what keeps the two runtimes consistent. Omitting it yields the classic 3-field memo.
+   */
+  scienceHash?: string;
 }
 
 export interface AnchorCoreResult {
@@ -208,7 +215,7 @@ export async function anchorOnEndpoints(
   bundleHash: string,
   opts: AnchorSendOptions = {},
 ): Promise<AnchorCoreResult> {
-  return anchorMemoOnEndpoints(endpoints, kp, buildMemo(findingId, bundleHash), opts);
+  return anchorMemoOnEndpoints(endpoints, kp, buildMemo(findingId, bundleHash, opts.scienceHash), opts);
 }
 
 /**

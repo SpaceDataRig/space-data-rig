@@ -44,6 +44,9 @@ export interface AnchorOptions {
   commitment?: "confirmed" | "finalized";
   /** build + return the memo without sending (offline preview / tests). */
   dryRun?: boolean;
+  /** stable content address appended as the memo's 4th field (audit-10 #1); keeps Node memos
+   *  the same shape as Worker memos. Omit for the classic 3-field memo. */
+  scienceHash?: string;
 }
 
 export interface AnchorResult {
@@ -153,7 +156,7 @@ export async function anchorBundleHash(
   bundleHash: string,
   opts: AnchorOptions = {},
 ): Promise<AnchorResult> {
-  const memo = buildMemo(findingId, bundleHash);
+  const memo = buildMemo(findingId, bundleHash, opts.scienceHash);
   if (opts.dryRun) return { ok: true, memo, dryRun: true };
 
   const endpoints = rpcCandidates(opts.rpcUrl);
@@ -167,6 +170,7 @@ export async function anchorBundleHash(
   const res = await anchorOnEndpoints(endpoints, kp, findingId, bundleHash, {
     airdropSol: opts.airdropSol,
     commitment: opts.commitment,
+    scienceHash: opts.scienceHash,
   });
   return { ...res, dryRun: false };
 }

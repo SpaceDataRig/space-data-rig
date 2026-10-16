@@ -60,6 +60,20 @@ test("buildMemo appends a scienceHash as a 4th field without disturbing the bund
   assert.ok(memo.includes(hash)); // substring check is unaffected by the appended field
 });
 
+test("Node and Worker anchor paths produce the SAME memo shape for a given scienceHash (audit-3 defect A)", async () => {
+  // The on-chain tx memo is built by anchorOnEndpoints (shared by both runtimes); the Node
+  // adapter's dryRun preview exercises the exact wiring that previously dropped scienceHash.
+  const { anchorBundleHash } = await import("../src/solana/anchor.ts");
+  const hash = "f".repeat(64);
+  const sci = "a".repeat(64);
+  const withSci = await anchorBundleHash("F-HR-858-b", hash, { dryRun: true, scienceHash: sci });
+  assert.equal(withSci.memo, buildMemo("F-HR-858-b", hash, sci)); // Node forwards scienceHash end-to-end
+  assert.equal(withSci.memo.split("|").length, 4);
+  const without = await anchorBundleHash("F-HR-858-b", hash, { dryRun: true });
+  assert.equal(without.memo, buildMemo("F-HR-858-b", hash)); // omitted -> classic 3-field, unchanged
+  assert.equal(without.memo.split("|").length, 3);
+});
+
 test("hashScience is content-addressed (stable across createdAt/runId) while bundleHash is a timestamped commitment", async () => {
   const base = {
     schema: "space-data-rig/bundle@1", findingId: "F-1", targetId: "T", createdAt: "2020-01-01T00:00:00Z", runId: "run-A",

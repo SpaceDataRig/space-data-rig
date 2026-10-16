@@ -586,7 +586,7 @@ export class RigStateDO extends DurableObject<Env> {
       let res: AnchorCoreResult;
       try {
         const kp = await keypairFromSecretJson(keypairSecret);
-        res = await anchorOnEndpoints(endpoints, kp, findingId, bundleHash, { commitment: "confirmed" });
+        res = await anchorOnEndpoints(endpoints, kp, findingId, bundleHash, { commitment: "confirmed", scienceHash });
       } catch (e) {
         res = { ok: false, memo, error: e instanceof Error ? e.message : String(e) };
       }

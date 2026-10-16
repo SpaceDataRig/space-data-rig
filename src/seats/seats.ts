@@ -33,9 +33,14 @@ const encoder = new TextEncoder();
 
 /** SHA-256 over a canonical projection of the light curve (data provenance hash). */
 export async function computeDataHash(lc: LightCurve): Promise<string> {
+  // The data address fingerprints the PHOTOMETRY CONTENT, not the target's NAME. audit-4 root cause: targetId
+  // used to be hashed in, so ONE immutable FITS file processed under three catalog labels (HR 858 b/c/d)
+  // produced three different lightCurveHash values -- "the address of the same data" was unstable, and that
+  // instability was then absorbed straight into scienceHash (see bundle.ts). Hashing only cadence + point
+  // count + the rounded points makes identical bytes address identically no matter what the target is called.
+  // targetId still lives on the LightCurve and in the manifest; it is simply not part of the DATA fingerprint.
   return sha256Hex(
     canonicalJson({
-      targetId: lc.targetId,
       cadenceSec: lc.cadenceSec,
       n: lc.points.length,
       // round to keep the hash stable across float formatting

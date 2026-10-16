@@ -99,6 +99,7 @@
     "p9:anchor-verify": "tsx scripts/p9-anchor-live-verify.ts",
     "p9:decode-memo": "tsx scripts/anchor-memo-decode.ts",
     "p8:live-probe": "tsx scripts/p8-live-probe.ts",
+    "fixtures:capture": "tsx scripts/capture-live-fixtures.ts",
     "figure:round": "tsx scripts/deploy-retest-round-figure.ts",
     "figure:audit9": "tsx scripts/audit9-round-figure.ts",
     "figure:audit9c": "tsx scripts/audit9-complete-figure.ts",

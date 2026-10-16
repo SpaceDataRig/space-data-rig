@@ -1,0 +1,336 @@
+{
+  "capturedAt": "2026-10-16T03:25:42.521Z",
+  "base": "https://spacedatarig.app",
+  "bundles": [
+    {
+      "findingId": "F-HR-858-b",
+      "manifest": {
+        "schema": "space-data-rig/bundle@1",
+        "findingId": "F-HR-858-b",
+        "targetId": "HR 858 b",
+        "createdAt": "2026-10-16T03:16:43.001Z",
+        "runId": "run-20261016-031545",
+        "codeVersion": "space-data-rig@0.1.1",
+        "candidate": {
+          "periodDays": 3.587214258080734,
+          "epochBjd": 2458387.671892301,
+          "durationHours": 2.3463281792156754,
+          "depthPpt": 0.20284185883851172,
+          "depthFrac": 0.00010279893876924406,
+          "snr": 22.963373493429,
+          "power": 1.105973875657703e-9,
+          "nPointsInTransit": 23
+        },
+        "verdict": "accepted",
+        "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
+        "recoveryConfidence": 1,
+        "aliasMultiple": 1,
+        "ephemeris": {
+          "t0Bjd": 2458387.671892301,
+          "periodDays": 3.587214258080734,
+          "nextTransitsBjd": [
+            2458387.671892301,
+            2458391.259106559,
+            2458394.8463208172
+          ]
+        },
+        "crossmatch": {
+          "matchedKnownPlanet": true,
+          "knownPlanetName": "HR 858 b",
+          "knownPeriodDays": 3.585287,
+          "periodDeltaPct": 0.05375463890990894,
+          "harmonic": 1
+        },
+        "checks": [
+          {
+            "name": "snr",
+            "pass": true,
+            "detail": "SNR 23.0 (need >= 7)"
+          },
+          {
+            "name": "depth",
+            "pass": true,
+            "detail": "depth 103 ppm"
+          },
+          {
+            "name": "duration",
+            "pass": true,
+            "detail": "duration 2.35 h"
+          },
+          {
+            "name": "coverage",
+            "pass": true,
+            "detail": "23 points in transit"
+          },
+          {
+            "name": "odd-even",
+            "pass": true,
+            "detail": "period is clean (alias x1)"
+          },
+          {
+            "name": "recovery-confidence",
+            "pass": true,
+            "detail": "re-injection recovery 100%"
+          },
+          {
+            "name": "period-vs-truth (post-hoc, non-gating)",
+            "pass": true,
+            "detail": "period error 0.05% vs the catalog value -- informational only; the verdict is evidence-driven and never peeked at truth"
+          },
+          {
+            "name": "centroid-shift",
+            "pass": true,
+            "detail": "in-transit photocenter shift 0.04 arcsec (need <= 2)"
+          },
+          {
+            "name": "fap",
+            "pass": true,
+            "detail": "BLS false-alarm probability 0.0083 (need <= 0.05)"
+          }
+        ],
+        "dataProvenance": {
+          "catalogSource": "nasa-tap",
+          "lightCurveHash": "7e8c95459da38ced1c617d6e24002c50b902279bbd7ff91f1823c9bbd813adcd",
+          "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
+        },
+        "artifacts": [
+          {
+            "path": "folded.svg",
+            "sha256": "29fea1a214b17f090bb2022d0e949f62e0ded1a5c4f6f93efd6c622ab3664930",
+            "bytes": 63655
+          },
+          {
+            "path": "periodogram.svg",
+            "sha256": "b9d5317bb46009b19b4758de602dbf0ee63e4b7fa391d5a237085b8409a35f59",
+            "bytes": 4440
+          },
+          {
+            "path": "timeseries.svg",
+            "sha256": "4f5583038401c9b868e9e8ca4de427db6a04005e8eae553c5672604f1b9b0c6d",
+            "bytes": 71152
+          }
+        ]
+      }
+    },
+    {
+      "findingId": "F-HR-858-c",
+      "manifest": {
+        "schema": "space-data-rig/bundle@1",
+        "findingId": "F-HR-858-c",
+        "targetId": "HR 858 c",
+        "createdAt": "2026-10-16T03:17:13.166Z",
+        "runId": "run-20261016-031545",
+        "codeVersion": "space-data-rig@0.1.1",
+        "candidate": {
+          "periodDays": 3.587214258080734,
+          "epochBjd": 2458387.671892301,
+          "durationHours": 2.3463281792156754,
+          "depthPpt": 0.20284185883851172,
+          "depthFrac": 0.00010279893876924406,
+          "snr": 22.963373493429,
+          "power": 1.105973875657703e-9,
+          "nPointsInTransit": 23
+        },
+        "verdict": "accepted",
+        "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
+        "recoveryConfidence": 1,
+        "aliasMultiple": 1,
+        "ephemeris": {
+          "t0Bjd": 2458387.671892301,
+          "periodDays": 3.587214258080734,
+          "nextTransitsBjd": [
+            2458387.671892301,
+            2458391.259106559,
+            2458394.8463208172
+          ]
+        },
+        "crossmatch": {
+          "matchedKnownPlanet": true,
+          "knownPlanetName": "HR 858 b",
+          "knownPeriodDays": 3.585287,
+          "periodDeltaPct": 0.05375463890990894,
+          "harmonic": 1
+        },
+        "checks": [
+          {
+            "name": "snr",
+            "pass": true,
+            "detail": "SNR 23.0 (need >= 7)"
+          },
+          {
+            "name": "depth",
+            "pass": true,
+            "detail": "depth 103 ppm"
+          },
+          {
+            "name": "duration",
+            "pass": true,
+            "detail": "duration 2.35 h"
+          },
+          {
+            "name": "coverage",
+            "pass": true,
+            "detail": "23 points in transit"
+          },
+          {
+            "name": "odd-even",
+            "pass": true,
+            "detail": "period is clean (alias x1)"
+          },
+          {
+            "name": "recovery-confidence",
+            "pass": true,
+            "detail": "re-injection recovery 100%"
+          },
+          {
+            "name": "period-vs-truth (post-hoc, non-gating)",
+            "pass": false,
+            "detail": "period error 39.95% vs the catalog value -- informational only; the verdict is evidence-driven and never peeked at truth"
+          },
+          {
+            "name": "centroid-shift",
+            "pass": true,
+            "detail": "in-transit photocenter shift 0.04 arcsec (need <= 2)"
+          },
+          {
+            "name": "fap",
+            "pass": true,
+            "detail": "BLS false-alarm probability 0.0083 (need <= 0.05)"
+          }
+        ],
+        "dataProvenance": {
+          "catalogSource": "nasa-tap",
+          "lightCurveHash": "99152b8106d899a918c5619c9a6f7c324accee9e2db2ebb8c21ec597baad1fc2",
+          "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
+        },
+        "artifacts": [
+          {
+            "path": "folded.svg",
+            "sha256": "ca32eb8334dcee759936901b816429204450dc2727c3f3059abdbcef72b5184a",
+            "bytes": 63655
+          },
+          {
+            "path": "periodogram.svg",
+            "sha256": "953b425ab453f7a498e7834983a46c8920b0253d91817952d8f1be4c5627a243",
+            "bytes": 4440
+          },
+          {
+            "path": "timeseries.svg",
+            "sha256": "ea9cd94c4988ee4549bfda37aec03c84a5bee7c017f3de95fc63b583afeb6a9f",
+            "bytes": 71152
+          }
+        ]
+      }
+    },
+    {
+      "findingId": "F-HR-858-d",
+      "manifest": {
+        "schema": "space-data-rig/bundle@1",
+        "findingId": "F-HR-858-d",
+        "targetId": "HR 858 d",
+        "createdAt": "2026-10-16T03:17:39.697Z",
+        "runId": "run-20261016-031545",
+        "codeVersion": "space-data-rig@0.1.1",
+        "candidate": {
+          "periodDays": 3.587214258080734,
+          "epochBjd": 2458387.671892301,
+          "durationHours": 2.3463281792156754,
+          "depthPpt": 0.20284185883851172,
+          "depthFrac": 0.00010279893876924406,
+          "snr": 22.963373493429,
+          "power": 1.105973875657703e-9,
+          "nPointsInTransit": 23
+        },
+        "verdict": "accepted",
+        "verdictReason": "Blind recovery: significant, physically-consistent transit (SNR 23, recovery 100%) independently cross-matches HR 858 b (P=3.585d) at its fundamental period on evidence alone, without using any truth period.",
+        "recoveryConfidence": 1,
+        "aliasMultiple": 1,
+        "ephemeris": {
+          "t0Bjd": 2458387.671892301,
+          "periodDays": 3.587214258080734,
+          "nextTransitsBjd": [
+            2458387.671892301,
+            2458391.259106559,
+            2458394.8463208172
+          ]
+        },
+        "crossmatch": {
+          "matchedKnownPlanet": true,
+          "knownPlanetName": "HR 858 b",
+          "knownPeriodDays": 3.585287,
+          "periodDeltaPct": 0.05375463890990894,
+          "harmonic": 1
+        },
+        "checks": [
+          {
+            "name": "snr",
+            "pass": true,
+            "detail": "SNR 23.0 (need >= 7)"
+          },
+          {
+            "name": "depth",
+            "pass": true,
+            "detail": "depth 103 ppm"
+          },
+          {
+            "name": "duration",
+            "pass": true,
+            "detail": "duration 2.35 h"
+          },
+          {
+            "name": "coverage",
+            "pass": true,
+            "detail": "23 points in transit"
+          },
+          {
+            "name": "odd-even",
+            "pass": true,
+            "detail": "period is clean (alias x1)"
+          },
+          {
+            "name": "recovery-confidence",
+            "pass": true,
+            "detail": "re-injection recovery 100%"
+          },
+          {
+            "name": "period-vs-truth (post-hoc, non-gating)",
+            "pass": false,
+            "detail": "period error 68.06% vs the catalog value -- informational only; the verdict is evidence-driven and never peeked at truth"
+          },
+          {
+            "name": "centroid-shift",
+            "pass": true,
+            "detail": "in-transit photocenter shift 0.04 arcsec (need <= 2)"
+          },
+          {
+            "name": "fap",
+            "pass": true,
+            "detail": "BLS false-alarm probability 0.0083 (need <= 0.05)"
+          }
+        ],
+        "dataProvenance": {
+          "catalogSource": "nasa-tap",
+          "lightCurveHash": "1fce77e6486b033f9efaa2d73aa9ed1426c01a08107931ac0b11b1e1373091a9",
+          "lightCurveSource": "TESS-SPOC PDCSAP product hlsp_tess-spoc_tess_phot_0000000178155732-s0003_tess_v1_lc.fits from public S3 (REAL photometry); CC BY 4.0, cite Caldwell et al. 2020; catalog source=nasa-tap"
+        },
+        "artifacts": [
+          {
+            "path": "folded.svg",
+            "sha256": "2cf79337a701012652f34e7f88369a3d53a230dc216737d0e7ab3c43e80ae337",
+            "bytes": 63655
+          },
+          {
+            "path": "periodogram.svg",
+            "sha256": "b2e3adb66d181228da5c6bd95567554574a482ba1ca33f9d9cd212baca684c64",
+            "bytes": 4440
+          },
+          {
+            "path": "timeseries.svg",
+            "sha256": "5098b1b183fb41d2f95307e5ff15e7578aa7023dec83bb44701b11ae1dcc7edb",
+            "bytes": 71152
+          }
+        ]
+      }
+    }
+  ]
+}

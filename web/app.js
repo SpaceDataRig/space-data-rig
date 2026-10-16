@@ -12,6 +12,7 @@
 
 import { MissionRoom, SEAT_META } from "/space.js";
 import { connectLive } from "/live.js";
+import { headlineRelabelNote } from "/relabel.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -239,20 +240,13 @@ function plotsHtml(id) {
   return items.map(([name, cap]) => `<figure><figcaption>${cap}</figcaption><img loading="lazy" src="/api/bundles/${encodeURIComponent(id)}/artifact/${name}" alt="${cap}" /></figure>`).join("");
 }
 
-// Bundles are immutable (a design goal), so records sealed before the 2026-10 honesty pass still
-// carry their stored "Confirmed: ..." headline even though that word has been retired for new cards
-// (audit-3 defect B: older cards would otherwise look MORE overclaiming over time). The display layer
-// re-labels those legacy headlines honestly as injection-recovery. Only fires for a pre-policy card whose
-// stored text still says "confirm" -- post-policy headlines never do, so current cards are untouched.
-const RELABEL_POLICY_DATE = "2026-10-12"; // audit-10 #3: "Confirmed" -> "Recovered" for injection-recovery
-function headlineRelabelNote(f) {
-  const text = `${f.narration?.headline || ""} ${f.verdictReason || ""}`;
-  const created = (f.createdAt || "").slice(0, 10);
-  const legacy = !created || created < RELABEL_POLICY_DATE;
-  if (legacy && /confirm/i.test(text))
-    return "Re-labeled under the 2026-10 display policy: injection-recovery (the pipeline recovered a signal it was pointed at), not an independent confirmation.";
-  return "";
-}
+// Bundles are immutable (a design goal), so records sealed before the 2026-10 honesty pass still carry their
+// stored "Confirmed: ..." headline even though that word has been retired for new cards (audit-3 defect B:
+// older cards would otherwise look MORE overclaiming over time). The display layer re-labels those legacy
+// headlines honestly as injection-recovery. The predicate itself lives in /relabel.js so it is ONE source of
+// truth shared with tests/live-data-regression.test.ts -- audit-4 caught that the inline version's strict `<`
+// boundary matched ZERO live cards (all four legacy cards were created ON the policy date) and a string-match
+// test could not see it. Only fires for a pre-policy card whose stored text still says "confirm".
 
 function cardHtml(f) {
   const badge = BADGE[f.verdict] || BADGE.rejected;
@@ -972,7 +966,20 @@ boardEl.addEventListener("click", async (e) => {
     try {
       const r = await adminFetch(`/api/anchor/${encodeURIComponent(id)}`, { method: "POST", body: "{}" });
       const res = await r.json();
-      if (res.ok && res.signature) {
+      if (res.ok && res.deduplicated) {
+        // audit-4: identical science was already anchored under another finding, so the rig correctly spent
+        // NOTHING. That is a SUCCESS (a fee saved), not a failure -- the old code fell through to "anchor
+        // failed" because a dedup response carries no signature of its own. We deliberately do NOT stamp the
+        // foreign tx onto THIS card (its memo commits a different bundleHash, so stamping it would present an
+        // unverifiable proof); we only point at the existing anchor and say why no new tx was made.
+        const of = res.dedupOf || {};
+        status.className = "verify-out ok";
+        status.innerHTML =
+          `no new tx &mdash; identical science already anchored as <b>${esc(of.findingId || "another finding")}</b>` +
+          (of.signature ? ` (<a class="txlink" href="${esc(explorerUrl(of.signature))}" target="_blank" rel="noopener">${esc(shortTx(of.signature))}</a>)` : "");
+        btn.textContent = "Deduplicated";
+        await loadLedger();
+      } else if (res.ok && res.signature) {
         status.className = "verify-out ok";
         status.innerHTML = `${res.alreadyAnchored ? "already anchored (receipt) " : "anchored "}<a class="txlink" href="${esc(explorerUrl(res.signature))}" target="_blank" rel="noopener">${esc(shortTx(res.signature))}</a>`;
         if (!res.alreadyAnchored) btn.textContent = "Re-anchor";

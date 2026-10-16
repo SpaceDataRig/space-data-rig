@@ -77,6 +77,31 @@ test("fetchSpocBytes returns null for a non-FITS body (login wall / error page)"
   assert.equal(bytes, null);
 });
 
+test("fetchSpocBytes memoises by key when given a shared byteCache (audit-4 P1: one star, several catalog rows)", async () => {
+  const key = resolveSpocKey(25155310, 4);
+  // A body that passes the download guard: >= 2880 bytes and the FITS "SIMPLE" magic in the first six bytes.
+  const fits = new Uint8Array(2880);
+  fits.set(new TextEncoder().encode("SIMPLE"), 0);
+  let calls = 0;
+  const mockFetch = (async () => {
+    calls++;
+    return new Response(fits, { status: 200 });
+  }) as never;
+
+  const cache = new Map<string, Promise<Uint8Array | null>>();
+  const a = await fetchSpocBytes(key, { fetchImpl: mockFetch, byteCache: cache });
+  const b = await fetchSpocBytes(key, { fetchImpl: mockFetch, byteCache: cache });
+  assert.ok(a && b, "both calls resolve the bytes");
+  assert.equal(calls, 1, "a shared byteCache downloads the immutable object ONCE for the whole group");
+
+  // Without a cache the same two calls hit the network twice -- proving the cache is what dedups, and that
+  // existing callers (who pass no byteCache) keep the old behaviour byte-for-byte.
+  const before = calls;
+  await fetchSpocBytes(key, { fetchImpl: mockFetch });
+  await fetchSpocBytes(key, { fetchImpl: mockFetch });
+  assert.equal(calls, before + 2, "no cache => no dedup");
+});
+
 test("fetchSpocLightCurve falls through to null when every sector 404s", async () => {
   const lc = await fetchSpocLightCurve(12345, [1, 2, 3], "TIC 12345", {
     fetchImpl: (async () => new Response("Not Found", { status: 404 })) as never,
@@ -98,6 +123,32 @@ test(
     // the critic truthSource discriminator matches this exact uppercase marker
     assert.equal(lc!.source!.includes("REAL photometry"), true);
     assert.equal(lc!.source!.includes("Caldwell et al. 2020"), true);
+  },
+);
+
+test(
+  "fetchSpocLightCurve serves several rows on ONE star from a single download, each with its OWN label (audit-4 P1)",
+  { skip: have ? false : "no cached product; run npm run p0:mast" },
+  async () => {
+    const fits = readFileSync(CACHE);
+    let calls = 0;
+    const mockFetch = (async () => {
+      calls++;
+      return new Response(new Uint8Array(fits), { status: 200 });
+    }) as never;
+    const cache = new Map<string, Promise<Uint8Array | null>>();
+
+    // HR 858 b/c/d are three catalog rows on ONE TIC: identical immutable bytes, three distinct labels.
+    const b = await fetchSpocLightCurve(25155310, [4], "HR 858 b", { fetchImpl: mockFetch, byteCache: cache });
+    const c = await fetchSpocLightCurve(25155310, [4], "HR 858 c", { fetchImpl: mockFetch, byteCache: cache });
+    assert.equal(calls, 1, "the shared byteCache downloads the FITS once for the whole group");
+    assert.ok(b && c, "both rows resolve a light curve");
+    // The label is applied AFTER the cache read, per row -- so caching bytes cannot contaminate targetId.
+    assert.equal(b!.targetId, "HR 858 b");
+    assert.equal(c!.targetId, "HR 858 c");
+    // ...and the photometry is identical, so points/dataHash do not depend on how many times we fetched.
+    assert.equal(b!.points.length, c!.points.length);
+    assert.deepEqual(b!.points.slice(0, 3), c!.points.slice(0, 3));
   },
 );
 

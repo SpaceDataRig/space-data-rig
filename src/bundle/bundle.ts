@@ -115,20 +115,58 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
 }
 
 /**
- * Content-addressed SCIENCE hash: the manifest hash computed with the two RUN-VOLATILE
- * fields (createdAt, runId) normalised to empty. Two runs that recover the SAME science
- * (identical candidate numbers, verdict, checks, data provenance, artifact hashes) but at
- * different times / run ids therefore share one scienceHash while carrying DIFFERENT
- * bundleHashes. This is the distinction the reproducibility claim needs:
+ * The BLIND-SCIENCE projection: exactly the evidence-driven result, and nothing that depends on WHICH
+ * finding/target label it got, WHEN it ran, or HOW it was rendered or fetched. The content address
+ * (scienceHash) is the SHA-256 of THIS projection, so re-running the same detection -- under a different
+ * findingId, a different target name, a fresh timestamp/runId, a re-fetched light curve, or re-rendered
+ * plots -- collapses to ONE scienceHash and the anchor dedup can actually fire.
+ *
+ * audit-4 ROOT CAUSE. The prior scienceHash was `{ ...manifest, createdAt: "", runId: "" }`, which still
+ * folded in findingId, targetId, dataProvenance.lightCurveHash and artifacts[].sha256. On the live
+ * F-HR-858-b/c/d trio (ONE detection re-run under three catalog labels) all four of those differ, so the
+ * three scienceHashes never collided and the dedup was dead code -- three mainnet fees for one content.
+ * A unit test on a hand-built stub ("two rows share a scienceHash") stayed green the whole time because
+ * it asserted the predicate, never that real manifests PRODUCE an equal hash. tests/live-data-regression
+ * now drives the real captured manifests through this function to close that gap.
+ *
+ * Deliberately EXCLUDED, and why each is not "the science":
+ *   - findingId, targetId -- identity/label. The label is precisely what made the trio differ.
+ *   - createdAt, runId -- when it ran. A timestamped commitment is bundleHash's job, not this one's.
+ *   - codeVersion -- a re-run under a patch is still the same science when the numbers match.
+ *   - dataProvenance -- lightCurveHash was unstable (a re-fetch, and a targetId mixed into computeDataHash).
+ *   - artifacts -- the SVG sha256 embeds the targetId in the plot title, so it varies by label, not science.
+ *   - the post-hoc / non-gating truth check -- it compares the period against the LABEL's catalog period, so
+ *     it varies by target while the blind detection is identical. The project's own contract is that "the
+ *     verdict is evidence-driven and never peeked at truth", so a truth-peeking annotation is not part of
+ *     the science content address. The GATING checks (snr/depth/duration/coverage/odd-even/recovery/
+ *     centroid/fap) ARE kept: each is a pure function of the candidate + light curve, so they differ only
+ *     when the evidence differs -- never because of a label or a timestamp.
+ */
+export function scienceProjection(manifest: BundleManifest): Record<string, unknown> {
+  const gatingChecks = (manifest.checks ?? []).filter((c) => !/non-gating|post-hoc/i.test(c.name));
+  return {
+    candidate: manifest.candidate,
+    verdict: manifest.verdict,
+    verdictReason: manifest.verdictReason,
+    recoveryConfidence: manifest.recoveryConfidence,
+    aliasMultiple: manifest.aliasMultiple,
+    ephemeris: manifest.ephemeris,
+    crossmatch: manifest.crossmatch,
+    checks: gatingChecks,
+  };
+}
+
+/**
+ * Content-addressed SCIENCE hash: the SHA-256 of the blind-science projection above. Two runs that recover
+ * the SAME science therefore share one scienceHash while carrying DIFFERENT bundleHashes:
  *   - bundleHash is a TIMESTAMPED COMMITMENT (it binds the analysis to the moment it ran);
- *   - scienceHash is a CONTENT ADDRESS (it identifies the science itself across runs).
- * It does NOT alter bundleHash or the stored manifest -- purely additive -- so no existing
- * bundle, verdict, or on-chain anchor changes. verify on-chain still matches on bundleHash
- * (the commitment); cross-run comparison uses scienceHash.
+ *   - scienceHash is a CONTENT ADDRESS (it identifies the science itself across runs, labels, and re-fetches).
+ * It does NOT alter bundleHash or the stored manifest -- purely additive -- so no existing bundle, verdict,
+ * or on-chain anchor changes. verify on-chain still matches on bundleHash (the commitment); cross-run dedup
+ * uses scienceHash.
  */
 export async function hashScience(manifest: BundleManifest): Promise<string> {
-  const normalized: BundleManifest = { ...manifest, createdAt: "", runId: "" };
-  return sha256Hex(canonicalJson(normalized));
+  return sha256Hex(canonicalJson(scienceProjection(manifest)));
 }
 
 export interface BuildBundleInput {

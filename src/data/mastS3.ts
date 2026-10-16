@@ -35,6 +35,15 @@ export interface SpocFetchOptions {
   timeoutMs?: number;
   /** injectable fetch for offline tests; defaults to the global. */
   fetchImpl?: typeof fetch;
+  /**
+   * Optional shared, run-scoped cache of RAW object bytes keyed by S3 key (audit-4 P1). When several catalog
+   * rows resolve to the same (TIC, sector) -- e.g. HR 858 b/c/d are three planets on ONE star, so one immutable
+   * FITS serves all three -- passing the SAME Map makes that ~150 KB download happen once instead of once per
+   * row (a null miss is cached too, so a 404 is not re-hit). It caches BYTES, never a labelled LightCurve, so
+   * each caller still parses its OWN targetId off the shared bytes: no cross-target label contamination, and the
+   * resulting points are byte-identical to fetching per-row. Purely additive: omit it and behaviour is unchanged.
+   */
+  byteCache?: Map<string, Promise<Uint8Array | null>>;
 }
 
 /** 16-digit zero-padded TIC string, e.g. 1024880 -> "0000000001024880". */
@@ -117,8 +126,24 @@ function collectSectors(node: unknown, out: number[]): void {
  * Download one SPOC object anonymously. Best-effort: returns null for any
  * non-2xx (a target not in the SPOC program is a 404) or a non-FITS body, so a
  * miss never throws the pipeline out of its determinism guarantee.
+ *
+ * When `opts.byteCache` is supplied, the download is memoised per S3 key so one run that touches several
+ * catalog rows on the same star (same TIC => same key) fetches the immutable bytes once. The cache stores the
+ * in-flight PROMISE (including a null miss), so concurrent rows for one key share a single request.
  */
 export async function fetchSpocBytes(key: string, opts: SpocFetchOptions = {}): Promise<Uint8Array | null> {
+  if (opts.byteCache) {
+    const hit = opts.byteCache.get(key);
+    if (hit) return hit;
+    const p = downloadSpocBytes(key, opts);
+    opts.byteCache.set(key, p);
+    return p;
+  }
+  return downloadSpocBytes(key, opts);
+}
+
+/** The actual anonymous S3 GET + FITS magic check; split out so `fetchSpocBytes` can memoise it by key. */
+async function downloadSpocBytes(key: string, opts: SpocFetchOptions): Promise<Uint8Array | null> {
   const doFetch = opts.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 60000);

@@ -123,6 +123,13 @@ app.get("/health", (c) =>
 // which accepts it for Hibernation and streams hello/log/state frames. web/live.js
 // speaks this WS at the edge and transparently falls back to the Node SSE feed.
 app.get("/api/events", (c) => {
+  // Gate the upgrade HERE (audit-4). The old code ALWAYS built a synthetic `Upgrade: websocket` Request, so a
+  // plain GET (curl, a scanner, a browser prefetch) made the DO call acceptWebSocket() with no actual pending
+  // socket -- that throws and surfaced as a Worker exception (HTTP 500) on every non-WS hit, and it meant the
+  // DO's own correct 426 branch was unreachable. Answer 426 directly; the DO keeps its 426 as defence-in-depth.
+  if ((c.req.header("Upgrade") ?? "").toLowerCase() !== "websocket") {
+    return c.json({ error: "this endpoint requires a WebSocket upgrade", upgrade: "websocket", hint: "connect with a WebSocket client; a plain GET is not a live-feed subscription" }, 426);
+  }
   const url = new URL(c.req.url);
   const headers: Record<string, string> = { Upgrade: "websocket" };
   const protocol = c.req.header("Sec-WebSocket-Protocol");

@@ -233,6 +233,16 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
     }
     const { targets, catalogSource } = selectR.value;
 
+    // Run-scoped fetch de-dup (audit-4 P1). Several catalog rows can sit on ONE star -- HR 858 b/c/d share a
+    // TIC -- and each would otherwise re-download the same immutable TESS-SPOC FITS and re-query TESScut for the
+    // same sectors. Both caches live ONLY for this run and hold raw BYTES / sector numbers, never a labelled
+    // LightCurve, so every row still parses its own targetId off the shared bytes (no cross-target leakage) and
+    // the points, dataHash and bundle stay byte-identical to fetching per-row. On a DO eviction + step replay the
+    // caches are simply empty again and the row re-fetches -- a fail-safe, never a correctness dependency. Pure
+    // latency/GET savings on the token-free path: no SOL, no science, no bundleHash changes.
+    const spocByteCache = new Map<string, Promise<Uint8Array | null>>();
+    const sectorCache = new Map<string, Promise<number[]>>();
+
     // ---- pipeline over targets: one durable step per seat --------------------
     for (const t of targets) {
       const { meta, planet } = t;
@@ -250,11 +260,22 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           `Building an observable light curve for ${meta.name} (P=${planet.pl_orbper?.toFixed(3)}d, Rp=${planet.pl_rade?.toFixed(2)} R_Earth, R*=${planet.st_rad?.toFixed(2)} R_Sun).`,
         );
         const useS3 = env.MAST_S3 === "1" && Number.isFinite(planet.tic);
-        const sectors =
-          useS3 && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)
-            ? await sectorsForCoord(planet.ra!, planet.dec!)
-            : [];
-        const spoc = sectors.length > 0 ? await fetchSpocLightCurve(planet.tic!, sectors, meta.name) : null;
+        let sectors: number[] = [];
+        if (useS3 && Number.isFinite(planet.ra) && Number.isFinite(planet.dec)) {
+          // Same star => same coordinates => same TESScut sectors: memoise the lookup for this run.
+          const coordKey = `${planet.ra!.toFixed(6)},${planet.dec!.toFixed(6)}`;
+          let pending = sectorCache.get(coordKey);
+          if (!pending) {
+            pending = sectorsForCoord(planet.ra!, planet.dec!);
+            sectorCache.set(coordKey, pending);
+          }
+          sectors = await pending;
+        }
+        // Share ONE byte cache across the run so a star with several catalog rows downloads its FITS once.
+        const spoc =
+          sectors.length > 0
+            ? await fetchSpocLightCurve(planet.tic!, sectors, meta.name, { byteCache: spocByteCache })
+            : null;
         let lc: LightCurve;
         let truthPeriodDays: number;
         if (spoc) {

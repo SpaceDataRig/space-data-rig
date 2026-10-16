@@ -5,6 +5,41 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-4 follow-up: two "deployed but inert" fixes made to actually fire, plus a live-data gate (2026-10-16)
+A fourth independent review re-tested the audit-3 fixes on the LIVE site and found two of them were correct,
+unit-tested, and deployed -- but never took effect on real data, because a non-science field had been folded
+into a hash. Both are fixed at the root and, crucially, guarded by a new class of test that runs the REAL
+captured production records through the REAL predicate.
+
+- scienceHash dedup was DEAD CODE: `hashScience()` was `{ ...manifest, createdAt:"", runId:"" }`, still folding
+  in `findingId`/`targetId`/`artifacts`/`dataProvenance`, so the live F-HR-858-b/c/d trio (one detection under
+  three catalog labels) hashed to THREE values and never deduped -- three mainnet fees for one content.
+  Replaced with `scienceProjection()` (blind science + gating checks only); `computeDataHash()` no longer hashes
+  `targetId`. Proven on the real captured manifests: 3 distinct scienceHashes -> 1.
+- Measuring the real data CORRECTED the audit's own field list: its suggested projection included `checks`, but
+  `checks[6]` "period-vs-truth (post-hoc, non-gating)" differs per label, so including it verbatim would have
+  kept the dedup dead. The projection filters post-hoc/non-gating checks and keeps the 8 gating ones.
+- Legacy "Confirmed:" relabel was OFF-BY-ONE-DAY: `created < "2026-10-12"` excluded all four live legacy cards
+  (created ON that date), and its test only string-matched source so it stayed green. Boundary is now `<=`; the
+  predicate moved to `web/relabel.js` (imported by app.js AND the tests); `tests/projection-relabel.test.ts`
+  rewritten from string-matching to BEHAVIOUR.
+- The dedup's honest API reply showed as "anchor failed" in the UI (app.js had no `deduplicated` branch, so
+  `res.ok && res.signature` fell through). Added the branch: "no new tx -- identical science already anchored as
+  <id>"; the button reads "Deduplicated"; the foreign signature is deliberately NOT stamped on the card.
+- Plain `GET /api/events` returned 500: the worker forwarded it with an injected `Upgrade: websocket` header, so
+  the DO's correct 426 branch was unreachable. The worker now checks `Upgrade` first and returns 426 for a
+  non-WebSocket request (the DO branch stays as defence-in-depth).
+- One run re-downloaded the same light curve per catalog row on a star. Added an optional run-scoped BYTE cache
+  to `fetchSpocBytes` (keyed by tic+sector, never the label) + a per-run sector memo; each row still parses its
+  own targetId, so points/dataHash/bundle stay byte-identical. Pure latency/GET saving on the token-free path.
+- Defect C ledger wording CORRECTED: it was remediated ~23 min AFTER the audit-3 snapshot (34e93b8 @ 00:55Z vs
+  584c1e47 @ 00:32Z), not "before this review's snapshot", and it is a global DO with in-memory counters (reset
+  on eviction), NOT "global SQLite". Coverage values now carry a Node-version caveat (branch 80.4 vs an audit
+  re-measure of 79.82 on Node 24.15; the gate enforces FLOORS, not exact values).
+- NEW GATE: `scripts/capture-live-fixtures.ts` (`npm run fixtures:capture`) snapshots the live /api/state and
+  stored manifests into committed fixtures; `tests/live-data-regression.test.ts` drives the real predicates over
+  them. This is the class of test that would have caught both inert fixes before deploy.
+
 ### Audit-3 follow-up: half-done items closed, two new defects fixed, limits made explicit (2026-10-16)
 A third independent review confirmed 8/11 audit-10 items and flagged three that were *done but only
 half-done* plus two new defects. The one-line-code-and-a-test items are shipped; the design/method items
@@ -24,10 +59,13 @@ are recorded honestly as limits, not patched over.
   NOTE: this commit's subject line was mislabelled (an embedded-double-quote escaping bug reused the previous
   commit text); the diff -- `web/app.js`, `web/styles.css`, `README.md`, `tests/projection-relabel.test.ts` -- is
   the projection-relabel work described here, not the anchor-dedup text in the subject.
-- Defect C (rate limiting per-isolate + fail-open) was already remediated before this review's snapshot:
-  the abuse-brake counters live in a global SQLite `RateLimitDO` (`src/cf/rate-limit.do.ts`, commit 34e93b8,
-  deployed c9af4564); `worker.ts` `rateCheck` hits the DO stub first and only fails open to a local limiter if
-  the DO call errors. Verified in live code + `wrangler.toml` (`new_sqlite_classes=["RateLimitDO"]`).
+- Defect C (rate limiting per-isolate + fail-open) was remediated ~23 min AFTER this review's snapshot, not
+  before it (timeline corrected here per audit-4): the audit-3 snapshot 584c1e47 is 00:32Z, while the fix commit
+  34e93b8 is 00:55Z and is itself titled "Audit-10 #7 residual". The abuse-brake counters live in a global
+  `RateLimitDO` (`src/cf/rate-limit.do.ts`, deployed c9af4564) -- a Durable Object with pure **in-memory** counters
+  (a `Map`, reset on DO eviction), NOT SQLite-backed; `worker.ts` `rateCheck` hits the DO stub first and only fails
+  open to a local limiter if the DO call errors. `wrangler.toml` declares it via `new_sqlite_classes=["RateLimitDO"]`,
+  which is the migration key this account requires for ANY new DO and does not imply SQLite storage.
 - #10 / P1 -- the live-probe's failure mode is now PROVEN offline, not just present: each probe split into a
   fetch + pure `judge`, a `--self-test` drives drifted fixtures through the real detection logic and asserts the
   alert exit code, and 5 offline tests in `npm test` lock it in. Commit 97cddc6.

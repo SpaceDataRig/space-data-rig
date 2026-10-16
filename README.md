@@ -992,12 +992,15 @@ Events connection:
   independent confirmation), and every new headline is prefixed `[real TESS photometry]`
   or `[stand-in synthetic curve]`. Because older bundles still store the old wording, the
   **render layer derives a relabel** rather than mutating them: a card whose stored
-  headline still says "confirm" AND whose `createdAt` predates the policy date
-  (`2026-10-12`) gets a visible note - "Re-labeled under the 2026-10 display policy:
-  injection-recovery, not an independent confirmation." Post-policy cards are untouched.
-  Immutability must not mean the public history stays frozen at its most overclaiming
-  version; this rule lives in `web/app.js` (`headlineRelabelNote`) and is the single
-  source of truth for the projection.
+  headline still says "confirm" AND whose `createdAt` is on or before the policy date
+  (`2026-10-12`, inclusive - audit-4 caught that a strict `<` boundary excluded every
+  legacy card, since all four live ones were created ON that date) gets a visible note -
+  "Re-labeled under the 2026-10 display policy: injection-recovery, not an independent
+  confirmation." Post-policy cards are untouched. Immutability must not mean the public
+  history stays frozen at its most overclaiming version; the predicate lives in
+  `web/relabel.js` (`headlineRelabelNote`), imported by `web/app.js` and shared with
+  `tests/live-data-regression.test.ts`, so it is the single source of truth for the
+  projection and the browser and the test run the SAME function.
 - **Live feed** - the raw seat event stream.
 - **On-chain ledger** - every anchoring attempt with its status and explorer link.
 

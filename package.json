@@ -134,6 +134,7 @@
     "anchor": "tsx scripts/p2-anchor.ts",
     "cf:dev": "wrangler dev",
     "cf:deploy": "wrangler deploy",
+    "cf:deploy:sha": "tsx scripts/deploy-with-sha.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",

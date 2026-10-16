@@ -40,6 +40,17 @@ which changes on every upload) and gitSha (the commit the deployment was built f
 as the GIT_SHA secret); the Node server's /health echoes GIT_SHA for parity. One GET now answers "which
 commit is live".
 
+### Audit-6 P2 follow-up: gitSha stays honest across deploys (2026-10-16)
+GIT_SHA is a static secret, so a plain `wrangler deploy` uploads new code but leaves /health reporting the
+PREVIOUS commit -- the self-proof would quietly start lying after the next deploy. `npm run cf:deploy:sha`
+(scripts/deploy-with-sha.ts) is now the recommended deploy path: it re-sets GIT_SHA to the current HEAD
+immediately before deploying (warning on a dirty tree), so the live gitSha always equals the deployed commit.
+`--dry-run` resolves the sha and builds the bundle without writing the secret or uploading. The
+version_metadata binding was also corrected to the object form `{ binding = "CF_VERSION_METADATA" }` that
+wrangler 4.149 requires -- a bare string fails config parsing, which tsc/tests do not cover, so it was caught
+only by `wrangler whoami` / `deploy --dry-run` (recorded as a pitfall: always parse-check wrangler.toml before
+pushing). Live /health verified after deploy: gitSha = the deployed HEAD, deployVersion = the Workers version id.
+
 ### Audit-6 P2: the six real-MAST-FITS gates now run in CI (2026-10-16)
 tests/mast.test.ts, tests/mastS3.test.ts and tests/mastS3Pixels.test.ts skip themselves when out/probe-lc.fits
 or out/probe-tp.fits are absent, and out/ is gitignored -- so on a fresh CI checkout the gates closest to

@@ -12,7 +12,7 @@ name: x-post (half-hourly English science digest)
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
 # English-only is enforced twice). A window with NO new science is not automatically silent: it may post a BUILD
 # NOTE over the commits since the last post (a development-progress tier); only when there is neither new science
-# nor a buildable commit does it fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 90m) -- to an honest
+# nor a buildable commit does it fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 45m) -- to an honest
 # status heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet), so a quiet stretch is not
 # mistaken for downtime. It NEVER posts an empty tweet and NEVER claims a discovered planet -- a blind candidate is
 # always "UNCONFIRMED ... for human follow-up" -- and honesty is carried by plain wording, not a per-post stamp.
@@ -96,7 +96,7 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           # Silence watchdog: when a scheduled run finds NO new science AND the account has been quiet this many
           # minutes, composeDigest falls back to an honest status heartbeat so a long gap is not read as downtime.
-          HEARTBEAT_AFTER_MIN: "90"
+          HEARTBEAT_AFTER_MIN: "45"
           DRY_HEARTBEAT: ${{ github.event.inputs.dry_heartbeat }}
         run: |
           set -uo pipefail
@@ -184,7 +184,7 @@ jobs:
           # see how long the channel has been quiet (a human post counts too); past the threshold, compose an
           # honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
           if [ ! -s out/digest.txt ]; then
-            HB_MIN="${HEARTBEAT_AFTER_MIN:-90}"
+            HB_MIN="${HEARTBEAT_AFTER_MIN:-45}"
             SILENT_MIN=""
             if [ -n "$LAST_POST_ISO" ]; then
               EPOCH="$(date -u -d "$LAST_POST_ISO" +%s 2>/dev/null || true)"

@@ -1,5 +1,21 @@
 {
   "meta": {
+    "generatedAt": "2026-10-17T15:15:53.616Z",
+    "gitSha": "19251cba2e31e48e2be07c2c359a929c0ae5d95e",
+    "inputs": [
+      {
+        "path": "reports/p58-veto-2x2.json",
+        "sha256": "64a60f7a62f5abadc0be58748eea24931ca2e0df31fca7978abb8040d0fe61c2"
+      },
+      {
+        "path": "src/data/toiDispositions.ts",
+        "sha256": "f6115c850fc181abe043e81fcd70ff3e7e5779d3a132f64e16a59fad15efbc18"
+      },
+      {
+        "path": "src/data/gaiaDilution.ts",
+        "sha256": "0978bade9ef4a815015959628990f5126d8731fbd7755e0d754fa59cd2526aa5"
+      }
+    ],
     "generatedBy": "scripts/p59-offtarget-subset.ts",
     "apertureArcsec": 21,
     "minSepArcsec": 1.5,

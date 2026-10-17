@@ -66,8 +66,8 @@
       "jointCorroborated": true
     },
     {
-      "name": "HR 858 d",
-      "catPeriod": 11.230511,
+      "name": "HR 858 c",
+      "catPeriod": 5.973865,
       "nSectors": 4,
       "bestSinglePeriod": 7.145134160435382,
       "bestSingleSnr": 18.32962450380649,
@@ -79,8 +79,8 @@
       "jointCorroborated": false
     },
     {
-      "name": "HR 858 c",
-      "catPeriod": 5.973865,
+      "name": "HR 858 d",
+      "catPeriod": 11.230511,
       "nSectors": 4,
       "bestSinglePeriod": 7.145134160435382,
       "bestSingleSnr": 18.32962450380649,
@@ -131,19 +131,6 @@
       "jointCorroborated": false
     },
     {
-      "name": "HD 25463 c",
-      "catPeriod": 3.04405,
-      "nSectors": 3,
-      "bestSinglePeriod": 3.5319097249316216,
-      "bestSingleSnr": 17.36229696120507,
-      "singleRecovered": false,
-      "jointPeriod": 7.048357337745268,
-      "jointSnr": 26.217348767219082,
-      "jointRecovered": false,
-      "nSectorsConfirm": 3,
-      "jointCorroborated": false
-    },
-    {
       "name": "HD 25463 b",
       "catPeriod": 7.0491423,
       "nSectors": 3,
@@ -155,6 +142,19 @@
       "jointRecovered": true,
       "nSectorsConfirm": 3,
       "jointCorroborated": true
+    },
+    {
+      "name": "HD 25463 c",
+      "catPeriod": 3.04405,
+      "nSectors": 3,
+      "bestSinglePeriod": 3.5319097249316216,
+      "bestSingleSnr": 17.36229696120507,
+      "singleRecovered": false,
+      "jointPeriod": 7.048357337745268,
+      "jointSnr": 26.217348767219082,
+      "jointRecovered": false,
+      "nSectorsConfirm": 3,
+      "jointCorroborated": false
     },
     {
       "name": "TOI-5789 c",

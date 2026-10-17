@@ -4,7 +4,9 @@
 // scripts/post-x-text.ts and shares its rules: credentials come ONLY from the four X_API_* env vars (never
 // hardcoded, never logged); with none present it makes NO network call and exits non-zero, so the workflow simply
 // skips the heartbeat. Uses X API v2 user context (OAuth 1.0a): GET /2/users/me -> id, then
-// GET /2/users/:id/tweets?max_results=1 -> newest created_at. Errors go to stderr; stdout carries only the ISO.
+// GET /2/users/:id/tweets?max_results=5&tweet.fields=created_at -> the newest created_at among the page returned.
+// (v2 requires max_results in [5,100]; 1 is rejected with HTTP 400, so we ask for the smallest legal page and keep
+// the latest timestamp rather than assuming a single-row request.) Errors go to stderr; stdout carries only the ISO.
 import { createHmac, randomBytes } from "node:crypto";
 
 type JsonObject = Record<string, unknown>;
@@ -68,9 +70,11 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const tw = await signedGet(`/2/users/${uid}/tweets`, { max_results: "1", "tweet.fields": "created_at" });
+  const tw = await signedGet(`/2/users/${uid}/tweets`, { max_results: "5", "tweet.fields": "created_at" });
   const rows = tw.data as Array<{ created_at?: string }> | undefined;
-  const created = rows?.[0]?.created_at ?? "";
+  // v2 returns reverse-chronological, but pick the newest explicitly (ISO stamps sort lexicographically) so the
+  // silence gap is measured from the truly most-recent tweet regardless of page order.
+  const created = (rows ?? []).map((r) => r?.created_at).filter((x): x is string => !!x).sort().reverse()[0] ?? "";
   if (!created) {
     console.error("x-last-post: no tweets found (the account has posted nothing yet).");
     process.exitCode = 1;

@@ -6,7 +6,9 @@ name: x-post (half-hourly English science digest)
 # previous run -- a result sealed on-chain, a newly flagged UNCONFIRMED blind candidate, or a research
 # milestone -- composed by scripts/science-digest.ts (composeDigest, unit-tested in tests/science-digest.test.ts)
 # from the LIVE rig state (/api/state + /api/ledger) plus the committed web/research.json. It posts at most ONE
-# English, text-only line. No image (AI illustration is generated only inside an agent session, never in CI).
+# English, text-only long-form post (the author is a Premium/"blue" account, so a digest may run past 280 chars
+# up to X's 25,000-char long-post ceiling). No image (AI illustration is generated only inside an agent session,
+# never in CI).
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
 # English-only is enforced twice). A window with NO new result posts NOTHING (no empty tweet), and it NEVER
 # claims a discovered planet -- a blind candidate is always "UNCONFIRMED ... for human follow-up".
@@ -105,13 +107,15 @@ jobs:
           RESEARCH_UPDATED=0
           if [ "$RESEARCH_COMMITS" -gt 0 ]; then RESEARCH_UPDATED=1; fi
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
-          # Compose ONE honest English science line, or an EMPTY file when there is nothing new to report.
+          # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
           npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt
           if [ -s out/digest.txt ]; then
             # strip any non-ASCII once more; English-only is enforced in the posting script too
             TEXT="$(printf '%s' "$(cat out/digest.txt)" | tr -cd '\11\12\15\40-\176')"
             echo "posting: $TEXT"
-            npm run x:post -- --text "$TEXT"
+            # --max-len 25000: the author is a Premium ("blue") account and the digest is now a LONG-FORM summary
+            # (>280 chars); without this the posting script's default 280 ceiling would silently truncate it.
+            npm run x:post -- --text "$TEXT" --max-len 25000
           else
             echo "no new science result in this window; skipping (never posts an empty tweet)"
           fi

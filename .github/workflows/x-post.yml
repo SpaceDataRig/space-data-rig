@@ -15,6 +15,14 @@ name: x-post (half-hourly English science digest)
 # heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet) so a quiet stretch is not
 # mistaken for downtime. It NEVER claims a discovered planet -- a blind candidate is always
 # "UNCONFIRMED ... for human follow-up".
+#
+# VERIFYING THIS CHANNEL (a lesson earned the hard way): the compose + watchdog path only runs when a window has
+# NO new science, so unit tests + a green `npm test` do NOT exercise it and CI stays green even when it is broken
+# (a pipefail abort and an illegal max_results both shipped undetected). Before editing this workflow, dispatch
+# dry_heartbeat=1 (composes + validates a heartbeat WITHOUT posting) and/or a run with a VALID but empty window
+# (past --since AND --until) to force the watchdog branch, then read the job log; that, not the test count, is the
+# real gate. (An inverted window -- a future --since with no --until -- makes composeDigest return "" at its guard
+# before the heartbeat tier, so it does NOT exercise the fallback.)
 
 # Loop / spam guards:
 #  - No push trigger at all: committing docs/reports no longer posts per-commit; the half-hourly digest is the
@@ -38,6 +46,10 @@ on:
         default: ""
       maxlen:
         description: "length ceiling for a manual text override (blank = 280; a Premium author may probe up to 25000)"
+        required: false
+        default: ""
+      dry_heartbeat:
+        description: "set to 1 to compose a status heartbeat and validate it WITHOUT posting (verification only)"
         required: false
         default: ""
 
@@ -82,6 +94,7 @@ jobs:
           # Silence watchdog: when a scheduled run finds NO new science AND the account has been quiet this many
           # minutes, composeDigest falls back to an honest status heartbeat so a long gap is not read as downtime.
           HEARTBEAT_AFTER_MIN: "90"
+          DRY_HEARTBEAT: ${{ github.event.inputs.dry_heartbeat }}
         run: |
           set -uo pipefail
           if [ -n "$OVERRIDE_TEXT" ]; then
@@ -90,6 +103,28 @@ jobs:
             if [ -n "$OVERRIDE_MAXLEN" ]; then MAXLEN_ARG="--max-len=$OVERRIDE_MAXLEN"; fi
             echo "posting override (maxlen=${OVERRIDE_MAXLEN:-280}): $TEXT"
             npm run x:post -- --text "$TEXT" $MAXLEN_ARG
+            exit 0
+          fi
+          # Verification path (default off): compose a heartbeat and validate it, then STOP -- never posts. Forces
+          # the fallback branch (empty window + a silence gap past the threshold) so the heartbeat tier -- the one
+          # live traffic rarely reaches -- can be exercised on demand without spamming the feed.
+          if [ "$DRY_HEARTBEAT" = "1" ]; then
+            echo "dry_heartbeat=1 -> composing a heartbeat for validation ONLY (no post)"
+            # A VALID but EMPTY window (far-past since+until): composeDigest returns "" for an inverted window via
+            # its guard, so we cannot force the fallback with a future --since. A past window is valid (end>start)
+            # yet holds no science -> the tiers fall through to the heartbeat, which the silence gap then triggers.
+            npm run science:digest -- --since 1970-01-01T00:00:00Z --until 1970-01-02T00:00:00Z --research-updated 0 --silent-min 100000 --heartbeat-after-min 90 --out out/dryhb.txt || true
+            if [ ! -s out/dryhb.txt ]; then
+              echo "##[error]dry_heartbeat produced no text -- the heartbeat tier did not fire"; exit 1
+            fi
+            RAW="$(cat out/dryhb.txt)"
+            CLEAN="$(printf '%s' "$RAW" | tr -cd '\11\12\15\40-\176')"
+            if [ "$RAW" != "$CLEAN" ]; then
+              echo "##[error]dry_heartbeat contained non-ASCII bytes"; exit 1
+            fi
+            echo "---- dry heartbeat text (NOT posted) ----"
+            printf '%s\n' "$RAW"
+            echo "---- end: ASCII-only, $(printf '%s' "$RAW" | wc -c | tr -d ' ') bytes ----"
             exit 0
           fi
           # Window start = when the PREVIOUS completed x-post run started (a self-healing cursor via the Actions

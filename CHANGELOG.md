@@ -50,6 +50,11 @@ behaviour tests pinning the request shape, newest-timestamp selection, /2/users/
 encoding, none of which touch the network). CI-only (workflow + scripts run from the runner checkout, not the
 Worker bundle), so it is live on push with no redeploy; verified end-to-end on a real dispatch run that read the
 gap correctly and suppressed the heartbeat below threshold.
+A workflow_dispatch input dry_heartbeat=1 was added as the standing way to prove the heartbeat tier end-to-end on
+the runner WITHOUT touching the feed: it composes a heartbeat over a valid-but-empty window (past --since AND
+--until, since an inverted window trips composeDigest's guard before the fallback tier), asserts the output is
+non-empty and ASCII-only, prints it, and exits before any post. The workflow header now records that `npm test`
+being green does NOT exercise the compose/watchdog path, so this dry dispatch is the real pre-merge gate.
 
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)

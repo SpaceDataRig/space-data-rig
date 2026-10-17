@@ -94,6 +94,57 @@ test("evaluateAgainst: legacy / unstamped reports are NEVER hard-stale -- no wal
   assert.match(stampedNoInputs.reasons.join(" "), /records no input checkpoint/);
 });
 
+// `stamped` means "carries a generatedAt timestamp"; `verified` means "the gate re-hashed at least one
+// recorded input checksum and it matched". Conflating them let the published p89 artifact -- which has a
+// timestamp but NO inputs at all, because its generator grew the stamp wiring after that artifact was
+// written -- count toward the site's "N stamped" figure as though it had been machine-checked.
+test("verified vs stamped: only a re-hashed matching checksum counts as verified", () => {
+  const intact = evaluateAgainst(stamp([{ path: "a.ts", sha256: "aaa" }]), {
+    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "aaa" }),
+  });
+  assert.equal(intact.stamped, true);
+  assert.equal(intact.verified, true, "a recorded checksum that still matches IS machine-verified");
+
+  const tampered = evaluateAgainst(stamp([{ path: "a.ts", sha256: "aaa" }]), {
+    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "CHANGED" }),
+  });
+  assert.equal(tampered.stale, true);
+  assert.equal(tampered.verified, false, "a mismatching checksum must not read as verified");
+
+  // The p89 published shape: a timestamp and zero recorded inputs.
+  const stampedOnly = evaluateAgainst(stamp([]), { reportMs: T0, inputNewestMs: null });
+  assert.equal(stampedOnly.stamped, true);
+  assert.equal(stampedOnly.verified, false, "a timestamp alone proves nothing about the inputs");
+
+  // The p79 shape: input paths declared as bare strings, normalised to sha256 null.
+  const hashless = evaluateAgainst(stamp(normalizeInputRecords(["a.ts", "b.json"])), { reportMs: T0, inputNewestMs: null });
+  assert.equal(hashless.stamped, true);
+  assert.equal(hashless.verified, false, "declared-but-unhashed inputs cannot be re-verified");
+  assert.match(hashless.reasons.join(" "), /cannot be re-verified/);
+
+  const legacy = evaluateAgainst(null, { reportMs: T0, inputNewestMs: null });
+  assert.equal(legacy.stamped, false);
+  assert.equal(legacy.verified, false);
+});
+
+test("verified never exceeds stamped, and no report is verified while stale", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  if (!existsSync("web/reports/index.json")) return;
+  const idx = JSON.parse(readFileSync("web/reports/index.json", "utf8")) as {
+    freshness?: { stamped?: number; verified?: number; total?: number; stale?: string[] };
+    reports?: { id: string; stamped?: boolean; verified?: boolean; fresh?: boolean }[];
+  };
+  const rs = idx.reports ?? [];
+  if (!rs.length) return;
+  for (const r of rs) {
+    if (r.verified) assert.equal(r.stamped, true, `${r.id}: verified without a stamp is impossible`);
+    if (r.verified) assert.notEqual(r.fresh, false, `${r.id}: a stale report must never be published as verified`);
+  }
+  const f = idx.freshness ?? {};
+  assert.ok((f.verified ?? 0) <= (f.stamped ?? 0), "aggregate verified must not exceed aggregate stamped");
+  assert.equal(f.total, rs.length, "freshness.total must equal the number of report entries");
+});
+
 test("stampFromMeta: reads nested + flat shapes, rejects legacy metas with no generatedAt", () => {
   assert.equal(stampFromMeta({ generatedAt: "2026-10-17T00:00:00Z", gitSha: "abc", inputs: [{ path: "p", sha256: "h" }] })?.gitSha, "abc");
   assert.equal(stampFromMeta({ generatedBy: "scripts/p59-offtarget-subset.ts" }), null); // the pre-gate meta shape

@@ -157,6 +157,18 @@ export function isProvenanceStale(reportMs: number, inputNewestMs: number | null
 
 export interface FreshnessVerdict {
   stamped: boolean; // did the report carry a generatedAt stamp?
+  /**
+   * Did the gate actually RE-HASH at least one recorded input checksum and find it unchanged?
+   *
+   * WHY THIS IS NOT THE SAME AS `stamped` (audit-6 follow-up). `stamped` only means "carries a timestamp",
+   * so a report can be stamped and still record nothing checkable: the published p89 artifact has
+   * `generatedAt` but no `inputs` at all (its generator grew the stamp wiring after that artifact was
+   * written, and it has not been re-run since). Counting such a report as verified is the p79 bare-string
+   * false comfort one level up -- the site read "6 stamped" as "6 checked" when only the ones carrying real
+   * checksums had been. `verified` is the number that may be quoted as machine-checked; `stamped` is kept
+   * unchanged so existing consumers and tests are not silently reinterpreted.
+   */
+  verified: boolean;
   fresh: boolean; // !stale
   stale: boolean;
   reasons: string[];
@@ -194,21 +206,22 @@ export function evaluateAgainst(
     const stale = cmp.hardStale; // ONLY a changed recorded input blocks.
     // A report that NAMES its inputs but records no hash for any of them is not verified -- say so, rather
     // than letting an empty reason list read as "checked and clean" (the p79 hand-written shape).
-    if (!stamp.inputs.some((i) => i.sha256)) {
+    const anyChecksum = stamp.inputs.some((i) => i.sha256);
+    if (!anyChecksum) {
       reasons.push(`report declares ${stamp.inputs.length} input path(s) but records no sha256 for them, so they cannot be re-verified`);
     }
     // Optional soft note: a dependency is newer than the report even though the hashed inputs still match.
     if (!stale && isProvenanceStale(opts.reportMs, opts.inputNewestMs, opts.toleranceMs)) {
       reasons.push("note: a source this report reads is newer than the report itself (informational, not blocking)");
     }
-    return { stamped, fresh: !stale, stale, reasons };
+    return { stamped, verified: anyChecksum && !stale, fresh: !stale, stale, reasons };
   }
 
   // No recorded input hashes (legacy or network report not yet re-run): never hard-stale, but make the gap
   // visible so it can be prioritised for stamping.
   if (!stamped) reasons.push("report carries no freshness stamp (generatedAt/gitSha/inputs)");
   else reasons.push("report is stamped but records no input checkpoint to re-verify");
-  return { stamped, fresh: true, stale: false, reasons };
+  return { stamped, verified: false, fresh: true, stale: false, reasons };
 }
 
 // ---- I/O helpers used by generators and p86 ----

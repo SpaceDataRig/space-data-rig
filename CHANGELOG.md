@@ -6,7 +6,7 @@ Keep a Changelog and adheres to Semantic Versioning.
 ## Unreleased
 
 ### Audit-6 re-check: the freshness gate itself had two false-positive bugs, and report order was not reproducible (2026-10-17)
-Re-verifying the audit-6 remediation end to end (rather than trusting it) found four defects, two of them IN
+Re-verifying the audit-6 remediation end to end (rather than trusting it) found five defects, two of them IN
 the gate that was added to stop stale numbers -- so they were fixed, not worked around with `--allow-stale`.
 
 - **CRLF false positive that blocked deploys** (`scripts/report-freshness.ts`). The CI bot published
@@ -33,12 +33,27 @@ the gate that was added to stop stale numbers -- so they were fixed, not worked 
   trails `/health.gitSha` by one commit, and after an amend it named a commit that was never pushed at all
   (`merge-base --is-ancestor` exit 1). Renamed to `builtAtGitSha` with a `shaNote` stating the trail and pointing
   at `/health.gitSha`; an invariant test now fails if the published SHA is not an ancestor of HEAD.
+- **"stamped" was being read as "machine-checked", overstating verification.** `evaluateAgainst` set
+  `stamped` from the presence of a `generatedAt` timestamp alone, so a report carrying a timestamp but ZERO
+  input checksums counted toward the published "6 stamped" as though the gate had re-hashed something. The
+  published p88/p89 artifacts are exactly that shape -- both generators grew the `buildStamp` wiring in
+  `19251cb`, after those artifacts were written, and neither has been re-run since. The honest reason string
+  ("stamped but records no input checkpoint to re-verify") was computed and then DROPPED: it reached neither
+  `index.json` nor the fragment, because only hard-stale reports got a banner. This is the p79 bare-string
+  false comfort one level up. Added a separate `verified` flag (true only when at least one recorded checksum
+  was re-hashed and matched), published per report and in the aggregate, and surfaced the dropped reasons as
+  an AMBER "provenance not machine-verifiable" note on the fragment plus a list badge -- amber, not red, and
+  explicitly not a build failure, because these numbers are unaudited rather than known-wrong. The honest
+  count is 4 verified of 48, not 6 of 48; `stamped` keeps its old meaning so no consumer is silently
+  reinterpreted. Re-running p88/p89 to earn real stamps would change published science numbers, so it is
+  left as an explicit decision rather than done as a side effect of a build fix.
 
-Tests 586 to 596 (+7 freshness, +2 tap, +1 reachability invariant); `typecheck:all` and `lint --max-warnings 0`
-exit 0; p86 publishes 48 fragments, 6 stamped, 0 stale, exit 0 -- where it previously exited 1 on a false
-positive. Deployed and verified live: `/health` gitSha equals HEAD, `freshness.stale` empty, P81 free of the
-stale `contradictions (4)`, P84/P85 showing the corrected-sky figures, and `stats.surveyPass` at 24 against the
-review's snapshot of 17 -- the claim-time cursor advance holding in production.
+Tests 586 to 598 (+7 freshness, +2 tap, +1 reachability invariant, +2 verified-vs-stamped); `typecheck:all` and
+`lint --max-warnings 0` exit 0; p86 publishes 48 fragments, 4 verified, 6 stamped, 0 stale, exit 0 -- where it
+previously exited 1 on a false positive. Deployed and verified live: `/health` gitSha equals HEAD,
+`freshness.stale` empty, P81 free of the stale `contradictions (4)`, P84/P85 showing the corrected-sky figures,
+and `stats.surveyPass` at 24 against the review's snapshot of 17 -- the claim-time cursor advance holding in
+production.
 
 ### Audit-6 remediation: RA-unit re-run, a report freshness gate, and coverage for the frozen path (2026-10-17)
 The sixth review's central finding was the same failure class in a third domain -- round 1 "computed but not

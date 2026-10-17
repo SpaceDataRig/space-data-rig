@@ -1305,6 +1305,9 @@ function renderReportsList(reports) {
     `<button class="report-item" type="button" data-slug="${esc(r.slug)}">` +
       `<span class="ri-title">${esc(r.title)}</span>` +
       (r.fresh === false ? `<span class="ri-stale" title="numbers may predate a change to their inputs; re-run before quoting">possibly out of date</span>` : "") +
+      // `verified` (not `stamped`) is the machine-checked signal: a report can carry a timestamp and still
+      // record no input checksum for the freshness gate to re-hash. Say so in the list, not only inside.
+      (r.fresh !== false && r.verified === false ? `<span class="ri-unverified" title="carries no input checksums the freshness gate can re-hash; unaudited, not known-wrong">provenance unverified</span>` : "") +
       (r.summary ? `<span class="ri-sum">${esc(r.summary)}</span>` : "") +
     `</button>`).join("");
 }

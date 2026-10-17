@@ -101,6 +101,22 @@ const STALE_BANNER = (reasons: string[]): string =>
   (reasons.length ? `<ul style="margin:6px 0 0;padding-left:20px;font-weight:400">${reasons.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "") +
   `</div>`;
 
+/**
+ * SOFT amber note for a report the gate could not machine-check -- deliberately NOT the red stale banner and
+ * deliberately NOT a build failure. These numbers are not known to be wrong; they are unaudited, because the
+ * artifact records no input checksum to re-hash. Before this note existed the honest reason string computed by
+ * evaluateAgainst ("stamped but records no input checkpoint to re-verify") was dropped on the floor: it reached
+ * neither index.json nor the fragment, so a reader -- and the aggregate "N stamped" count -- could not tell a
+ * re-hashed report from one carrying only a timestamp.
+ */
+const PROVENANCE_NOTE = (reasons: string[]): string =>
+  `<div class="report-provenance-note" style="border:1px solid #8a6d00;background:#fffbe6;color:#5c4a00;padding:8px 12px;margin:0 0 16px;border-radius:6px">` +
+  `PROVENANCE NOT MACHINE-VERIFIABLE: this report records no input checksums the freshness gate can re-hash, ` +
+  `so its numbers have not been checked against the data they were computed from. That is a statement about the ` +
+  `audit trail, not a claim that the figures are wrong. ` +
+  (reasons.length ? `<ul style="margin:6px 0 0;padding-left:20px">${reasons.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "") +
+  `</div>`;
+
 function main(): void {
   if (!existsSync(REPORTS_DIR)) {
     console.error(`p86: no ${REPORTS_DIR}/ directory found (run from the repo root).`);
@@ -119,9 +135,10 @@ function main(): void {
   if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean }[] = [];
+  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean; verified: boolean }[] = [];
   const staleIds: string[] = [];
   let stampedCount = 0;
+  let verifiedCount = 0;
 
   for (const f of files) {
     const md = readFileSync(join(REPORTS_DIR, f), "utf8");
@@ -130,14 +147,18 @@ function main(): void {
     const meta = extractMeta(md);
     const { verdict } = freshnessFor(id);
     if (verdict.stamped) stampedCount++;
+    if (verdict.verified) verifiedCount++;
     let html = mdToHtml(md);
     if (verdict.stale) {
       staleIds.push(id);
       html = STALE_BANNER(verdict.reasons) + "\n" + html;
       console.error(`p86: STALE ${id} -- ${verdict.reasons.join("; ")}`);
+    } else if (!verdict.verified) {
+      // Not blocking (that would fail the build for every legacy report), but no longer invisible.
+      html = PROVENANCE_NOTE(verdict.reasons) + "\n" + html;
     }
     writeFileSync(join(OUT_DIR, `${slug}.html`), html, "utf8");
-    reports.push({ id, slug, title: meta.title, reproduce: meta.reproduce, summary: meta.summary, p: pnum(id), fresh: !verdict.stale, stamped: verdict.stamped });
+    reports.push({ id, slug, title: meta.title, reproduce: meta.reproduce, summary: meta.summary, p: pnum(id), fresh: !verdict.stale, stamped: verdict.stamped, verified: verdict.verified });
   }
 
   reports.sort((a, b) => a.p - b.p || a.id.localeCompare(b.id));
@@ -164,13 +185,19 @@ function main(): void {
       "Human-readable research reports, rendered from the committed reports/ directory. These characterise " +
       "the pipeline's operating point and cross-checks on real public TESS data with positive controls -- " +
       "measurements and method checks, not claims of new planets. Each entry carries a freshness flag from " +
-      "the report-freshness gate; stale reports are marked red both here and in their fragment.",
+      "the report-freshness gate; stale reports are marked red both here and in their fragment. " +
+      "`stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate " +
+      "re-hashed at least one recorded input checksum and found it unchanged. Quote `verified`, not " +
+      "`stamped`, as the machine-checked count -- a report can be stamped and still record nothing checkable.",
     count: reports.length,
-    freshness: { stamped: stampedCount, total: reports.length, stale: staleIds },
-    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped }) => ({ id, slug, title, reproduce, summary, fresh, stamped })),
+    freshness: { stamped: stampedCount, verified: verifiedCount, total: reports.length, stale: staleIds },
+    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped, verified }) => ({ id, slug, title, reproduce, summary, fresh, stamped, verified })),
   };
   writeFileSync(join(OUT_DIR, "index.json"), JSON.stringify(index, null, 2) + "\n", "utf8");
-  console.log(`p86: wrote ${reports.length} report fragments + index.json to ${OUT_DIR.replace(/\\/g, "/")}/ (${stampedCount} stamped, ${staleIds.length} stale).`);
+  console.log(
+    `p86: wrote ${reports.length} report fragments + index.json to ${OUT_DIR.replace(/\\/g, "/")}/ ` +
+      `(${verifiedCount} verified, ${stampedCount} stamped, ${staleIds.length} stale).`,
+  );
 
   if (staleIds.length && !ALLOW_STALE) {
     console.error(`p86: refusing to publish ${staleIds.length} stale report(s): ${staleIds.join(", ")}. Re-run them (or pass --allow-stale to ship marked-red).`);

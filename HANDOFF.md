@@ -307,6 +307,15 @@ the Actions web page when the anonymous API is rate-limited.
   with different parameters mid-session. ALWAYS run `git status --porcelain` immediately before
   committing, add files EXPLICITLY by path (never `git add -A`), and treat any report file you did
   not just regenerate as an incident to investigate rather than as your own work.
+- A verification flag must say what was actually CHECKED, not merely that a record exists. The
+  freshness gate's `stamped` meant "has a generatedAt timestamp", so reports carrying a timestamp
+  and zero input checksums (p88, p89 -- their generators grew buildStamp AFTER those artifacts were
+  written) were published inside a "6 stamped" count that read as "6 machine-checked". The honest
+  reason string was computed by evaluateAgainst and then dropped, because only hard-stale reports
+  got a banner. `verified` now means "at least one recorded checksum was re-hashed and matched"
+  (4 of 48). When adding any provenance/health flag, ask which of the two it is, and never let a
+  reason string be computed and discarded: if the gate knows something the reader does not, publish
+  it -- as a soft note when it is not a failure, so honesty does not become a false-positive machine.
 - The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
   Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
   runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions

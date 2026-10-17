@@ -67,6 +67,16 @@ re-runnable) -- it drives the actual composeDigest and asserts the reported coun
 never the total, plus the honesty invariants on production bytes (no discoveryClaim, none auto-anchored). The live
 fixture at capture time held 2 surviving + 2 rejected; before the fix the digest/heartbeat reported 4.
 
+### Digest window now anchored to the last ACTUAL post, not the last run (2026-10-17)
+The digest cursor used the previous completed x-post RUN's start time. Any run that posted NOTHING -- an empty-
+science tick, a dry_heartbeat, or a verification dispatch -- still advanced that cursor, so science sealed between
+the last real tweet and a no-op run fell OUTSIDE the next window and was skipped FOREVER. This is the real reason
+the feed went silent while the survey kept producing results: a fresh re-validation (KELT-20 b) sat unposted
+because a string of no-op runs had marched the cursor past it. The window is now anchored to the account's
+newest tweet (the same single up-front X read that feeds the heartbeat), falling back to override --since / prior
+run / ~40m, so the range is self-healing across skipped, failed OR throttled runs -- nothing is dropped until it
+has actually been reported. CI-only.
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

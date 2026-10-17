@@ -127,12 +127,27 @@ jobs:
             echo "---- end: ASCII-only, $(printf '%s' "$RAW" | wc -c | tr -d ' ') bytes ----"
             exit 0
           fi
-          # Window start = when the PREVIOUS completed x-post run started (a self-healing cursor via the Actions
-          # API): if a tick is delayed or skipped, the next window stretches to cover the gap so no result is
-          # silently dropped. Normalize to ISO 8601 UTC so `git log --since` and the digest script agree on the
-          # exact same window. On lookup failure / no prior run, fall back to ~40m (a slightly-late tick cannot
-          # leave an uncovered sliver).
+          # Read the account's newest tweet ONCE up front. That timestamp does two jobs: it anchors the digest
+          # window to the last ACTUAL post (not the last run), and it measures the silence for the heartbeat. It
+          # MUST NOT abort the run: the step is `set -eo pipefail`, so stdout/stderr/exit go to temp files with an
+          # explicit `|| echo`, and the ISO is pulled with `|| true`. x-last-post prints only fixed, credential-free
+          # diagnostics to stderr. With no creds / on failure LAST_POST_ISO stays empty and every consumer below
+          # falls back gracefully.
+          LP_OUT="$(mktemp)"; LP_ERR="$(mktemp)"
+          npm run --silent x:lastpost >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
+          echo "x:lastpost stderr: $(tr -cd '\11\12\15\40-\176' < "$LP_ERR" | tr '\n' ' ' | head -c 300)"
+          LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | tail -1 || true)"
+          rm -f "$LP_OUT" "$LP_ERR"
+          # Window start = when we LAST ACTUALLY POSTED (newest tweet), NOT when the last run happened. The old
+          # cursor used the previous run's start, so any run that posted nothing -- an empty-science tick, or a
+          # dry_heartbeat / verification dispatch -- marched the cursor forward and science that landed between the
+          # last tweet and that no-op run was skipped FOREVER (this is why real, already-sealed results went quiet
+          # even though the survey kept producing them). Anchoring to the last post makes the window self-healing
+          # across skipped / failed / throttled runs: nothing is dropped until it has actually been reported.
+          # Fallback order: an override --since, else the last post, else the previous run start (Actions API),
+          # else ~40m. Normalize to ISO 8601 so git and the digest agree on the exact same window.
           SINCE_RAW="$OVERRIDE_SINCE"
+          if [ -z "$SINCE_RAW" ] && [ -n "$LAST_POST_ISO" ]; then SINCE_RAW="$LAST_POST_ISO"; fi
           if [ -z "$SINCE_RAW" ]; then
             SINCE_RAW="$(curl -sfL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$REPO/actions/workflows/x-post.yml/runs?status=completed&per_page=10" \
@@ -141,7 +156,7 @@ jobs:
           SINCE=""
           if [ -n "$SINCE_RAW" ]; then SINCE="$(date -u -d "$SINCE_RAW" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
           if [ -z "$SINCE" ]; then SINCE="$(date -u -d '40 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"; fi
-          echo "digest window since: $SINCE"
+          echo "digest window since: $SINCE (last actual post: ${LAST_POST_ISO:-unknown})"
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.
           RESEARCH_COMMITS="$(git log HEAD --no-merges --since="$SINCE" --pretty=%H -- web/research.json | wc -l | tr -d ' ')"
@@ -149,22 +164,12 @@ jobs:
           if [ "$RESEARCH_COMMITS" -gt 0 ]; then RESEARCH_UPDATED=1; fi
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
           # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
-          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt
-          # Silence watchdog (fallback only): if there was NO new science, read the account's newest tweet to learn
-          # how long the channel has actually been quiet (a human post also counts), and past the threshold let the
-          # digest compose an honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
+          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt || true
+          # Silence watchdog (fallback only): if there was NO new science, use the last-post time already read to
+          # see how long the channel has been quiet (a human post counts too); past the threshold, compose an
+          # honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
           if [ ! -s out/digest.txt ]; then
             HB_MIN="${HEARTBEAT_AFTER_MIN:-90}"
-            # Read the newest tweet timestamp. This MUST NOT be able to abort the run: the step runs `set -eo
-            # pipefail`, so a bare `VAR="$(... | grep | tail)"` would inherit a non-zero pipeline status whenever
-            # the read yields no match and kill the whole digest (that is what made every quiet run fail). So the
-            # read is captured to files with its exit code checked via `|| echo`, stderr surfaced (x-last-post
-            # prints only fixed, credential-free diagnostics), and the ISO extracted with `|| true` as a guard.
-            LP_OUT="$(mktemp)"; LP_ERR="$(mktemp)"
-            npm run --silent x:lastpost >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
-            echo "x:lastpost stderr: $(tr -cd '\11\12\15\40-\176' < "$LP_ERR" | tr '\n' ' ' | head -c 300)"
-            LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | tail -1 || true)"
-            rm -f "$LP_OUT" "$LP_ERR"
             SILENT_MIN=""
             if [ -n "$LAST_POST_ISO" ]; then
               EPOCH="$(date -u -d "$LAST_POST_ISO" +%s 2>/dev/null || true)"

@@ -415,7 +415,7 @@ app.post("/api/run", async (c) => {
     // Never leave the run slot claimed if the instance could not even be created:
     // release the mutex so the next request is not stuck behind a phantom run (409).
     const msg = e instanceof Error ? e.message : String(e);
-    await rigStub(c.env).finishRun({ error: `workflow could not be created: ${msg}` }).catch(() => {});
+    await rigStub(c.env).finishRun(runId, { error: `workflow could not be created: ${msg}` }).catch(() => {});
     return c.json({ error: "failed to start workflow", detail: msg }, 500);
   }
 
@@ -525,7 +525,7 @@ export default {
       await env.RIG_RUN.create({ params: { ...params, runId } });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await rigStub(env).finishRun({ error: `autonomous workflow could not be created: ${msg}` }).catch(() => {});
+      await rigStub(env).finishRun(runId, { error: `autonomous workflow could not be created: ${msg}` }).catch(() => {});
     }
   },
 };

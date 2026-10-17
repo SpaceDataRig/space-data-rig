@@ -25,3 +25,19 @@ export function selectRotationWindow(poolLen: number, targets: number, pass: num
   for (let k = 0; k < count; k++) idx.push((start + k) % poolLen);
   return idx;
 }
+
+/**
+ * Split a per-pass target budget across two sub-pools (known re-validation + blind TOI) and rotate EACH
+ * independently by `pass`, so every window draws from BOTH pools. The contiguous merged-pool window only
+ * reached the TOI band once the offset crossed the known length, so with a low/frozen cursor it kept
+ * yielding "all known, zero blind" forever. Interleaving guarantees fresh UNCONFIRMED TOI candidates from
+ * the first pass; each item keeps its own within-sub-pool index (the caller maps those to stable
+ * findingIds, so no recorded row churns). Falls back to all-known when the TOI sub-pool is empty and caps
+ * cleanly when either pool is smaller than its share.
+ */
+export function selectMixedWindow(knownLen: number, toiLen: number, targets: number, pass: number): { known: number[]; toi: number[] } {
+  if (targets <= 0) return { known: [], toi: [] };
+  const wantToi = toiLen > 0 ? Math.min(toiLen, Math.floor(targets / 2)) : 0;
+  const wantKnown = targets - wantToi;
+  return { known: selectRotationWindow(knownLen, wantKnown, pass), toi: selectRotationWindow(toiLen, wantToi, pass) };
+}

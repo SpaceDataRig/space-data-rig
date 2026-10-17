@@ -385,6 +385,11 @@ export class RigStateDO extends DurableObject<Env> {
     await this.setMeta("runId", runId);
     this.activeRun = { runId, startedAt: new Date().toISOString(), running: true };
     await this.ctx.storage.sync();
+    // audit-6: advance the rotation cursor at the atomic CLAIM, not in the workflow's finish tail. The tail
+    // never runs for a hung/aborted pass, and that deadlocked the survey on a single window; the claim is
+    // exactly-once (DO-serialized), so one pass is consumed per launched run and the catalog keeps sweeping
+    // even when a step stalls. Manual top-N runs (rotation false) never move the cursor.
+    if (params.rotation) await this.advanceSurveyPass(runId);
     await this.emitEvent(
       "data-fetch",
       "info",
@@ -394,10 +399,18 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   /** Release the run slot with a summary or an error (called by the Workflow tail). */
-  async finishRun(result: { summary?: ActiveRun["summary"]; error?: string }): Promise<void> {
+  async finishRun(runId: string, result: { summary?: ActiveRun["summary"]; error?: string }): Promise<void> {
     const current = this.activeRun;
+    // audit-6: a run may only release ITS OWN slot. After a stale-takeover starts a successor under a new
+    // runId, the abandoned (zombie) workflow can still reach this tail late; without the guard it would
+    // clobber the live successor's slot and re-open the mutex to a concurrent launch. Ignore a finish whose
+    // runId is not the currently active run.
+    if (current && current.runId && current.runId !== runId) {
+      await this.emitEvent("reporter", "info", `Ignoring finish for superseded run ${runId}; the active run is ${current.runId}.`);
+      return;
+    }
     const finished: ActiveRun = {
-      runId: current?.runId ?? this.getMeta("runId") ?? "",
+      runId: runId || current?.runId || this.getMeta("runId") || "",
       startedAt: current?.startedAt ?? new Date().toISOString(),
       running: false,
       finishedAt: new Date().toISOString(),

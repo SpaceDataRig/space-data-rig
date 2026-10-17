@@ -48,7 +48,7 @@ import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { fetchTocCandidates, toiToArchivePlanet } from "../data/toiArchive.ts";
-import { selectRotationWindow } from "../survey/rotation.ts";
+import { selectMixedWindow } from "../survey/rotation.ts";
 import { persistBundle, type EphemerisRecord } from "../bundle/bundle.ts";
 import type { ArchivePlanet, Finding, LightCurve } from "../core/types.ts";
 import type { ActiveRunSummary, BundleRecord, DashboardState } from "../core/state-types.ts";
@@ -229,13 +229,21 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           } catch (e) {
             await stub.emitEvent("data-fetch", "warn", `TOI pool unavailable this pass: ${e instanceof Error ? e.message : String(e)}; running known-only rotation.`);
           }
-          const pool = [...knownSlice, ...toiSlice];
-          if (pool.length > 0) {
-            const pass = await stub.getSurveyPass();
-            for (const k of selectRotationWindow(pool.length, params.targets, pass)) selected.push(pool[k]);
-            const nToi = selected.filter((s) => s.origin === "blind-toi").length;
-            await stub.emitEvent("data-fetch", "info", `Rotation pass ${pass}: ${selected.length} targets (${selected.length - nToi} known re-validation + ${nToi} blind TOI candidates) from a pool of ${pool.length}.`);
-          }
+          const pass = await stub.getSurveyPass();
+          // audit-6 (silence root-cause): draw from BOTH sub-pools every pass. The previous single window
+          // over the merged pool only reached the blind-TOI band once the offset crossed the known length
+          // (~48), so a low/frozen cursor kept yielding "8 known + 0 blind TOI" forever -- zero candidates
+          // for the digest's blind tier. Splitting the per-pass budget surfaces fresh UNCONFIRMED TOI
+          // candidates from pass 1; each planet keeps its own within-sub-pool index, so its stable
+          // findingId (and every existing bundle/anchor) is untouched -- no churn of recorded rows.
+          const win = selectMixedWindow(knownSlice.length, toiSlice.length, params.targets, pass);
+          for (const k of win.known) selected.push(knownSlice[k]);
+          for (const t of win.toi) selected.push(toiSlice[t]);
+          await stub.emitEvent(
+            "data-fetch",
+            "info",
+            `Rotation pass ${pass}: ${selected.length} targets (${win.known.length} known re-validation + ${win.toi.length} blind TOI candidates) from known=${knownSlice.length} + toi=${toiSlice.length}.`,
+          );
         } else {
           selected = confirmedPool.slice(0, params.targets).map((planet, index) => ({ planet, origin: "revalidation", index }));
         }
@@ -264,7 +272,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
       },
     );
     if (!selectR.ok) {
-      await stub.finishRun({ error: selectR.error });
+      await stub.finishRun(runId, { error: selectR.error });
       await stub.emitEvent("reporter", "error", `Run ${runId} failed during target selection: ${selectR.error}`);
       return { targets: 0, accepted: 0, review: 0, rejected: 0, bundles: 0, catalogSource: "unavailable" };
     }
@@ -649,10 +657,10 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         catalogSource,
         toiCount: targets.filter((t) => t.origin === "blind-toi").length,
       };
-      // Advance the rotation cursor once per completed autonomous pass (idempotent by runId), so the
-      // next cron tick shows a NEW window of the pool and the catalog grows across time.
-      if (params.rotation && targets.length > 0) await stub.advanceSurveyPass(runId);
-      await stub.finishRun({ summary: out });
+      // audit-6: the rotation cursor advances when the run CLAIMS the slot (RigStateDO.startRunIfIdle), NOT
+      // here -- a pass that hangs before this tail never reached it, which deadlocked the survey on one
+      // window. finishRun is now runId-scoped so a stale run finishing late cannot release a live successor.
+      await stub.finishRun(runId, { summary: out });
       await stub.emitEvent(
         "reporter",
         "result",

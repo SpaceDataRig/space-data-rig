@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { selectRotationWindow } from "../src/survey/rotation.ts";
+import { selectMixedWindow, selectRotationWindow } from "../src/survey/rotation.ts";
 import { toiToArchivePlanet, type TocCandidate } from "../src/data/toiArchive.ts";
 import { critique } from "../src/seats/seats.ts";
 import { composeBundle, hashManifest, hashScience, type BundleManifest } from "../src/bundle/bundle.ts";
@@ -132,4 +132,43 @@ test("two findings identical except for origin compose to the SAME bundleHash, a
   );
   // sanity: hashManifest recomputes the same value from the serialized manifest (no hidden origin leak).
   assert.equal(await hashManifest(withOrigin.manifest), withOrigin.hash);
+});
+
+// ---- 5. mixed known+TOI window (audit-6: the feed must not starve on a low/frozen cursor) -------
+//
+// The old selection ran ONE contiguous window over the merged [known ++ TOI] pool, so the blind-TOI band
+// (indices >= known length, ~48 in production) was only reached at pass >=6. With the cursor pinned low by
+// hung passes, every pass yielded "8 known + 0 blind TOI" and the digest's blind tier had NO source. These
+// tests pin the fix: each pass draws from BOTH sub-pools, independently rotated, with stable per-pool indices.
+
+test("selectMixedWindow draws from BOTH sub-pools on the FIRST pass so blind candidates appear immediately", () => {
+  const win = selectMixedWindow(48, 54, 8, 1); // production-shaped: 48 known + 54 TOI, 8 targets
+  assert.equal(win.known.length, 4, "half the per-pass budget comes from the known sub-pool");
+  assert.equal(win.toi.length, 4, "half comes from the TOI sub-pool -- blind candidates from pass 1, not pass 6");
+  for (const k of win.known) assert.ok(k >= 0 && k < 48, `known index ${k} must stay inside the known pool`);
+  for (const t of win.toi) assert.ok(t >= 0 && t < 54, `toi index ${t} must stay inside the TOI pool`);
+});
+
+test("selectMixedWindow is deterministic and sweeps BOTH pools across passes", () => {
+  assert.deepEqual(selectMixedWindow(48, 54, 8, 3), selectMixedWindow(48, 54, 8, 3), "same inputs -> same window");
+  assert.notDeepEqual(selectMixedWindow(48, 54, 8, 0), selectMixedWindow(48, 54, 8, 1), "consecutive passes shift both sub-windows");
+  const knownU = new Set<number>();
+  const toiU = new Set<number>();
+  for (let pass = 0; pass < 12; pass++) {
+    const w = selectMixedWindow(48, 54, 8, pass);
+    for (const k of w.known) knownU.add(k);
+    for (const t of w.toi) toiU.add(t);
+  }
+  assert.ok(knownU.size >= 40, `12 passes should cover most of a 48-known pool, covered ${knownU.size}`);
+  assert.ok(toiU.size >= 40, `12 passes should cover most of a 54-TOI pool, covered ${toiU.size}`);
+});
+
+test("selectMixedWindow falls back to all-known with no TOI, caps a small TOI pool, and handles zero targets", () => {
+  const noToi = selectMixedWindow(48, 0, 8, 1);
+  assert.equal(noToi.toi.length, 0, "an empty TOI sub-pool yields no blind slots");
+  assert.equal(noToi.known.length, 8, "the whole budget goes to known when no TOI is available");
+  const tiny = selectMixedWindow(48, 3, 8, 1); // TOI smaller than its share
+  assert.equal(tiny.toi.length, 3, "the TOI share caps at the pool size");
+  assert.equal(tiny.known.length, 5, "known absorbs targets minus the capped TOI share");
+  assert.deepEqual(selectMixedWindow(48, 54, 0, 1), { known: [], toi: [] }, "zero targets -> empty window");
 });

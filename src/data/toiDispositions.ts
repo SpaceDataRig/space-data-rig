@@ -76,10 +76,14 @@ export function parseSexagesimal(value: string): number {
   return sign * (deg + min / 60 + sec / 3600);
 }
 
-/** RA is always positive degrees (02:31:51 -> ~38 deg); Dec carries its own sign. */
+/** RA is sexagesimal HOURS (right ascension is measured in h m s, not degrees): "02:31:51" is 2.53h =
+ *  37.96 deg. We convert hours -> degrees with x15 and require the result to land in [0,360). Passing the raw
+ *  hour value through as degrees (the pre-x15 mistake) collapses every host into the 0-24 deg strip and points
+ *  every downstream cone / cross-match at the wrong sky, so the x15 is load-bearing, not cosmetic. */
 function parseRa(value: string): number {
-  const d = parseSexagesimal(value);
-  return Number.isFinite(d) && d >= 0 && d < 360 ? d : NaN;
+  const hours = parseSexagesimal(value);
+  if (!Number.isFinite(hours) || hours < 0 || hours >= 24) return NaN;
+  return hours * 15;
 }
 
 /** Classify one row's two disposition strings into our conservative label. */

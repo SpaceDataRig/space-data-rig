@@ -53,8 +53,10 @@ test("parseToiTable reads labels, sexagesimal coords, and quoted sectors", () =>
   const fp = rows.find((r) => r.tic === 22712134)!;
   assert.equal(fp.label, "blend-or-fp");
   assert.deepEqual(fp.sectors, [18, 58]);
-  assert.ok(Math.abs(fp.ra - (2 + 31 / 60 + 51.31 / 3600)) < 1e-4);
+  // RA is HOURS: "02:31:51.31" -> 2.5309 h -> x15 = 37.964 deg. Dec is DEGREES: "+28:57:57.64" -> 28.966 deg.
+  assert.ok(Math.abs(fp.ra - (2 + 31 / 60 + 51.31 / 3600) * 15) < 1e-4);
   assert.ok(Math.abs(fp.dec - (28 + 57 / 60 + 57.64 / 3600)) < 1e-4);
+  assert.ok(fp.ra > 24, "RA in degrees must exceed the 0-24 hour range once x15 is applied (guards against the hours-as-degrees regression)");
   assert.equal(rows.find((r) => r.tic === 400000000)!.label, "blend-or-fp"); // EB
   assert.equal(rows.find((r) => r.tic === 261136679)!.label, "known-planet"); // KP
   assert.equal(rows.find((r) => r.tic === 500000000)!.label, "other"); // CP/APC

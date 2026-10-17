@@ -72,6 +72,10 @@ export interface DigestInput {
   research: DigestResearch | null;
   /** Did web/research.json land in this window? The workflow decides (via git) and passes it in. */
   researchUpdated: boolean;
+  /** Minutes since the channel last posted a tweet (from the workflow's X read). Unknown -> heartbeat disabled. */
+  silentMinutes?: number;
+  /** A heartbeat fires only when silentMinutes >= this. 0/absent disables it, so the science path is unchanged. */
+  heartbeatAfterMinutes?: number;
 }
 
 function within(iso: string | undefined, start: number, end: number): boolean {
@@ -205,6 +209,52 @@ function proofBlock(char: Characterization, txUrl: string | null): string {
 }
 
 /**
+ * The silence heartbeat -- the documented FALLBACK, reached only when the science tiers above had nothing new to
+ * report AND the workflow reports the channel has been quiet past its threshold. It states the honest situation
+ * (the survey is still running; nothing is newly sealed on-chain or newly flagged) so a quiet stretch is not
+ * mistaken for downtime. Every figure is a current catalog fact already in the inputs (total blind candidates held
+ * for follow-up, results sealed so far, the standing star characterization) -- it never claims a discovery and
+ * never mentions spend. It links only the live rig and (when a number is cited) research.json; no transaction,
+ * since nothing was newly sealed. Disabled unless a threshold is supplied, so the default science path is byte-for-byte unchanged.
+ */
+function heartbeat(input: DigestInput): string {
+  const findings = Array.isArray(input.findings) ? input.findings : [];
+  const ledger = Array.isArray(input.ledger) ? input.ledger : [];
+  const survey = input.research?.survey;
+  const stars = survey && survey.stars != null && Number.isFinite(survey.stars) ? survey.stars : null;
+
+  const body: string[] = [
+    "The survey is running on its own against public NASA TESS light curves, and there is nothing newly sealed on-chain or newly flagged to report at this check.",
+  ];
+  if (stars != null) body.push(`The detector keeps operating against its characterization on ${stars} real public TESS-SPOC stars.`);
+  const blindTotal = findings.filter((f) => f && f.origin === "blind-toi").length;
+  body.push(
+    blindTotal > 0
+      ? `The catalog currently records ${blindTotal} UNCONFIRMED blind candidate${blindTotal === 1 ? "" : "s"}, held for human follow-up rather than any claim.`
+      : "The catalog currently holds no UNCONFIRMED blind candidate awaiting follow-up.",
+  );
+  const sealed = ledger.filter((e) => e && e.signature && e.anchoredAt);
+  body.push(
+    sealed.length > 0
+      ? `${sealed.length} analysis result${sealed.length === 1 ? " has" : "s have"} been sealed on-chain so far.`
+      : "No analysis has been sealed on-chain yet.",
+  );
+  body.push("The next update posts here on its own once there is a new result or candidate to report.");
+
+  const proof: string[] = [];
+  if (stars != null) proof.push(`- Numbers + data (research.json): ${URL_RESEARCH}`);
+  proof.push(`- Live rig + full methods: ${URL_LIVE}`);
+
+  return clip(
+    blocks(
+      "Space Data Rig status.",
+      body.join("\n"),
+      `Proof:\n${proof.join("\n")}`,
+    ),
+  );
+}
+
+/**
  * Return the single most important honest science post for the window -- a LONG-FORM Premium summary (result +
  * key characterized numbers + honesty caveat + link), or "" when there is nothing new to report (the workflow
  * then posts NOTHING). Priority: (1) results sealed on-chain, (2) newly flagged UNCONFIRMED blind candidates,
@@ -303,6 +353,13 @@ export function composeDigest(input: DigestInput): string {
     );
   }
 
+  // (4) Silence heartbeat (documented FALLBACK, only when nothing new was reportable above). It fires only when
+  //     the workflow supplies BOTH a silence gap and a threshold, so the default science-only path is unchanged.
+  const hb = Number(input.heartbeatAfterMinutes);
+  const silent = Number(input.silentMinutes);
+  if (Number.isFinite(hb) && hb > 0 && Number.isFinite(silent) && silent >= hb) {
+    return heartbeat(input);
+  }
   return ""; // nothing new and honest to report this window -> the workflow posts nothing
 }
 
@@ -341,6 +398,10 @@ async function main(): Promise<void> {
   const outPath = arg("out", "");
   const ru = arg("research-updated", "");
   const researchUpdated = ru === "1" || ru.toLowerCase() === "true";
+  const silentRaw = arg("silent-min", "");
+  const silentMinutes = silentRaw === "" ? Number.NaN : Number(silentRaw);
+  const hbRaw = arg("heartbeat-after-min", "");
+  const heartbeatAfterMinutes = hbRaw === "" ? 0 : Number(hbRaw);
 
   const FALLBACK_MS = 40 * 60 * 1000; // ~40m (cadence is 30m), so a slightly-late tick cannot leave a gap
   const endParsed = untilArg ? new Date(untilArg) : new Date();
@@ -377,6 +438,8 @@ async function main(): Promise<void> {
     findings,
     research,
     researchUpdated,
+    silentMinutes,
+    heartbeatAfterMinutes,
   });
 
   console.error(

@@ -10,8 +10,11 @@ name: x-post (half-hourly English science digest)
 # up to X's 25,000-char long-post ceiling). No image (AI illustration is generated only inside an agent session,
 # never in CI).
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
-# English-only is enforced twice). A window with NO new result posts NOTHING (no empty tweet), and it NEVER
-# claims a discovered planet -- a blind candidate is always "UNCONFIRMED ... for human follow-up".
+# English-only is enforced twice). A window with NO new result normally posts NOTHING (no empty tweet) -- UNLESS
+# the channel has been silent past HEARTBEAT_AFTER_MIN (default 90m), when it falls back to an honest status
+# heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet) so a quiet stretch is not
+# mistaken for downtime. It NEVER claims a discovered planet -- a blind candidate is always
+# "UNCONFIRMED ... for human follow-up".
 
 # Loop / spam guards:
 #  - No push trigger at all: committing docs/reports no longer posts per-commit; the half-hourly digest is the
@@ -76,6 +79,9 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          # Silence watchdog: when a scheduled run finds NO new science AND the account has been quiet this many
+          # minutes, composeDigest falls back to an honest status heartbeat so a long gap is not read as downtime.
+          HEARTBEAT_AFTER_MIN: "90"
         run: |
           set -uo pipefail
           if [ -n "$OVERRIDE_TEXT" ]; then
@@ -109,6 +115,24 @@ jobs:
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
           # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
           npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt
+          # Silence watchdog (fallback only): if there was NO new science, read the account's newest tweet to learn
+          # how long the channel has actually been quiet (a human post also counts), and past the threshold let the
+          # digest compose an honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
+          if [ ! -s out/digest.txt ]; then
+            HB_MIN="${HEARTBEAT_AFTER_MIN:-90}"
+            LAST_POST_ISO="$(npm run --silent x:lastpost 2>/dev/null | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' | tail -1)"
+            SILENT_MIN=""
+            if [ -n "$LAST_POST_ISO" ]; then
+              EPOCH="$(date -u -d "$LAST_POST_ISO" +%s 2>/dev/null || true)"
+              if [ -n "$EPOCH" ]; then SILENT_MIN="$(( ( $(date -u +%s) - EPOCH ) / 60 ))"; fi
+            fi
+            if [ -n "$SILENT_MIN" ]; then
+              echo "no new science; channel silent ${SILENT_MIN} min (heartbeat threshold ${HB_MIN})"
+              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --silent-min "$SILENT_MIN" --heartbeat-after-min "$HB_MIN" --out out/digest.txt
+            else
+              echo "no new science; could not read last-post time (X read unavailable) -> skipping, no heartbeat"
+            fi
+          fi
           if [ -s out/digest.txt ]; then
             # strip any non-ASCII once more; English-only is enforced in the posting script too
             TEXT="$(printf '%s' "$(cat out/digest.txt)" | tr -cd '\11\12\15\40-\176')"

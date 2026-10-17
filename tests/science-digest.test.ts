@@ -5,7 +5,10 @@
 // in main(), which the entry guard keeps from running on import).
 //
 // The load-bearing properties are the HONESTY RED LINES, so those are what we pin:
-//  - No new result in the window -> "" (the workflow then posts NOTHING; never an empty/noise tweet).
+//  - No new result in the window -> "" (the workflow then posts NOTHING; never an empty/noise tweet) -- UNLESS a
+//    silence-heartbeat threshold (heartbeatAfterMinutes) is supplied AND the channel has been silent that long,
+//    when it instead emits an honest status note. With no threshold (the default) the post-nothing behavior is
+//    byte-for-byte unchanged; the heartbeat never claims a discovery and links no transaction (nothing new sealed).
 //  - A blind candidate is ALWAYS "UNCONFIRMED ... for human follow-up", never a discovery.
 //  - Only blind-TOI findings (contractually recovered on real photometry) may say "real TESS photometry".
 //  - Purity is cited as the LOWER bound it is; numbers carry their basis.
@@ -319,4 +322,53 @@ test("proof links: a blind candidate anchors nothing, so it cites no on-chain tx
   assert.ok(!/On-chain transaction/.test(text), "the blind-candidate path has no on-chain anchor");
   assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
   assertTweetSafe(text);
+});
+
+// ---- silence heartbeat (the documented FALLBACK when nothing new is reportable but the channel has gone quiet) ---
+
+test("heartbeat: fires only when silent >= threshold AND nothing new; states the honest situation", () => {
+  const t = composeDigest(input({ research: RICH_RESEARCH, silentMinutes: 200, heartbeatAfterMinutes: 90 }));
+  assert.match(t, /Space Data Rig status\./);
+  assert.match(t, /running on its own against public NASA TESS/);
+  assert.match(t, /nothing newly sealed on-chain or newly flagged/);
+  assert.match(t, /characterization on 204 real public TESS-SPOC stars/);
+  assert.match(t, /no UNCONFIRMED blind candidate/);
+  assert.match(t, /No analysis has been sealed on-chain yet\./);
+  assert.match(t, /spacedatarig\.app$/);
+  assert.ok(t.split("\n\n").length >= 3, "head + situation body + proof block");
+  assert.ok(!/On-chain transaction/.test(t), "a heartbeat seals nothing, so it cites no tx");
+  assertTweetSafe(t);
+});
+
+test("heartbeat: suppressed below the threshold, when the gap is unknown, and when disabled (0/absent)", () => {
+  assert.equal(composeDigest(input({ silentMinutes: 30, heartbeatAfterMinutes: 90 })), "", "under threshold -> stays silent");
+  assert.equal(composeDigest(input({ heartbeatAfterMinutes: 90 })), "", "no gap supplied -> stays silent");
+  assert.equal(composeDigest(input({ silentMinutes: 999 })), "", "no threshold supplied -> heartbeat disabled");
+  assert.equal(composeDigest(input({ silentMinutes: 999, heartbeatAfterMinutes: 0 })), "", "threshold 0 -> disabled");
+});
+
+test("heartbeat: reports catalog counts and does NOT reuse the out-of-window science tiers", () => {
+  const t = composeDigest(input({
+    findings: [blind("b1", "TIC 1", BEFORE), blind("b2", "TIC 2", BEFORE)],
+    ledger: [anchored("a1", BEFORE)],
+    silentMinutes: 100,
+    heartbeatAfterMinutes: 90,
+  }));
+  assert.ok(!/flagged .* UNCONFIRMED transit candidate/.test(t), "blind rows OUTSIDE the window must not trigger the science tier");
+  assert.ok(!/re-verified|reproducible/.test(t), "an anchored row outside the window must not trigger priority 1");
+  assert.match(t, /records 2 UNCONFIRMED blind candidates/);
+  assert.match(t, /1 analysis result has been sealed on-chain so far/);
+  assertTweetSafe(t);
+});
+
+test("heartbeat: a real new result always wins -- a huge silence does not force a status post", () => {
+  const t = composeDigest(input({
+    ledger: [anchored("f1")],
+    findings: [knownPlanet("f1", "HD 189733 b", 2.2185)],
+    silentMinutes: 100000,
+    heartbeatAfterMinutes: 90,
+  }));
+  assert.match(t, /re-verified the known exoplanet HD 189733 b/);
+  assert.ok(!/Space Data Rig status\./.test(t), "the science path is chosen, not the heartbeat");
+  assertTweetSafe(t);
 });

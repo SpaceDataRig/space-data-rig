@@ -48,6 +48,17 @@ the gate that was added to stop stale numbers -- so they were fixed, not worked 
   reinterpreted. Re-running p88/p89 to earn real stamps would change published science numbers, so it is
   left as an explicit decision rather than done as a side effect of a build fix.
 
+**Measured coverage of the gate, stated plainly because the mechanism existing is not the same as it
+covering anything.** Of the 48 published reports: 4 carry re-hashed input checksums and are genuinely
+verified (p59, p82, p84, p85); 2 carry a timestamp and zero checksums (p88, p89); 41 carry no stamp at
+all. Seven generators call `buildStamp`, so three reports (p81, p88, p89) would earn a real stamp from a
+re-run alone -- but each is a network run that rewrites published numbers, and p89 has no cache and writes
+straight into `reports/`, so none is safe to re-run opportunistically. The remaining 40 need their
+generator wired first. The gate is non-blocking for those by design (failing the build for 44 legacy
+reports would be a false-positive machine), so the honest state is: the alarm is proven to ring, and it
+currently watches 4 reports -- with the other 44 saying so on their own page rather than sitting silently
+inside a count that reads as checked.
+
 Tests 586 to 598 (+7 freshness, +2 tap, +1 reachability invariant, +2 verified-vs-stamped); `typecheck:all` and
 `lint --max-warnings 0` exit 0; p86 publishes 48 fragments, 4 verified, 6 stamped, 0 stale, exit 0 -- where it
 previously exited 1 on a false positive. Deployed and verified live: `/health` gitSha equals HEAD,

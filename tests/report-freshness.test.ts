@@ -207,3 +207,33 @@ test("evaluateAgainst: one hashed input alongside a hash-less one still verifies
   const bad = evaluateAgainst(s, { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "b.jsonl": "zzz" }) });
   assert.equal(bad.stale, true);
 });
+
+test("the published builtAtGitSha is reachable from HEAD, never a dangling rewritten commit", async () => {
+  // REGRESSION. p86 was built, then the commit carrying its output was AMENDED, so web/reports/index.json
+  // went out naming a commit that lived only in the local object database and was never pushed -- a
+  // provenance field that resolves to nothing on the remote, which is worse than naming no commit at all.
+  // Rebuilding after the rewrite is the fix; this pins the invariant so an amend or rebase after a build
+  // cannot silently publish an unreachable SHA again. Note the field legitimately trails HEAD by the one
+  // commit that ships the artifact (see shaNote in p86) -- a parent IS an ancestor, so that still passes.
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { execFileSync } = await import("node:child_process");
+  if (!existsSync("web/reports/index.json")) return; // not built on this checkout
+  const idx = JSON.parse(readFileSync("web/reports/index.json", "utf8")) as { builtAtGitSha?: string };
+  const sha = idx.builtAtGitSha;
+  if (!sha || !/^[0-9a-f]{40}$/.test(sha)) return; // pre-rename artifact, or built with git unavailable
+  let type = "";
+  try {
+    type = execFileSync("git", ["cat-file", "-t", sha], { encoding: "utf8" }).trim();
+  } catch {
+    return; // shallow clone or no git: the object is legitimately absent, nothing to assert
+  }
+  if (type !== "commit") return;
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { encoding: "utf8" });
+  } catch {
+    assert.fail(
+      `web/reports/index.json publishes builtAtGitSha ${sha.slice(0, 12)}, which is not an ancestor of HEAD. ` +
+        "Re-run npm run p86:report-library after any amend/rebase so the artifact never names an unreachable commit.",
+    );
+  }
+});

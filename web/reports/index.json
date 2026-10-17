@@ -1,7 +1,7 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-17T15:45:43.886Z",
-  "builtAtGitSha": "e21376f3f738d12376e340bd8f3d80fa67cf1514",
+  "generatedAt": "2026-10-17T15:49:32.786Z",
+  "builtAtGitSha": "39177d1e8b4d0f8ea7389176d9ff3f98a89497e2",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment.",

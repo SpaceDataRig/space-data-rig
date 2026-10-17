@@ -501,6 +501,30 @@ export default {
    * inside the workflow, so enabling the schedule never costs SOL by itself.
    */
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    // Reliable X-post trigger. GitHub throttles the x-post workflow's own `on.schedule` (observed 2-5h
+    // gaps), so the digest could fall silent even though THIS cron fires on time. Twice an hour, if a
+    // dispatch token is configured, wake x-post.yml; its window is anchored to the last ACTUAL post and it
+    // self-heals, so an extra wake never double-posts. Runs before the AUTO_RESEARCH guard (posting must
+    // not depend on research being on), is inert without the secret, and swallows failures -- the workflow's
+    // own schedule remains a backup.
+    const wakeMinute = new Date(controller.scheduledTime).getUTCMinutes();
+    if (env.GH_XPOST_DISPATCH_TOKEN && (wakeMinute === 0 || wakeMinute === 30)) {
+      try {
+        await fetch("https://api.github.com/repos/SpaceDataRig/space-data-rig/actions/workflows/x-post.yml/dispatches", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${env.GH_XPOST_DISPATCH_TOKEN}`,
+            accept: "application/vnd.github+json",
+            "x-github-api-version": "2022-11-28",
+            "content-type": "application/json",
+            "user-agent": "space-data-rig",
+          },
+          body: JSON.stringify({ ref: "main", inputs: {} }),
+        });
+      } catch {
+        /* best-effort wake; the workflow's own `on.schedule` remains a backup */
+      }
+    }
     if (env.AUTO_RESEARCH !== "1") return;
     const targets = clampInt(env.AUTO_RESEARCH_TARGETS, 1, 8, 3);
     const maxTmag = clampFloat(env.AUTO_RESEARCH_TMAG, 0, 20, 10);

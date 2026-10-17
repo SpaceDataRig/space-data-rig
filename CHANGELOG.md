@@ -77,6 +77,18 @@ newest tweet (the same single up-front X read that feeds the heartbeat), falling
 run / ~40m, so the range is self-healing across skipped, failed OR throttled runs -- nothing is dropped until it
 has actually been reported. CI-only.
 
+### Reliable X-post trigger from the Cloudflare cron (2026-10-17)
+GitHub throttles the x-post workflow's own `on.schedule` (observed 2-5h gaps), so the feed could go silent even
+while the survey kept producing results -- and the silence heartbeat could not fire because it lives inside the
+skipped run. The dependable clock is this app's Cloudflare `*/15` cron, which fires on time. Twice an hour (at
+:00 / :30) the `scheduled` handler now POSTs a workflow_dispatch to wake x-post.yml -- but ONLY if the
+`GH_XPOST_DISPATCH_TOKEN` secret (a fine-grained GitHub PAT with Actions:write on this repo, nothing more) is
+present. The dispatch merely starts a run; it carries no content and cannot post by itself, and the digest window
+is anchored to the last actual post and self-heals, so an extra wake never double-posts or drops science. Inert
+without the secret (this code changes nothing until it is provisioned), failures are swallowed so the research
+tick is never blocked, and GitHub's own schedule stays as a backup. This is a Worker change -> requires wrangler
+deploy to take effect.
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

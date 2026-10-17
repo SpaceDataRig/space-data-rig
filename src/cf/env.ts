@@ -127,4 +127,12 @@ export interface Env {
    * byte-compare of static assets. Absent on deployments made before the secret existed.
    */
   GIT_SHA?: string;
+  /**
+   * GitHub fine-grained PAT with `Actions: write` on SpaceDataRig/space-data-rig ONLY. Set with
+   * `wrangler secret put GH_XPOST_DISPATCH_TOKEN`. When present, the every-15-minute cron wakes the x-post
+   * digest workflow twice an hour (GitHub throttles that workflow's own `on.schedule`, so the feed
+   * could otherwise go silent for hours). Absent -> the wake is inert and nothing changes. The token
+   * cannot read secrets, push code, or touch the chain -- it can only trigger a workflow run.
+   */
+  GH_XPOST_DISPATCH_TOKEN?: string;
 }

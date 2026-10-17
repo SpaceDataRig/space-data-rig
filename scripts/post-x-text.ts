@@ -15,6 +15,7 @@
 // Usage:
 //   npm run x:post -- --text "English update ..."        # dry run (no keys) / post (with keys)
 //   npm run x:post -- --text-file out/tweet.txt
+//   npm run x:post -- --text "..." --max-len 25000       # Premium long-post probe (default ceiling is 280)
 // Optional: X_BEARER-free; only the four OAuth1.0a values are required.
 
 import { readFileSync } from "node:fs";
@@ -47,6 +48,14 @@ if (!text) {
 }
 text = text.replace(/\s+/g, " ").trim();
 
+// Length ceiling. The default 280 (the standard post limit) keeps every automatic digest short and safe.
+// A Premium ("blue") author MAY pass --max-len up to X's 25,000-char long-post ceiling; we clamp to that and
+// never exceed it. Whether the official /2/tweets endpoint actually accepts >280 for a Premium author is the
+// server's call, not ours -- an over-long body still fails cleanly at send time with X's own length error, so
+// this clamp only ever prevents an obviously-too-long body from being sent.
+const maxArg = Number(arg("max-len", "280"));
+const MAXLEN = Number.isFinite(maxArg) && maxArg > 0 ? Math.min(Math.floor(maxArg), 25000) : 280;
+
 if (!text) {
   console.error("x:post: no text supplied (use --text \"...\" or --text-file path)");
   process.exitCode = 1;
@@ -54,8 +63,8 @@ if (!text) {
   // English-only guard: refuse anything with a non-ASCII character rather than silently post it.
   console.error("x:post: REFUSED -- text contains a non-ASCII character; policy is English-only.");
   process.exitCode = 1;
-} else if (text.length > 280) {
-  text = `${text.slice(0, 277)}...`;
+} else if (text.length > MAXLEN) {
+  text = `${text.slice(0, MAXLEN - 3).trimEnd()}...`;
 }
 
 const ready = Boolean(API_KEY && API_SECRET && TOKEN && TOKEN_SECRET);
@@ -68,7 +77,7 @@ if (process.exitCode === 1) {
   console.log("---");
   console.log(text);
   console.log("---");
-  console.log(`length=${text.length}/280`);
+  console.log(`length=${text.length}/${MAXLEN}`);
 } else {
   const method = "POST";
   const url = "https://api.twitter.com/2/tweets";

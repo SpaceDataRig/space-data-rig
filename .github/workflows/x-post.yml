@@ -31,6 +31,10 @@ on:
         description: "override the look-back window start (ISO 8601, or a git date like '2 hours ago')"
         required: false
         default: ""
+      maxlen:
+        description: "length ceiling for a manual text override (blank = 280; a Premium author may probe up to 25000)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -64,6 +68,7 @@ jobs:
           REPO: ${{ github.repository }}
           OVERRIDE_TEXT: ${{ github.event.inputs.text }}
           OVERRIDE_SINCE: ${{ github.event.inputs.since }}
+          OVERRIDE_MAXLEN: ${{ github.event.inputs.maxlen }}
           # credentials come ONLY from secrets; absent -> the script dry-runs and sends nothing
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
@@ -73,8 +78,10 @@ jobs:
           set -uo pipefail
           if [ -n "$OVERRIDE_TEXT" ]; then
             TEXT="$(printf '%s' "$OVERRIDE_TEXT" | tr -cd '\11\12\15\40-\176')"
-            echo "posting override: $TEXT"
-            npm run x:post -- --text "$TEXT"
+            MAXLEN_ARG=""
+            if [ -n "$OVERRIDE_MAXLEN" ]; then MAXLEN_ARG="--max-len=$OVERRIDE_MAXLEN"; fi
+            echo "posting override (maxlen=${OVERRIDE_MAXLEN:-280}): $TEXT"
+            npm run x:post -- --text "$TEXT" $MAXLEN_ARG
             exit 0
           fi
           # Window start = when the PREVIOUS completed x-post run started (a self-healing cursor via the Actions

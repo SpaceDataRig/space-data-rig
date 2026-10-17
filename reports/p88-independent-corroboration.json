@@ -1,0 +1,179 @@
+{
+  "schema": "sdr-p88-independent-corroboration/1",
+  "generatedAt": "2026-10-17T11:23:22.053Z",
+  "instrument": "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
+  "labelSource": "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
+  "population": {
+    "positives": 7,
+    "negatives": 10,
+    "withGaiaData": 6,
+    "periodMatched": 0
+  },
+  "metrics": {
+    "n": 17,
+    "nBlend": 10,
+    "nPlanet": 7,
+    "cm": {
+      "trueVeto": 0,
+      "missedBlend": 10,
+      "falseVeto": 0,
+      "trueKeep": 7
+    },
+    "vetoPower": 0,
+    "vetoPowerCI": [
+      0,
+      0.2775401687666166
+    ],
+    "falseVetoRate": 0,
+    "falseVetoCI": [
+      0,
+      0.35433884297520657
+    ],
+    "vetoPrecision": null
+  },
+  "verdict": {
+    "safeToGate": false,
+    "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered",
+    "auc": null
+  },
+  "falseVeto": 0,
+  "discoveryClaim": false,
+  "cases": [
+    {
+      "id": "2197.01",
+      "isBlend": false,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7059.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7907.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "5087.01",
+      "isBlend": false,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "6551.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "2125.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1282.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1340.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1421.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1424.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1520.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1637.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "5954.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "6065.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7071.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "2477.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1285.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    }
+  ]
+}

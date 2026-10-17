@@ -1,0 +1,91 @@
+{
+  "schema": "sdr-gaia-rv/1",
+  "generatedAt": "2026-10-17T11:17:49.319Z",
+  "source": "Gaia DR3 TAP (gea.esac.esa.int): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
+  "positiveControl": "confirmed transiting planets (ExoFOP KP labels) -- a real planet's transit period must NOT be corroborated as a stellar-mass EB",
+  "considered": 19,
+  "withGaiaData": 5,
+  "count": 5,
+  "cases": [
+    {
+      "plName": "2197.01",
+      "hostname": "2197.01",
+      "tic": 389352124,
+      "periodDays": 4.954648657375356,
+      "gaiaSourceId": "6681720724498802176",
+      "orbit": null,
+      "epochs": [],
+      "flags": {
+        "hasRvs": true,
+        "nonSingleStarBits": 0
+      },
+      "ebExclusion": "unknown",
+      "blendCorroborated": false,
+      "periodMatched": false
+    },
+    {
+      "plName": "5087.01",
+      "hostname": "5087.01",
+      "tic": 18310799,
+      "periodDays": 17.3070631,
+      "gaiaSourceId": "145916050683920128",
+      "orbit": null,
+      "epochs": [],
+      "flags": {
+        "hasRvs": true,
+        "nonSingleStarBits": 0
+      },
+      "ebExclusion": "unknown",
+      "blendCorroborated": false,
+      "periodMatched": false
+    },
+    {
+      "plName": "102.01",
+      "hostname": "102.01",
+      "tic": 149603524,
+      "periodDays": 4.411937227697335,
+      "gaiaSourceId": "4756649415309914240",
+      "orbit": null,
+      "epochs": [],
+      "flags": {
+        "hasRvs": true,
+        "nonSingleStarBits": 0
+      },
+      "ebExclusion": "unknown",
+      "blendCorroborated": false,
+      "periodMatched": false
+    },
+    {
+      "plName": "264.01",
+      "hostname": "264.01",
+      "tic": 122612091,
+      "periodDays": 2.216743559386217,
+      "gaiaSourceId": "5065640460769428224",
+      "orbit": null,
+      "epochs": [],
+      "flags": {
+        "hasRvs": true,
+        "nonSingleStarBits": 0
+      },
+      "ebExclusion": "unknown",
+      "blendCorroborated": false,
+      "periodMatched": false
+    },
+    {
+      "plName": "4538.03",
+      "hostname": "4538.03",
+      "tic": 262715204,
+      "periodDays": 10.453474801618311,
+      "gaiaSourceId": "2657374606238804992",
+      "orbit": null,
+      "epochs": [],
+      "flags": {
+        "hasRvs": true,
+        "nonSingleStarBits": 0
+      },
+      "ebExclusion": "unknown",
+      "blendCorroborated": false,
+      "periodMatched": false
+    }
+  ]
+}

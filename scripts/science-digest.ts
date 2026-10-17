@@ -23,6 +23,22 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const SITE = "spacedatarig.app";
+// Proof-link targets. Every one is a real, committed artifact served from the production site (Cloudflare
+// static assets) and was verified reachable AND corresponding to the numbers the digest cites:
+//   research.json       -- the authoritative bundle behind every cited number (stars/completeness/purity/recall).
+//   results-figure.svg  -- P37: Panel A completeness-vs-depth (the TypeScript box-fit BLS series IS
+//                          survey.completeness), Panel B blind purity as raw TP/FP (the survey.purity LOWER
+//                          bound). Linked ONLY when a completeness/purity number is cited, so it always corresponds.
+//   p49-blind-test.html -- the sealed-key blind test; its recall/precision match research.blindTest exactly.
+//                          Linked ONLY when the blind-test numbers are cited.
+// DELIBERATELY EXCLUDED: P47 (completeness-grid) is a DIFFERENT experiment (960 injections into 20 curves) and
+// does not match survey.completeness, and milestone-figure.svg depicts P62-P65 (joint-fold/soft-score/telemetry/
+// audit), not these numbers. A proof link must correspond to the exact number it is offered for, never merely
+// sound related -- so neither is linked here.
+const URL_LIVE = `https://${SITE}`; // bare domain, no trailing slash: the post ends on it (see tests)
+const URL_RESEARCH = `https://${SITE}/research.json`;
+const URL_RESULTS_FIG = `https://${SITE}/results-figure.svg`;
+const URL_P49 = `https://${SITE}/reports/p49-blind-test.html`;
 
 export interface DigestLedgerEntry {
   findingId?: string;
@@ -65,13 +81,32 @@ function within(iso: string | undefined, start: number, end: number): boolean {
 }
 
 /** X's long-post ceiling for a Premium author, in weighted chars (CJK/emoji count 2, any URL counts 23). Our
- *  text is pure ASCII with a single short bare-domain URL, so the naive .length sits far below the weighted
- *  count and far below this cap; a composed digest is ~800 chars. This is a hard safety net (never a target),
- *  mirroring the clamp in post-x-text.ts so composeDigest can never overflow. */
+ *  text is pure ASCII; even with several proof-link URLs the weighted count stays far below this cap (a composed
+ *  digest is ~1,200 chars). This is a hard safety net (never a target), mirroring the clamp in post-x-text.ts so
+ *  composeDigest can never overflow.
+ *
+ *  clip() PRESERVES the intentional line structure of the long-form post -- X renders newlines (it has no rich
+ *  text, so layout is newlines + ASCII only). It normalizes CRLF->LF, collapses runs of spaces/tabs WITHIN each
+ *  line, trims each line, and squeezes 3+ newlines to one blank line, but never joins lines. post-x-text.ts
+ *  applies the identical normalization, so what is composed here is byte-for-byte what is sent. */
 const MAX_LEN = 25000;
+function normalizeLines(s: string): string {
+  return s
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((ln) => ln.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 function clip(s: string): string {
-  const t = s.replace(/\s+/g, " ").trim();
+  const t = normalizeLines(s);
   return t.length > MAX_LEN ? `${t.slice(0, MAX_LEN - 3).trimEnd()}...` : t;
+}
+
+/** Join non-empty blocks with a blank line between them (X renders the newline; there is no rich text). */
+function blocks(...parts: string[]): string {
+  return parts.filter((p) => p && p.trim().length > 0).join("\n\n");
 }
 
 function periodDays(f: DigestFinding | undefined): number | null {
@@ -79,43 +114,94 @@ function periodDays(f: DigestFinding | undefined): number | null {
   return p != null && Number.isFinite(p) ? p : null;
 }
 
+/** A ledger explorerUrl is only safe to print when it is a plain-ASCII https URL with no whitespace: a malformed
+ *  or non-ASCII value would either break the red lines or make post-x-text.ts refuse the WHOLE post. Anything
+ *  else is dropped, so the digest omits the on-chain link rather than risk printing a bad one. */
+function safeTxUrl(u: unknown): string | null {
+  if (typeof u !== "string") return null;
+  const t = u.trim();
+  if (!/^https:\/\/\S+$/.test(t)) return null;
+  if (/[^\x00-\x7F]/.test(t)) return null;
+  return t;
+}
+
+/** The most recent valid on-chain transaction URL among the anchored rows (newest anchoredAt first), or null. */
+function newestTxUrl(entries: DigestLedgerEntry[]): string | null {
+  const sorted = entries
+    .filter((e) => e && safeTxUrl(e.explorerUrl))
+    .sort((a, b) => String(b.anchoredAt || "").localeCompare(String(a.anchoredAt || "")));
+  return sorted.length ? safeTxUrl(sorted[0].explorerUrl) : null;
+}
+
+/** What the characterization block cited, so the Proof block links ONLY the artifacts that correspond to a
+ *  number actually shown (results-figure.svg for completeness/purity; the P49 report for recall/precision). */
+interface Characterization {
+  block: string; // multi-line: a lead line, then "- " bullets; "" when there is no survey to cite
+  citesFigure: boolean; // a completeness or purity number was cited -> results-figure.svg corresponds
+  citesBlindTest: boolean; // recall/precision cited -> the P49 blind-test report corresponds
+}
+
 /**
- * Build the standing-characterization paragraph from web/research.json, or "" when there is no survey to cite.
- * Every number is read from the data (never hardcoded); purity is labelled the LOWER bound it is, and the blind
- * test is labelled an independent cross-check. `lead` lets a caller phrase it as "separately characterized"
- * (context inside an event post) or "is characterized" (the research-milestone post itself), which keeps a
- * known-planet re-validation honestly separate from the detector's real-photometry survey.
+ * Build the standing-characterization block from web/research.json as a lead line + ASCII bullets, or an empty
+ * block when there is no survey to cite. Every number is read from the data (never hardcoded); purity is
+ * labelled the LOWER bound it is, and the blind test is labelled an independent cross-check. `lead` lets a
+ * caller phrase it as "separately characterized" (context inside an event post) or "is characterized" (the
+ * research-milestone post itself), which keeps a known-planet re-validation honestly separate from the
+ * detector's real-photometry survey.
  */
-function characterization(research: DigestResearch | null | undefined, lead: string): string {
+function characterization(research: DigestResearch | null | undefined, lead: string): Characterization {
+  const empty: Characterization = { block: "", citesFigure: false, citesBlindTest: false };
   const survey = research?.survey;
-  if (!survey || survey.stars == null || !Number.isFinite(survey.stars)) return "";
+  if (!survey || survey.stars == null || !Number.isFinite(survey.stars)) return empty;
+
+  const bullets: string[] = [];
+  let citesFigure = false;
 
   const rawComp: DigestCompletenessPoint[] = Array.isArray(survey.completeness) ? survey.completeness : [];
   const comp = rawComp
     .filter((c) => Boolean(c) && Number.isFinite(c.depthPpm) && Number.isFinite(c.rate))
     .map((c) => ({ depthPpm: c.depthPpm as number, rate: c.rate as number }))
     .sort((a, b) => a.depthPpm - b.depthPpm);
-  let completenessTxt = "";
   if (comp.length >= 2) {
     const lo = comp[0];
     const hi = comp[comp.length - 1];
-    completenessTxt = ` Injection-recovery completeness rises from ${Math.round(lo.rate * 100)}% at ${lo.depthPpm} ppm to ${Math.round(hi.rate * 100)}% at ${hi.depthPpm} ppm.`;
+    bullets.push(`Injection-recovery completeness rises from ${Math.round(lo.rate * 100)}% at ${lo.depthPpm} ppm to ${Math.round(hi.rate * 100)}% at ${hi.depthPpm} ppm.`);
+    citesFigure = true;
   } else if (comp.length === 1) {
-    completenessTxt = ` Injection-recovery completeness is ${Math.round(comp[0].rate * 100)}% at ${comp[0].depthPpm} ppm.`;
+    bullets.push(`Injection-recovery completeness is ${Math.round(comp[0].rate * 100)}% at ${comp[0].depthPpm} ppm.`);
+    citesFigure = true;
   }
 
-  const purityTxt =
-    survey.purity != null && Number.isFinite(survey.purity)
-      ? ` The purity LOWER bound is ${Math.round(survey.purity * 100)}% -- a genuine but uncatalogued planet is counted against it, so the true value can only be higher.`
-      : "";
+  if (survey.purity != null && Number.isFinite(survey.purity)) {
+    bullets.push(`The purity LOWER bound is ${Math.round(survey.purity * 100)}% -- a genuine but uncatalogued planet is counted against it, so the true value can only be higher.`);
+    citesFigure = true;
+  }
 
   const bt = research?.blindTest;
-  const blindTxt =
-    bt && Number.isFinite(bt.recall) && Number.isFinite(bt.precision)
-      ? ` An independent sealed-key blind test measured ${Math.round((bt.recall as number) * 100)}% recall at ${Math.round((bt.precision as number) * 100)}% precision.`
-      : "";
+  let citesBlindTest = false;
+  if (bt && Number.isFinite(bt.recall) && Number.isFinite(bt.precision)) {
+    citesBlindTest = true;
+    bullets.push(`An independent sealed-key blind test measured ${Math.round((bt.recall as number) * 100)}% recall at ${Math.round((bt.precision as number) * 100)}% precision.`);
+  }
 
-  return `${lead} ${survey.stars} real public TESS-SPOC stars.${completenessTxt}${purityTxt}${blindTxt}`;
+  const head = `${lead} ${survey.stars} real public TESS-SPOC stars${bullets.length ? ":" : "."}`;
+  const block = bullets.length ? `${head}\n${bullets.map((b) => `- ${b}`).join("\n")}` : head;
+  return { block, citesFigure, citesBlindTest };
+}
+
+/**
+ * The Proof block: verifiable links, each offered ONLY for content the post actually states. On-chain tx (when
+ * this window anchored one), research.json (when any number is cited), the results figure (when completeness or
+ * purity is cited), the P49 blind-test report (when recall/precision is cited), and always the live rig root.
+ */
+function proofBlock(char: Characterization, txUrl: string | null): string {
+  const lines: string[] = [];
+  if (txUrl) lines.push(`- On-chain transaction: ${txUrl}`);
+  if (char.block) lines.push(`- Numbers + data (research.json): ${URL_RESEARCH}`);
+  if (char.citesFigure) lines.push(`- Completeness & purity figure: ${URL_RESULTS_FIG}`);
+  if (char.citesBlindTest) lines.push(`- Blind test (recall/precision): ${URL_P49}`);
+  lines.push(`- Live rig + full methods: ${URL_LIVE}`);
+  return `Proof:\n${lines.join("\n")}`;
 }
 
 /**
@@ -135,11 +221,11 @@ export function composeDigest(input: DigestInput): string {
   for (const f of findings) if (f && typeof f.id === "string") byId.set(f.id, f);
 
   // (1) Results sealed on-chain in this window. Name it ONLY when the row resolves to a KNOWN-planet
-  //     re-validation; otherwise state the honest, origin-neutral fact (N results anchored). Either way this is
-  //     a LONG-FORM summary: the event, then the detector's standing characterization as SEPARATE context, then
-  //     the discoveryClaim=false caveat and the link. A known-planet re-validation may run on seeded stand-ins,
-  //     so it never borrows the real-photometry survey's provenance -- that survey is cited only as the
-  //     detector's separate characterization.
+  //     re-validation; otherwise state the honest, origin-neutral fact (N results anchored). The post is laid out
+  //     in BLOCKS (joined by a blank line): the result, the honesty caveat, the detector's standing
+  //     characterization as SEPARATE context, and a Proof block of links that correspond to what was just
+  //     stated. A known-planet re-validation may run on seeded stand-ins, so it never borrows the
+  //     real-photometry survey's provenance -- that survey is cited only as separate characterization.
   const anchored = ledger.filter((e) => e && e.signature && within(e.anchoredAt, start, end));
   if (anchored.length) {
     const n = anchored.length;
@@ -149,27 +235,37 @@ export function composeDigest(input: DigestInput): string {
     const known = resolved.find(
       (f) => f.origin !== "blind-toi" && f.crossmatch?.matchedKnownPlanet && typeof f.crossmatch?.knownPlanetName === "string",
     );
-    const ctx = characterization(input.research, "The detector is separately characterized on");
+    const char = characterization(input.research, "The detector is separately characterized on");
     if (known && known.crossmatch?.knownPlanetName) {
       const pd = periodDays(known);
       const period = pd != null ? ` (P=${pd.toFixed(2)}d)` : "";
-      const sealed = n > 1 ? ` and sealed ${n} reproducible results on-chain in total` : " and sealed the analysis on-chain";
+      const sealed = n > 1 ? `and sealed ${n} reproducible results on-chain in total` : "and sealed the analysis on-chain";
+      // The on-chain proof is THIS finding's own transaction when the ledger carries one, else the newest.
+      const match = anchored.find((e) => String(e.findingId || "") === String(known.id || ""));
+      const txUrl = safeTxUrl(match?.explorerUrl) ?? newestTxUrl(anchored);
       return clip(
-        `Space Data Rig re-verified the known exoplanet ${known.crossmatch.knownPlanetName}${period}${sealed}. ` +
-          `Re-covering a catalogued planet is a recovery check -- it shows the pipeline reproduces a signal astronomers already know -- not a discovery. ` +
-          `${ctx ? `${ctx} ` : ""}Every result carries discoveryClaim=false. ` +
-          `Full numbers, methods and on-chain proofs: ${SITE}`,
+        blocks(
+          `Space Data Rig re-verified the known exoplanet ${known.crossmatch.knownPlanetName}${period} ${sealed}.`,
+          `Re-covering a catalogued planet is a recovery check -- it shows the pipeline reproduces a signal astronomers already know -- not a discovery. Every result carries discoveryClaim=false.`,
+          char.block,
+          proofBlock(char, txUrl),
+        ),
       );
     }
+    const txUrl = newestTxUrl(anchored);
     return clip(
-      `Space Data Rig anchored ${n} reproducible analysis result${n === 1 ? "" : "s"} on-chain from its autonomous exoplanet survey. ` +
-        `Anchoring timestamps each result and its exact inputs, so anyone can re-run the analysis and get the identical answer -- reproducibility, not a claimed discovery (discoveryClaim=false). ` +
-        `${ctx ? `${ctx} ` : ""}Full numbers, methods and on-chain proofs: ${SITE}`,
+      blocks(
+        `Space Data Rig anchored ${n} reproducible analysis result${n === 1 ? "" : "s"} on-chain from its autonomous exoplanet survey.`,
+        `Anchoring timestamps each result and its exact inputs, so anyone can re-run the analysis and get the identical answer -- reproducibility, not a claimed discovery (discoveryClaim=false).`,
+        char.block,
+        proofBlock(char, txUrl),
+      ),
     );
   }
 
   // (2) Newly flagged UNCONFIRMED blind candidates (newest first, for the example). These are contractually
-  //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here).
+  //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). This path
+  //     anchors nothing on-chain, so its Proof block carries no transaction link.
   const blind = findings
     .filter((f) => f && f.origin === "blind-toi" && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
@@ -180,11 +276,14 @@ export function composeDigest(input: DigestInput): string {
     // targetId is already a catalogue label that carries its own prefix (src/core/types.ts: e.g. "TIC 261136679"
     // or "KIC 10666592"), so use it verbatim -- prepending "TIC" here would print "TIC TIC 261136679".
     const example = eg.targetId ? ` (e.g. ${eg.targetId}${pd != null ? `, P=${pd.toFixed(2)}d` : ""})` : "";
-    const ctx = characterization(input.research, "The detector is separately characterized on");
+    const char = characterization(input.research, "The detector is separately characterized on");
     return clip(
-      `Space Data Rig flagged ${n} new UNCONFIRMED transit candidate${n === 1 ? "" : "s"} in its blind survey of real TESS photometry${example}. ` +
-        `A blind candidate is a periodic dip the detector found without being told where to look; each stays UNCONFIRMED and is posted for human follow-up rather than any claimed discovery (discoveryClaim=false). ` +
-        `${ctx ? `${ctx} ` : ""}Full numbers, methods and on-chain proofs: ${SITE}`,
+      blocks(
+        `Space Data Rig flagged ${n} new UNCONFIRMED transit candidate${n === 1 ? "" : "s"} in its blind survey of real TESS photometry${example}.`,
+        `A blind candidate is a periodic dip the detector found without being told where to look; each stays UNCONFIRMED and is posted for human follow-up rather than any claimed discovery (discoveryClaim=false).`,
+        char.block,
+        proofBlock(char, null),
+      ),
     );
   }
 
@@ -193,11 +292,14 @@ export function composeDigest(input: DigestInput): string {
   //     the operating point it is -- never a discovery.
   const survey = input.researchUpdated ? input.research?.survey : undefined;
   if (survey && survey.stars != null && Number.isFinite(survey.stars)) {
-    const metrics = characterization(input.research, "our autonomous TESS transit pipeline is characterized on");
+    const char = characterization(input.research, "Our autonomous TESS transit pipeline is characterized on");
     return clip(
-      `Space Data Rig research update: ${metrics} ` +
-        `These are measurements of the pipeline operating point and independent cross-checks, not discoveries: every result carries discoveryClaim=false, and any blind candidate stays UNCONFIRMED, for human follow-up rather than a claimed planet. ` +
-        `Full numbers, methods and on-chain proofs: ${SITE}`,
+      blocks(
+        `Space Data Rig research update.`,
+        `These are measurements of the pipeline operating point and independent cross-checks, not discoveries: every result carries discoveryClaim=false, and any blind candidate stays UNCONFIRMED, for human follow-up rather than a claimed planet.`,
+        char.block,
+        proofBlock(char, null),
+      ),
     );
   }
 

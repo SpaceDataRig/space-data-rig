@@ -46,7 +46,17 @@ if (!text) {
   const f = arg("text-file", "");
   if (f) { try { text = readFileSync(f, "utf8"); } catch { text = ""; } }
 }
-text = text.replace(/\s+/g, " ").trim();
+// Preserve the long-form post's intentional line structure (X renders newlines; it has no rich text, so layout
+// is newlines + ASCII only). Normalize CRLF->LF, collapse runs of spaces/tabs WITHIN each line, trim each line,
+// and squeeze 3+ newlines to one blank line -- but NEVER join lines. This is the identical normalization
+// science-digest.ts clip() applies, so what is composed there is byte-for-byte what is sent here.
+text = text
+  .replace(/\r\n?/g, "\n")
+  .split("\n")
+  .map((ln) => ln.replace(/[ \t]+/g, " ").trim())
+  .join("\n")
+  .replace(/\n{3,}/g, "\n\n")
+  .trim();
 
 // Length ceiling. The default 280 (the standard post limit) keeps every automatic digest short and safe.
 // A Premium ("blue") author MAY pass --max-len up to X's 25,000-char long-post ceiling; we clamp to that and

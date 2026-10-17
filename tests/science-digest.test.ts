@@ -11,6 +11,13 @@
 //  - Purity is cited as the LOWER bound it is; numbers carry their basis.
 //  - Output is pure ASCII, within X's 25,000-char long-post ceiling, and free of time-implying words
 //    (post-x-text.ts enforces ASCII too, and clamps to the same 25,000 ceiling).
+//  - LAYOUT: the long-form post is MULTI-LINE (blocks split by a blank line; numbers/proof as ASCII "- " bullets),
+//    never a run-on paragraph -- X renders newlines but has no rich text. clip() and post-x-text.ts both preserve
+//    newlines (they collapse spaces WITHIN a line, never join lines).
+//  - PROOF LINKS: a "Proof:" block cites only artifacts that CORRESPOND to a number actually shown -- on-chain tx
+//    (when this window anchored one), research.json (any number), results-figure.svg (completeness/purity), the
+//    P49 blind-test report (recall/precision), and always the live rig. P47 / milestone-figure.svg depict OTHER
+//    experiments and are never linked (a proof link must match the exact number it is offered for).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { composeDigest } from "../scripts/science-digest.ts";
@@ -26,8 +33,12 @@ function input(over: Partial<DigestInput> = {}): DigestInput {
   return { windowStart: START, windowEnd: END, ledger: [], findings: [], research: null, researchUpdated: false, ...over };
 }
 
-// A ledger row only counts as "anchored" when it carries a real signature inside the window.
-const anchored = (findingId: string, at = IN, signature = "5xYsig"): DigestLedgerEntry => ({ findingId, status: "confirmed", signature, anchoredAt: at });
+// A ledger row only counts as "anchored" when it carries a real signature inside the window. It also carries the
+// live mainnet explorer URL the digest prints as on-chain proof. TX_URL is deliberately red-line-clean: pure-ASCII
+// https, no whitespace, and free of "cost"/"usd"/"wallet" and of a standalone "sol" ("solana" has no word boundary
+// after "sol", so assertTweetSafe's /sol\b/ does not fire on it).
+const TX_URL = "https://explorer.solana.com/tx/5xYsigProofOfAnchor123ABCdefGHIjklMNOpqrSTUvwxyz?cluster=mainnet-beta";
+const anchored = (findingId: string, at = IN, signature = "5xYsig", explorerUrl: string | undefined = TX_URL): DigestLedgerEntry => ({ findingId, status: "confirmed", signature, anchoredAt: at, explorerUrl });
 
 const knownPlanet = (id: string, name: string, periodDays?: number, origin = "revalidation"): DigestFinding => ({
   id,
@@ -230,5 +241,82 @@ test("long-form: a known-planet re-validation carries the survey as SEPARATE con
   // Red line: the re-validation clause itself must NOT claim it ran on real photometry (its photons may be seeded
   // stand-ins); only the separate characterization may cite the real public survey.
   assert.ok(!/re-verified[^.]*real (TESS|public)/.test(text), "the revalidation clause must not borrow real-photometry provenance");
+  assertTweetSafe(text);
+});
+
+test("layout: the long-form digest is multi-line (blank-line-separated blocks + ASCII bullets), never a run-on", () => {
+  const text = composeDigest(input({ research: RICH_RESEARCH, researchUpdated: true }));
+  assert.ok(text.includes("\n"), "a formatted long-form post contains newlines (clip preserves them)");
+  assert.ok(text.includes("\n\n"), "blocks are separated by a blank line");
+  assert.ok(text.split("\n\n").length >= 4, "headline + honesty caveat + key numbers + proof blocks");
+  assert.match(text, /\n- /, "numbers and proof links are laid out as ASCII '- ' bullet lines");
+  assertTweetSafe(text);
+});
+
+test("proof links: a research milestone links research.json, the results figure, the P49 blind test, and the live rig", () => {
+  const text = composeDigest(input({ research: RICH_RESEARCH, researchUpdated: true }));
+  assert.match(text, /\nProof:\n/, "a 'Proof:' block heads the verifiable links");
+  assert.ok(text.includes("- Numbers + data (research.json): https://spacedatarig.app/research.json"));
+  assert.ok(text.includes("- Completeness & purity figure: https://spacedatarig.app/results-figure.svg"));
+  assert.ok(text.includes("- Blind test (recall/precision): https://spacedatarig.app/reports/p49-blind-test.html"));
+  assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"), "the live rig root is the last proof line");
+  assert.ok(!/On-chain transaction/.test(text), "a research milestone anchors nothing, so it cites no on-chain tx");
+  assertTweetSafe(text);
+});
+
+test("proof links: each artifact is linked ONLY when the number it proves is actually cited", () => {
+  // stars only -> research.json backs the count, but no completeness/purity figure and no blind-test report.
+  const starsOnly = composeDigest(input({ research: { survey: { stars: 120 } }, researchUpdated: true }));
+  assert.ok(starsOnly.includes("research.json"), "research.json backs the cited star count");
+  assert.ok(!starsOnly.includes("results-figure.svg"), "no completeness/purity cited -> no figure link");
+  assert.ok(!starsOnly.includes("p49-blind-test"), "no blind test cited -> no P49 link");
+
+  // completeness but no blind test -> figure yes, P49 no.
+  const compOnly = composeDigest(
+    input({ research: { survey: { stars: 120, completeness: [{ depthPpm: 300, rate: 0.36 }, { depthPpm: 8000, rate: 0.93 }] } }, researchUpdated: true }),
+  );
+  assert.ok(compOnly.includes("results-figure.svg"), "completeness cited -> the figure that plots it is linked");
+  assert.ok(!compOnly.includes("p49-blind-test"), "no blind test cited -> no P49 link");
+
+  // blind test but no completeness/purity -> P49 yes, figure no.
+  const blindOnly = composeDigest(
+    input({ research: { survey: { stars: 120 }, blindTest: { recall: 0.77, precision: 0.33 } }, researchUpdated: true }),
+  );
+  assert.ok(blindOnly.includes("p49-blind-test.html"), "recall/precision cited -> the P49 report is linked");
+  assert.ok(!blindOnly.includes("results-figure.svg"), "no completeness/purity cited -> no figure link");
+
+  assertTweetSafe(starsOnly);
+  assertTweetSafe(compOnly);
+  assertTweetSafe(blindOnly);
+});
+
+test("proof links: an on-chain result links its ledger transaction as proof", () => {
+  const text = composeDigest(
+    input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2185)], research: RICH_RESEARCH }),
+  );
+  assert.ok(text.includes(`- On-chain transaction: ${TX_URL}`), "the sealed result links its on-chain tx");
+  assertTweetSafe(text);
+});
+
+test("proof links: a ledger row with no usable explorerUrl omits the tx line (never prints a broken one)", () => {
+  // Build the row directly WITHOUT explorerUrl: passing `undefined` to the factory would trigger its TX_URL
+  // default (JS default params fire on an explicit undefined), so it would not exercise the missing-url path.
+  const noUrlRow: DigestLedgerEntry = { findingId: "f1", status: "confirmed", signature: "5xYsig", anchoredAt: IN };
+  const noUrl = composeDigest(input({ ledger: [noUrlRow], findings: [blind("f1", "TIC 9")] }));
+  assert.match(noUrl, /anchored 1 reproducible analysis result on-chain/);
+  assert.ok(!/On-chain transaction/.test(noUrl), "no explorerUrl -> no tx link");
+  assert.ok(!/explorer\.solana\.com/.test(noUrl));
+  assertTweetSafe(noUrl);
+
+  const bad = composeDigest(input({ ledger: [anchored("f1", IN, "5xYsig", "not a url")], findings: [blind("f1", "TIC 9")] }));
+  assert.ok(!/On-chain transaction/.test(bad), "a non-https explorerUrl is refused, not printed");
+  assertTweetSafe(bad);
+});
+
+test("proof links: a blind candidate anchors nothing, so it cites no on-chain tx", () => {
+  const text = composeDigest(input({ findings: [blind("f1", "TIC 240720121", IN, 4.5)], research: RICH_RESEARCH }));
+  assert.match(text, /flagged 1 new UNCONFIRMED transit candidate/);
+  assert.ok(!/On-chain transaction/.test(text), "the blind-candidate path has no on-chain anchor");
+  assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
   assertTweetSafe(text);
 });

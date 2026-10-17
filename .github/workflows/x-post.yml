@@ -10,11 +10,12 @@ name: x-post (half-hourly English science digest)
 # up to X's 25,000-char long-post ceiling). No image (AI illustration is generated only inside an agent session,
 # never in CI).
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
-# English-only is enforced twice). A window with NO new result normally posts NOTHING (no empty tweet) -- UNLESS
-# the channel has been silent past HEARTBEAT_AFTER_MIN (default 90m), when it falls back to an honest status
-# heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet) so a quiet stretch is not
-# mistaken for downtime. It NEVER claims a discovered planet -- a blind candidate is always
-# "UNCONFIRMED ... for human follow-up".
+# English-only is enforced twice). A window with NO new science is not automatically silent: it may post a BUILD
+# NOTE over the commits since the last post (a development-progress tier); only when there is neither new science
+# nor a buildable commit does it fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 90m) -- to an honest
+# status heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet), so a quiet stretch is not
+# mistaken for downtime. It NEVER posts an empty tweet and NEVER claims a discovered planet -- a blind candidate is
+# always "UNCONFIRMED ... for human follow-up" -- and honesty is carried by plain wording, not a per-post stamp.
 #
 # VERIFYING THIS CHANNEL (a lesson earned the hard way): the compose + watchdog path only runs when a window has
 # NO new science, so unit tests + a green `npm test` do NOT exercise it and CI stays green even when it is broken
@@ -25,8 +26,10 @@ name: x-post (half-hourly English science digest)
 # before the heartbeat tier, so it does NOT exercise the fallback.)
 
 # Loop / spam guards:
-#  - No push trigger at all: committing docs/reports no longer posts per-commit; the half-hourly digest is the
-#    only automatic path, and one window yields AT MOST ONE science line (or nothing at all).
+#  - No push trigger: a push never posts on its own. The half-hourly digest is the only automatic path, and one
+#    window yields AT MOST ONE line -- a science post, else a BATCHED build note over the window's commits, else a
+#    heartbeat. Commit coverage is batched (never per-commit), and the last-post cursor means one commit is never
+#    re-reported across windows.
 #  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
@@ -165,6 +168,18 @@ jobs:
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
           # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
           npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt || true
+          # Build-note tier (development progress): when a window has NO new science, offer a plain-English update
+          # over the commits since the LAST POST -- excluding the generated research-data file and the reports/out
+          # trees, and skipping pure chore/docs noise. composeDigest sanitizes every line (drops any that would break
+          # a red line: spend/wallet/key/time-words), so an all-noise list yields nothing and we fall through.
+          if [ ! -s out/digest.txt ]; then
+            git log HEAD --no-merges --since="$SINCE" --pretty=%s -- ':!web/research.json' ':!reports/**' ':!out/**' \
+              | grep -Eiv '^(chore|docs?)(\([a-z0-9-]+\))?:' | head -5 > out/dev-commits.txt || true
+            if [ -s out/dev-commits.txt ]; then
+              echo "no new science; build note over $(wc -l < out/dev-commits.txt | tr -d ' ') commit(s) since the last post"
+              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --dev-commits-file out/dev-commits.txt --out out/digest.txt || true
+            fi
+          fi
           # Silence watchdog (fallback only): if there was NO new science, use the last-post time already read to
           # see how long the channel has been quiet (a human post counts too); past the threshold, compose an
           # honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.

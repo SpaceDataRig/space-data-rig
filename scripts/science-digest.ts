@@ -1,14 +1,18 @@
 // SCIENCE DIGEST: compose ONE honest, English-only long-form post about the most important science the rig
 // produced in a time window, for the half-hourly X (Twitter) digest. The author is a Premium ("blue") account,
 // so a post may run well past the classic 280 chars (X allows up to 25,000 weighted chars): each digest is a
-// compact multi-sentence summary -- the result, the key characterized numbers, the honesty caveat, and the
-// link -- rather than one clipped sentence. This REPLACES the old "N new commits" digest: the
-// channel now reports SCIENCE, not commit counts, and posts NOTHING when there is no new result to report
-// (see .github/workflows/x-post.yml).
+// compact multi-sentence summary -- the result, the key numbers, and the link -- rather than one clipped
+// sentence. The channel LEADS WITH SCIENCE (a result sealed on-chain, a newly flagged candidate, or a research
+// milestone). When a window has NO new science it no longer stays silent by default: it may fall back to a BUILD
+// NOTE over the commits since the last post (the development-progress tier), and only when there is neither new
+// science nor a buildable commit does it drop to the silence heartbeat -- so the feed reports either a real result
+// or the work keeping the rig running, and never an empty tweet (see .github/workflows/x-post.yml).
 //
 // Red lines (enforced here AND in scripts/post-x-text.ts, which refuses any non-ASCII byte):
 //  - English-only ASCII; no time-implying words (this week / recently / overnight / today ...).
 //  - NEVER claims a new planet. A blind candidate is always "UNCONFIRMED ... for human follow-up".
+//  - Honesty is carried by PLAIN WORDING + numbers-with-basis, NOT by stamping "discoveryClaim=false" on every
+//    post -- the maintainer asked to stop repeating that disclaimer, so the literal stamp no longer appears.
 //  - Numbers carry their basis (purity is a LOWER bound). No wallet / key / cost is ever mentioned.
 //  - Photon-tier honesty: only blind-TOI findings are contractually "recovered on real photometry"
 //    (src/core/types.ts Finding.origin), so only those may say "real TESS photometry"; a known-planet
@@ -39,6 +43,7 @@ const URL_LIVE = `https://${SITE}`; // bare domain, no trailing slash: the post 
 const URL_RESEARCH = `https://${SITE}/research.json`;
 const URL_RESULTS_FIG = `https://${SITE}/results-figure.svg`;
 const URL_P49 = `https://${SITE}/reports/p49-blind-test.html`;
+const URL_REPO = "https://github.com/SpaceDataRig/space-data-rig"; // build-note proof: the code + history itself
 
 export interface DigestLedgerEntry {
   findingId?: string;
@@ -76,6 +81,9 @@ export interface DigestInput {
   silentMinutes?: number;
   /** A heartbeat fires only when silentMinutes >= this. 0/absent disables it, so the science path is unchanged. */
   heartbeatAfterMinutes?: number;
+  /** Notable commit subjects since the last post (from the workflow's git read). When a window has no science, a
+   *  non-empty list lets composeDigest emit a BUILD NOTE (development-progress tier) instead of staying silent. */
+  devCommits?: string[];
 }
 
 function within(iso: string | undefined, start: number, end: number): boolean {
@@ -256,11 +264,48 @@ function heartbeat(input: DigestInput): string {
   );
 }
 
+/** An empty characterization -- used by the routine result/candidate posts, which deliberately carry NO standing
+ *  methodology block so consecutive posts do not read as copy-paste. proofBlock(EMPTY_CHAR, tx) then emits only
+ *  the transaction (when the window sealed one) plus the live rig. */
+const EMPTY_CHAR: Characterization = { block: "", citesFigure: false, citesBlindTest: false };
+
+/** Deterministic variant picker: FNV-1a hash a stable seed and choose among honest rephrasings, so posts over
+ *  DIFFERENT windows read differently while composeDigest stays pure (no clock/random) and reproducible in tests. */
+function pick(list: string[], seed: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return list[Math.abs(h) % list.length];
+}
+
+/** One dev commit -> one safe bullet line, or "" to drop it. Collapses whitespace, strips non-ASCII, caps length,
+ *  and DROPS anything that would break a red line (mentions spend/wallet/key, or a time word) so a build note can
+ *  never leak a banned term. The raw text still hits post-x-text.ts's own non-ASCII refusal as a second guard. */
+function sanitizeSubject(raw: string): string {
+  const s = String(raw || "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/[^\x00-\x7F]/g, "")
+    .trim();
+  if (!s) return "";
+  if (/wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i.test(s)) return "";
+  if (/\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i.test(s)) return "";
+  return s.length > 140 ? `${s.slice(0, 137).trimEnd()}...` : s;
+}
+
 /**
- * Return the single most important honest science post for the window -- a LONG-FORM Premium summary (result +
- * key characterized numbers + honesty caveat + link), or "" when there is nothing new to report (the workflow
- * then posts NOTHING). Priority: (1) results sealed on-chain, (2) newly flagged UNCONFIRMED blind candidates,
- * (3) a research milestone when research.json landed in the window.
+ * Return the single most important honest post for the window -- a LONG-FORM Premium summary -- or "" when there
+ * is nothing new to report (the workflow then posts NOTHING). Priority: (1) results sealed on-chain, (2) newly
+ * flagged UNCONFIRMED blind candidates, (3) a research milestone (research.json landed this window), (4) a BUILD
+ * NOTE over notable commits since the last post, (5) the silence heartbeat fallback.
+ *
+ * Tone (the maintainer's standing rules): honesty is carried by PLAIN WORDING and numbers-with-basis, NOT by a
+ * per-post "discoveryClaim=false" stamp (removed). The standing characterization block + its research/figure/blind-
+ * test links are attached ONLY to the research milestone (where they ARE the content); routine result/candidate
+ * posts stay lean (headline + one honest line + the proof that corresponds: an on-chain tx when sealed, always the
+ * live rig) so consecutive posts read differently.
  */
 export function composeDigest(input: DigestInput): string {
   const start = Date.parse(input.windowStart);
@@ -273,54 +318,67 @@ export function composeDigest(input: DigestInput): string {
   for (const f of findings) if (f && typeof f.id === "string") byId.set(f.id, f);
 
   // (1) Results sealed on-chain in this window. Name it ONLY when the row resolves to a KNOWN-planet
-  //     re-validation; otherwise state the honest, origin-neutral fact (N results anchored). The post is laid out
-  //     in BLOCKS (joined by a blank line): the result, the honesty caveat, the detector's standing
-  //     characterization as SEPARATE context, and a Proof block of links that correspond to what was just
-  //     stated. A known-planet re-validation may run on seeded stand-ins, so it never borrows the
-  //     real-photometry survey's provenance -- that survey is cited only as separate characterization.
+  //     re-validation; otherwise state the honest, origin-neutral count. LEAN by design: no standing
+  //     characterization here, and a known-planet re-validation never borrows the real-photometry survey's
+  //     provenance (its photons may be seeded stand-ins) -- the Proof block carries just the sealing tx + live rig.
   const anchored = ledger.filter((e) => e && e.signature && within(e.anchoredAt, start, end));
   if (anchored.length) {
     const n = anchored.length;
+    const plural = n === 1 ? "" : "s";
     const resolved = anchored
       .map((e) => byId.get(String(e.findingId || "")))
       .filter((f): f is DigestFinding => Boolean(f));
     const known = resolved.find(
       (f) => f.origin !== "blind-toi" && f.crossmatch?.matchedKnownPlanet && typeof f.crossmatch?.knownPlanetName === "string",
     );
-    const char = characterization(input.research, "The detector is separately characterized on");
     if (known && known.crossmatch?.knownPlanetName) {
       const pd = periodDays(known);
       const period = pd != null ? ` (P=${pd.toFixed(2)}d)` : "";
+      const name = known.crossmatch.knownPlanetName;
       const sealed = n > 1 ? `and sealed ${n} reproducible results on-chain in total` : "and sealed the analysis on-chain";
-      // The on-chain proof is THIS finding's own transaction when the ledger carries one, else the newest.
       const match = anchored.find((e) => String(e.findingId || "") === String(known.id || ""));
       const txUrl = safeTxUrl(match?.explorerUrl) ?? newestTxUrl(anchored);
-      return clip(
-        blocks(
-          `Space Data Rig re-verified the known exoplanet ${known.crossmatch.knownPlanetName}${period} ${sealed}.`,
-          `Re-covering a catalogued planet is a recovery check -- it shows the pipeline reproduces a signal astronomers already know -- not a discovery. Every result carries discoveryClaim=false.`,
-          char.block,
-          proofBlock(char, txUrl),
-        ),
+      const head = pick(
+        [
+          `Space Data Rig re-verified the known exoplanet ${name}${period} ${sealed}.`,
+          `A new pass by Space Data Rig reproduced the known exoplanet ${name}${period}; the analysis is sealed on-chain.`,
+          `Space Data Rig recovered the known exoplanet ${name}${period} once more ${sealed}.`,
+        ],
+        `known:${input.windowStart}:${name}`,
       );
+      const note = pick(
+        [
+          "Re-covering a planet already in the catalogue is a recovery check -- it shows the pipeline reproduces a known signal, not a new find.",
+          "This is a recovery check against a planet astronomers already know, not a claimed discovery.",
+          "A recovery check, not a new find: the pipeline hits a known signal again on its own.",
+        ],
+        `knownnote:${input.windowStart}:${name}`,
+      );
+      return clip(blocks(head, note, proofBlock(EMPTY_CHAR, txUrl)));
     }
     const txUrl = newestTxUrl(anchored);
-    return clip(
-      blocks(
-        `Space Data Rig anchored ${n} reproducible analysis result${n === 1 ? "" : "s"} on-chain from its autonomous exoplanet survey.`,
-        `Anchoring timestamps each result and its exact inputs, so anyone can re-run the analysis and get the identical answer -- reproducibility, not a claimed discovery (discoveryClaim=false).`,
-        char.block,
-        proofBlock(char, txUrl),
-      ),
+    const head = pick(
+      [
+        `Space Data Rig anchored ${n} reproducible analysis result${plural} on-chain from its autonomous exoplanet survey.`,
+        `${n} reproducible analysis result${plural} from Space Data Rig's autonomous survey are now sealed on-chain.`,
+        `From its autonomous exoplanet survey Space Data Rig sealed ${n} reproducible result${plural} on-chain.`,
+      ],
+      `anchored:${input.windowStart}:${n}`,
     );
+    const note = pick(
+      [
+        "Each anchoring timestamps a result and its exact inputs, so anyone can re-run the analysis and get the identical answer.",
+        "The inputs are fixed and public, so the whole analysis can be checked and reproduced by anyone.",
+      ],
+      `anchorednote:${input.windowStart}:${n}`,
+    );
+    return clip(blocks(head, note, proofBlock(EMPTY_CHAR, txUrl)));
   }
 
   // (2) Newly flagged UNCONFIRMED blind candidates (newest first, for the example). These are contractually
-  //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). This path
-  //     anchors nothing on-chain, so its Proof block carries no transaction link. Only SURVIVING candidates count:
-  //     a blind row the critic already rejected (verdict="rejected") is noise, not a candidate awaiting follow-up,
-  //     so it must not inflate the reported count (the live catalog holds both surviving needs-more-data rows AND
-  //     rejected rows for the same survey pass).
+  //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). Only
+  //     SURVIVING candidates count: a critic-rejected blind row is noise, not a lead awaiting follow-up, so it must
+  //     not inflate the count. LEAN: no characterization, no tx (this path anchors nothing), live rig only.
   const blind = findings
     .filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected" && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
@@ -328,38 +386,71 @@ export function composeDigest(input: DigestInput): string {
     const n = blind.length;
     const eg = blind[0];
     const pd = periodDays(eg);
-    // targetId is already a catalogue label that carries its own prefix (src/core/types.ts: e.g. "TIC 261136679"
-    // or "KIC 10666592"), so use it verbatim -- prepending "TIC" here would print "TIC TIC 261136679".
+    // targetId already carries its own prefix ("TIC 261136679" / "KIC 10666592"), so use it verbatim -- prepending
+    // "TIC" would print "TIC TIC 261136679".
     const example = eg.targetId ? ` (e.g. ${eg.targetId}${pd != null ? `, P=${pd.toFixed(2)}d` : ""})` : "";
-    const char = characterization(input.research, "The detector is separately characterized on");
-    return clip(
-      blocks(
-        `Space Data Rig flagged ${n} new UNCONFIRMED transit candidate${n === 1 ? "" : "s"} in its blind survey of real TESS photometry${example}.`,
-        `A blind candidate is a periodic dip the detector found without being told where to look; each stays UNCONFIRMED and is posted for human follow-up rather than any claimed discovery (discoveryClaim=false).`,
-        char.block,
-        proofBlock(char, null),
-      ),
+    const plural = n === 1 ? "" : "s";
+    const head = pick(
+      [
+        `Space Data Rig flagged ${n} new UNCONFIRMED transit candidate${plural} in its blind survey of real TESS photometry${example}.`,
+        `Its blind sweep of real TESS photometry turned up ${n} new UNCONFIRMED transit candidate${plural}${example}.`,
+        `Space Data Rig surfaced ${n} new periodic-dip candidate${plural} in real TESS photometry -- all still UNCONFIRMED${example}.`,
+      ],
+      `blind:${input.windowStart}:${n}:${eg.targetId || ""}`,
     );
+    const note = pick(
+      [
+        "A candidate is a periodic dip the detector flagged without being told where to look; each stays UNCONFIRMED and is posted for human follow-up.",
+        "These are leads for people to check, found on the detector's own -- each stays UNCONFIRMED, for human follow-up rather than a confirmed planet.",
+      ],
+      `blindnote:${input.windowStart}:${n}`,
+    );
+    return clip(blocks(head, note, proofBlock(EMPTY_CHAR, null)));
   }
 
-  // (3) A research milestone, only when web/research.json actually landed in this window. Cite the stable
-  //     survey characterization (completeness span, purity LOWER bound, independent blind test) and frame it as
-  //     the operating point it is -- never a discovery.
+  // (3) A research milestone, only when web/research.json actually landed in this window. This is the ONE tier
+  //     that carries the standing characterization (completeness span, purity LOWER bound, independent blind test)
+  //     and its corresponding proof links -- there the numbers ARE the update. Framed as the operating point it is.
   const survey = input.researchUpdated ? input.research?.survey : undefined;
   if (survey && survey.stars != null && Number.isFinite(survey.stars)) {
     const char = characterization(input.research, "Our autonomous TESS transit pipeline is characterized on");
-    return clip(
-      blocks(
-        `Space Data Rig research update.`,
-        `These are measurements of the pipeline operating point and independent cross-checks, not discoveries: every result carries discoveryClaim=false, and any blind candidate stays UNCONFIRMED, for human follow-up rather than a claimed planet.`,
-        char.block,
-        proofBlock(char, null),
-      ),
+    const head = pick(
+      [
+        "Space Data Rig research update.",
+        "A research milestone for the pipeline:",
+        "Space Data Rig has a research milestone to report.",
+      ],
+      `milestone:${input.windowStart}:${survey.stars}`,
     );
+    const note = "These figures describe how the pipeline behaves and are independent cross-checks, not discoveries.";
+    return clip(blocks(head, note, char.block, proofBlock(char, null)));
   }
 
-  // (4) Silence heartbeat (documented FALLBACK, only when nothing new was reportable above). It fires only when
-  //     the workflow supplies BOTH a silence gap and a threshold, so the default science-only path is unchanged.
+  // (4) BUILD NOTE (development-progress tier): no new science this window, but the workflow passed notable commit
+  //     subjects since the last post. Plain-English bullets of the work keeping the rig running -- honest, no
+  //     discovery framing, no spend/wallet (sanitizeSubject enforces), linked to the repository + live rig. The
+  //     last-post cursor advances once it posts, so the same commits are never re-reported.
+  const devLines = (Array.isArray(input.devCommits) ? input.devCommits : [])
+    .map(sanitizeSubject)
+    .filter((x) => x.length > 0)
+    .slice(0, 5);
+  if (devLines.length) {
+    const head = pick(
+      [
+        "Under the hood, what changed in how Space Data Rig runs:",
+        "Not a science result -- a build note on the pipeline itself:",
+        "Changes to the machinery behind Space Data Rig:",
+      ],
+      `dev:${input.windowStart}:${devLines[0]}`,
+    );
+    const bullets = devLines.map((x) => `- ${x}`).join("\n");
+    const note = "The science feed still posts only real results; this is a note on the work keeping it running.";
+    const proof = `- Repository (code + history): ${URL_REPO}\n- Live rig + full methods: ${URL_LIVE}`;
+    return clip(blocks(head, `${bullets}\n\n${note}`, `Proof:\n${proof}`));
+  }
+
+  // (5) Silence heartbeat (documented FALLBACK, only when nothing above was reportable). Fires only when the
+  //     workflow supplies BOTH a silence gap and a threshold, so the default science-only path is unchanged.
   const hb = Number(input.heartbeatAfterMinutes);
   const silent = Number(input.silentMinutes);
   if (Number.isFinite(hb) && hb > 0 && Number.isFinite(silent) && silent >= hb) {
@@ -407,6 +498,20 @@ async function main(): Promise<void> {
   const silentMinutes = silentRaw === "" ? Number.NaN : Number(silentRaw);
   const hbRaw = arg("heartbeat-after-min", "");
   const heartbeatAfterMinutes = hbRaw === "" ? 0 : Number(hbRaw);
+  // Build-note tier input: a file of commit subjects (one per line) gathered by the workflow from the window since
+  // the last post. Absent/empty -> composeDigest skips the dev tier exactly as before (science/heartbeat unchanged).
+  const devFile = arg("dev-commits-file", "");
+  let devCommits: string[] | undefined;
+  if (devFile) {
+    try {
+      devCommits = readFileSync(devFile, "utf8")
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
+    } catch {
+      devCommits = undefined;
+    }
+  }
 
   const FALLBACK_MS = 40 * 60 * 1000; // ~40m (cadence is 30m), so a slightly-late tick cannot leave a gap
   const endParsed = untilArg ? new Date(untilArg) : new Date();
@@ -445,6 +550,7 @@ async function main(): Promise<void> {
     researchUpdated,
     silentMinutes,
     heartbeatAfterMinutes,
+    devCommits,
   });
 
   console.error(

@@ -5,10 +5,13 @@
 // in main(), which the entry guard keeps from running on import).
 //
 // The load-bearing properties are the HONESTY RED LINES, so those are what we pin:
-//  - No new result in the window -> "" (the workflow then posts NOTHING; never an empty/noise tweet) -- UNLESS a
-//    silence-heartbeat threshold (heartbeatAfterMinutes) is supplied AND the channel has been silent that long,
-//    when it instead emits an honest status note. With no threshold (the default) the post-nothing behavior is
-//    byte-for-byte unchanged; the heartbeat never claims a discovery and links no transaction (nothing new sealed).
+//  - No new science -> "" (the workflow posts NOTHING) -- UNLESS the window carries commit subjects (devCommits),
+//    when composeDigest emits a BUILD NOTE (development-progress tier); and, absent both, unless a silence-heartbeat
+//    threshold (heartbeatAfterMinutes) is supplied AND the channel has been silent that long, when it emits an
+//    honest status note. With no devCommits and no threshold (the default) the post-nothing behavior is unchanged.
+//  - NO per-post "discoveryClaim=false" stamp: honesty is carried by plain wording + numbers-with-basis. The standing
+//    characterization block + research/figure/p49 links attach ONLY to the research milestone; routine result and
+//    candidate posts stay LEAN (headline + one honest line + the sealing tx when any + the live rig).
 //  - A blind candidate is ALWAYS "UNCONFIRMED ... for human follow-up", never a discovery.
 //  - Only blind-TOI findings (contractually recovered on real photometry) may say "real TESS photometry".
 //  - Purity is cited as the LOWER bound it is; numbers carry their basis.
@@ -95,27 +98,30 @@ test("an inverted or unparseable window composes no tweet", () => {
   assert.equal(composeDigest(input({ windowStart: "nope", windowEnd: END })), ""); // NaN start
 });
 
-test("priority 1: a known-planet re-validation sealed on-chain is named, with its period", () => {
+test("priority 1: a known-planet re-validation sealed on-chain is named, with its period, honestly framed", () => {
   const text = composeDigest(
     input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2185)] }),
   );
-  assert.match(text, /re-verified the known exoplanet HD 189733 b \(P=2\.22d\)/);
-  assert.match(text, /sealed the analysis on-chain/);
-  assert.match(text, /recovery check/, "long form frames a re-validation as a recovery check, not a discovery");
-  assert.match(text, /discoveryClaim=false/);
+  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22d\)/, "names the known planet + period (stable across variants)");
+  assert.match(text, /on-chain/);
+  assert.match(text, /recovery check/, "frames a re-validation as a recovery check, not a discovery");
+  assert.ok(!/discoveryClaim=false/.test(text), "the per-post discoveryClaim stamp is gone");
   assert.match(text, /spacedatarig\.app$/);
   assertTweetSafe(text);
 });
 
 test("priority 1: anchored rows that do NOT resolve to a known planet fall back to an honest count", () => {
   const one = composeDigest(input({ ledger: [anchored("f1")], findings: [blind("f1", "TIC 9")] }));
-  assert.match(one, /anchored 1 reproducible analysis result on-chain/);
-  assert.ok(!/results/.test(one), "singular for exactly one");
+  assert.match(one, /\b1 reproducible\b/);
+  assert.match(one, /on-chain/);
+  assert.ok(!/\bresults\b/.test(one), "singular for exactly one");
 
   const many = composeDigest(
     input({ ledger: [anchored("f1"), anchored("f2")], findings: [blind("f1", "TIC 9"), blind("f2", "TIC 10")] }),
   );
-  assert.match(many, /anchored 2 reproducible analysis results on-chain/);
+  assert.match(many, /\b2 reproducible\b/);
+  assert.match(many, /\bresults\b/);
+  assert.match(many, /on-chain/);
   assertTweetSafe(many);
 });
 
@@ -137,11 +143,11 @@ test("window filtering: results anchored OUTSIDE the window are ignored", () => 
 
 test("priority 2: a newly flagged blind candidate is UNCONFIRMED, for follow-up, never a discovery", () => {
   const text = composeDigest(input({ findings: [blind("f1", "TIC 240720121", IN, 4.5)] }));
-  assert.match(text, /flagged 1 new UNCONFIRMED transit candidate/);
+  assert.match(text, /UNCONFIRMED transit candidate|periodic-dip candidate/);
   assert.match(text, /real TESS photometry/); // blind-TOI is contractually recovered on real photometry
-  assert.match(text, /for human follow-up rather than any claimed discovery/);
+  assert.match(text, /for human follow-up/);
   assert.match(text, /\(e\.g\. TIC 240720121, P=4\.50d\)/);
-  assert.match(text, /discoveryClaim=false/);
+  assert.ok(!/discoveryClaim=false/.test(text), "no per-post stamp");
   assert.ok(!/discovered/i.test(text), "must never claim a discovery");
   assertTweetSafe(text);
 });
@@ -150,7 +156,8 @@ test("priority 2: plural, and the newest candidate is the example", () => {
   const text = composeDigest(
     input({ findings: [blind("f1", "TIC 1", "2026-10-16T10:10:00.000Z"), blind("f2", "TIC 2", "2026-10-16T10:50:00.000Z")] }),
   );
-  assert.match(text, /flagged 2 new UNCONFIRMED transit candidates/);
+  assert.match(text, /\b2 new\b/, "reports the count of 2");
+  assert.match(text, /candidates/);
   assert.match(text, /e\.g\. TIC 2\b/, "the newest by createdAt is the example");
   assertTweetSafe(text);
 });
@@ -167,18 +174,19 @@ test("priority ordering: an on-chain result outranks a blind candidate in the sa
       findings: [knownPlanet("k1", "HD 189733 b", 2.2), blind("b1", "TIC 7", IN, 3.1)],
     }),
   );
-  assert.match(text, /re-verified the known exoplanet HD 189733 b/);
+  assert.match(text, /known exoplanet HD 189733 b/);
   assert.ok(!/UNCONFIRMED/.test(text), "the anchored line wins, so no blind text");
 });
 
 test("priority 3: a research milestone fires only when research.json landed in the window", () => {
   const research: DigestResearch = { survey: { stars: 204, purity: 0.5315315 } };
   const text = composeDigest(input({ research, researchUpdated: true }));
-  assert.match(text, /research update/);
+  assert.match(text, /research/);
   assert.match(text, /characterized on 204 real public TESS-SPOC stars/);
   assert.match(text, /purity LOWER bound is 53%/, "purity is rounded and labelled a LOWER bound");
   assert.match(text, /a genuine but uncatalogued planet is counted against it/);
-  assert.match(text, /discoveryClaim=false/);
+  assert.match(text, /not discoveries/);
+  assert.ok(!/discoveryClaim=false/.test(text), "no per-post stamp");
   assertTweetSafe(text);
 });
 
@@ -232,18 +240,18 @@ test("long-form: the research milestone cites the completeness span and the inde
   assertTweetSafe(text);
 });
 
-test("long-form: a known-planet re-validation carries the survey as SEPARATE context, never as photometry it recovered", () => {
+test("lean footnotes: a routine known-planet post drops the standing characterization even when research is rich", () => {
   const text = composeDigest(
     input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2185)], research: RICH_RESEARCH }),
   );
-  assert.match(text, /re-verified the known exoplanet HD 189733 b \(P=2\.22d\)/);
+  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22d\)/);
   assert.match(text, /recovery check/);
-  assert.match(text, /separately characterized on 204 real public TESS-SPOC stars/);
-  assert.match(text, /completeness rises from 36% at 300 ppm to 93% at 8000 ppm/);
-  assert.match(text, /discoveryClaim=false/);
-  // Red line: the re-validation clause itself must NOT claim it ran on real photometry (its photons may be seeded
-  // stand-ins); only the separate characterization may cite the real public survey.
-  assert.ok(!/re-verified[^.]*real (TESS|public)/.test(text), "the revalidation clause must not borrow real-photometry provenance");
+  assert.ok(!/separately characterized|completeness rises|purity LOWER bound/.test(text), "the methodology block now lives ONLY on the research milestone, not every result post");
+  assert.ok(!/research\.json|results-figure\.svg|p49-blind-test/.test(text), "no methodology links when no such number is cited");
+  assert.ok(text.includes(`- On-chain transaction: ${TX_URL}`), "the sealing tx is still the proof that corresponds");
+  assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
+  // Red line preserved: a known-planet re-validation never claims it ran on real photometry (its photons may be seeded).
+  assert.ok(!/real (TESS|public) photometry/.test(text), "a lean result post cites no real-photometry provenance");
   assertTweetSafe(text);
 });
 
@@ -306,7 +314,7 @@ test("proof links: a ledger row with no usable explorerUrl omits the tx line (ne
   // default (JS default params fire on an explicit undefined), so it would not exercise the missing-url path.
   const noUrlRow: DigestLedgerEntry = { findingId: "f1", status: "confirmed", signature: "5xYsig", anchoredAt: IN };
   const noUrl = composeDigest(input({ ledger: [noUrlRow], findings: [blind("f1", "TIC 9")] }));
-  assert.match(noUrl, /anchored 1 reproducible analysis result on-chain/);
+  assert.match(noUrl, /\b1 reproducible\b/);
   assert.ok(!/On-chain transaction/.test(noUrl), "no explorerUrl -> no tx link");
   assert.ok(!/explorer\.solana\.com/.test(noUrl));
   assertTweetSafe(noUrl);
@@ -318,10 +326,77 @@ test("proof links: a ledger row with no usable explorerUrl omits the tx line (ne
 
 test("proof links: a blind candidate anchors nothing, so it cites no on-chain tx", () => {
   const text = composeDigest(input({ findings: [blind("f1", "TIC 240720121", IN, 4.5)], research: RICH_RESEARCH }));
-  assert.match(text, /flagged 1 new UNCONFIRMED transit candidate/);
+  assert.match(text, /UNCONFIRMED transit candidate|periodic-dip candidate/);
   assert.ok(!/On-chain transaction/.test(text), "the blind-candidate path has no on-chain anchor");
   assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
   assertTweetSafe(text);
+});
+
+test("lean footnotes: a routine blind post carries no characterization or methodology links", () => {
+  const text = composeDigest(input({ findings: [blind("f1", "TIC 240720121", IN, 4.5)], research: RICH_RESEARCH }));
+  assert.ok(!/separately characterized|completeness rises|purity LOWER bound/.test(text));
+  assert.ok(!/research\.json|results-figure\.svg|p49-blind-test/.test(text), "no methodology links without a cited methodology number");
+  assert.match(text, /UNCONFIRMED/);
+  assert.match(text, /for human follow-up/);
+  assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
+  assertTweetSafe(text);
+});
+
+test("variety: the composer picks a phrasing deterministically from a stable set (pure, no clock/random)", () => {
+  const mk = (seed: string) =>
+    composeDigest(input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", `HD ${seed} b`, 2.2185)] }));
+  // Same window + same planet -> byte-identical (deterministic / testable).
+  assert.equal(mk("1"), mk("1"));
+  // Whatever variant the rotation picks, the required facts always survive and the stamp never returns.
+  for (const t of [mk("1"), mk("7"), mk("42")]) {
+    assert.match(t, /known exoplanet HD .* b \(P=2\.22d\)/);
+    assert.match(t, /recovery check/);
+    assert.ok(!/discoveryClaim=false/.test(t));
+  }
+});
+
+test("priority 4 (build note): no science but commits -> a plain dev update over the commits", () => {
+  const text = composeDigest(input({ devCommits: [
+    "feat(worker): a reliable X-post trigger from the Cloudflare cron",
+    "fix(x-post): anchor the digest window to the last actual post",
+    "test: cover the last-post reader offline",
+  ] }));
+  assert.match(text, /Under the hood|build note|machinery/);
+  assert.match(text, /- feat\(worker\): a reliable X-post trigger/, "commit subjects become the bullets");
+  assert.match(text, /- fix\(x-post\): anchor/);
+  assert.match(text, /Repository \(code \+ history\): https:\/\/github\.com\/SpaceDataRig\/space-data-rig/);
+  assert.ok(text.endsWith("- Live rig + full methods: https://spacedatarig.app"));
+  assert.ok(!/discovery|planet|photometry/i.test(text), "a build note is about the code, not a result");
+  assertTweetSafe(text);
+});
+
+test("build note: subjects that would break a red line are dropped; a clean one survives", () => {
+  const text = composeDigest(input({ devCommits: [
+    "fix: reduce the wallet cost",
+    "feat: shipped today",
+    "ci: run the pipeline test",
+  ] }));
+  assert.ok(!/wallet|\bcost\b|today/i.test(text), "a subject that would break a red line is never printed");
+  assert.match(text, /- ci: run the pipeline test/, "a clean subject survives as a bullet");
+  assertTweetSafe(text);
+});
+
+test("build note: when every commit breaks a red line, there is no dev post (stays silent)", () => {
+  const text = composeDigest(input({ devCommits: ["chore: wallet cost in usd", "feat: worked today"] }));
+  assert.equal(text, "", "nothing safe to say -> stays silent (the workflow then tries the heartbeat)");
+});
+
+test("priority ordering: science beats a build note, and a build note beats the heartbeat", () => {
+  const scienceWins = composeDigest(input({
+    ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2)], devCommits: ["feat: build x"],
+  }));
+  assert.match(scienceWins, /known exoplanet HD 189733 b/);
+  assert.ok(!/Under the hood|build note|machinery/.test(scienceWins), "science path chosen, not the dev note");
+
+  const devWins = composeDigest(input({ devCommits: ["feat: build x"], silentMinutes: 500, heartbeatAfterMinutes: 90 }));
+  assert.match(devWins, /Under the hood|build note|machinery/);
+  assert.ok(!/Space Data Rig status\./.test(devWins), "a buildable commit wins over the status heartbeat");
+  assertTweetSafe(devWins);
 });
 
 // ---- silence heartbeat (the documented FALLBACK when nothing new is reportable but the channel has gone quiet) ---
@@ -368,7 +443,7 @@ test("heartbeat: a real new result always wins -- a huge silence does not force 
     silentMinutes: 100000,
     heartbeatAfterMinutes: 90,
   }));
-  assert.match(t, /re-verified the known exoplanet HD 189733 b/);
+  assert.match(t, /known exoplanet HD 189733 b/);
   assert.ok(!/Space Data Rig status\./.test(t), "the science path is chosen, not the heartbeat");
   assertTweetSafe(t);
 });

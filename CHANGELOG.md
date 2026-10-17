@@ -89,6 +89,22 @@ without the secret (this code changes nothing until it is provisioned), failures
 tick is never blocked, and GitHub's own schedule stays as a backup. This is a Worker change -> requires wrangler
 deploy to take effect.
 
+### Digest tone: no per-post disclaimer, varied phrasing, lean footnotes + a build-note tier (2026-10-17)
+The auto digest read as copy-paste because every post reused the SAME three blocks -- a fixed "discoveryClaim=false"
+sentence, the standing characterization numbers (unchanged until research.json changes), and the same proof links --
+so only the headline differed. The maintainer had also asked to stop stamping that disclaimer on every post.
+composeDigest now: (1) drops the literal "discoveryClaim=false" stamp (honesty rides on plain wording +
+numbers-with-basis); (2) rotates each headline / honest line among a few paraphrases picked DETERMINISTICALLY by a
+hash of the window, so it stays a PURE testable function (no clock/random) while consecutive posts stop looking
+identical; (3) keeps the characterization block + research.json/figure/p49 links ONLY on the research milestone
+(there those numbers ARE the content) and makes routine result/candidate posts lean (headline + one honest line +
+the sealing tx when any + the live rig). Added a BUILD-NOTE tier (priority 4): when a window has no new science the
+workflow gathers non-research, non-chore commit subjects since the last post and composeDigest emits a plain dev
+update; sanitizeSubject drops any line mentioning spend/wallet/key or a time word, so commit coverage is BATCHED
+(never per-commit) and deduped by the last-post cursor, with the silence heartbeat still the last resort. CI-only
+(workflow + scripts run from the runner checkout, not the Worker bundle) -> push activates, no redeploy.
+typecheck:all + eslint clean; 545 pass (was 539, +6 for rotation / lean footnotes / build-note tier / filtering).
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

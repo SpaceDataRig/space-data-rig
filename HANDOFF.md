@@ -286,6 +286,27 @@ the Actions web page when the anonymous API is rate-limited.
   (scripts/report-freshness.ts) and p86 refuses/RED-marks stale ones before publishing. After
   touching a checkpoint or a report's inputs, RE-RUN the downstream report(s) AND rebuild
   web/reports (npm run p86:report-library) before saying a figure is current.
+- ANY content hash used for provenance must be computed on EOL-NORMALISED bytes, never on raw
+  working-tree bytes. This repo pins `* text=auto eol=lf`, but a Windows checkout with
+  core.autocrlf=true still materialises tracked text files as CRLF, so a stamp recorded by CI
+  (LF) did not match the same file locally (CRLF) and p86 refused to publish a report whose
+  inputs had not changed at all -- `git show HEAD:<path>` was byte-identical. See
+  normalizeEol/sha256File in scripts/report-freshness.ts; binary is left untouched (NUL in the
+  leading 8 KiB, git's own test). Corollary: a report whose rows are only partly ordered is
+  byte-unstable, which silently invalidates every stamp that records it -- fetchConfirmedPlanets
+  therefore tie-breaks sy_tmag on pl_name then pl_orbper, with plain code-unit comparison (NOT
+  localeCompare, which depends on host ICU data).
+- NEVER amend or rebase a commit that carries a built web/reports/ artifact without rebuilding
+  it afterwards. index.json records builtAtGitSha; rewriting the commit leaves that field naming
+  a SHA that was never pushed (merge-base --is-ancestor exits 1). tests/report-freshness.test.ts
+  fails on exactly that. Rebuild, then commit as a NEW commit -- the field legitimately trails
+  HEAD by one, which shaNote documents.
+- A background terminal left in PowerShell continuation mode (`>>`) keeps whatever was typed as
+  pending input and can flush it later, executing commands nobody just issued. This silently
+  re-ran scripts/p89-multiepoch-di.ts and overwrote committed reports/p89-multiepoch-di.{json,md}
+  with different parameters mid-session. ALWAYS run `git status --porcelain` immediately before
+  committing, add files EXPLICITLY by path (never `git add -A`), and treat any report file you did
+  not just regenerate as an incident to investigate rather than as your own work.
 - The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
   Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
   runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions

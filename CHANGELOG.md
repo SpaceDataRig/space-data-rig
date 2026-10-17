@@ -5,6 +5,41 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 re-check: the freshness gate itself had two false-positive bugs, and report order was not reproducible (2026-10-17)
+Re-verifying the audit-6 remediation end to end (rather than trusting it) found four defects, two of them IN
+the gate that was added to stop stale numbers -- so they were fixed, not worked around with `--allow-stale`.
+
+- **CRLF false positive that blocked deploys** (`scripts/report-freshness.ts`). The CI bot published
+  `reports/p59-offtarget-subset.json` from LF bytes; on a Windows checkout (`core.autocrlf=true`) the tracked
+  `src/data/*.ts` inputs materialise as CRLF, so hashing raw working-tree bytes declared a report the bot had
+  just written to be HARD-STALE and p86 exited 1 -- while `git show HEAD:<path>` was byte-identical to the
+  recorded stamp. `sha256File` now normalises CRLF/CR to LF; binary (a NUL in the leading 8 KiB, exactly git's
+  own test) is hashed untouched. Measured before switching: raw flagged 2 inputs stale, normalised flagged 0,
+  and every previously recorded stamp still matched, so nothing was invalidated.
+- **Hash-less input declarations were silently dropped.** `p79-benchmark.json` declares its inputs as bare path
+  strings; the strict filter discarded them, so the report looked fully verified when nothing about it could be
+  checked. They now become `{path, sha256: null}` and the verdict SAYS they cannot be re-verified instead of
+  returning an empty reason list that reads as "checked and clean".
+- **Non-deterministic catalog order churned report bytes** (`src/data/exoplanetArchive.ts`).
+  `fetchConfirmedPlanets` sorted by `sy_tmag` alone; every planet of a host shares a magnitude, so they all tied,
+  and a stable sort preserved whatever order TAP returned (the SQL has no ORDER BY -- NASA's WAF rejects the
+  clauses needed). The bot's Roadmap-5 commit shows p60 publishing HR 858 c/d and HD 25463 b/c swapped over an
+  UNCHANGED catalog. That churns the bytes of every per-planet report and so invalidates the sha256 other reports
+  record for them: left alone it would have made the gate above flap stale forever. Ties now break on `pl_name`
+  then `pl_orbper`, by plain code-unit comparison -- not `localeCompare`, whose collation depends on host ICU
+  data and would only trade one platform dependence for another.
+- **Never publish an unreachable build SHA.** `web/reports/index.json` recorded the HEAD at build time under the
+  plain name `gitSha`; because the artifact is built, then committed, then deployed, that value necessarily
+  trails `/health.gitSha` by one commit, and after an amend it named a commit that was never pushed at all
+  (`merge-base --is-ancestor` exit 1). Renamed to `builtAtGitSha` with a `shaNote` stating the trail and pointing
+  at `/health.gitSha`; an invariant test now fails if the published SHA is not an ancestor of HEAD.
+
+Tests 586 to 596 (+7 freshness, +2 tap, +1 reachability invariant); `typecheck:all` and `lint --max-warnings 0`
+exit 0; p86 publishes 48 fragments, 6 stamped, 0 stale, exit 0 -- where it previously exited 1 on a false
+positive. Deployed and verified live: `/health` gitSha equals HEAD, `freshness.stale` empty, P81 free of the
+stale `contradictions (4)`, P84/P85 showing the corrected-sky figures, and `stats.surveyPass` at 24 against the
+review's snapshot of 17 -- the claim-time cursor advance holding in production.
+
 ### Audit-6 remediation: RA-unit re-run, a report freshness gate, and coverage for the frozen path (2026-10-17)
 The sixth review's central finding was the same failure class in a third domain -- round 1 "computed but not
 anchored", round 4 "deployed but not in effect", this round "fixed but not re-run, re-run but not published".

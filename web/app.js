@@ -62,6 +62,7 @@ const runBtnEl = $("#run-btn");
 const autoscrollEl = $("#transcript-autoscroll");
 
 const findingsById = new Map();
+let ledgerCache = [];
 let lastRunning = false;
 let speakerTimer = 0;
 
@@ -245,6 +246,71 @@ function metricsHtml(f) {
   return cells.map(([k, v]) => `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
 }
 
+// ---- finding "Details" panel: next-transit countdown, NASA cross-match, recovery trials, on-chain proof ----
+// Read-only presentation of fields the finding ALREADY carries (src/core/types.ts Finding) -- no new call,
+// no worker change. The stored ephemeris is a linear model (t0Bjd, periodDays); its nextTransitsBjd starts
+// AT t0 (a past TESS epoch), so the next FUTURE transit is projected forward from that same model. That is
+// honest extrapolation of the published ephemeris, and it is labeled barycentric/approximate-UTC so it can
+// never read as a precise observing ephemeris. Everything degrades to "" when a field is absent.
+const BJD_UNIX_OFFSET = 2440587.5; // Julian Date of the Unix epoch (1970-01-01T00:00:00Z)
+const MS_PER_DAY = 86400000;
+function bjdToMs(bjd) { return (bjd - BJD_UNIX_OFFSET) * MS_PER_DAY; }
+function fmtCountdown(targetMs) {
+  let s = Math.round((targetMs - Date.now()) / 1000);
+  if (s <= 0) return "transit window reached";
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60);
+  if (d > 0) return `in ~${d}d ${h}h ${m}m`;
+  if (h > 0) return `in ~${h}h ${m}m`;
+  return `in ~${m}m`;
+}
+function nextTransit(eph) {
+  if (!eph || !Number.isFinite(eph.t0Bjd) || !(eph.periodDays > 0)) return null;
+  const t0 = bjdToMs(eph.t0Bjd);
+  const period = eph.periodDays * MS_PER_DAY;
+  const k = Math.max(0, Math.ceil((Date.now() - t0) / period));
+  return { nextMs: t0 + k * period, nextBjd: eph.t0Bjd + k * eph.periodDays };
+}
+function detailsHtml(f) {
+  const rows = [];
+  const nt = nextTransit(f.ephemeris);
+  if (nt) {
+    const utc = new Date(nt.nextMs).toISOString().slice(0, 16).replace("T", " ");
+    rows.push(`<div class="det-row"><span class="det-k">Next transit</span><span class="det-v"><b data-countdown="${nt.nextMs}">${fmtCountdown(nt.nextMs)}</b> &middot; BJD ${nt.nextBjd.toFixed(3)} &middot; ~${utc} UTC</span></div>`);
+    rows.push(`<div class="det-row"><span class="det-k">Ephemeris</span><span class="det-v">t0 = BJD ${f.ephemeris.t0Bjd.toFixed(3)}, P = ${f.ephemeris.periodDays.toFixed(5)} d &mdash; linear, barycentric, so the UTC instant is approximate to a few minutes</span></div>`);
+  }
+  const x = f.crossmatch;
+  if (x && x.matchedKnownPlanet) {
+    const name = x.knownPlanetName || "a catalogued planet";
+    const per = x.knownPeriodDays != null ? ` &middot; catalog P = ${x.knownPeriodDays.toFixed(4)} d` : "";
+    const delta = x.periodDeltaPct != null ? ` &middot; our period differs by ${Math.abs(x.periodDeltaPct).toFixed(3)}%` : "";
+    const link = x.knownPlanetName ? ` &middot; <a href="https://exoplanetarchive.ipac.caltech.edu/overview/${encodeURIComponent(x.knownPlanetName)}" target="_blank" rel="noopener">NASA archive row &rarr;</a>` : "";
+    rows.push(`<div class="det-row"><span class="det-k">NASA cross-match</span><span class="det-v">matched <b>${esc(name)}</b>${per}${delta}${link}</span></div>`);
+  } else if (x) {
+    rows.push(`<div class="det-row"><span class="det-k">NASA cross-match</span><span class="det-v">no catalogued planet matched this signal</span></div>`);
+  }
+  if (f.recoveryConfidence != null) {
+    const pct = `${Math.round(f.recoveryConfidence * 100)}%`;
+    const trials = f.recoveryTrials ? ` (${f.recoveryTrials.nRecovered}/${f.recoveryTrials.nTrials} fresh-noise replays recovered it)` : " of fresh-noise replays recovered it";
+    rows.push(`<div class="det-row"><span class="det-k">Injection recovery</span><span class="det-v">${pct}${trials}</span></div>`);
+  }
+  rows.push(`<div class="det-row"><span class="det-k">Bundle hash</span><span class="det-v"><code class="det-hash">${esc(f.bundleHash || "not sealed")}</code></span></div>`);
+  rows.push(f.solanaTx
+    ? `<div class="det-row"><span class="det-k">On-chain proof</span><span class="det-v"><a class="txlink det-hash" href="${esc(explorerUrl(f.solanaTx))}" target="_blank" rel="noopener">${esc(f.solanaTx)}</a></span></div>`
+    : `<div class="det-row"><span class="det-k">On-chain proof</span><span class="det-v">not anchored yet &mdash; Anchor seals this bundle hash in a Solana mainnet memo</span></div>`);
+  rows.push(`<div class="det-note">Verify recomputes this hash from the stored cold artifacts and checks every file; the on-chain memo carries the same hash, so the two must agree.</div>`);
+  return rows.join("");
+}
+// One shared ticker refreshes every rendered next-transit countdown; it re-queries the DOM each tick so
+// re-rendered cards are picked up automatically. Minute granularity is ample for a transit hours/days out.
+function tickCountdowns() {
+  for (const el of document.querySelectorAll("[data-countdown]")) {
+    const t = Number(el.getAttribute("data-countdown"));
+    if (Number.isFinite(t)) el.textContent = fmtCountdown(t);
+  }
+}
+
 function plotsHtml(id) {
   const items = [["timeseries.svg", "Light curve + transit model"], ["folded.svg", "Folded at the detected period"], ["periodogram.svg", "BLS periodogram (power vs period)"]];
   return items.map(([name, cap]) => `<figure><figcaption>${cap}</figcaption><img loading="lazy" src="/api/bundles/${encodeURIComponent(id)}/artifact/${name}" alt="${cap}" /></figure>`).join("");
@@ -282,6 +348,10 @@ function cardHtml(f) {
       <button class="btn tiny" data-action="anchor">${f.solanaTx ? "Re-anchor" : "Anchor"}</button>
       <span class="verify-out" data-status></span>
     </div>
+    <details class="card-details">
+      <summary>Details</summary>
+      <div class="det-body">${detailsHtml(f)}</div>
+    </details>
     <div class="plots" data-plots data-loaded="0"></div>
   </div>`;
 }
@@ -377,6 +447,7 @@ function setTarget(name) {
 }
 
 function renderLedger(entries) {
+  ledgerCache = entries || [];
   if (!entries || !entries.length) { ledgerEl.innerHTML = `<p class="empty">Nothing anchored yet.</p>`; return; }
   ledgerEl.innerHTML = entries.map((e) => {
     const tx = e.signature
@@ -903,6 +974,8 @@ function openSSE() {
     if (s.seats) MissionRoom.setAgents(s.seats);
     applyRunState(s.activeRun);
     renderProvBar(s.activeRun?.summary);
+    if (currentView() === "survey") renderSurveyTimeline();
+    else if (currentView() === "gallery") renderGalleryPlots();
   });
   es.onerror = () => setConn("down");
 }
@@ -1203,6 +1276,146 @@ function wireLiveExtras() {
   startFeedPulse();
 }
 
+// ---- research report library (view: reports) --------------------------------
+// Lazy-loads web/reports/index.json (built by scripts/p86-report-library.ts from the committed
+// reports/*.md), then fetches ONE rendered fragment per click. Static assets only -- no worker/DO
+// code and no new API route. The fragments are generated by our own build script and HTML-escaped
+// there (see scripts/report-md.ts), so injecting them into the detail pane is safe.
+const reportsListEl = $("#reports-list");
+const reportsDetailEl = $("#reports-detail");
+let reportsIndex = null;
+let reportsLoading = false;
+async function ensureReports() {
+  if (reportsIndex || reportsLoading) return;
+  reportsLoading = true;
+  try {
+    const idx = await fetchJSON("/reports/index.json");
+    reportsIndex = idx;
+    renderReportsList(idx.reports || []);
+  } catch {
+    if (reportsListEl) reportsListEl.innerHTML = `<p class="empty">Report index unavailable.</p>`;
+  } finally {
+    reportsLoading = false;
+  }
+}
+function renderReportsList(reports) {
+  if (!reportsListEl) return;
+  if (!reports.length) { reportsListEl.innerHTML = `<p class="empty">No reports yet.</p>`; return; }
+  reportsListEl.innerHTML = reports.map((r) =>
+    `<button class="report-item" type="button" data-slug="${esc(r.slug)}">` +
+      `<span class="ri-title">${esc(r.title)}</span>` +
+      (r.summary ? `<span class="ri-sum">${esc(r.summary)}</span>` : "") +
+    `</button>`).join("");
+}
+async function openReport(slug) {
+  if (!reportsDetailEl || !slug) return;
+  reportsDetailEl.innerHTML = `<p class="empty">Loading&hellip;</p>`;
+  try {
+    const r = await fetch(`/reports/${encodeURIComponent(slug)}.html`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    reportsDetailEl.innerHTML = `<div class="report-body md">${await r.text()}</div>`;
+    reportsDetailEl.scrollTop = 0;
+  } catch (e) {
+    reportsDetailEl.innerHTML = `<p class="empty">Could not load that report (${esc(e.message)}).</p>`;
+  }
+}
+if (reportsListEl) reportsListEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".report-item");
+  if (!btn) return;
+  for (const el of reportsListEl.querySelectorAll(".report-item")) el.classList.toggle("active", el === btn);
+  openReport(btn.dataset.slug);
+});
+
+// ---- figure gallery (view: gallery) -----------------------------------------
+// Lazy-loads web/figures.json (built by scripts/p87-figures-manifest.ts from the committed web/*.svg)
+// and adds a strip of the newest findings' own three plots (served from R2 via /api/bundles/:id/artifact).
+const galleryGridEl = $("#gallery-grid");
+const galleryPlotsEl = $("#gallery-plots");
+let galleryLoaded = false;
+async function ensureGallery() {
+  if (!galleryLoaded) {
+    galleryLoaded = true;
+    try {
+      const fig = await fetchJSON("/figures.json");
+      renderGallery(fig.figures || []);
+    } catch {
+      if (galleryGridEl) galleryGridEl.innerHTML = `<p class="empty">Figure manifest unavailable.</p>`;
+    }
+  }
+  renderGalleryPlots();
+}
+function renderGallery(figures) {
+  if (!galleryGridEl) return;
+  if (!figures.length) { galleryGridEl.innerHTML = `<p class="empty">No figures yet.</p>`; return; }
+  galleryGridEl.innerHTML = figures.map((f) =>
+    `<figure class="figure-card">` +
+      `<a href="/${esc(f.src)}" target="_blank" rel="noopener"><img loading="lazy" src="/${esc(f.src)}" alt="${esc(f.title)}" /></a>` +
+      `<figcaption><b>${esc(f.title)}</b>${f.caption ? `<span>${esc(f.caption)}</span>` : ""}</figcaption>` +
+    `</figure>`).join("");
+}
+function renderGalleryPlots() {
+  if (!galleryPlotsEl) return;
+  const latest = sortedFindings().slice(0, 3);
+  if (!latest.length) { galleryPlotsEl.innerHTML = `<p class="empty">No findings yet.</p>`; return; }
+  galleryPlotsEl.innerHTML = latest.map((f) => {
+    const pill = ORIGIN_PILL[originOf(f)];
+    return `<div class="gallery-finding"><div class="gf-head">${esc(f.targetId)} <span class="origin-pill ${pill.cls}">${pill.label}</span></div><div class="gf-plots">${plotsHtml(f.id)}</div></div>`;
+  }).join("");
+}
+
+// ---- autonomous survey timeline (view: survey) ------------------------------
+// Pure frontend: reconstructs each ~15-minute autonomous pass from data the page already has
+// (/api/state findings + /api/ledger), bucketing rows by their timestamp. No new endpoint, no worker
+// change. Every row keeps the honest origin label (known-planet re-validation vs UNCONFIRMED blind).
+const surveyTimelineEl = $("#survey-timeline");
+const surveyHeadStatsEl = $("#survey-head-stats");
+const surveyStatusTextEl = $("#survey-status-text");
+function bucketKey(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCMilliseconds(0);
+  d.setUTCSeconds(0);
+  d.setUTCMinutes(Math.floor(d.getUTCMinutes() / 15) * 15);
+  return d.toISOString();
+}
+function fmtBucket(iso) {
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
+}
+async function renderSurveyTimeline() {
+  if (!surveyTimelineEl) return;
+  if (surveyStatusTextEl) surveyStatusTextEl.textContent = `autonomous survey: next pass in ~${nextSurveyIn()}m`;
+  let state = null;
+  let ledger = ledgerCache;
+  try { state = await fetchJSON("/api/state"); } catch { /* keep last findings */ }
+  try { ledger = (await fetchJSON("/api/ledger")).ledger || []; } catch { /* keep cache */ }
+  ledgerCache = ledger;
+  const findings = state && Array.isArray(state.findings) ? state.findings : [...findingsById.values()];
+  if (state && state.stats && surveyHeadStatsEl) {
+    const st = state.stats;
+    surveyHeadStatsEl.textContent = `survey pass ${st.surveyPass ?? 0} - ${st.distinctHosts ?? 0} distinct targets - ${st.blindCandidates ?? 0} blind candidates (unconfirmed)`;
+  }
+  const buckets = new Map();
+  const ensure = (k) => { if (!buckets.has(k)) buckets.set(k, { findings: [], anchored: [] }); return buckets.get(k); };
+  for (const f of findings) { const k = bucketKey(f.createdAt); if (k) ensure(k).findings.push(f); }
+  for (const e of ledger) { const k = e.anchoredAt ? bucketKey(e.anchoredAt) : null; if (k) ensure(k).anchored.push(e); }
+  const keys = [...buckets.keys()].sort((a, b) => b.localeCompare(a)).slice(0, 40);
+  if (!keys.length) { surveyTimelineEl.innerHTML = `<p class="empty">No survey passes recorded yet. The autonomous cron runs every 15 minutes.</p>`; return; }
+  surveyTimelineEl.innerHTML = keys.map((k) => {
+    const b = buckets.get(k);
+    const rows = b.findings.map((f) => {
+      const badge = BADGE[f.verdict] || BADGE.rejected;
+      const pill = ORIGIN_PILL[originOf(f)];
+      return `<div class="tl-target"><span class="tl-tic">${esc(f.targetId)}</span><span class="origin-pill ${pill.cls}">${pill.label}</span><span class="badge ${badge.tone}">${badge.label}</span></div>`;
+    }).join("");
+    const chain = b.anchored.length
+      ? `<div class="tl-chain">sealed on-chain: ${b.anchored.map((e) => e.signature ? `<a class="txlink" href="${esc(e.explorerUrl || explorerUrl(e.signature))}" target="_blank" rel="noopener">${esc(shortTx(e.signature))}</a>` : esc(e.findingId)).join(" &middot; ")}</div>`
+      : "";
+    return `<div class="tl-round"><div class="tl-when"><span class="tl-dot"></span>${fmtBucket(k)}<span class="tl-count">${b.findings.length} target${b.findings.length === 1 ? "" : "s"}</span></div><div class="tl-body">${rows || `<span class="hint">no targets recorded this pass</span>`}${chain}</div></div>`;
+  }).join("");
+}
+
 // ---- boot ------------------------------------------------------------------
 setConn("connecting");
 const roomOk = MissionRoom.init($("#room"));
@@ -1222,12 +1435,13 @@ if (roomOk) {
 openSSE();
 loadAll();
 wireLiveExtras();
+setInterval(tickCountdowns, 30000); // refresh every finding's next-transit countdown (minute granularity)
 
 // ---- view router: show one navigable section at a time (so the page stops piling up) ----
 // The stacked sections are grouped into 6 views in index.html; this toggles which is visible
 // and deep-links via location.hash. Every element id is preserved, so all renderers above keep
 // working whether or not their view is on screen. Layout only -- no data or pipeline change.
-const VIEWS = ["mission", "candidates", "research", "observe", "findings", "method"];
+const VIEWS = ["mission", "candidates", "research", "reports", "gallery", "survey", "observe", "findings", "method"];
 const viewEls = Array.from(document.querySelectorAll(".view"));
 const navLinks = Array.from(document.querySelectorAll(".viewnav-link"));
 function currentView() {
@@ -1242,6 +1456,9 @@ function showView(name) {
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   }
   if (name === "mission" && roomOk) MissionRoom.resize(); // canvas was zero-width while hidden
+  if (name === "reports") ensureReports();
+  if (name === "gallery") ensureGallery();
+  if (name === "survey") renderSurveyTimeline();
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", () => showView(currentView()));

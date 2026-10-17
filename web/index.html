@@ -40,6 +40,9 @@
     <a class="viewnav-link" href="#/mission" data-goto="mission">Mission</a>
     <a class="viewnav-link" href="#/candidates" data-goto="candidates">Candidates</a>
     <a class="viewnav-link" href="#/research" data-goto="research">Research</a>
+    <a class="viewnav-link" href="#/reports" data-goto="reports">Reports</a>
+    <a class="viewnav-link" href="#/gallery" data-goto="gallery">Gallery</a>
+    <a class="viewnav-link" href="#/survey" data-goto="survey">Survey</a>
     <a class="viewnav-link" href="#/observe" data-goto="observe">Observatory</a>
     <a class="viewnav-link" href="#/findings" data-goto="findings">Findings &amp; Ledger</a>
     <a class="viewnav-link" href="#/method" data-goto="method">Method</a>
@@ -155,6 +158,63 @@
   </section>
 
   </div><!-- /view-research -->
+
+  <div class="view" id="view-reports" data-view="reports">
+
+  <!-- ============ research report library (the committed reports/, rendered) ============ -->
+  <section class="section reports-section">
+    <div class="glass reports">
+      <div class="panel-head">
+        <h2>RESEARCH REPORTS</h2>
+        <span class="hint">the committed reports/ directory, rendered &mdash; measurements and method cross-checks on real public TESS data with positive controls, never claims of new planets</span>
+      </div>
+      <div class="reports-layout">
+        <div class="reports-list" id="reports-list"><p class="empty">Loading the report index&hellip;</p></div>
+        <div class="reports-detail" id="reports-detail"><p class="empty">Select a report to read it here.</p></div>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /view-reports -->
+
+  <div class="view" id="view-gallery" data-view="gallery">
+
+  <!-- ============ figure gallery (every published figure + each finding's own plots) ============ -->
+  <section class="section gallery-section">
+    <div class="glass gallery">
+      <div class="panel-head">
+        <h2>FIGURE GALLERY</h2>
+        <span class="hint">every figure the rig has published &mdash; pipeline diagnostics and cross-checks, rendered from the committed web/*.svg</span>
+      </div>
+      <div class="gallery-grid" id="gallery-grid"><p class="empty">Loading the figure manifest&hellip;</p></div>
+      <div class="panel-head gallery-plots-head">
+        <h2>LATEST FINDING PLOTS</h2>
+        <span class="hint">the three newest findings&rsquo; own light curve and phase-fold, straight from their sealed bundles</span>
+      </div>
+      <div class="gallery-plots" id="gallery-plots"><p class="empty">No findings yet.</p></div>
+    </div>
+  </section>
+
+  </div><!-- /view-gallery -->
+
+  <div class="view" id="view-survey" data-view="survey">
+
+  <!-- ============ autonomous survey timeline (each ~15-minute pass, reconstructed) ============ -->
+  <section class="section survey-section">
+    <div class="glass survey">
+      <div class="panel-head">
+        <h2>AUTONOMOUS SURVEY TIMELINE</h2>
+        <span class="feed-status" title="The rig re-surveys real TESS photometry on a 15-minute schedule and seals accepted results on-chain">
+          <span class="pulse-dot"></span><span id="survey-status-text">booting survey&hellip;</span>
+        </span>
+      </div>
+      <p class="survey-stats" id="survey-head-stats">survey pass 0 - 0 distinct targets - 0 blind candidates (unconfirmed)</p>
+      <p class="survey-lede">Each block is one autonomous pass, bucketed to its 15-minute UTC window. Every row keeps its honest label: a <b>known-planet re-validation</b> or an <b>UNCONFIRMED blind candidate</b> for human follow-up &mdash; never a claimed discovery.</p>
+      <div class="timeline" id="survey-timeline"><p class="empty">Loading survey passes&hellip;</p></div>
+    </div>
+  </section>
+
+  </div><!-- /view-survey -->
 
   <div class="view" id="view-observe" data-view="observe">
 

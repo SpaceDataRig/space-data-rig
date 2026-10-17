@@ -1,0 +1,331 @@
+{
+  "schema": "sdr-reports/1",
+  "generatedAt": "2026-10-17T00:15:48.874Z",
+  "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
+  "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets.",
+  "count": 46,
+  "reports": [
+    {
+      "id": "p33-scale-roc",
+      "slug": "p33-scale-roc",
+      "title": "P33 large-scale completeness / purity ROC (real photometry)",
+      "reproduce": "npm run p33:scale-roc -- --stars 250 --maxsectors 2 --period 3 --seed 7",
+      "summary": "Sample: first 250 TIC-bearing hosts (T<=12, P in [1,13] d) in deterministic catalog order; 204 had usable public TESS-SPOC curves (<=2 sectors stitched), 46 coverage misses. Inject period 3 d; depths [300, 500, 1000, 2000, 4000, 8000]..."
+    },
+    {
+      "id": "p34-cost-model",
+      "slug": "p34-cost-model",
+      "title": "P34 measured compute / cost model (scaling the survey)",
+      "reproduce": "npm run p34:cost-model -- --sectors 1,2,4 --stars 1000,5000,20000 --parallel 1,8,64",
+      "summary": "Grounded in reports/p33-catalog.json (33 real TESS-SPOC curves). Re-fit every run; nothing hardcoded."
+    },
+    {
+      "id": "p35-pdm-crosscheck",
+      "slug": "p35-pdm-crosscheck",
+      "title": "P35 independent cross-check: PDM vs box-fit BLS (real photometry)",
+      "reproduce": "npm run p35:pdm-crosscheck -- --stars 40 --maxsectors 2 --period 3 --seed 7",
+      "summary": "Sample: first 40 TIC-bearing hosts (T<=12, P in [1,13] d) in deterministic catalog order (the SAME seeded sample as p33); 33 had usable public TESS-SPOC curves (<=2 sectors stitched), 7 coverage misses. PDM (Stellingwerf 1978,..."
+    },
+    {
+      "id": "p39-instrumental-fp",
+      "slug": "p39-instrumental-fp",
+      "title": "P39 systematics-inclusive null + ensemble FDR, measured on real TESS photometry",
+      "reproduce": "npm run p39:instrumental-fp -- --sector 1 --limit 200 --nNull 80 --inject 80 --seed 7",
+      "summary": "Data: real TGLC sector 1 full-frame curves (token-free public S3). Module: src/detect/instrumentalNull.ts (unit-tested, deterministic, research-only). Raw common-mode template RMS 5387 ppm / peak 104010 ppm; residual after subtraction..."
+    },
+    {
+      "id": "p40-fp-safety",
+      "slug": "p40-fp-safety",
+      "title": "P40 systematics-aware FP gate -- measure-before-gate safety certification",
+      "reproduce": "npm run p40:fp-safety -- --sector 1 --limit 80 --nNull 40 --seed 7",
+      "summary": "Data: real TGLC sector 1 curves, common-mode subtracted first (the intended subtract-then-gate posture). Residual coherent template after subtraction: RMS 44 ppm / peak 268 ppm."
+    },
+    {
+      "id": "p41-longbaseline",
+      "slug": "p41-longbaseline",
+      "title": "P41 longer baseline (multi-sector) vs single sector -- completeness on real photometry",
+      "reproduce": "npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7",
+      "summary": "Sample: first 30 seeded hosts (T<=12, P in [1,13] d); 29 had a public SPOC curve, 25 had >=2 sectors stitched. Identical injection-recovery depth grid on (a) each host's longest single sector and (b) its stitched multi-sector baseline;..."
+    },
+    {
+      "id": "p42-fp-scale",
+      "slug": "p42-fp-scale",
+      "title": "P42 systematics-aware FP control at scale, across sectors, with a formal discrimination metric",
+      "reproduce": "npm run p42:fp-scale -- --sectors 1,2,3,4 --limit 200 --nNull 60 --inject 60 --seed 7",
+      "summary": "Data: real TGLC full-frame curves (token-free public S3), subtract-then-gate posture. Module:"
+    },
+    {
+      "id": "p43-window-alias",
+      "slug": "p43-window-alias",
+      "title": "P43 window-function alias risk measured on real TESS photometry",
+      "reproduce": "npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 --seed 7",
+      "summary": "Data: real TGLC full-frame curves (token-free public S3). Module: src/detect/windowAlias.ts. Positives = a P=3 d / 8000 ppm transit injected onto a real curve and recovered by the A-gate; negatives = the A-gate survivors of the quiet..."
+    },
+    {
+      "id": "p44-diff-imaging",
+      "slug": "p44-diff-imaging",
+      "title": "P44 difference-imaging off-target calibration on confirmed planets",
+      "reproduce": "npm run p44:diff-imaging -- --targets 12 --tmag 10 --boot 200",
+      "summary": "Data: real TESS-SPOC target-pixel cubes (token-free public S3), confirmed-planet catalog ephemerides. Module: src/detect/diffImaging.ts. A confirmed planet transits its host, so the difference-image offset (where flux dropped vs where..."
+    },
+    {
+      "id": "p45-fp-probability",
+      "slug": "p45-fp-probability",
+      "title": "P45 false-positive probability characterised on confirmed planets",
+      "reproduce": "npm run p45:fp-probability -- --targets 16 --tmag 10 --aperture 21",
+      "summary": "Data: real Gaia DR3 neighbours of confirmed planets. Module: src/candidate/falsePositiveProbability.ts. Every row here is a REAL planet, so the honest question is how often the blended-EB prior wrongly elevates P(FP)."
+    },
+    {
+      "id": "p46-coherence",
+      "slug": "p46-coherence",
+      "title": "P46 multi-year O-C coherence characterised on real known planets",
+      "reproduce": "npm run p46:coherence -- --hosts 6 --maxsectors 3 --tmag 11",
+      "summary": "Data: real TESS-SPOC multi-sector stitched light curves of confirmed planets. Module: src/detect/multiYearCoherence.ts."
+    },
+    {
+      "id": "p47-completeness-grid",
+      "slug": "p47-completeness-grid",
+      "title": "P47 two-dimensional completeness map (period x depth) on real light curves",
+      "reproduce": "npm run p47:completeness-grid -- --targets 20 --tmag 11 --trials 2 --min-snr 7",
+      "summary": "Target selection function (stated a priori): unique TIC hosts from the confirmed-planet catalog at Tmag<=11, first SPOC light curve with >=200 points among up to 3 sectors containing the coordinate; injection grid..."
+    },
+    {
+      "id": "p48-novelty",
+      "slug": "p48-novelty",
+      "title": "P48 novelty disposition of the candidate board vs the NASA Exoplanet Archive",
+      "reproduce": "npm run p48:novelty-check",
+      "summary": "For each live board candidate we ask a narrow, checkable question: has anyone ALREADY announced a transit signal at or near this position (within 30\"), and does any announcement share our period? A control query against a known TOI..."
+    },
+    {
+      "id": "p49-blind-test",
+      "slug": "p49-blind-test",
+      "title": "P49 formal blind test of the detector on real photometry",
+      "reproduce": "npm run p49:blind-test -- --stars 30 --maxsectors 2 --inject-frac 0.5 --seed 7",
+      "summary": "A seeded coin planted one synthetic planet (random period/depth from a documented prior, logged in a sealed answer key the detector never saw) on some real TESS-SPOC curves and left the rest null; the production gated detector then ran..."
+    },
+    {
+      "id": "p50-replay",
+      "slug": "p50-replay",
+      "title": "P50 end-to-end deterministic replay on real public bytes",
+      "reproduce": "npm run p50:replay -- --repeats 3 --tmag 10 --sector 1",
+      "summary": "We fetched the raw TESS-SPOC FITS bytes for one real target from the public S3 bucket, ran the full detection chain (parse -> canonical data hash -> iterativeBls under the production gate -> recovered candidate), and folded only the..."
+    },
+    {
+      "id": "p51-crowding-stratified",
+      "slug": "p51-crowding-stratified",
+      "title": "P51 crowding-stratified acceptance re-validation of the blend-veto tools",
+      "reproduce": "npm run p51:crowding -- --targets 24 --tmag 12 --pixcap 8 --aperture 21",
+      "summary": "A reviewer's correct objection: a synthetic-data pass is not enough for a veto tool; acceptance testing also needs localization on confirmed planets AND performance in crowded fields where blends matter. Our P45 (blended-EB P(FP)) had..."
+    },
+    {
+      "id": "p52-negative-class",
+      "slug": "p52-negative-class",
+      "title": "P52 can we build a labelled NEGATIVE class from public data? (true-veto acceptance feasibility)",
+      "reproduce": "npm run p52:negative-class -- --hosts 12 --cone-radius-arcsec 21 --list-rows 3000",
+      "summary": "P51 measured the veto tools on crowded-field POSITIVES (confirmed planets). A reviewer's standard goes further: to accept a veto you must also show it CATCHES real blends, which needs a labelled NEGATIVE class -- real off-target..."
+    },
+    {
+      "id": "p53-psf-diff-imaging",
+      "slug": "p53-psf-diff-imaging",
+      "title": "P53 PSF-model double-difference imaging vs the naive centroid (P44), on confirmed planets",
+      "reproduce": "npm run p53:psf-diff-imaging -- --targets 24 --tmag 11 --boot 120",
+      "summary": "Data: real TESS-SPOC target-pixel cubes (token-free public S3), confirmed-planet catalog ephemerides. Modules: src/detect/psfDiffImaging.ts (under test) vs src/detect/diffImaging.ts (naive, shown unsafe in P44). A confirmed planet..."
+    },
+    {
+      "id": "p54-selection-function",
+      "slug": "p54-selection-function",
+      "title": "P54 selection-function skeleton, composed on the real P47 completeness grid",
+      "reproduce": "npm run p54:selection-function",
+      "summary": "Module: src/sim/selectionFunction.ts. Inputs: the REAL 2-D completeness map from reports/p47 (period x observed-depth detector efficiency on real TESS-SPOC photometry), composed with a geometric transit probability and a dilution window."
+    },
+    {
+      "id": "p56-real-selection",
+      "slug": "p56-real-selection",
+      "title": "P56 a real, per-target selection function (measured dilution + stellar parameters)",
+      "reproduce": "npm run p56:real-selection -- --hosts 18 --tmag 11 --aperture 21",
+      "summary": "Data: NASA Exoplanet Archive stellar radius/mass + Gaia DR3 aperture neighbours (both token-free), combined with the committed P47 completeness grid via src/sim/selectionFunction.ts."
+    },
+    {
+      "id": "p57-true-veto",
+      "slug": "p57-true-veto",
+      "title": "P57 the real true-veto 2x2 acceptance test (token-free labelled negative class)",
+      "reproduce": "npm run p57:true-veto -- --neg 18 --pos 18 --tmag 11 --boot 120",
+      "summary": "Labels come from the PUBLIC ExoFOP TOI table (no token): known planets (KP) = must keep, and false positives / eclipsing binaries (FP/EB) = should veto. Each case's ephemeris drives a real TESS-SPOC target-pixel cube through the PSF..."
+    },
+    {
+      "id": "p58-veto-2x2",
+      "slug": "p58-veto-2x2",
+      "title": "P58 a larger, phase-refined true-veto 2x2 (priority-0 scale-up)",
+      "reproduce": "npm run p58:veto-2x2 -- --neg 24 --pos 24 --tmag 11 --boot 80 --phases 16",
+      "summary": "Same token-free ExoFOP labels as P57 (KP = keep, FP/EB = veto), but with more cases and a transit-phase refinement: the fold is modulo the period, so we sweep one full period and localize at the phase of the strongest real dip. This..."
+    },
+    {
+      "id": "p59-offtarget-subset",
+      "slug": "p59-offtarget-subset",
+      "title": "P59 the veto's catch-rate on the localization-addressable subset (not the lower bound)",
+      "reproduce": "npm run p59:offtarget-subset -- --aperture 21 --min-sep 1.5",
+      "summary": "P57/P58 reported the PSF veto's blend catch-rate over ALL FP/EB labels, and flagged it was a LOWER bound because that class mixes off-target blends (which localization is built to catch) with on-target eclipsing binaries (which it..."
+    },
+    {
+      "id": "p60-joint-vs-single",
+      "slug": "p60-joint-vs-single",
+      "title": "P60 joint multi-sector search vs the single-sector path: a head-to-head re-find test",
+      "reproduce": "npm run p60:joint-vs-single -- --targets 20 --maxsectors 4 --tmag 11 --minsnr 7 --tol 5",
+      "summary": "On 20 confirmed planets that have >= 2 usable real TESS-SPOC sectors, both arms run the same production-like detector (BLS + SNR>=7 + period within 5% of catalog truth): the SINGLE arm takes the best independent sector, the JOINT arm..."
+    },
+    {
+      "id": "p61-llm-hypothesis",
+      "slug": "p61-llm-hypothesis",
+      "title": "P61 an LLM-chosen test, scored as a 2x2 on ground-truth classes (closed loop @ scale)",
+      "reproduce": "npm run p61:llm-hypothesis -- --pos 24 --neg 24 --deep --no-llm",
+      "summary": "Both classes come from ONE token-free public source (the ExoFOP TOI table): 24 confirmed planets (positives) and 18 FP/EB dispositions (labelled blends). Each menu test is run on real photometry and scored as a full 2x2 via..."
+    },
+    {
+      "id": "p62-phase-aligned-joint",
+      "slug": "p62-phase-aligned-joint",
+      "title": "P62 phase-aligned joint folding vs the naive stitch (targeted fix of the P60 negative)",
+      "reproduce": "npm run p62:phase-aligned-joint -- --minsnr 7 --tol 5 --win 0.1 --oversample 24",
+      "summary": "P60 found joint == single re-find (6/20 each) and the per-planet rows showed why: most misses were PERIOD MISMATCH on the stitched long baseline (a high-SNR peak at the wrong period from phase drift), not low SNR. This script tests the..."
+    },
+    {
+      "id": "p63-soft-score",
+      "slug": "p63-soft-score",
+      "title": "P63 soft blend-likelihood score (continuous, not a veto) and its published false-kill rate",
+      "reproduce": "npm run p63:soft-score",
+      "summary": "no new measurement). P57-P59 showed the pixel/dilution tools false-kill known planets, so they are turned into a continuous 0..1 blend-likelihood (src/candidate/softScore.ts) that the critic may use ONLY as a bounded ranking weight --..."
+    },
+    {
+      "id": "p64-fetch-telemetry",
+      "slug": "p64-fetch-telemetry",
+      "title": "P64 fetch telemetry: is the concurrent+cached multi-sector helper worth using broadly?",
+      "reproduce": "npm run p64:fetch-telemetry -- --hosts 8 --maxsectors 4 --concurrency 4",
+      "summary": "Over 8 real TOI hosts (<= 4 sectors each), the helper was swept twice. The cold pass made 24 byte requests (17 downloads, ~1062ms each, 7714ms wall). The warm pass reused the same keys and hit cache 24/24 = 100% of requests, finishing..."
+    },
+    {
+      "id": "p65-external-audit",
+      "slug": "p65-external-audit",
+      "title": "P65 external-candidate audit: submit a third-party claim, run the full critic + gates, report pass/fail",
+      "reproduce": "npm run p65:external-audit",
+      "summary": "This is the community / external audit ENTRY (research mode, NOT on-chain): it runs the independent audit (novelty, Gaia dilution/blend, geometry, our OWN blind re-detection + power rank, a detectability floor) AND the deterministic..."
+    },
+    {
+      "id": "p67-seed-precision",
+      "slug": "p67-seed-precision",
+      "title": "P67 seed-precision: does the production iterative detector clear the P62 'seed wall'?",
+      "reproduce": "npm run p67:seed-precision -- --minsnr 7 --tol 5 --win 0.1 --k 3",
+      "summary": "P62 localised the joint-search bottleneck to seed acquisition, but seeded the refinement from a NAIVE single-sector BLS peak. The production detector (p33/p49/p50) is iterativeBls -- mask-and-refind top-k signals. This study measures..."
+    },
+    {
+      "id": "p68-discriminator-roc",
+      "slug": "p68-discriminator-roc",
+      "title": "P68 discriminator ROC: does ANY threshold reject blends without killing known planets?",
+      "reproduce": "",
+      "summary": "P61 collapsed each vetting tool to a binary at one hard-coded cut. This study sweeps the FULL continuous threshold for every discriminator on the committed P61 per-target metrics (24 known planets + 18 labelled FP/EB blends, run..."
+    },
+    {
+      "id": "p69-rednoise-significance",
+      "slug": "p69-rednoise-significance",
+      "title": "P69 is the AR(1)-model significance gate faithful to real red noise?",
+      "reproduce": "npm run p69:rednoise-significance -- --targets 10 --nnull 100 --trials 100",
+      "summary": "The production gate calibrates against an AR(1) null matched to lag-1 rho. This study masks the transit on real known-planet hosts and compares, on the SAME noise-only residual bump, the AR(1)-model FAP against a model-free..."
+    },
+    {
+      "id": "p70-llm-ablation",
+      "slug": "p70-llm-ablation",
+      "title": "P70 LLM ablation: does the model change a decision, and is it a good hypothesis generator?",
+      "reproduce": "npm run p70:llm-ablation -- --pos 5 --neg 5",
+      "summary": "(1) Structural ablation. The per-test 2x2 and every gate flag come only from runHypothesisTest (real photometry); a model prediction is never an input. We verify this by recomputing each decision after the models run -- identical,..."
+    },
+    {
+      "id": "p71-audit-positive-control",
+      "slug": "p71-audit-positive-control",
+      "title": "P71 is the external-audit 'accepted' branch reachable, or is P65's 0/2 a dead gate?",
+      "reproduce": "npm run p71:audit-positive-control -- --targets 14 --tmag 11",
+      "summary": "P65 capped 0/2 novel external claims at needs-more-data. Is that the intended BLIND guard (a novel signal with no catalog cross-match can never be accepted -- src/critic/review.ts:282-296) or a broken, unsatisfiable gate? This control..."
+    },
+    {
+      "id": "p73-masked-recovery",
+      "slug": "p73-masked-recovery",
+      "title": "P73 masked recovery: is the P62 'seed wall' mostly sibling crowding?",
+      "reproduce": "npm run p73:masked-recovery -- --minsnr 7 --tol 5 --win 0.1 --k 3 --pad 0.25",
+      "summary": "P62/P67 put the joint-search bottleneck on SEED ACQUISITION: a blind fold locks onto a neighbouring planet or a harmonic and re-finds only 4-6/20, while a truth-seeded ORACLE fold reaches 10/20. The external eumemic/exoplanets pipeline..."
+    },
+    {
+      "id": "p74-centroid-consistency",
+      "slug": "p74-centroid-consistency",
+      "title": "P74 multi-sector centroid consistency: does cross-sector coherence fix the pixel veto?",
+      "reproduce": "npm run p74:centroid-consistency -- --pos 16 --neg 16 --maxsectors 5 --gate 2 --minsnr 5",
+      "summary": "P53/P57/P58 proved the SINGLE difference-image centroid veto is not safe to gate (it false-kills real planets). Attribution corrected after the eumemic author (@dysmemic) replied: eumemic's real cross-sector check runs an F-test on the..."
+    },
+    {
+      "id": "p75-inverted-fp",
+      "slug": "p75-inverted-fp",
+      "title": "P75 inverted-curve false alarms: an empirical, model-free check on the AR(1) gate",
+      "reproduce": "npm run p75:inverted-fp -- --targets 16 --nnull 60 --trials 80 --maxsectors 1",
+      "summary": "P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every catalogued planet..."
+    },
+    {
+      "id": "p76-multisource-novelty",
+      "slug": "p76-multisource-novelty",
+      "title": "P76 multi-source novelty: does adding ExoFOP TOI/CTOI shrink P48's apparent novelty?",
+      "reproduce": "npm run p76:multisource-novelty",
+      "summary": "AND the token-free ExoFOP-TESS public TOI/CTOI table)."
+    },
+    {
+      "id": "p77-centroid-ctest",
+      "slug": "p77-centroid-ctest",
+      "title": "P77 eumemic multi-sector centroid F-test -- faithful re-port, measured on our data",
+      "reproduce": "npm run p77:centroid-ctest -- --pos 14 --neg 14 --maxsectors 6 --minsnr 5",
+      "summary": "P74 mislabelled eumemic's cross-sector centroid check; the author corrected us -- it is an F-test on the mean offset (1\"/axis floor, >=2 sectors) against the target and each star within 2'. src/detect/centroidFtest.ts now reproduces..."
+    },
+    {
+      "id": "p78-blind-multisector",
+      "slug": "p78-blind-multisector",
+      "title": "P78 multi-sector blind test on real photometry",
+      "reproduce": "npm run p78:blind-multisector -- --stars 24 --sectors 4 --inject-frac 0.5 --seed 11",
+      "summary": "Where P49 stitched sectors into one baseline and forced corroboratedSectors=1 (so the 2-sector bar accepted nothing by construction), P78 runs the detector SECTOR BY SECTOR on real TESS-SPOC curves, plants one phase-coherent ephemeris..."
+    },
+    {
+      "id": "p79-benchmark",
+      "slug": "p79-benchmark",
+      "title": "P79 quantitative benchmark vs TCE / DAVE / TPM on our own data",
+      "reproduce": "npm run p79:benchmark",
+      "summary": "We cannot run those projects' production pipelines, so we re-implement each one's headline statistic (src/detect/benchmark.ts, 8 offline tests) and apply it to numbers our own pipeline measured on real TESS-SPOC photometry. The TPM..."
+    },
+    {
+      "id": "p80-external-validation",
+      "slug": "p80-external-validation",
+      "title": "P80 external-candidate independent validation (audit finding 9, gap 3)",
+      "reproduce": "npm run p80:external-validation -- --kp 10 --cp 10 --sectors 4 --min-depth 3000 --tol 0.02 --min-corr 2",
+      "summary": "Closes the structural gap behind the old 0/2: P65 audits an outside claim while running the detector blind on an empty catalog, so it can never self-corroborate. Here we build an INDEPENDENT validation path: the detector never sees the..."
+    },
+    {
+      "id": "p81-triceratops-lite",
+      "slug": "p81-triceratops-lite",
+      "title": "P81 TRICERATOPS-grade upgrade of the P80 external-candidate validation (audit finding 9, gap 3)",
+      "reproduce": "npm run p81:triceratops-lite -- --kp 10 --cp 10 --aperture 21 --centroid 1",
+      "summary": "P80 confirmed external (ExoFOP) claims via a BLIND, non-circular per-sector corroboration match, but its residual risks -- blends and period aliasing (P78: 2-sector precision ~47%) -- were only bounded statistically. Here each..."
+    },
+    {
+      "id": "p82-scaled",
+      "slug": "p82-scaled",
+      "title": "P82 scaled validation (audit follow-up: grow the sample ~100-1000x)",
+      "reproduce": "npm run p82:scaled -- --probe all --limit 500 --concurrency 6",
+      "summary": "Same three audit-9 probes, run over a MUCH larger real target pool via one resumable, concurrent, byte-cached engine (out/scaled/*.jsonl checkpoints). Every number is measured on real public TESS-SPOC / Gaia / ExoFOP data."
+    },
+    {
+      "id": "p84-centroid-diagnosis",
+      "slug": "p84-centroid-diagnosis",
+      "title": "P84 centroid per-contaminant F-test diagnosis (audit-10 #4: chase the 2/6, don't add a lever)",
+      "reproduce": "npm run p84:centroid-diagnosis -- --alpha 0.001",
+      "summary": "The scaled centroid result (P82) was asymmetric: known planets false-reject 1/53, but labelled blends caught 0/56. This splits the WHY into (A) COVERAGE -- did the target-pixel-cube even yield >=2 localisable sector offsets? -- and (B)..."
+    },
+    {
+      "id": "p85-contaminant-fit",
+      "slug": "p85-contaminant-fit",
+      "title": "P85 -- faithful per-contaminant centroid F-test (eumemic method), on the real P82 run",
+      "reproduce": "",
+      "summary": "Statistic: src/detect/centroidFtest.ts -- F = n(n-1)|m-s|^2 / RSS, 1\"/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (neighbourCanCauseDip). Source:..."
+    }
+  ]
+}

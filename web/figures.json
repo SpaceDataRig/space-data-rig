@@ -1,0 +1,101 @@
+{
+  "schema": "sdr-figures/1",
+  "generatedAt": "2026-10-17T00:15:49.511Z",
+  "generatedBy": "scripts/p87-figures-manifest.ts (from committed web/*.svg)",
+  "note": "Every figure the rig has published, inventoried from the committed web/ directory. Titles are derived mechanically from each filename; each card links to the SVG exactly as deployed.",
+  "count": 23,
+  "figures": [
+    {
+      "src": "results-figure.svg",
+      "title": "Results"
+    },
+    {
+      "src": "transit-example.svg",
+      "title": "Transit Example"
+    },
+    {
+      "src": "milestone-figure.svg",
+      "title": "Milestone"
+    },
+    {
+      "src": "anchor-decode-proof.svg",
+      "title": "Anchor Decode Proof"
+    },
+    {
+      "src": "audit-round-figure.svg",
+      "title": "Audit Round"
+    },
+    {
+      "src": "audit10-close-figure.svg",
+      "title": "Audit10 Close"
+    },
+    {
+      "src": "audit10-response-figure.svg",
+      "title": "Audit10 Response"
+    },
+    {
+      "src": "audit10-v011-figure.svg",
+      "title": "Audit10 V011"
+    },
+    {
+      "src": "audit3-remediation-figure.svg",
+      "title": "Audit3 Remediation"
+    },
+    {
+      "src": "audit4-live-gate-figure.svg",
+      "title": "Audit4 Live Gate"
+    },
+    {
+      "src": "audit5-rotating-survey-figure.svg",
+      "title": "Audit5 Rotating Survey"
+    },
+    {
+      "src": "audit9-complete-figure.svg",
+      "title": "Audit9 Complete"
+    },
+    {
+      "src": "audit9-round-figure.svg",
+      "title": "Audit9 Round"
+    },
+    {
+      "src": "borrowed-figure.svg",
+      "title": "Borrowed"
+    },
+    {
+      "src": "borrowed-round-figure.svg",
+      "title": "Borrowed Round"
+    },
+    {
+      "src": "deploy-audit10-figure.svg",
+      "title": "Deploy Audit10"
+    },
+    {
+      "src": "deploy-retest-round-figure.svg",
+      "title": "Deploy Retest Round"
+    },
+    {
+      "src": "followups-figure.svg",
+      "title": "Followups"
+    },
+    {
+      "src": "inverted-fp-figure.svg",
+      "title": "Inverted FP"
+    },
+    {
+      "src": "p81-round-figure.svg",
+      "title": "P81 Round"
+    },
+    {
+      "src": "p82-audit10-figure.svg",
+      "title": "P82 Audit10"
+    },
+    {
+      "src": "p82-results-figure.svg",
+      "title": "P82 Results"
+    },
+    {
+      "src": "p82-scaleup-figure.svg",
+      "title": "P82 Scaleup"
+    }
+  ]
+}

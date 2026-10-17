@@ -1,0 +1,9 @@
+<h1>P58 a larger, phase-refined true-veto 2x2 (priority-0 scale-up)</h1>
+<p>Reproduce: <code>npm run p58:veto-2x2 -- --neg 24 --pos 24 --tmag 11 --boot 80 --phases 16</code> Same token-free ExoFOP labels as P57 (KP = keep, FP/EB = veto), but with more cases and a transit-phase refinement: the fold is modulo the period, so we sweep one full period and localize at the phase of the strongest real dip. This removes catalog-epoch mis-timing -- the likely cause of P57&#39;s single false kill -- as a confound.</p>
+<p><strong>Usable labelled cases: 36</strong> (16 negatives, 20 positives) out of 48 sampled; 12 had no SPOC cube or no coherent transit.</p>
+<h2>PSF double-difference -- true 2x2 (phase-refined)</h2>
+<table class="md-table"><thead><tr><th></th><th>labelled blend (should veto)</th><th>labelled planet (must keep)</th></tr></thead><tbody><tr><td>veto fired</td><td>2</td><td>1</td></tr><tr><td>kept</td><td>14</td><td>19</td></tr></tbody></table>
+<ul><li>veto power (blends caught): <strong>13%</strong> [0.03, 0.36] -- a LOWER bound</li><li>false-veto rate (planets killed): <strong>5%</strong> [0.01, 0.24] -- exact</li><li>ROC AUC: PSF 0.694 vs naive 0.566; naive false-veto rate 40%</li></ul>
+<p><strong>VERDICT: safeToGate = false.</strong> 1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate</p>
+<h2>Honest reading</h2>
+<p>Even with the timing confound removed, the FP/EB negative class still contains on-target eclipsing binaries that a localization veto legitimately cannot reject, so the catch-rate is a lower bound, not the tool&#39;s sensitivity. The disqualifying number is the false-veto rate: any known planet the refined PSF still kills is a genuine localization failure, and one is enough to keep the gate closed. Nothing here is wired into the critic / money path; no candidate is cleared; discoveryClaim false.</p>

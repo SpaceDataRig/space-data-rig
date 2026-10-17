@@ -1,0 +1,8 @@
+<h1>P62 phase-aligned joint folding vs the naive stitch (targeted fix of the P60 negative)</h1>
+<p>Reproduce: <code>npm run p62:phase-aligned-joint -- --minsnr 7 --tol 5 --win 0.1 --oversample 24</code></p>
+<p>P60 found joint == single re-find (6/20 each) and the per-planet rows showed why: most misses were PERIOD MISMATCH on the stitched long baseline (a high-SNR peak at the wrong period from phase drift), not low SNR. This script tests the reviewer&#39;s fix -- detect per-sector first, then run a narrow, high-oversample joint fold around that seed (phase-aligned period refinement) -- on the SAME planets.</p>
+<table class="md-table"><thead><tr><th>arm</th><th>re-find</th><th>95% Wilson CI</th></tr></thead><tbody><tr><td>single-sector (best)</td><td>6/20 = 30.0%</td><td>-</td></tr><tr><td>naive joint (full-range)</td><td>6/20 = 30.0%</td><td>[15, 52]</td></tr><tr><td>REFINED (data-seed, phase-aligned)</td><td>4/20 = 20.0%</td><td>[8, 42]</td></tr><tr><td>ORACLE (truth-seed ceiling, diagnostic)</td><td>10/20 = 50.0%</td><td>-</td></tr></tbody></table>
+<p>Refinement FIXED 1 naive-misses and BROKE 3. Corroborated at the refined ephemeris (&gt;=2 sectors confirm a planet-plausible dip): 3/20.</p>
+<p><strong>Bottleneck:</strong> oracle minus refined = 6. A perfect (truth) seed recovers more than the data seed, so the binding constraint is single-sector seed acquisition, not the alignment step.</p>
+<p><strong>VERDICT: NO-LIFT-JOINT-NOT-A-FREE-LUNCH (phase-aligned refinement does not recover more known planets on this few-sector sample; the P60 negative stands and is now mechanistically explained)</strong></p>
+<p>Discovery claims stay structurally false; nothing here is gated, anchored, or deployed.</p>

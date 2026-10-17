@@ -1,0 +1,12 @@
+<h1>P85 -- faithful per-contaminant centroid F-test (eumemic method), on the real P82 run</h1>
+<p>Statistic: <code>src/detect/centroidFtest.ts</code> -- F = n(n-1)|m-s|^2 / RSS, 1&quot;/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (<code>neighbourCanCauseDip</code>). Source: out/scaled/centroid.jsonl (500 targets).</p>
+<h2>Coverage (the honest ceiling)</h2>
+<ul><li>testable (&gt;=2 localised sectors): <strong>109/500</strong> (21.8%)</li><li>never localised (pixel-baseline bound, P84): <strong>391/500</strong></li></ul>
+<h2>Headline at the run threshold (alpha=0.001)</h2>
+<ul><li>known-planet false-reject: <strong>1/53</strong> (1.9%) -- the calibration arm; eumemic report 0/565 at p&lt;0.001</li><li>blend caught (target rejected AND a contaminant fits): <strong>0/56</strong> (0.0%)</li><li>among testable blends that HAVE a bright-enough neighbour, a neighbour&#39;s offset explains the mean in <strong>54/56</strong> (96.4%)</li></ul>
+<h2>Sensitivity to the significance threshold</h2>
+<table class="md-table"><thead><tr><th>alpha</th><th>planet false-reject</th><th>blend caught</th><th>contaminant fits / viable</th></tr></thead><tbody><tr><td>0.0001</td><td>0/53</td><td>0/56</td><td>56/56</td></tr><tr><td>0.001</td><td>1/53</td><td>0/56</td><td>54/56</td></tr><tr><td>0.01</td><td>3/53</td><td>2/56</td><td>40/56</td></tr></tbody></table>
+<h2>Methodological choices (where the author&#39;s doc left them open)</h2>
+<ul><li><strong>Which star fits:</strong> max-p across bright-enough contaminants (a neighbour &#39;explains&#39; the mean offset); NOT a joint/min-p test.</li><li><strong>Scatter floor:</strong> 1&quot;/axis floor applied to the residual scatter AFTER the mean offset (per-axis min SS = (n-1)*floor^2).</li><li><strong>Brightness gate:</strong> neighbourCanCauseDip: a total eclipse of the neighbour, diluted by the host, must reach the observed depth.</li></ul>
+<h2>Verdict</h2>
+<p>FAITHFUL-REPRODUCTION-RUN. The per-contaminant F-test is implemented and executed over 109 localisable real targets. The statistic behaves as calibrated (a low known-planet false-reject rate), but its POWER is bounded by the same pixel-baseline coverage limit P84 identified: 391/500 targets never localise a &gt;=2-sector offset to test at all. Widening the sample narrows the error bars; it does not remove the coverage wall. safeToGate=false, discoveryClaim=false.</p>

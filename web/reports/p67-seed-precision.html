@@ -1,0 +1,7 @@
+<h1>P67 seed-precision: does the production iterative detector clear the P62 &#39;seed wall&#39;?</h1>
+<p>Reproduce: <code>npm run p67:seed-precision -- --minsnr 7 --tol 5 --win 0.1 --k 3</code></p>
+<p>P62 localised the joint-search bottleneck to seed acquisition, but seeded the refinement from a NAIVE single-sector BLS peak. The production detector (p33/p49/p50) is <code>iterativeBls</code> -- mask-and-refind top-k signals. This study measures SEED HIT (does the seeder&#39;s period match catalog truth within tol) for each seeder on the SAME 20 confirmed planets, then feeds each into P62&#39;s phase-aligned narrow joint fold.</p>
+<table class="md-table"><thead><tr><th>seeder</th><th>seed-hit</th><th>refined re-find</th><th>95% Wilson CI (hit)</th></tr></thead><tbody><tr><td>naive single peak</td><td>4/20</td><td>4/20</td><td>-</td></tr><tr><td>iterative top-1</td><td>5/20</td><td>5/20</td><td>[11, 47]</td></tr><tr><td>iterative top-3 (any)</td><td>5/20</td><td>-</td><td>[11, 47]</td></tr><tr><td>ORACLE (truth seed, ceiling)</td><td>-</td><td>10/20</td><td>-</td></tr></tbody></table>
+<p>Seed-recall gain (iterative top-3 over the single peak) = +5.0 pp.</p>
+<p><strong>VERDICT: MODEST-SEED-LIFT (iterative top-3 recall exceeds the single peak but within overlapping Wilson CIs -- not decisive; the wall is real but somewhat softer than P62 implied).</strong></p>
+<p>Discovery claims stay structurally false; nothing here is gated, anchored, or deployed.</p>

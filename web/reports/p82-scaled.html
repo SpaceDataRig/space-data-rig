@@ -1,0 +1,9 @@
+<h1>P82 scaled validation (audit follow-up: grow the sample ~100-1000x)</h1>
+<p>Reproduce: <code>npm run p82:scaled -- --probe all --limit 500 --concurrency 6</code> then <code>npm run p82:scaled -- --probe report</code> Same three audit-9 probes, run over a MUCH larger real target pool via one resumable, concurrent, byte-cached engine (out/scaled/*.jsonl checkpoints). Every number is measured on real public TESS-SPOC / Gaia / ExoFOP data.</p>
+<h2>Blind test (scaled P78)</h2>
+<ul><li>curves 425 (181 injected / 244 null); recall 86.2% CI [80,90]; precision 14.4% CI [12,17]</li><li>&gt;=2-sector bar: accepted 329, accepted-recall 139/181, FALSE-ACCEPTS 190, accepted precision 42.2%</li></ul>
+<h2>External independent validation (scaled P80+P81)</h2>
+<ul><li>KP controls: validated 182/234; blendFPP&lt;1e-3 &amp; no harmonic alias 1/234</li><li>CP uncertain candidates: validated 104/179; strict grade 5/179</li></ul>
+<h2>Centroid per-contaminant F-test (scaled P77 point 4)</h2>
+<ul><li>known planets testable 53: FALSE-REJECT 1 (1.9%) -- eumemic reference 0/565</li><li>labelled blends testable 56: CAUGHT 0 (0.0%) -- eumemic reference 73% (38% within 15&quot;)</li></ul>
+<p>First-order checks and positive controls on real data; not discoveries, not full TRICERATOPS/eumemic-grade validation. discoveryClaim false, safeToGate false.</p>

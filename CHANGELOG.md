@@ -5,6 +5,33 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Frontend: four new/expanded read-only views over already-published artifacts (2026-10-17)
+The hash-routed SPA gained four views that surface more of the rig's own output, all served from build-time
+static assets under web/ -- no new Worker route, no Durable Object, pipeline or bundle/science-hash change.
+(1) Reports: scripts/report-md.ts renders the committed reports/*.md through an escape-first Markdown-subset
+renderer, and scripts/p86-report-library.ts distills them into web/reports/index.json plus one HTML fragment
+per report (46 fragments); the view lazy-loads the index and injects a fragment per click. (2) Gallery:
+scripts/p87-figures-manifest.ts scans web/*.svg into web/figures.json (23 figures) and the view also renders
+each finding's light-curve / phase-fold plots. (3) Survey timeline: the autonomous passes bucketed to
+15-minute UTC edges from the existing /api/state + /api/ledger, honestly badged (RECOVERED vs UNCONFIRMED
+blind-TOI). (4) Finding Details: a collapsible panel per card with a client-side linear ephemeris countdown to
+the next transit, the NASA cross-match, injection-recovery, the bundle hash and a one-click on-chain proof.
+New tests/report-md.test.ts guards the renderer's escaping; the tests/projection-relabel.test.ts structural
+assertions on web/app.js are preserved verbatim.
+
+### X digest now reports science, not commit counts (2026-10-17)
+The hourly X digest (.github/workflows/x-post.yml) no longer counts commits landed since the last run; it
+composes ONE honest English line about the most important SCIENCE the rig produced in the window, via
+scripts/science-digest.ts (a pure composeDigest, unit-tested in tests/science-digest.test.ts, with all
+network/file I/O kept in an entry-guarded main()). Priority: (1) a result sealed on-chain -- named only when
+it resolves to a known-planet re-validation, otherwise an honest count; (2) newly flagged UNCONFIRMED blind
+candidates, worded "for human follow-up rather than any claimed discovery"; (3) a research milestone, and
+only when web/research.json actually landed in the window. A window with no new result still posts nothing.
+The window start is normalized to ISO 8601 so `git log --since` and the digest agree exactly; English-only /
+ASCII-only and dry-run-without-secrets behaviour are unchanged (enforced in both the workflow and
+post-x-text.ts). Photon-tier honesty is preserved: only blind-TOI findings (contractually recovered on real
+photometry) may say "real TESS photometry", and purity is cited as the lower bound research.json declares.
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

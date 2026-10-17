@@ -479,3 +479,111 @@ details.collapse[open] > summary.panel-head::after { content: "\2212"; }
 /* let the card header wrap instead of overflowing when the origin pill is added (mobile scrollWidth guard) */
 .card-top { flex-wrap: wrap; row-gap: 6px; }
 .card-side { flex: initial; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ============================================================================
+   REPORTS library + FIGURE gallery + SURVEY timeline (three added views)
+   Pure presentation for the web/app.js renderers; appended last so these rules
+   win the cascade. Grids use minmax(0,1fr)/auto-fit + min-width:0 so long IDs
+   and wide tables scroll inside their card, never the page (mobile guard).
+   ============================================================================ */
+
+/* ---- research reports: list + detail ---- */
+.reports { padding: 0 0 6px; overflow: hidden; }
+.reports-layout { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); }
+.reports-list { border-right: 1px solid var(--edge); max-height: 72vh; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.reports-list::-webkit-scrollbar, .reports-detail::-webkit-scrollbar { width: 8px; }
+.reports-list::-webkit-scrollbar-thumb, .reports-detail::-webkit-scrollbar-thumb { background: rgba(120, 180, 255, 0.18); border-radius: 8px; }
+.report-item { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: rgba(120, 180, 255, 0.03); border: 1px solid transparent; border-radius: 10px; padding: 9px 11px; transition: background 0.15s, border-color 0.15s; }
+.report-item:hover { background: rgba(120, 180, 255, 0.08); border-color: var(--edge); }
+.report-item.active { background: rgba(58, 224, 255, 0.12); border-color: var(--edge-hot); }
+.ri-title { font: 600 13px var(--sans); color: #eaf6ff; line-height: 1.35; }
+.report-item.active .ri-title { color: #fff; }
+.ri-sum { font-size: 11.5px; color: var(--ink-dim); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.reports-detail { padding: 18px 22px; max-height: 72vh; overflow-y: auto; min-width: 0; }
+
+/* ---- rendered Markdown fragment (.report-body.md) ---- */
+.report-body.md { color: var(--ink); font-size: 14px; line-height: 1.66; overflow-wrap: anywhere; }
+.report-body.md h1 { font-size: 20px; color: #eaf6ff; letter-spacing: 0.01em; margin: 0 0 12px; line-height: 1.3; }
+.report-body.md h2 { font-size: 16px; color: #dbe7ff; margin: 22px 0 8px; }
+.report-body.md h3 { font-size: 12.5px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.07em; margin: 18px 0 6px; }
+.report-body.md h4, .report-body.md h5, .report-body.md h6 { font-size: 13px; color: var(--ink); margin: 14px 0 6px; }
+.report-body.md p { margin: 0 0 12px; color: #cfe0f7; }
+.report-body.md ul, .report-body.md ol { margin: 0 0 12px; padding-left: 22px; color: #cfe0f7; }
+.report-body.md li { margin: 4px 0; }
+.report-body.md a { color: var(--accent); }
+.report-body.md strong { color: #eaf6ff; font-weight: 700; }
+.report-body.md em { color: var(--ink-dim); font-style: italic; }
+.report-body.md code { font: 500 12.5px var(--mono); color: var(--gold); background: rgba(255, 209, 102, 0.09); border-radius: 5px; padding: 1px 5px; }
+.report-body.md pre { background: rgba(3, 5, 13, 0.6); border: 1px solid var(--edge); border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 0 0 14px; }
+.report-body.md pre code { background: none; padding: 0; color: #cfe0f7; }
+.md-table { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 12.5px; }
+.md-table th, .md-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(120, 180, 255, 0.08); vertical-align: top; }
+.md-table thead th { color: var(--ink-faint); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--edge); }
+.md-table tbody td { color: var(--ink); font-family: var(--mono); }
+.md-table tbody tr:hover { background: rgba(120, 180, 255, 0.04); }
+
+/* ---- figure gallery ---- */
+.gallery { padding: 0 0 18px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; padding: 18px 22px; }
+.figure-card { margin: 0; min-width: 0; background: rgba(9, 14, 26, 0.6); border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.18s, transform 0.18s; }
+.figure-card:hover { border-color: var(--edge-hot); transform: translateY(-2px); }
+.figure-card a { display: block; background: #06101f; }
+.figure-card img { display: block; width: 100%; height: auto; }
+.figure-card figcaption { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.figure-card figcaption b { font: 600 12.5px var(--sans); color: #eaf6ff; }
+.figure-card figcaption span { font-size: 11.5px; color: var(--ink-dim); line-height: 1.45; }
+.gallery-plots-head { border-top: 1px solid var(--edge); }
+.gallery-plots { padding: 16px 22px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 18px; }
+.gallery-finding { min-width: 0; background: rgba(9, 14, 26, 0.5); border: 1px solid var(--edge); border-radius: 12px; padding: 12px 14px; }
+.gf-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font: 700 13px var(--mono); color: #eaf6ff; margin-bottom: 10px; }
+.gf-plots figure { margin: 0 0 12px; }
+.gf-plots figcaption { font: 600 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
+.gf-plots img { width: 100%; border-radius: 10px; border: 1px solid var(--edge); background: #06101f; }
+
+/* ---- autonomous survey timeline ---- */
+.survey { padding: 0 0 18px; }
+.survey .survey-stats { padding: 14px 22px 0; margin: 0; }
+.survey-lede { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin: 0; padding: 12px 22px 4px; }
+.survey-lede b { color: #cfe0f7; }
+.timeline { padding: 12px 22px 4px; display: flex; flex-direction: column; gap: 12px; }
+.tl-round { position: relative; border: 1px solid var(--edge); border-left: 3px solid var(--accent); border-radius: 10px; background: rgba(9, 14, 26, 0.5); padding: 10px 14px; }
+.tl-when { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font: 600 12px var(--mono); color: #dbe7ff; letter-spacing: 0.02em; }
+.tl-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px -1px var(--accent); flex: none; }
+.tl-count { margin-left: auto; font: 600 11px var(--mono); color: var(--ink-dim); }
+.tl-body { margin-top: 9px; display: flex; flex-direction: column; gap: 5px; }
+.tl-target { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font-size: 12.5px; }
+.tl-tic { font: 600 12px var(--mono); color: #cfe0f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.tl-chain { margin-top: 6px; padding-top: 7px; border-top: 1px dashed rgba(120, 180, 255, 0.14); font: 500 11px var(--mono); color: var(--ink-dim); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.tl-chain .txlink { color: var(--chain); }
+
+/* ---- phone refinements for the three added views (<=720px), appended last to win the cascade ---- */
+@media (max-width: 720px) {
+  .reports-layout { grid-template-columns: minmax(0, 1fr); }
+  .reports-list { border-right: none; border-bottom: 1px solid var(--edge); max-height: 38vh; }
+  .reports-detail { max-height: none; padding: 16px; }
+  .report-body.md { overflow-x: auto; }
+  .md-table { white-space: nowrap; }
+  .gallery-grid, .gallery-plots, .timeline, .survey-lede { padding-left: 16px; padding-right: 16px; }
+  .survey .survey-stats { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ---- finding "Details" panel (web/app.js detailsHtml): collapsed by default, like Plots ---- */
+.card-details { margin-top: 10px; }
+.card-details > summary { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; list-style: none;
+  font: 600 11px var(--sans); color: var(--ink-dim); background: rgba(120, 180, 255, 0.06);
+  border: 1px solid var(--edge); border-radius: 8px; padding: 4px 11px; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.card-details > summary::-webkit-details-marker { display: none; }
+.card-details > summary::before { content: "+"; font: 700 13px var(--mono); color: var(--accent); line-height: 1; }
+.card-details[open] > summary::before { content: "\2212"; }
+.card-details > summary:hover { color: var(--ink); border-color: var(--edge-hot); background: rgba(120, 180, 255, 0.12); }
+.det-body { margin-top: 11px; display: flex; flex-direction: column; gap: 7px; }
+.det-row { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 12px; }
+.det-k { font: 600 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+.det-v { color: var(--ink-dim); line-height: 1.5; overflow-wrap: anywhere; }
+.det-v b { color: #eaf6ff; font-weight: 700; }
+.det-v a { color: var(--accent); }
+.det-hash { font: 500 11.5px var(--mono); color: var(--gold); word-break: break-all; }
+.det-note { font-size: 11px; color: var(--ink-faint); line-height: 1.5; margin-top: 3px; border-top: 1px dashed rgba(120, 180, 255, 0.12); padding-top: 7px; }
+@media (max-width: 560px) {
+  .det-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}

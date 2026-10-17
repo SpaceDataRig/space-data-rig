@@ -1,0 +1,15 @@
+<h1>P43 window-function alias risk measured on real TESS photometry</h1>
+<p>Reproduce: <code>npm run p43:window-alias -- --sectors 1,2,3 --limit 150 --inject 60 --seed 7</code> Data: real TGLC full-frame curves (token-free public S3). Module: <code>src/detect/windowAlias.ts</code>. Positives = a P=3 d / 8000 ppm transit injected onto a real curve and recovered by the A-gate; negatives = the A-gate survivors of the quiet curves (false by construction).</p>
+<h2>Is the daily window even open in this data? (450 curves, 125 survivors)</h2>
+<p>The spectral-window power at 1 cycle/day over the A-gate survivors: median 0.012, p95 0.013, max 0.019. 0.0% of survivors sit on a curve with daily window &gt; 0.3; 0.0% above 0.5. TESS full-frame sampling is near-continuous, so the classic 1 c/d alias window is largely CLOSED here -- window aliasing is therefore NOT the dominant FP driver in this dataset (the coherent systematics of p39 are); this is the measured answer to a claim the roadmap previously only asserted.</p>
+<h2>Where the window IS open, does a veto help?</h2>
+<p>FP survivors alias-ambiguous (risk&gt;0.3): 0/125; injected planets alias-ambiguous (risk&gt;0.3): 0/53.</p>
+<table class="md-table"><thead><tr><th>veto threshold (risk &gt;)</th><th>FP removed</th><th>injected planets kept</th></tr></thead><tbody><tr><td>0.15</td><td>0.0% (0/125)</td><td>100.0% (53/53)</td></tr><tr><td>0.25</td><td>0.0% (0/125)</td><td>100.0% (53/53)</td></tr><tr><td>0.35</td><td>0.0% (0/125)</td><td>100.0% (53/53)</td></tr><tr><td>0.5</td><td>0.0% (0/125)</td><td>100.0% (53/53)</td></tr></tbody></table>
+<h2>Honest reading</h2>
+<ol><li>This turns &#39;window aliases are unsuppressed&#39; from an assertion into a measurement: we quantify the</li></ol>
+<p>sampling window per curve and the period ambiguity, on real data, with a true/false positive control.</p>
+<ol><li>The dominant finding is what a good negative result looks like: on near-continuous TESS FFI the daily</li></ol>
+<p>window is mostly closed, so the residual FP is NOT aliasing -- it is the coherent instrumental systematics p39 attacks and each star&#39;s own variability p31/p33 bound. Where the window is open (sparse or ground-like cadence), the veto removes ambiguous-period candidates at a completeness cost we report.</p>
+<ol><li>The primitive is still worth wiring for any sparse-cadence or long-campaign follow-up, where the daily</li></ol>
+<p>window reopens; it is pure, deterministic and unit-tested.</p>
+<p>Measure-only: nothing gated, anchored, claimed or deployed.</p>

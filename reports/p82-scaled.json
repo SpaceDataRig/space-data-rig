@@ -36,35 +36,35 @@
   "external": {
     "kp": {
       "tested": 234,
-      "validated": 182,
-      "grade": 1,
+      "validated": 186,
+      "grade": 24,
       "kpCI": [
-        72,
-        82.6
+        73.9,
+        84.2
       ]
     },
     "cp": {
       "tested": 179,
-      "validated": 104,
-      "grade": 5,
+      "validated": 103,
+      "grade": 9,
       "cpCI": [
-        50.8,
-        65.1
+        50.2,
+        64.5
       ]
     }
   },
   "centroid": {
-    "planetsTestable": 53,
-    "planetFalseReject": 1,
+    "planetsTestable": 55,
+    "planetFalseReject": 2,
     "planetFalseRejectCI": [
-      0.3,
-      9.9
+      1,
+      12.3
     ],
-    "blendsTestable": 56,
+    "blendsTestable": 59,
     "blendCaught": 0,
     "blendCaughtCI": [
       0,
-      6.4
+      6.1
     ],
     "eumemicReference": {
       "planetFalseReject": "0/565 at p<0.001",

@@ -6,10 +6,10 @@ engine (out/scaled/*.jsonl checkpoints). Every number is measured on real public
 - curves 425 (181 injected / 244 null); recall 86.2% CI [80,90]; precision 14.4% CI [12,17]
 - >=2-sector bar: accepted 329, accepted-recall 139/181, FALSE-ACCEPTS 190, accepted precision 42.2%
 ## External independent validation (scaled P80+P81)
-- KP controls: validated 182/234; blendFPP<1e-3 & no harmonic alias 1/234
-- CP uncertain candidates: validated 104/179; strict grade 5/179
+- KP controls: validated 186/234; blendFPP<1e-3 & no harmonic alias 24/234
+- CP uncertain candidates: validated 103/179; strict grade 9/179
 ## Centroid per-contaminant F-test (scaled P77 point 4)
-- known planets testable 53: FALSE-REJECT 1 (1.9%) -- eumemic reference 0/565
-- labelled blends testable 56: CAUGHT 0 (0.0%) -- eumemic reference 73% (38% within 15")
+- known planets testable 55: FALSE-REJECT 2 (3.6%) -- eumemic reference 0/565
+- labelled blends testable 59: CAUGHT 0 (0.0%) -- eumemic reference 73% (38% within 15")
 First-order checks and positive controls on real data; not discoveries, not full TRICERATOPS/eumemic-grade
 validation. discoveryClaim false, safeToGate false.

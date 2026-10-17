@@ -120,7 +120,16 @@ jobs:
           # digest compose an honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
           if [ ! -s out/digest.txt ]; then
             HB_MIN="${HEARTBEAT_AFTER_MIN:-90}"
-            LAST_POST_ISO="$(npm run --silent x:lastpost 2>/dev/null | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' | tail -1)"
+            # Read the newest tweet timestamp. This MUST NOT be able to abort the run: the step runs `set -eo
+            # pipefail`, so a bare `VAR="$(... | grep | tail)"` would inherit a non-zero pipeline status whenever
+            # the read yields no match and kill the whole digest (that is what made every quiet run fail). So the
+            # read is captured to files with its exit code checked via `|| echo`, stderr surfaced (x-last-post
+            # prints only fixed, credential-free diagnostics), and the ISO extracted with `|| true` as a guard.
+            LP_OUT="$(mktemp)"; LP_ERR="$(mktemp)"
+            npm run --silent x:lastpost >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
+            echo "x:lastpost stderr: $(tr -cd '\11\12\15\40-\176' < "$LP_ERR" | tr '\n' ' ' | head -c 300)"
+            LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | tail -1 || true)"
+            rm -f "$LP_OUT" "$LP_ERR"
             SILENT_MIN=""
             if [ -n "$LAST_POST_ISO" ]; then
               EPOCH="$(date -u -d "$LAST_POST_ISO" +%s 2>/dev/null || true)"
@@ -128,7 +137,7 @@ jobs:
             fi
             if [ -n "$SILENT_MIN" ]; then
               echo "no new science; channel silent ${SILENT_MIN} min (heartbeat threshold ${HB_MIN})"
-              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --silent-min "$SILENT_MIN" --heartbeat-after-min "$HB_MIN" --out out/digest.txt
+              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --silent-min "$SILENT_MIN" --heartbeat-after-min "$HB_MIN" --out out/digest.txt || true
             else
               echo "no new science; could not read last-post time (X read unavailable) -> skipping, no heartbeat"
             fi

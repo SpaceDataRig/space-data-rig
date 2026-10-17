@@ -115,7 +115,25 @@ export async function fetchConfirmedPlanets(o: ArchiveQueryOptions = {}): Promis
           if (tic != null) row.tic = tic;
           return row;
         });
-      rows.sort((a, b) => (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99));
+      // DETERMINISTIC ORDER (audit-6 follow-up). Sorting by sy_tmag alone leaves every planet of the SAME
+      // host tied -- they share a stellar magnitude -- and Array#sort is stable, so tied rows kept whatever
+      // order the TAP query happened to return. The SQL carries no ORDER BY (NASA's WAF rejects the clauses
+      // we would need), so that order is not guaranteed. Two runs over an UNCHANGED catalog therefore
+      // emitted the same rows in a different order. That is not cosmetic here: it churns the bytes of every
+      // report that lists per-planet rows, and a byte-churned report invalidates the sha256 stamps that
+      // downstream reports record for it, so the report-freshness gate flapped a report stale whose inputs
+      // had not actually changed (observed on p60: HR 858 c/d and HD 25463 b/c swapping between runs).
+      // Tie-breaking on pl_name then pl_orbper makes the order a pure function of the content.
+      //
+      // The comparison is plain code-unit, NOT localeCompare: locale-aware collation depends on the ICU
+      // data of whichever machine ran it, which would trade one platform-dependent order for another.
+      const byName = (x: string, y: string): number => (x < y ? -1 : x > y ? 1 : 0);
+      rows.sort(
+        (a, b) =>
+          (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99) ||
+          byName(String(a.pl_name ?? ""), String(b.pl_name ?? "")) ||
+          (a.pl_orbper ?? 0) - (b.pl_orbper ?? 0),
+      );
       // Autonomous mode keeps only TIC-bearing rows (client-side: the WAF
       // rejects an SQL `is not null` clause). Nearly all TESS pscomppars rows
       // carry a tic_id, so a slightly deeper slice before filtering is enough.

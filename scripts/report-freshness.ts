@@ -55,10 +55,36 @@ export type HashFn = (path: string) => string | null;
 export type MtimeFn = (path: string) => number | null;
 export type GitTimeFn = (path: string) => string | null;
 
-/** SHA-256 of a file's bytes, or null when it cannot be read (absent / gitignored & cleaned). */
+/**
+ * CRLF/CR -> LF for text content; binary content returned byte-for-byte untouched.
+ *
+ * Binary is detected the way git detects it: a NUL byte in the leading 8 KiB. git never EOL-converts a
+ * binary file, so its working-tree bytes are already platform-stable and must not be rewritten.
+ */
+export function normalizeEol(buf: Buffer): Buffer {
+  if (buf.subarray(0, 8192).includes(0)) return buf; // binary: leave alone
+  if (!buf.includes(13)) return buf; // no CR anywhere: already LF (the common case, avoids the copy)
+  // latin1 round-trips every byte 0x00-0xFF to the same code unit, so this is lossless for any content.
+  return Buffer.from(buf.toString("latin1").replace(/\r\n/g, "\n").replace(/\r/g, "\n"), "latin1");
+}
+
+/**
+ * SHA-256 of a file's content WITH LINE ENDINGS NORMALISED, or null when it cannot be read (absent /
+ * gitignored & cleaned).
+ *
+ * WHY NORMALISE (audit-6 follow-up; measured, not assumed). This repo pins `* text=auto eol=lf`, but a
+ * Windows checkout with core.autocrlf=true still materialises tracked text files with CRLF bytes, while
+ * CI generates the same report from LF bytes. Hashing raw working-tree bytes therefore made a report the
+ * CI bot had just published read as HARD-STALE on a Windows machine even though `git show HEAD:<path>` was
+ * byte-identical to what the stamp recorded -- a false positive that blocks deploys for a non-reason and
+ * trains people to reach for --allow-stale. Measured across every stamped report before this change: the
+ * raw-bytes scheme flagged 2 inputs stale (both pure CRLF artifacts of src/data/*.ts), the normalised
+ * scheme flagged 0, and every previously recorded stamp -- CI-recorded LF inputs AND locally recorded
+ * untracked out/scaled/*.jsonl checkpoints -- still matched, so switching invalidates nothing.
+ */
 export function sha256File(path: string): string | null {
   try {
-    return createHash("sha256").update(readFileSync(path)).digest("hex");
+    return createHash("sha256").update(normalizeEol(readFileSync(path))).digest("hex");
   } catch {
     return null;
   }
@@ -166,6 +192,11 @@ export function evaluateAgainst(
     const cmp = compareInputs(states);
     reasons.push(...cmp.reasons);
     const stale = cmp.hardStale; // ONLY a changed recorded input blocks.
+    // A report that NAMES its inputs but records no hash for any of them is not verified -- say so, rather
+    // than letting an empty reason list read as "checked and clean" (the p79 hand-written shape).
+    if (!stamp.inputs.some((i) => i.sha256)) {
+      reasons.push(`report declares ${stamp.inputs.length} input path(s) but records no sha256 for them, so they cannot be re-verified`);
+    }
     // Optional soft note: a dependency is newer than the report even though the hashed inputs still match.
     if (!stale && isProvenanceStale(opts.reportMs, opts.inputNewestMs, opts.toleranceMs)) {
       reasons.push("note: a source this report reads is newer than the report itself (informational, not blocking)");
@@ -191,15 +222,35 @@ export function buildStamp(inputPaths: string[]): FreshnessStamp {
   };
 }
 
+/**
+ * Coerce the `inputs` array of a stamp into InputRecords, accepting BOTH shapes that exist in the wild:
+ * `{path, sha256}` objects (what buildStamp writes) and bare path strings (what older hand-written reports
+ * such as p79-benchmark.json declared). A bare string becomes `{path, sha256: null}` so the declared
+ * dependency stays VISIBLE: dropping it, as the previous strict filter did, made such a report look fully
+ * verified when in fact nothing about it could be checked at all.
+ */
+export function normalizeInputRecords(raw: unknown[]): InputRecord[] {
+  const out: InputRecord[] = [];
+  for (const x of raw) {
+    if (typeof x === "string") {
+      if (x) out.push({ path: x, sha256: null });
+      continue;
+    }
+    if (x && typeof x === "object") {
+      const o = x as Record<string, unknown>;
+      if (typeof o.path === "string" && o.path) out.push({ path: o.path, sha256: typeof o.sha256 === "string" ? o.sha256 : null });
+    }
+  }
+  return out;
+}
+
 /** Read a stamp back out of a report's JSON meta, tolerating the flat p88/p89 shape and legacy reports. */
 export function stampFromMeta(meta: unknown): FreshnessStamp | null {
   if (!meta || typeof meta !== "object") return null;
   const m = meta as Record<string, unknown>;
   const generatedAt = typeof m.generatedAt === "string" ? m.generatedAt : null;
   if (!generatedAt) return null;
-  const inputs = Array.isArray(m.inputs)
-    ? (m.inputs as unknown[]).filter((x): x is InputRecord => !!x && typeof (x as InputRecord).path === "string")
-    : [];
+  const inputs = Array.isArray(m.inputs) ? normalizeInputRecords(m.inputs) : [];
   return { generatedAt, gitSha: typeof m.gitSha === "string" ? m.gitSha : "", inputs };
 }
 

@@ -146,7 +146,19 @@ function main(): void {
   const index = {
     schema: "sdr-reports/1",
     generatedAt: publishStamp.generatedAt,
-    gitSha: publishStamp.gitSha,
+    // WHY "builtAtGitSha" AND NOT "gitSha" (audit-6 follow-up). This is a STATIC artifact: p86 runs, its
+    // output is committed, and that commit is then deployed. The HEAD recorded here is therefore, by
+    // construction, the commit BEFORE the one that ships this file -- it can never equal /health.gitSha,
+    // which is injected at deploy time. Naming the field plainly "gitSha" invited exactly that false
+    // mismatch (an auditor comparing the two would read a benign one-commit lag as "the published report
+    // library came from a different tree than the deployed worker"). The authoritative deployed revision
+    // is /health.gitSha; whether a report may be quoted is decided by its own input sha256 stamp under
+    // freshness/, never by this build-provenance field.
+    builtAtGitSha: publishStamp.gitSha,
+    shaNote:
+      "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the " +
+      "deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed " +
+      "revision and freshness.stale for whether any report here is out of date.",
     generatedBy: "scripts/p86-report-library.ts (from committed reports/*.md)",
     note:
       "Human-readable research reports, rendered from the committed reports/ directory. These characterise " +

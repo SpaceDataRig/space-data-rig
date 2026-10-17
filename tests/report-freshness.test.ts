@@ -14,6 +14,9 @@ import {
   evaluateAgainst,
   stampFromMeta,
   buildStamp,
+  normalizeEol,
+  normalizeInputRecords,
+  sha256File,
   type FreshnessStamp,
 } from "../scripts/report-freshness.ts";
 
@@ -116,4 +119,91 @@ test("the gate re-flags a real committed report when its recorded checkpoint is 
   if (!s || !s.inputs.length) return; // P85 not yet regenerated with a stamp on this checkout
   const v = evaluateAgainst(s, { reportMs: T0 + 10 * DAY, inputNewestMs: null, hash: () => "0".repeat(64) });
   assert.equal(v.stale, true);
+});
+
+// ---- line-ending independence (audit-6 follow-up) -----------------------------------------------
+//
+// REGRESSION THIS PINS: the CI bot published reports/p59-offtarget-subset.json from LF bytes; on a Windows
+// checkout with core.autocrlf=true the very same tracked .ts inputs materialise as CRLF, so hashing raw
+// bytes declared a report the bot had just written to be HARD-STALE and blocked the deploy -- while
+// `git show HEAD:<path>` proved nothing had changed. The hash must depend on CONTENT, not on the platform
+// that happens to have checked it out.
+
+test("normalizeEol: CRLF and lone CR fold to LF; LF-only content is returned unchanged", () => {
+  assert.deepEqual(normalizeEol(Buffer.from("a\r\nb\r\n")), Buffer.from("a\nb\n"));
+  assert.deepEqual(normalizeEol(Buffer.from("a\rb")), Buffer.from("a\nb"));
+  const lf = Buffer.from("a\nb\n");
+  assert.equal(normalizeEol(lf), lf); // identity, not a copy: the fast path must not rewrite anything
+});
+
+test("normalizeEol: binary content is NEVER rewritten even when it contains CR bytes", () => {
+  // git treats a NUL in the leading bytes as binary and skips EOL conversion; so must we, or a .fits/.png
+  // input would hash differently here than in CI.
+  const bin = Buffer.from([0x89, 0x50, 0x00, 0x0d, 0x0a, 0x1a, 0x0a]);
+  assert.equal(normalizeEol(bin), bin);
+  assert.deepEqual(normalizeEol(bin), bin);
+});
+
+test("sha256File: the SAME text hashes identically from a CRLF file and an LF file (platform independence)", async () => {
+  const { writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = tmpdir();
+  const crlf = join(dir, "sdr-freshness-crlf.txt");
+  const lf = join(dir, "sdr-freshness-lf.txt");
+  try {
+    writeFileSync(crlf, "line one\r\nline two\r\n");
+    writeFileSync(lf, "line one\nline two\n");
+    const a = sha256File(crlf);
+    const b = sha256File(lf);
+    assert.match(a ?? "", /^[0-9a-f]{64}$/);
+    assert.equal(a, b, "CRLF and LF renderings of the same text must produce the same stamp");
+    // And a genuine content change must still be caught -- normalising must not blind the gate.
+    writeFileSync(lf, "line one\nline CHANGED\n");
+    assert.notEqual(sha256File(lf), a);
+    assert.equal(sha256File(join(dir, "sdr-does-not-exist.txt")), null);
+  } finally {
+    rmSync(crlf, { force: true });
+    rmSync(lf, { force: true });
+  }
+});
+
+// ---- hand-written / hash-less input declarations -------------------------------------------------
+
+test("normalizeInputRecords: bare path strings become visible {path, sha256:null} instead of being dropped", () => {
+  // The real p79-benchmark.json shape: inputs declared as plain strings. The old strict filter discarded
+  // them, so the report looked fully verified when nothing about it could be checked.
+  assert.deepEqual(normalizeInputRecords(["reports/p47-completeness-grid.json", "reports/p78-blind-multisector.json"]), [
+    { path: "reports/p47-completeness-grid.json", sha256: null },
+    { path: "reports/p78-blind-multisector.json", sha256: null },
+  ]);
+  assert.deepEqual(normalizeInputRecords([{ path: "p", sha256: "h" }]), [{ path: "p", sha256: "h" }]);
+  assert.deepEqual(normalizeInputRecords([{ path: "p" }]), [{ path: "p", sha256: null }]); // object with no hash
+  assert.deepEqual(normalizeInputRecords(["", null, 42, {}, { sha256: "h" }]), []); // junk contributes nothing
+});
+
+test("stampFromMeta: keeps the p79 bare-string inputs rather than silently emptying them", () => {
+  const s = stampFromMeta({ generatedAt: "2026-10-17T00:00:00Z", inputs: ["reports/p47-completeness-grid.json"] });
+  assert.equal(s?.inputs.length, 1);
+  assert.equal(s?.inputs[0].path, "reports/p47-completeness-grid.json");
+  assert.equal(s?.inputs[0].sha256, null);
+});
+
+test("evaluateAgainst: inputs declared but never hashed are NOT stale, and say they cannot be re-verified", () => {
+  const s = stamp([{ path: "reports/p47-completeness-grid.json", sha256: null }]);
+  const v = evaluateAgainst(s, { reportMs: T0, inputNewestMs: T0 + DAY, hash: hashFrom({}) });
+  assert.equal(v.stale, false, "an unhashable declaration must never block a deploy");
+  assert.equal(v.stamped, true);
+  assert.match(v.reasons.join(" "), /records no sha256 for them/);
+  // Crucially it must NOT read as clean-and-verified: the gap has to be in the reasons.
+  assert.ok(v.reasons.length > 0);
+});
+
+test("evaluateAgainst: one hashed input alongside a hash-less one still verifies the hashed one", () => {
+  const s = stamp([{ path: "a.json", sha256: null }, { path: "b.jsonl", sha256: "bbb" }]);
+  const ok = evaluateAgainst(s, { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "b.jsonl": "bbb" }) });
+  assert.equal(ok.stale, false);
+  assert.doesNotMatch(ok.reasons.join(" "), /records no sha256/); // at least one input WAS verifiable
+  const bad = evaluateAgainst(s, { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "b.jsonl": "zzz" }) });
+  assert.equal(bad.stale, true);
 });

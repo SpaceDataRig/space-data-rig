@@ -1,5 +1,5 @@
 // SCIENCE DIGEST: compose ONE honest, English-only line about the most important science the rig produced
-// in a time window, for the hourly X (Twitter) digest. This REPLACES the old "N new commits" digest: the
+// in a time window, for the half-hourly X (Twitter) digest. This REPLACES the old "N new commits" digest: the
 // channel now reports SCIENCE, not commit counts, and posts NOTHING when there is no new result to report
 // (see .github/workflows/x-post.yml).
 //
@@ -173,7 +173,7 @@ async function main(): Promise<void> {
   const ru = arg("research-updated", "");
   const researchUpdated = ru === "1" || ru.toLowerCase() === "true";
 
-  const FALLBACK_MS = 70 * 60 * 1000; // ~1h, so a slightly-late tick cannot leave an uncovered sliver
+  const FALLBACK_MS = 40 * 60 * 1000; // ~40m (cadence is 30m), so a slightly-late tick cannot leave a gap
   const endParsed = untilArg ? new Date(untilArg) : new Date();
   const windowEnd = Number.isNaN(endParsed.getTime()) ? new Date() : endParsed;
   let startParsed = sinceArg ? new Date(sinceArg) : new Date(windowEnd.getTime() - FALLBACK_MS);

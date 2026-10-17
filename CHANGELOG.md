@@ -20,7 +20,7 @@ New tests/report-md.test.ts guards the renderer's escaping; the tests/projection
 assertions on web/app.js are preserved verbatim.
 
 ### X digest now reports science, not commit counts (2026-10-17)
-The hourly X digest (.github/workflows/x-post.yml) no longer counts commits landed since the last run; it
+The half-hourly X digest (.github/workflows/x-post.yml) no longer counts commits landed since the last run; it
 composes ONE honest English line about the most important SCIENCE the rig produced in the window, via
 scripts/science-digest.ts (a pure composeDigest, unit-tested in tests/science-digest.test.ts, with all
 network/file I/O kept in an entry-guarded main()). Priority: (1) a result sealed on-chain -- named only when

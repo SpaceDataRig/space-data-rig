@@ -1,26 +1,26 @@
-name: x-post (hourly English science digest)
+name: x-post (half-hourly English science digest)
 
 # audit-6: BATCHED posting. This channel used to fire on EVERY qualifying push, so a run of consecutive
-# commits produced a run of consecutive tweets (too noisy). It is now a once-an-hour DIGEST.
+# commits produced a run of consecutive tweets (too noisy). It is now a DIGEST that runs every 30 minutes.
 # Science, not commits: the digest reports the single most important SCIENCE the rig produced since the
 # previous run -- a result sealed on-chain, a newly flagged UNCONFIRMED blind candidate, or a research
 # milestone -- composed by scripts/science-digest.ts (composeDigest, unit-tested in tests/science-digest.test.ts)
 # from the LIVE rig state (/api/state + /api/ledger) plus the committed web/research.json. It posts at most ONE
 # English, text-only line. No image (AI illustration is generated only inside an agent session, never in CI).
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
-# English-only is enforced twice). An hour with NO new result posts NOTHING (no empty tweet), and it NEVER
+# English-only is enforced twice). A window with NO new result posts NOTHING (no empty tweet), and it NEVER
 # claims a discovered planet -- a blind candidate is always "UNCONFIRMED ... for human follow-up".
 
 # Loop / spam guards:
-#  - No push trigger at all: committing docs/reports no longer posts per-commit; the hourly digest is the only
-#    automatic path, and one window yields AT MOST ONE science line (or nothing at all).
+#  - No push trigger at all: committing docs/reports no longer posts per-commit; the half-hourly digest is the
+#    only automatic path, and one window yields AT MOST ONE science line (or nothing at all).
 #  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
 
 on:
   schedule:
-    - cron: "0 * * * *" # top of every hour (UTC)
+    - cron: "*/30 * * * *" # every 30 minutes (at :00 and :30 UTC)
   workflow_dispatch:
     inputs:
       text:
@@ -80,7 +80,7 @@ jobs:
           # Window start = when the PREVIOUS completed x-post run started (a self-healing cursor via the Actions
           # API): if a tick is delayed or skipped, the next window stretches to cover the gap so no result is
           # silently dropped. Normalize to ISO 8601 UTC so `git log --since` and the digest script agree on the
-          # exact same window. On lookup failure / no prior run, fall back to ~70m (a slightly-late tick cannot
+          # exact same window. On lookup failure / no prior run, fall back to ~40m (a slightly-late tick cannot
           # leave an uncovered sliver).
           SINCE_RAW="$OVERRIDE_SINCE"
           if [ -z "$SINCE_RAW" ]; then
@@ -90,7 +90,7 @@ jobs:
           fi
           SINCE=""
           if [ -n "$SINCE_RAW" ]; then SINCE="$(date -u -d "$SINCE_RAW" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
-          if [ -z "$SINCE" ]; then SINCE="$(date -u -d '70 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"; fi
+          if [ -z "$SINCE" ]; then SINCE="$(date -u -d '40 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"; fi
           echo "digest window since: $SINCE"
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.

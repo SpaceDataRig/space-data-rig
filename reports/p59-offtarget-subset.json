@@ -12,8 +12,8 @@
     "p58Negatives": 16,
     "p58Positives": 20,
     "negativesWithPosition": 16,
-    "addressableNegatives": 8,
-    "excludedOnTargetOnly": 8,
+    "addressableNegatives": 13,
+    "excludedOnTargetOnly": 3,
     "caughtOnAddressable": 2
   },
   "refined": {
@@ -21,21 +21,21 @@
     "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
     "cm": {
       "trueVeto": 2,
-      "missedBlend": 6,
+      "missedBlend": 11,
       "falseVeto": 1,
       "trueKeep": 19
     },
-    "vetoPower": 0.25,
+    "vetoPower": 0.15384615384615385,
     "vetoPowerCI": [
-      0.07147768885802763,
-      0.5907301208974108
+      0.04325726318273798,
+      0.4223517050863101
     ],
     "falseVetoRate": 0.05,
     "falseVetoCI": [
       0.008881219432873136,
       0.23613589351256675
     ],
-    "auc": 0.7875000000000001
+    "auc": 0.7423076923076923
   },
   "allNegativesPower": {
     "vetoPower": 0.125,
@@ -46,7 +46,7 @@
       "tic": 297967252,
       "psfOffsetArcsec": 29.25,
       "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 8.78,
+      "nearestCompanionSepArcsec": 8.11,
       "psfVeto": false,
       "crossCheck": ""
     },
@@ -54,23 +54,15 @@
       "tic": 458856474,
       "psfOffsetArcsec": 106.214,
       "psfClassification": "off-target",
-      "nearestCompanionSepArcsec": 4.26,
+      "nearestCompanionSepArcsec": 3.66,
       "psfVeto": true,
-      "crossCheck": "offset 106.2\" vs nearest companion 4.3\" (does not line up)"
+      "crossCheck": "offset 106.2\" vs nearest companion 3.7\" (does not line up)"
     },
     {
-      "tic": 20182165,
-      "psfOffsetArcsec": 4.2,
+      "tic": 412961700,
+      "psfOffsetArcsec": 20.683,
       "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 7.77,
-      "psfVeto": false,
-      "crossCheck": ""
-    },
-    {
-      "tic": 364107753,
-      "psfOffsetArcsec": 27.308,
-      "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 6.78,
+      "nearestCompanionSepArcsec": 4.2,
       "psfVeto": false,
       "crossCheck": ""
     },
@@ -78,15 +70,55 @@
       "tic": 269450900,
       "psfOffsetArcsec": 23.479,
       "psfClassification": "off-target",
-      "nearestCompanionSepArcsec": 11.29,
+      "nearestCompanionSepArcsec": 12.6,
       "psfVeto": true,
-      "crossCheck": "offset 23.5\" vs nearest companion 11.3\" (does not line up)"
+      "crossCheck": "offset 23.5\" vs nearest companion 12.6\" (does not line up)"
     },
     {
       "tic": 270238522,
       "psfOffsetArcsec": 19.361,
       "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 5.19,
+      "nearestCompanionSepArcsec": 5.98,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 97700520,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "nearestCompanionSepArcsec": 13.91,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 96246348,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "nearestCompanionSepArcsec": 2.05,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 143350972,
+      "psfOffsetArcsec": 46.957,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 6.51,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 294090620,
+      "psfOffsetArcsec": 45.558,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 19.47,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 117979850,
+      "psfOffsetArcsec": 10.708,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 9.44,
       "psfVeto": false,
       "crossCheck": ""
     },
@@ -94,7 +126,15 @@
       "tic": 447283466,
       "psfOffsetArcsec": 45.094,
       "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 7.08,
+      "nearestCompanionSepArcsec": 9.19,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 305943739,
+      "psfOffsetArcsec": 142.479,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 8.99,
       "psfVeto": false,
       "crossCheck": ""
     },
@@ -102,56 +142,26 @@
       "tic": 9858404,
       "psfOffsetArcsec": 15.397,
       "psfClassification": "inconclusive",
-      "nearestCompanionSepArcsec": 17.67,
+      "nearestCompanionSepArcsec": 3.21,
       "psfVeto": false,
       "crossCheck": ""
     }
   ],
   "excludedCases": [
     {
-      "tic": 412961700,
+      "tic": 20182165,
       "nearestCompanionSepArcsec": null,
+      "psfVeto": false,
+      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
+    },
+    {
+      "tic": 364107753,
+      "nearestCompanionSepArcsec": 1.33,
       "psfVeto": false,
       "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
     },
     {
       "tic": 138017750,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 97700520,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 96246348,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 143350972,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 294090620,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 117979850,
-      "nearestCompanionSepArcsec": null,
-      "psfVeto": false,
-      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
-    },
-    {
-      "tic": 305943739,
       "nearestCompanionSepArcsec": null,
       "psfVeto": false,
       "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"

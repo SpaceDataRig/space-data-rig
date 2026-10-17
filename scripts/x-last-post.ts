@@ -23,8 +23,28 @@ const TOKEN_SECRET = env.X_ACCESS_TOKEN_SECRET || "";
 const API = "https://api.twitter.com";
 
 // RFC-3986 percent-encoding (encodeURIComponent plus the marks OAuth still escapes).
-function pct(s: string): string {
+export function pct(s: string): string {
   return encodeURIComponent(s).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+// The query for the user-tweets read, kept pure so a test can pin its shape. v2 rejects max_results outside
+// [5,100] with HTTP 400, so we request the smallest legal page (5) rather than 1 -- and then take the newest
+// timestamp from the page (see newestCreatedAt). This exact parameter was the bug that broke the read in prod.
+export function tweetsQuery(): Record<string, string> {
+  return { max_results: "5", "tweet.fields": "created_at" };
+}
+
+// Pull the authenticated user id out of a GET /2/users/me payload ({} -> ""), so the caller's shape assumption is
+// one testable predicate rather than an inline cast.
+export function userIdFromMe(me: { data?: { id?: string } } | null | undefined): string {
+  return me?.data?.id ?? "";
+}
+
+// Newest created_at among the returned rows. v2 returns reverse-chronological, but we pick the max explicitly
+// (ISO 8601 stamps sort lexicographically) so the silence gap is measured from the truly most-recent tweet no
+// matter the page order. Empty / absent input -> "" (the caller then treats the read as unavailable).
+export function newestCreatedAt(rows: Array<{ created_at?: string; [k: string]: unknown }> | null | undefined): string {
+  return (rows ?? []).map((r) => r?.created_at).filter((x): x is string => !!x).sort().reverse()[0] ?? "";
 }
 
 async function signedGet(path: string, query: Record<string, string>): Promise<JsonObject> {
@@ -64,17 +84,15 @@ async function main(): Promise<void> {
     return;
   }
   const me = await signedGet("/2/users/me", {});
-  const uid = (me.data as { id?: string } | undefined)?.id ?? "";
+  const uid = userIdFromMe(me as { data?: { id?: string } });
   if (!uid) {
     console.error("x-last-post: /2/users/me returned no id.");
     process.exitCode = 1;
     return;
   }
-  const tw = await signedGet(`/2/users/${uid}/tweets`, { max_results: "5", "tweet.fields": "created_at" });
+  const tw = await signedGet(`/2/users/${uid}/tweets`, tweetsQuery());
   const rows = tw.data as Array<{ created_at?: string }> | undefined;
-  // v2 returns reverse-chronological, but pick the newest explicitly (ISO stamps sort lexicographically) so the
-  // silence gap is measured from the truly most-recent tweet regardless of page order.
-  const created = (rows ?? []).map((r) => r?.created_at).filter((x): x is string => !!x).sort().reverse()[0] ?? "";
+  const created = newestCreatedAt(rows);
   if (!created) {
     console.error("x-last-post: no tweets found (the account has posted nothing yet).");
     process.exitCode = 1;

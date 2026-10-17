@@ -32,6 +32,25 @@ ASCII-only and dry-run-without-secrets behaviour are unchanged (enforced in both
 post-x-text.ts). Photon-tier honesty is preserved: only blind-TOI findings (contractually recovered on real
 photometry) may say "real TESS photometry", and purity is cited as the lower bound research.json declares.
 
+### X digest gained a silence heartbeat + a regression net for its read (2026-10-17)
+The half-hourly digest posts nothing when there is no new science -- correct anti-spam behaviour, but a long
+quiet stretch then read as if the rig had stopped. composeDigest gained a fourth, PURE branch (scripts/
+science-digest.ts): when a run has nothing new to report AND the account has actually been quiet past
+HEARTBEAT_AFTER_MIN (default 90 min), it composes ONE honest status heartbeat instead of going silent. The
+silence gap is measured by scripts/x-last-post.ts reading the account's own newest tweet (so a human reply also
+counts and no needless note is sent); a real result always outranks the heartbeat and the read costs an extra
+API call only on the empty-science branch. Three defects surfaced and were fixed while verifying it live:
+(1) the read was wrapped in a `set -o pipefail` command substitution that aborted the WHOLE run whenever the
+read returned no match -- every quiet scheduled run went red and the heartbeat never ran (fixed: read captured
+to files with an explicit exit-code check + `|| true` guards, so a failed read now degrades to an honest skip);
+(2) x-last-post.ts requested max_results=1, which X API v2 rejects with HTTP 400 (legal range 5..100), so the
+read always failed (fixed: request the smallest legal page and take the newest created_at); (3) all of this
+shipped with zero test coverage on the read -- it is now covered by tests/x-last-post.test.ts (5 offline
+behaviour tests pinning the request shape, newest-timestamp selection, /2/users/me id parse and RFC-3986
+encoding, none of which touch the network). CI-only (workflow + scripts run from the runner checkout, not the
+Worker bundle), so it is live on push with no redeploy; verified end-to-end on a real dispatch run that read the
+gap correctly and suppressed the heartbeat below threshold.
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

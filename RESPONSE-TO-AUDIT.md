@@ -146,3 +146,56 @@ runtime-agnostic critic AND blocked from the anchor branch in the workflow, and 
 manifest -- proven by a test that composes two identical findings differing only in `origin` and asserts
 byte-identical hashes. What changed is breadth and legibility; the no-discovery red line and every existing
 anchor are untouched.
+
+## Sixth-round (audit-6) follow-up -- "fixed, but not re-run; re-run, but not published"
+
+The sixth review confirmed the audit-5 rotation is live in production (surveyPass climbing, 27 blind-TOI
+hosts, red line 2 holding -- 0 accepted / 0 solanaTx among blind rows) and that the content-addressing
+fix from round 5 is writing on-chain. Its central finding was the most serious yet, and it is a NEW domain
+of the SAME failure class seen across rounds: round 1 was "computed but not anchored", round 4 "deployed
+but not in effect", this round "fixed but not re-run -- and re-run but not published".
+
+### The blast radius of the right-ascension unit bug was under-stated
+
+`parseRa` returned sexagesimal HOURS as DEGREES, so every host was squeezed into a 0-24 deg RA band. The
+fix (`d306ce6`) touched only research code -- `src/` running path has ZERO references, so PRODUCTION was
+never affected -- but 10+ research scripts import it, and the P82 centroid probe (`p82-scaled-validation.ts`)
+writes the `out/scaled/centroid.jsonl` checkpoint that P84 AND P85 both consume. The auditor correctly split
+the P85 numbers into two classes; we re-ran on the corrected sky and confirm the split:
+
+| P85 / P84 quantity | class | pre-fix (wrong sky) | post-fix (re-run) | trustworthy? |
+|---|---|---|---|---|
+| testable (>=2 localised sectors) | pixel offsets only | 109/500 | 114/500 | yes (moved only with cube-fetch re-run) |
+| never-localised coverage wall | pixel offsets only | 391/500 (~78%) | 386/500 (~77%) | yes |
+| known-planet false-reject (calibration arm) | pixel offsets only | 1/53 | 2/55 | yes -- still the low arm |
+| blend caught | **Gaia neighbour census** | 0/56 | **0/59** | was NOT valid pre-fix; now re-measured |
+| "a neighbour explains the mean" | **Gaia neighbour census** | 54/56 | **49/52** | was inflated by querying the wrong field |
+| viableNeighbours denominator | **Gaia neighbour census** | 56 | 52 | only meaningful post-fix |
+
+The qualitative conclusion is unchanged (blends are pixel-baseline-bound and out of scope), but every
+Gaia-derived figure cited before the fix was measured against an unrelated sky. The 54/56 -> 49/52 drop
+confirms the suspicion that "in a random field you can always find a directionally-close star" had been
+padding the number. README "Capability boundaries" now states both classes and withdraws 0/56 / 54/56.
+
+The deeper problem the auditor named -- and fixed structurally -- was that NOTHING in the committed report
+said WHEN it was generated or FROM WHICH input, so no one (including them) could tell a pre-fix report from
+a post-fix one, and the PUBLIC site (web/reports) was still serving the pre-fix P81 "contradictions (4)"
+while the repository md already said 0.
+
+| Concern | Root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| Reports carry no provenance; stale numbers published on the site | `reports/*.json` had no timestamp/git-SHA/input-hash; `web/reports` was a hand-run build that could lag the repo md indefinitely. | `scripts/report-freshness.ts` stamps every regenerated report with `generatedAt` + `gitSha` + `inputs:[{path,sha256}]`; `p86-report-library.ts` re-hashes each recorded input before publishing and, on a mismatch, marks the fragment RED, flags it in `index.json`, and EXITS NON-ZERO so the deploy refuses to ship stale numbers. (Wall-clock heuristics were tried then dropped -- they false-positive on unrelated edits.) | `tests/report-freshness.test.ts` (offline, injected hashes): tampered input -> stale, matching -> authoritative, vanished gitignored checkpoint -> not blocking, legacy unstamped -> visible-not-stale. | Shipped (deploy-pending). |
+| The stateful path that froze the survey had zero tests | `RigStateDO` imports `cloudflare:workers` so it cannot be loaded by the Node runner; `startRunIfIdle` -- the only broken path -- was the only untested one, and CI stayed green through a 22-hour freeze. | Extracted the claim/advance/finish decisions into `src/cf/run-mutex.ts` (CF-free, the precedent of `src/survey/rotation.ts`); the DO's `startRunIfIdle`/`advanceSurveyPass`/`finishRun` now delegate to it, so the test drives PRODUCTION logic. | `tests/run-mutex.test.ts`: claim advances the cursor exactly once, live claim -> 409 (no double-advance), stale takeover, zombie finish cannot release a successor's slot, resume reuses runId. | Shipped (deploy-pending). |
+| The freeze was found by "the feed stopped posting", not by a gate | No check asserted the survey was actually progressing. | Added a SURVEY-PROGRESS assertion to the weekly live-probe: between consecutive runs `surveyPass` MUST increase and `distinctHosts` MUST NOT decrease, else FAIL (open issue). Previous sample carried across runs via Actions cache. | `tests/live-probe-drill.test.ts` + `p8:live-probe -- --self-test`: frozen/regressed -> FAIL, progress/baseline -> PASS, bad stats never silently ok. | Shipped (deploy-pending). |
+| P88 could be read as "already cross-matched with Gaia" | `periodMatched=0` sat in the body; the title said "first INDEPENDENT-instrument 2x2". | Retitled the report and promoted a headline line stating the run measured independent-instrument COVERAGE (Gaia present for 6/17), NOT a Gaia-vs-TESS period crossmatch -- with 0 period matches the 2x2 is all-zeros by construction. | Committed `reports/p88-independent-corroboration.md`; note the run post-dates the RA fix, so 0 was a real coverage result, not a coordinate artifact. | Shipped. |
+| Over-claim protection now rests only on wording (the fixed stamp was removed) | No independent check that the final string stays honest across every tier + the new build-note layer. | Added `overclaimViolations(text)` (hedge-aware: negated forms are honest, bare affirmatives are not) as BOTH an offline assertion across every tier AND a runtime refusal in `post-x-text.ts` that blocks any over-claiming send. | `tests/science-digest.test.ts`: every tier's composed text is clean; an accidental "discovered / confirms / first" template edit trips it; honest negations do not. | Shipped (deploy-pending). |
+
+### Honesty note on audit-6
+
+The small deviation the auditor flagged -- the plan said blind-TOI rows are "always needs-more-data" but the
+implementation also allows `rejected` (13 of 27) -- is intentional and MORE honest (critic-rejected jitter
+should not be filed under "awaiting follow-up" to pad the count); the docs now say so. P59/P81 re-runs are
+recorded here for the first time; they were run in commits `55f4cee`/`22e491d`/`7c0bbc5` but had never been
+entered in any ledger. No discovery is claimed anywhere; the no-discovery and no-unsupervised-spend red lines
+are unchanged, and every historical anchor/hash is untouched because none of this round's code reaches the
+manifest.

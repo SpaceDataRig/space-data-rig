@@ -12,6 +12,7 @@
 // Usage: npm run p85:contaminant-fit
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 
 interface Row {
   tic: number; toi: string; label: "planet" | "blend"; nUsed: number; testable: boolean;
@@ -87,7 +88,7 @@ function main(): void {
   const base = tiers.find((t) => t.alpha === BASE_ALPHA)!;
 
   const json = {
-    meta: { generatedFrom: CHECKPOINT, rows: rows.length, statistic: "eumemic per-contaminant multi-sector centroid F-test (src/detect/centroidFtest.ts)", baseAlpha: BASE_ALPHA },
+    meta: { ...buildStamp([CHECKPOINT]), generatedFrom: CHECKPOINT, rows: rows.length, statistic: "eumemic per-contaminant multi-sector centroid F-test (src/detect/centroidFtest.ts)", baseAlpha: BASE_ALPHA },
     coverage: { total: rows.length, testable: nTestable, notLocalised: nCoverage, testablePct: Number(((nTestable / rows.length) * 100).toFixed(1)) },
     methodChoices: {
       whichStarFits: "max-p across bright-enough contaminants (a neighbour 'explains' the mean offset); NOT a joint/min-p test",

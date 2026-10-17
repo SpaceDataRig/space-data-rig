@@ -16,6 +16,7 @@
 //   npm run p88:independent-corroboration -- --pos 8 --neg 8 --tmag 12
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { buildStamp } from "./report-freshness.ts";
 import { fetchToiTable, confirmedPositives, labelledNegatives, type ToiRecord } from "../src/data/toiDispositions.ts";
 import { fetchGaiaNeighborhood, angularSepArcsec } from "../src/data/gaiaDilution.ts";
 import { fetchGaiaCorroboration, rvAstrometryVsCandidate } from "../src/data/gaiaRv.ts";
@@ -107,7 +108,7 @@ async function main(): Promise<void> {
 
   const out = {
     schema: "sdr-p88-independent-corroboration/1",
-    generatedAt: new Date().toISOString(),
+    ...buildStamp(["src/data/toiDispositions.ts", "src/data/gaiaRv.ts", "src/data/gaiaDilution.ts"]),
     instrument: "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
     labelSource: "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
     population: { positives: pos.scored.length, negatives: neg.scored.length, withGaiaData: nData, periodMatched: nMatched },
@@ -118,9 +119,11 @@ async function main(): Promise<void> {
     cases: scored,
   };
   const md = [
-    "# P88 first true-veto 2x2 from an INDEPENDENT instrument (Gaia RV / astrometry)",
+    "# P88 independent-instrument 2x2 -- a COVERAGE measurement, not yet a Gaia-vs-TESS crossmatch (period-matched orbits: 0)",
     "",
     `Reproduce: \`npm run p88:independent-corroboration -- --pos ${posN} --neg ${negN} --tmag ${tmag}\``,
+    "",
+    `**Headline (read first): ${nMatched} of ${cases.length} hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for ${nData}/${cases.length}) -- NOT a Gaia-vs-TESS period crossmatch. With ${nMatched} period matches the two datasets never actually intersected, so the 2x2 is all-zeros BY CONSTRUCTION. The honest read is "safe but under-powered", never "Gaia agrees/disagrees"; discoveryClaim false.**`,
     "",
     `Gaia (a different satellite) is asked, for ${pos.scored.length} confirmed planets (must keep) and ${neg.scored.length} labelled FP/EB blends (should veto): does its two-body orbit / RV series independently corroborate a stellar-mass companion on the candidate's period?`,
     "",

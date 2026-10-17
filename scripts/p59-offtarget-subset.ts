@@ -25,6 +25,7 @@
 //   npm run p59:offtarget-subset
 //   npm run p59:offtarget-subset -- --aperture 21 --min-sep 1.5
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { fetchToiTable, type ToiRecord } from "../src/data/toiDispositions.ts";
 import { fetchGaiaNeighborhood, angularSepArcsec } from "../src/data/gaiaDilution.ts";
 import { acceptVetoTool, type VetoCase } from "../src/candidate/vetoAcceptance.ts";
@@ -111,6 +112,7 @@ async function main() {
 
   const json = {
     meta: {
+      ...buildStamp(["reports/p58-veto-2x2.json", "src/data/toiDispositions.ts", "src/data/gaiaDilution.ts"]),
       generatedBy: "scripts/p59-offtarget-subset.ts", apertureArcsec: APERTURE, minSepArcsec: MIN_SEP, hostRadiusArcsec: HOST_RADIUS,
       reads: "reports/p58-veto-2x2.json (already phase-refined offsets) + public TOI positions + Gaia resolved-companion test",
       hostExclusion: "by POSITION (angularSep), not Gaia source_id (int64 precision loss)",

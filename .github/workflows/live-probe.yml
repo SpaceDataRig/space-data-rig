@@ -3,9 +3,13 @@ name: Upstream live-probe (read-only)
 # audit-10 #8: a weekly, keyless, READ-ONLY check that the three external data upstreams the science
 # depends on (NASA Exoplanet Archive TAP, ExoFOP-TESS TOI table, Gaia archive TAP) still return the
 # fields and row counts we assume. A schema or behaviour change on any of them is a silent science bug.
-# The probe sends nothing and writes nothing -- it can only read. A HARD FAIL (schema / row-count drift)
-# opens an issue; a transient network error does NOT (it just re-tries next week). Deliberately separate
-# from CI/npm test, which must stay network-free and deterministic.
+# audit-6 #4 adds a FOURTH assertion -- SURVEY PROGRESS: between consecutive weekly runs the rotation
+# cursor (surveyPass) MUST increase and distinctHosts MUST NOT decrease. This catches the "stuck" class
+# that froze the survey for 22 hours and was discovered only by "the feed stopped posting" -- no gate fired.
+# The previous sample is carried across runs in the Actions cache (no secrets, no writes to any repo/store).
+# The probe sends nothing and writes nothing -- it can only read. A HARD FAIL (schema drift OR a frozen
+# survey) opens an issue; a transient network error does NOT (it just re-tries next week). Deliberately
+# separate from CI/npm test, which must stay network-free and deterministic.
 
 on:
   schedule:
@@ -30,11 +34,23 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Run upstream live-probe (read-only)
-        # exit 0 = healthy / partial; exit 1 = a real schema or row-count drift; exit 2 = all-network, ignore.
+      - name: Restore the last survey-progress sample
+        # A unique key (so this run always saves) with a rolling restore-prefix (so it restores the most
+        # recent prior sample regardless of run id). The probe reads --prev-file and rewrites the same path
+        # with the current numbers; the cache post-step then persists them for next Monday's run.
+        uses: actions/cache@v4
+        with:
+          path: live-progress
+          key: live-progress-${{ github.run_id }}
+          restore-keys: live-progress-
+
+      - name: Run live-probe (external upstreams + survey progress, read-only)
+        # exit 0 = healthy / partial; exit 1 = a schema drift OR a frozen survey; exit 2 = all-network, ignore.
         continue-on-error: true
         id: probe
-        run: npm run p8:live-probe | tee probe.log
+        run: |
+          mkdir -p live-progress
+          npm run p8:live-probe -- --prev-file live-progress/sample.json --out-file live-progress/sample.json | tee probe.log
 
       - name: Record verdict
         id: verdict
@@ -53,8 +69,9 @@ jobs:
             const fs = require('fs');
             const log = fs.readFileSync('probe.log', 'utf8');
             const body = [
-              'The weekly upstream live-probe detected a **schema or row-count drift** on at least one',
-              'external data source. A science assumption on that upstream is now unverified -- investigate',
+              'The weekly live-probe detected a **schema/row-count drift on an external upstream, or a',
+              'frozen survey** (surveyPass not advancing / distinctHosts regressing). Either means a science',
+              'assumption is now unverified or the autonomous survey has stopped making progress -- investigate',
               'before trusting results that depend on it.',
               '',
               'Probe output:',

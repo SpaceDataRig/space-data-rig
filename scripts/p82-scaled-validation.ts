@@ -24,6 +24,7 @@
 //        [--centroid-limit 200 --gaia-ms 300 --seed 7 --resume 1]
 
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { iterativeBls } from "../src/detect/iterative.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { injectTransitInto } from "../src/sim/injectInto.ts";
@@ -240,7 +241,7 @@ async function aggregate(): Promise<void> {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p82-scaled-validation.ts --probe report", limit: LIMIT, centroidLimit: CENTROID_LIMIT, concurrency: CONC, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, censusArcsec: CENSUS_ARCSEC, alpha: ALPHA, seed: SEED, note: "scaled from the hand-picked ~20-target P77-P81 probes to N up to hundreds; all measured on real public data; first-order, not full TRICERATOPS/eumemic; discoveryClaim false, safeToGate false." },
+    meta: { ...buildStamp([`${OUT}/blind.jsonl`, `${OUT}/external.jsonl`, `${OUT}/centroid.jsonl`]), generatedBy: "scripts/p82-scaled-validation.ts --probe report", limit: LIMIT, centroidLimit: CENTROID_LIMIT, concurrency: CONC, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, censusArcsec: CENSUS_ARCSEC, alpha: ALPHA, seed: SEED, note: "scaled from the hand-picked ~20-target P77-P81 probes to N up to hundreds; all measured on real public data; first-order, not full TRICERATOPS/eumemic; discoveryClaim false, safeToGate false." },
     blind: bt ? { curves: bt.nCurves, injected: bt.nInjected, nullCurves: bt.nNull, recall: bt.recall, recallCI: bt.recallCI, precision: bt.precision, precisionCI: bt.precisionCI, acceptedUnderBar: bt.accepted, acceptedTp: bt.acceptedTp, falseAccepts: bt.falseAccepts, acceptedPrecision: bt.acceptedPrecision } : null,
     external: { kp: { ...kpR, kpCI: ci(kpR.validated, kpR.tested) }, cp: { ...cpR, cpCI: ci(cpR.validated, cpR.tested) } },
     centroid: { planetsTestable: planets.length, planetFalseReject: pFalseReject, planetFalseRejectCI: ci(pFalseReject, planets.length), blendsTestable: blends.length, blendCaught: bCaught, blendCaughtCI: ci(bCaught, blends.length), eumemicReference: { planetFalseReject: "0/565 at p<0.001", blendCatch: "127/175 (73%); 38% within 15 arcsec" } },

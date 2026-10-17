@@ -1304,6 +1304,7 @@ function renderReportsList(reports) {
   reportsListEl.innerHTML = reports.map((r) =>
     `<button class="report-item" type="button" data-slug="${esc(r.slug)}">` +
       `<span class="ri-title">${esc(r.title)}</span>` +
+      (r.fresh === false ? `<span class="ri-stale" title="numbers may predate a change to their inputs; re-run before quoting">possibly out of date</span>` : "") +
       (r.summary ? `<span class="ri-sum">${esc(r.summary)}</span>` : "") +
     `</button>`).join("");
 }

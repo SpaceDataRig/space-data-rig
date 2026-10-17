@@ -19,6 +19,7 @@
 // NETWORK read-only, run locally (CI has no network), like p53/p58. Bounded by default; --pos/--neg/--max-sectors.
 //   npm run p89:multiepoch-di -- --pos 12 --neg 16 --max-sectors 3 --tmag 13 --boot 80
 import { writeFileSync, mkdirSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { fetchToiTable, confirmedPositives, labelledNegatives, type ToiRecord } from "../src/data/toiDispositions.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
 import { fetchSpocTargetPixels } from "../src/data/mastS3Pixels.ts";
@@ -138,7 +139,7 @@ async function main(): Promise<void> {
 
   const out = {
     schema: "sdr-p89-multiepoch-di/1",
-    generatedAt: new Date().toISOString(),
+    ...buildStamp(["src/data/toiDispositions.ts", "src/detect/psfDiffImaging.ts"]),
     method: `multi-epoch PSF-model double-difference (localizePsfDiff/judgePsfDiff) over up to ${MAX_SECTORS} covering SPOC sectors per target; veto = ANY epoch localized off-target at ${ARCSEC_VETO}"`,
     population: { kpPositives: pos.cases.length, labelledNegatives: neg.cases.length, maxOffsetArcsec: { min: q(psfOff, 0), p50: q(psfOff, 0.5), p90: q(psfOff, 0.9), max: psfOff[psfOff.length - 1] ?? null } },
     metrics, verdict: { safeToGate: verdict.safeToGate, reason: verdict.reason, auc: verdict.auc },

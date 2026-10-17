@@ -5,7 +5,7 @@
 // single drift to the alert exit code the CI gates on.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { judgeNasa, judgeExofop, judgeGaia, evaluate, selfTest, type Check } from "../scripts/p8-live-probe.ts";
+import { judgeNasa, judgeExofop, judgeGaia, judgeProgress, evaluate, selfTest, type Check } from "../scripts/p8-live-probe.ts";
 
 const GAIA_COLS = ["source_id", "ra", "dec", "phot_g_mean_mag", "parallax"];
 
@@ -42,4 +42,16 @@ test("evaluate() alerts (exit 1) on a single drift, treats all-network as inconc
 
 test("the built-in offline self-test drill passes (no drift class is silently missed)", () => {
   assert.equal(selfTest(), 0);
+});
+
+test("survey-progress judge (audit-6 #4): a frozen or regressed survey trips FAIL, progress and baseline PASS", () => {
+  // The 22-hour freeze signature: surveyPass stuck. This is the class the old probe could not see.
+  assert.equal(judgeProgress(null, { surveyPass: 17, distinctHosts: 72 }).ok, true); // baseline, no prev
+  assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 17, distinctHosts: 72 }).ok, false); // frozen
+  assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 16, distinctHosts: 80 }).ok, false); // regressed cursor
+  assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 18, distinctHosts: 40 }).ok, false); // hosts shrank
+  assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 18, distinctHosts: 72 }).ok, true); // cursor moved, breadth held
+  assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: NaN, distinctHosts: NaN }).ok, false); // bad stats, never silently ok
+  // and a frozen survey must reach the alert exit code the workflow keys on.
+  assert.equal(evaluate([{ name: "survey-progress", ok: false, detail: "survey FROZEN" }]), 1);
 });

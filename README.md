@@ -18,9 +18,12 @@ narration only (about 2% of the code, and removing it changes zero verdicts -- m
   signal from noise. `discoveryClaim` is false and `safeToGate` is false, everywhere, by design.
 - **Honest ceilings, reported as-is.** On real TESS data at scale (P82, 425 curves): blind recall
   86.2%, accepted-call precision 42.2% (a coherent-systematics wall a bigger sample narrows but
-  does not remove); external blind validation KP 182/234, CP 104/179 (easiest subsets, named); the
-  centroid F-test caught 0/56 blends because 71% of targets never localise -- pixel-baseline-bound,
-  not a statistic problem.
+  does not remove); external blind validation KP 186/234, CP 103/179 (easiest subsets, named); the
+  centroid F-test caught **0/59** labelled blends because 77% of the 500-target checkpoint never
+  localises a cross-sector centroid offset -- pixel-baseline-bound, not a statistic problem. All of
+  P82/P84/P85 were re-run on the **corrected sky** after an ExoFOP right-ascension unit bug
+  (sexagesimal hours read as degrees) was fixed; the earlier "0/56 / 71%" figures were measured
+  against the wrong field and are withdrawn (see Capability boundaries).
 - **Independently auditable.** Same manifest content -> same `scienceHash`; the timestamped
   `bundleHash` is anchored on-chain and anyone can re-read the memo with no trust in our database.
 - **Under review, and answering it.** A point-by-point ledger of the audit-10 review -- criticism,
@@ -36,13 +39,25 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
 (P82/P84/P85), each with its denominator named.
 
 - **Blended / multi-source-per-pixel scenes are out of scope.** The centroid-displacement
-  false-positive test caught **0/56** labelled blends on real pixel data, and P84 shows why: ~71% of
-  those targets never localise a cross-sector centroid offset at all from a single TESS pixel. This is
+  false-positive test caught **0/59** labelled blends on real pixel data (P85, re-run 2026-10-17 on
+  the corrected host coordinates), and P84 shows why: ~77% of the 500 targets never localise a
+  cross-sector centroid offset at all from a single TESS pixel (only 114/500 are testable). This is
   **pixel-baseline-bound, not a threshold problem** -- no cut on the existing statistic recovers the
   capability, because the resolving information is not in the aperture-photometry baseline. Handling
   blends requires a different photometric method (PSF fitting, or at minimum aperture correction with
   neighbour subtraction), which is a **science-layer rebuild, not a config change.** Until that exists,
-  treat any blended system as *unsupported*, and do not read the 0/56 as "tuned wrong."
+  treat any blended system as *unsupported*, and do not read the 0/59 as "tuned wrong."
+- **A provenance correction the previous revision got wrong.** The blend numbers ride on a Gaia
+  neighbour census, so until the RA-unit fix they were silently computed against the wrong sky (every
+  host squeezed into a 0-24 deg right-ascension band). Only the pixel-offset numbers survived the
+  re-run roughly intact (testable 109 to 114 of 500; known-planet false-reject 1/53 to 2/55 -- still the
+  low calibration arm the F-test is trusted for). The Gaia-derived numbers were never trustworthy at
+  wrong coordinates and are withdrawn: the old "caught 0/56" and the "some neighbour explains the mean
+  offset in 54/56" ratio are replaced by **caught 0/59** and **neighbour-explains-the-mean 49/52**.
+  The drop from 54/56 to 49/52 confirms the suspicion that the earlier figure was inflated by "in a
+  random field you can always find a directionally-close star." Relaxing alpha to 0.01 recovers only
+  1/59 caught, at 5/55 planet false-rejects. The *conclusion* is unchanged -- blends are out of scope
+  for this pixel baseline -- but every P84/P85 denominator cited here is now the corrected-sky one.
 - **Accepted-call precision plateaus near 42%.** At 425 curves the accepted-precision is 42.2%; a
   larger sample narrows the interval but does not remove the coherent-systematics wall. Precision, not
   recall, is the binding constraint -- stated so the 86.2% recall is not mistaken for readiness to claim.

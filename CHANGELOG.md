@@ -5,6 +5,44 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Audit-6 remediation: RA-unit re-run, a report freshness gate, and coverage for the frozen path (2026-10-17)
+The sixth review's central finding was the same failure class in a third domain -- round 1 "computed but not
+anchored", round 4 "deployed but not in effect", this round "fixed but not re-run, re-run but not published".
+
+- **Right-ascension unit bug blast radius + re-run.** `parseRa` returned sexagesimal hours as degrees (fixed
+  `d306ce6`); production `src/` never referenced it, but research scripts did, and P82's centroid probe wrote
+  the checkpoint P84/P85 read. Re-ran the offline P82(aggregate)/P84/P85 on the corrected sky and refreshed
+  every figure: pixel-only quantities moved slightly (testable 109 to 114/500, known-planet false-reject 1/53
+  to 2/55); the Gaia-derived ones were re-measured and are the honest ones now (blend caught 0/59, a neighbour
+  explains the mean 49/52, viableNeighbours 52). README "Capability boundaries" states which class is which and
+  WITHDRAWS the old 0/56 / 54/56 as wrong-sky. P59/P81/P82 re-runs (commits `55f4cee`/`22e491d`/`7c0bbc5`) are
+  entered in the ledger for the first time.
+- **Report freshness gate** (`scripts/report-freshness.ts` + `p86-report-library.ts`): regenerated reports now
+  stamp `generatedAt` + git SHA + `inputs:[{path,sha256}]`; before publishing p86 re-hashes each recorded input
+  and, on a mismatch, marks the fragment RED, flags it in `web/reports/index.json`, and exits non-zero so a
+  deploy refuses to ship stale numbers -- closing the "public site serving a superseded figure" class (the P81
+  `contradictions (4)` staleness). `tests/report-freshness.test.ts` proves the alarm offline. Wall-clock
+  heuristics were tried and rejected for false-positives on unrelated edits.
+- **run-mutex behaviour test** (`src/cf/run-mutex.ts`): the claim/advance/finish decisions that froze the
+  survey for 22 hours (and had zero coverage, because `RigStateDO` imports `cloudflare:workers` and cannot be
+  loaded by the Node runner) are extracted into a pure module the DO now delegates to. `tests/run-mutex.test.ts`
+  drives PRODUCTION logic: the rotation claim advances the cursor exactly once, a live claim returns 409, a
+  stale claim is taken over, and a zombie finish cannot release a successor's slot.
+- **Survey-progress assertion in the weekly live-probe**: between consecutive runs `surveyPass` MUST increase
+  and `distinctHosts` MUST NOT decrease, else FAIL + open issue (previous sample carried across runs via Actions
+  cache). The freeze is now caught by a gate, not by "the feed stopped posting". `judgeProgress` + exit wiring
+  verified offline (`tests/live-probe-drill.test.ts`, `--self-test`).
+- **P88 framing**: retitled and headlined to state it measured independent-instrument COVERAGE (Gaia present
+  6/17, period-matched 0), NOT a Gaia-vs-TESS crossmatch -- the 2x2 is all-zeros by construction.
+- **Output-level over-claim net** (`overclaimViolations` in `science-digest.ts`): since the per-post
+  `discoveryClaim=false` stamp was removed, a hedge-aware scan now runs on the FINAL string -- as an offline
+  assertion across every tier AND a runtime refusal in `post-x-text.ts` that blocks any affirmative
+  discover/confirm/first send.
+
+Full suite 586/586 green; `npm run typecheck:all` + `npm run lint --max-warnings 0` + `node --check web/app.js`
+exit 0; all touched files byte-level ASCII. No discovery claimed; no historical bundle/science hash or anchor
+changes (none of this reaches the manifest).
+
 ### Frontend: four new/expanded read-only views over already-published artifacts (2026-10-17)
 The hash-routed SPA gained four views that surface more of the rig's own output, all served from build-time
 static assets under web/ -- no new Worker route, no Durable Object, pipeline or bundle/science-hash change.

@@ -273,8 +273,24 @@ the Actions web page when the anonymous API is rate-limited.
 - PowerShell 5.1: no && (use ;), no ?? / ternary; ASCII checks must be byte-level or
   [regex]::IsMatch per line -- (... -match ...).Count silently overcounts; Select -First N
   in a pipe can truncate exit codes.
-- tsc --noEmit does not check tests/; new test files must be appended to the `npm test`
-  file list in package.json.
+- tsc --noEmit does not check tests/; the `npm test` runner (scripts/run-tests.ts) DISCOVERS
+  every tests/*.test.ts automatically (with a FLOOR guard that fails loudly if discovery breaks),
+  so a new test file needs NO registration. Do not reintroduce a hand-maintained file list.
+- ExoFOP RA is sexagesimal HOURS, not degrees -- `parseRa` must multiply by 15. Getting this
+  wrong squeezed every host into a 0-24 deg RA band; it was invisible in production (no `src/`
+  import) but silently wrong in the Gaia-census research reports (P59/P81/P82/P84/P85), which
+  is why those numbers are split by whether they use only pixel offsets or the Gaia neighbour
+  field. The x15 is load-bearing, not cosmetic.
+- A fixed bug that was never RE-RUN, or a re-run report never PUBLISHED, is the same failure
+  class as an unfixed bug. Reports now stamp generatedAt+gitSha+input sha256
+  (scripts/report-freshness.ts) and p86 refuses/RED-marks stale ones before publishing. After
+  touching a checkpoint or a report's inputs, RE-RUN the downstream report(s) AND rebuild
+  web/reports (npm run p86:report-library) before saying a figure is current.
+- The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
+  Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
+  runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions
+  are extracted to run-mutex.ts so tests/run-mutex.test.ts drives the PRODUCTION logic; keep new
+  claim/advance/finish behaviour there, not inline in the DO.
 - Durable Object RPC return types arrive with & Disposable -- do not cast them away.
 - After esbuild changes to browserBurn.ts, ALWAYS `npm run web:bundle` and commit the
   regenerated web/vendor/solana-burn.js (deployed bundle must match local byte-for-byte).

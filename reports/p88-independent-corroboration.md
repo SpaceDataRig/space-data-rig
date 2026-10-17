@@ -1,6 +1,8 @@
-# P88 first true-veto 2x2 from an INDEPENDENT instrument (Gaia RV / astrometry)
+# P88 independent-instrument 2x2 -- a COVERAGE measurement, not yet a Gaia-vs-TESS crossmatch (period-matched orbits: 0)
 
 Reproduce: `npm run p88:independent-corroboration -- --pos 8 --neg 10 --tmag 12`
+
+**Headline (read first): 0 of 17 hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for 6/17) -- NOT a Gaia-vs-TESS period crossmatch. With 0 period matches the two datasets never actually intersected, so the 2x2 is all-zeros BY CONSTRUCTION. The honest read is "safe but under-powered", never "Gaia agrees/disagrees"; discoveryClaim false.**
 
 Gaia (a different satellite) is asked, for 7 confirmed planets (must keep) and 10 labelled FP/EB blends (should veto): does its two-body orbit / RV series independently corroborate a stellar-mass companion on the candidate's period?
 

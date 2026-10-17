@@ -1022,6 +1022,26 @@ applied it to numbers our own pipeline measured on real TESS-SPOC photometry:
   aliases). `reports/p78-blind-multisector.{md,json}`, `reports/p79-benchmark.{md,json}`,
   `reports/p80-external-validation.{md,json}`. Measure-only; discoveryClaim / safeToGate false throughout.
 
+- **Scaled centroid per-contaminant F-test (P82 / P84 / P85), re-run on corrected coordinates.** The faithful
+  eumemic per-contaminant F-test (`src/detect/centroidFtest.ts`) was run over a 500-target real pool
+  (`scripts/p82-scaled-validation.ts --probe centroid`, checkpoint `out/scaled/centroid.jsonl`), then diagnosed
+  (`p84-centroid-diagnosis.ts`) and reported (`p85-contaminant-fit.ts`). **Provenance:** the first pass was
+  computed while `parseRa` returned ExoFOP sexagesimal HOURS as DEGREES, squeezing every host into a 0-24 deg RA
+  band so the Gaia neighbour census queried the wrong sky. After the fix (`d306ce6`) the checkpoint was re-swept
+  and P82(aggregate)/P84/P85 re-run offline. Quantities using ONLY the pixel offsets barely move (testable
+  114/500, never-localised 386/500 ~77%, known-planet false-reject 2/55 -- still the low calibration arm, eumemic
+  ref 0/565); quantities riding on the Gaia census were NOT trustworthy before and are re-measured -- labelled-blend
+  caught **0/59** and "a viable neighbour explains the mean offset" **49/52** (the pre-fix "0/56 / 54/56" is
+  WITHDRAWN). The 54/56 -> 49/52 drop supports that the earlier figure was inflated by "in a random field you can
+  always find a directionally-close star"; relaxing alpha to 0.01 recovers only 1/59 at 5/55 false-rejects.
+  Conclusion unchanged: blends are pixel-baseline-bound and out of scope. `reports/p8{2,4,5}-*`.
+- **Independent-instrument corroboration (P88) is a COVERAGE measurement, not yet a crossmatch.** Gaia RV/
+  astrometry was asked of 17 hosts for a period-matched orbit; data existed for 6/17 but a period-matched orbit
+  for **0** -- the datasets never intersected, so the 2x2 is all-zeros BY CONSTRUCTION (veto power 0.00, 95% upper
+  0.278; false-veto 0). This run post-dates the RA fix, so the 0 is a real coverage result, not a coordinate
+  artifact. Honest read "safe but under-powered"; independent channel stays out of the verdict/money path.
+  `reports/p88-independent-corroboration.*`. Measure-only; discoveryClaim false.
+
 ---
 
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.

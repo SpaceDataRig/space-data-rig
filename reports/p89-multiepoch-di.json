@@ -1,0 +1,90 @@
+{
+  "schema": "sdr-p89-multiepoch-di/1",
+  "generatedAt": "2026-10-17T13:33:43.197Z",
+  "method": "multi-epoch PSF-model double-difference (localizePsfDiff/judgePsfDiff) over up to 2 covering SPOC sectors per target; veto = ANY epoch localized off-target at 2\"",
+  "population": {
+    "kpPositives": 2,
+    "labelledNegatives": 3,
+    "maxOffsetArcsec": {
+      "min": 3.8451561107586793e-14,
+      "p50": 46.205418415641816,
+      "p90": 75.74569294685995,
+      "max": 75.74569294685995
+    }
+  },
+  "metrics": {
+    "n": 5,
+    "nBlend": 3,
+    "nPlanet": 2,
+    "cm": {
+      "trueVeto": 0,
+      "missedBlend": 3,
+      "falseVeto": 2,
+      "trueKeep": 0
+    },
+    "vetoPower": 0,
+    "vetoPowerCI": [
+      0,
+      0.5615060804490177
+    ],
+    "falseVetoRate": 1,
+    "falseVetoCI": [
+      0.34237195288961925,
+      1
+    ],
+    "vetoPrecision": 0
+  },
+  "verdict": {
+    "safeToGate": false,
+    "reason": "2 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
+    "auc": 0
+  },
+  "falseVeto": 2,
+  "discoveryClaim": false,
+  "cases": {
+    "positives": [
+      {
+        "label": "7056.01",
+        "isBlend": false,
+        "veto": true,
+        "maxOff": 66.26,
+        "epochs": 1,
+        "off": 1
+      },
+      {
+        "label": "7907.01",
+        "isBlend": false,
+        "veto": true,
+        "maxOff": 75.75,
+        "epochs": 1,
+        "off": 1
+      }
+    ],
+    "negatives": [
+      {
+        "label": "1340.01",
+        "isBlend": true,
+        "veto": false,
+        "maxOff": 0,
+        "epochs": 1,
+        "off": 0
+      },
+      {
+        "label": "1424.01",
+        "isBlend": true,
+        "veto": false,
+        "maxOff": 27.56,
+        "epochs": 1,
+        "off": 0
+      },
+      {
+        "label": "1637.01",
+        "isBlend": true,
+        "veto": false,
+        "maxOff": 46.21,
+        "epochs": 2,
+        "off": 0
+      }
+    ]
+  }
+}

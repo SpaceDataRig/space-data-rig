@@ -4,22 +4,22 @@ Statistic: `src/detect/centroidFtest.ts` -- F = n(n-1)|m-s|^2 / RSS, 1"/axis sca
 
 ## Coverage (the honest ceiling)
 
-- testable (>=2 localised sectors): **109/500** (21.8%)
-- never localised (pixel-baseline bound, P84): **391/500**
+- testable (>=2 localised sectors): **114/500** (22.8%)
+- never localised (pixel-baseline bound, P84): **386/500**
 
 ## Headline at the run threshold (alpha=0.001)
 
-- known-planet false-reject: **1/53** (1.9%) -- the calibration arm; eumemic report 0/565 at p<0.001
-- blend caught (target rejected AND a contaminant fits): **0/56** (0.0%)
-- among testable blends that HAVE a bright-enough neighbour, a neighbour's offset explains the mean in **54/56** (96.4%)
+- known-planet false-reject: **2/55** (3.6%) -- the calibration arm; eumemic report 0/565 at p<0.001
+- blend caught (target rejected AND a contaminant fits): **0/59** (0.0%)
+- among testable blends that HAVE a bright-enough neighbour, a neighbour's offset explains the mean in **49/52** (94.2%)
 
 ## Sensitivity to the significance threshold
 
 | alpha | planet false-reject | blend caught | contaminant fits / viable |
 |-------|--------------------:|-------------:|--------------------------:|
-| 0.0001 | 0/53 | 0/56 | 56/56 |
-| 0.001 | 1/53 | 0/56 | 54/56 |
-| 0.01 | 3/53 | 2/56 | 40/56 |
+| 0.0001 | 0/55 | 0/59 | 50/52 |
+| 0.001 | 2/55 | 0/59 | 49/52 |
+| 0.01 | 5/55 | 1/59 | 43/52 |
 
 ## Methodological choices (where the author's doc left them open)
 
@@ -29,4 +29,4 @@ Statistic: `src/detect/centroidFtest.ts` -- F = n(n-1)|m-s|^2 / RSS, 1"/axis sca
 
 ## Verdict
 
-FAITHFUL-REPRODUCTION-RUN. The per-contaminant F-test is implemented and executed over 109 localisable real targets. The statistic behaves as calibrated (a low known-planet false-reject rate), but its POWER is bounded by the same pixel-baseline coverage limit P84 identified: 391/500 targets never localise a >=2-sector offset to test at all. Widening the sample narrows the error bars; it does not remove the coverage wall. safeToGate=false, discoveryClaim=false.
+FAITHFUL-REPRODUCTION-RUN. The per-contaminant F-test is implemented and executed over 114 localisable real targets. The statistic behaves as calibrated (a low known-planet false-reject rate), but its POWER is bounded by the same pixel-baseline coverage limit P84 identified: 386/500 targets never localise a >=2-sector offset to test at all. Widening the sample narrows the error bars; it does not remove the coverage wall. safeToGate=false, discoveryClaim=false.

@@ -27,6 +27,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { composeDigest } from "../scripts/science-digest.ts";
+import { overclaimViolations } from "../scripts/science-digest.ts";
 import type { DigestFinding, DigestInput, DigestLedgerEntry, DigestResearch } from "../scripts/science-digest.ts";
 
 const START = "2026-10-16T10:00:00.000Z";
@@ -446,4 +447,38 @@ test("heartbeat: a real new result always wins -- a huge silence does not force 
   assert.match(t, /known exoplanet HD 189733 b/);
   assert.ok(!/Space Data Rig status\./.test(t), "the science path is chosen, not the heartbeat");
   assertTweetSafe(t);
+});
+
+// ---- output-level over-claim net (audit-6 #2) --------------------------------
+// The per-post "discoveryClaim=false" stamp was removed, so this asserts the FINAL composed text carries no
+// affirmative over-claim across EVERY tier, and that the hedge-aware net still fires on the accidental template
+// edit it exists to catch (a bare discover/confirm/first with no negation nearby).
+
+test("no tier's final composed text trips the over-claim net (honest negations pass, affirmatives would not)", () => {
+  const tierOutputs: Record<string, string> = {
+    anchoredKnown: composeDigest(input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "Kepler-1647 b", 4.2)] })),
+    anchoredGeneric: composeDigest(input({ ledger: [anchored("f2")] })),
+    blindCandidates: composeDigest(input({ findings: [blind("b1", "TIC 123", IN, 3.3)] })),
+    milestone: composeDigest(input({ researchUpdated: true, research: RICH_RESEARCH })),
+    buildNote: composeDigest(input({ devCommits: ["fix(p86): refuse stale reports on publish"] })),
+    heartbeat: composeDigest(input({ heartbeatAfterMinutes: 45, silentMinutes: 60, research: RICH_RESEARCH, findings: [blind("b2", "TIC 5", IN)] })),
+  };
+  for (const [tier, text] of Object.entries(tierOutputs)) {
+    assert.ok(text.length > 0, `${tier}: expected non-empty composed text for this fixture`);
+    assert.deepEqual(overclaimViolations(text), [], `${tier}: composed output must contain no affirmative over-claim`);
+  }
+});
+
+test("the over-claim net FIRES on an accidental affirmative template edit", () => {
+  const bad = "Space Data Rig discovered a new planet and confirms a first detection of it.";
+  const hits = overclaimViolations(bad).join(" | ").toLowerCase();
+  assert.match(hits, /discover/, "'discovered' in an un-hedged sentence must be flagged");
+  assert.match(hits, /confirm/, "'confirms' must be flagged");
+  assert.match(hits, /first/, "'first' must be flagged");
+});
+
+test("the over-claim net treats the composer's honest negations as safe (not false positives)", () => {
+  assert.deepEqual(overclaimViolations("This is not a claimed discovery."), []);
+  assert.deepEqual(overclaimViolations("These figures are independent cross-checks, not discoveries."), []);
+  assert.deepEqual(overclaimViolations("The catalog records 3 UNCONFIRMED candidates, rather than a confirmed planet."), []);
 });

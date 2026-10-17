@@ -459,6 +459,32 @@ export function composeDigest(input: DigestInput): string {
   return ""; // nothing new and honest to report this window -> the workflow posts nothing
 }
 
+// ---- Output-level over-claim net (audit-6 #2) --------------------------------
+// Because the per-post "discoveryClaim=false" stamp was REMOVED, over-claim protection now rests entirely on the
+// wording library. This scans the FINAL composed string and returns any AFFIRMATIVE over-claim, independent of
+// whether the templates were "supposed" to be correct. It is deliberately HEDGE-AWARE: the composer legitimately
+// uses negated forms ("not a claimed discovery", "UNCONFIRMED", "rather than a confirmed planet", "not
+// discoveries") which are honest, so a forbidden stem only counts as a violation when its SENTENCE carries no
+// negation / hedge marker. A bare "first", "novel", "landmark", "discover", or standalone "confirm(ed)" in an
+// un-hedged sentence is exactly what an accidental template edit would produce -- the test pins that it trips.
+const OVERCLAIM_STEM = /\b(discover\w*|confirm\w*|first|novel|unprecedented|landmark|historic)\b/gi;
+const OVERCLAIM_HEDGE = /\bnot\b|\bno\b|\bnone\b|\bstill\b|unconfirmed|rather than|never|without|non-|lower.?bound|under.?powered|recovery.?check|\bcheck\b|cross.?check|follow.?up|already know|astronomers|independent\b/i;
+
+/** Sentences that affirmatively over-claim (a forbidden stem with no hedge in the same sentence). */
+export function overclaimViolations(text: string): string[] {
+  const hits: string[] = [];
+  for (const rawLine of String(text ?? "").split(/\n+/)) {
+    for (const sent of rawLine.split(/(?<=[.!?])\s+/)) {
+      if (!/\S/.test(sent)) continue;
+      if (OVERCLAIM_HEDGE.test(sent)) continue; // a hedged/negated sentence is honest, not a claim
+      OVERCLAIM_STEM.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = OVERCLAIM_STEM.exec(sent))) hits.push(`${m[0]} :: ${sent.trim()}`);
+    }
+  }
+  return hits;
+}
+
 // ---- I/O (kept out of the pure composer above) --------------------------------
 
 function arg(name: string, dflt = ""): string {

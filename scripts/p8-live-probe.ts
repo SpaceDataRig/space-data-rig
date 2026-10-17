@@ -10,16 +10,39 @@
 // through the real judges and asserts the exit code the workflow keys on (audit-3 P1-B: "a mechanism that
 // exists is not a mechanism that works"). It makes NO network calls and MUST stay that way.
 //
+// audit-6 adds a FOURTH check -- SURVEY PROGRESS -- the class of failure that froze the survey for 22 hours
+// (the rotation cursor advanced only in the workflow tail, so a hung pass stuck surveyPass at 1 and the feed
+// went quiet, and NO gate caught it -- it was discovered by "the X feed stopped posting"). The live-probe
+// now reads the rig's own /api/state and, given a --prev-file from the previous run, asserts surveyPass
+// STRICTLY INCREASED and distinctHosts did NOT DECREASE; a stuck survey is a HARD FAIL (exit 1), while an
+// unreachable site is treated as transient network (never a false science alarm). judgeProgress is pure.
+//
 // Exit codes (matched to the workflow's "open an issue" gate):
-//   0 = all three upstreams look healthy;
-//   1 = at least one upstream FAILED its field / row-count assertion (schema drift or a bad response);
-//   2 = INCONCLUSIVE due to network errors on ALL upstreams (transit, rate-limit, DNS). Not a science alarm.
+//   0 = all upstreams healthy AND (when asked) the survey is making progress;
+//   1 = at least one upstream FAILED its field / row-count assertion (schema drift or a bad response), OR
+//       the survey is FROZEN (surveyPass did not advance / distinctHosts regressed);
+//   2 = INCONCLUSIVE due to network errors on ALL checks (transit, rate-limit, DNS). Not a science alarm.
 //
 // Usage: npm run p8:live-probe         (real network probe)
+//        npm run p8:live-probe -- --prev-file out/progress-prev.json --out-file out/progress-cur.json \
+//            [--state-url https://spacedatarig.app/api/state]   (adds the survey-progress assertion)
 //        npm run p8:live-probe -- --self-test   (offline detection-logic drill, exit 0 == drill passed)
+
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 export interface Check { name: string; ok: boolean; detail: string }
 type Verdict = "PASS" | "FAIL" | "NET";
+
+/** One observation of the rig's own breadth/rotation counters. */
+export interface ProgressPoint { surveyPass: number; distinctHosts: number }
+
+/** Read a `--flag value` / `--flag=value` argument with a default. */
+function arg(name: string, dflt = ""): string {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  if (hit) return hit.slice(name.length + 3);
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith("--") ? process.argv[i + 1] : dflt;
+}
 
 async function fetchWithUA(url: string, accept: string, timeoutMs = 45000): Promise<Response> {
   const controller = new AbortController();
@@ -117,6 +140,58 @@ async function probeGaia(): Promise<Check> {
   }
 }
 
+/**
+ * Pure survey-progress judge. A stuck survey (the 22-hour freeze) is the target failure: surveyPass is
+ * monotonic (it only advances at an atomic run claim), so a run-to-run value that did NOT increase means
+ * claims are happening but passes are not completing/advancing -- exactly the incident. distinctHosts is
+ * the breadth measure and should only grow as the cursor rotates over new targets. A missing prev sample
+ * simply establishes the baseline (PASS) so the very first run never false-alarms.
+ */
+export function judgeProgress(prev: ProgressPoint | null, cur: ProgressPoint): Check {
+  const name = "survey-progress";
+  if (!Number.isFinite(cur.surveyPass) || !Number.isFinite(cur.distinctHosts)) {
+    return { name, ok: false, detail: `/api/state stats not numeric (surveyPass=${cur.surveyPass}, distinctHosts=${cur.distinctHosts})` };
+  }
+  if (!prev || !Number.isFinite(prev.surveyPass) || !Number.isFinite(prev.distinctHosts)) {
+    return { name, ok: true, detail: `baseline established (surveyPass=${cur.surveyPass}, distinctHosts=${cur.distinctHosts}); no prior sample to compare` };
+  }
+  if (cur.surveyPass <= prev.surveyPass) {
+    return { name, ok: false, detail: `survey FROZEN: surveyPass did not increase (${prev.surveyPass} -> ${cur.surveyPass}); runs are claiming the slot but the cursor is not advancing` };
+  }
+  if (cur.distinctHosts < prev.distinctHosts) {
+    return { name, ok: false, detail: `distinctHosts DECREASED (${prev.distinctHosts} -> ${cur.distinctHosts}); the catalog should only grow as the survey rotates` };
+  }
+  return { name, ok: true, detail: `progressing: surveyPass ${prev.surveyPass}->${cur.surveyPass}, distinctHosts ${prev.distinctHosts}->${cur.distinctHosts}` };
+}
+
+/** Read /api/state, judge progress vs the previous sample, and persist the current one for the next run. */
+async function probeProgress(prevFile: string, curFile: string, url: string): Promise<Check> {
+  let prev: ProgressPoint | null = null;
+  try {
+    if (prevFile && existsSync(prevFile)) prev = JSON.parse(readFileSync(prevFile, "utf8")) as ProgressPoint;
+  } catch {
+    prev = null; // a corrupt prev just re-establishes the baseline; never a false alarm
+  }
+  let cur: ProgressPoint;
+  try {
+    const r = await fetchWithUA(url, "application/json");
+    if (!r.ok) return { name: "survey-progress", ok: false, detail: `network: HTTP ${r.status} from ${url}` };
+    const j = (await r.json()) as { stats?: Partial<ProgressPoint> } & Partial<ProgressPoint>;
+    const s = j && typeof j.stats === "object" && j.stats ? j.stats : j;
+    cur = { surveyPass: Number(s.surveyPass), distinctHosts: Number(s.distinctHosts) };
+  } catch (e) {
+    return { name: "survey-progress", ok: false, detail: `network: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  if (Number.isFinite(cur.surveyPass) && Number.isFinite(cur.distinctHosts)) {
+    try {
+      if (curFile) writeFileSync(curFile, JSON.stringify(cur));
+    } catch {
+      /* caching the sample is best-effort; the verdict stands on the live read */
+    }
+  }
+  return judgeProgress(prev, cur);
+}
+
 /** Shared verdict + exit-code logic, driven purely off the Check list so both live and self-test use it. */
 export function evaluate(checks: Check[]): number {
   let net = 0, fail = 0, pass = 0;
@@ -145,7 +220,14 @@ export function evaluate(checks: Check[]): number {
 async function main(): Promise<void> {
   console.log("audit-10 #8 upstream live-probe (read-only, no writes)");
   // Run in parallel -- these are independent, latency-bound probes; sequential would just waste minutes.
-  process.exitCode = evaluate(await Promise.all([probeNasa(), probeExofop(), probeGaia()]));
+  const checks = await Promise.all([probeNasa(), probeExofop(), probeGaia()]);
+  // audit-6: the survey-progress assertion only runs when the workflow gives it a place to read the previous
+  // sample and stash the current one (Actions cache). Without those flags the probe keeps its original
+  // three-external-upstreams behaviour, so nothing that ran before changes.
+  const prevFile = arg("prev-file");
+  const curFile = arg("out-file");
+  if (curFile) checks.push(await probeProgress(prevFile, curFile, arg("state-url", "https://spacedatarig.app/api/state")));
+  process.exitCode = evaluate(checks);
 }
 
 // Offline detection drill (audit-3 P1-B). Feeds a HEALTHY fixture and a DRIFTED fixture through each real
@@ -192,6 +274,23 @@ export function selfTest(): number {
   expect("evaluate() inconclusive-network is NOT an alarm (exit 2)", exitAllNet, 2);
   const exitHealthy = evaluate([{ name: "a", ok: true, detail: "x" }, { name: "b", ok: true, detail: "x" }, { name: "c", ok: true, detail: "x" }]);
   expect("evaluate() healthy -> exit 0", exitHealthy, 0);
+
+  // Survey progress (audit-6 #4): the freeze class. A stuck/ regressed survey MUST trip FAIL (exit 1); a
+  // baseline run and a genuinely progressing run must PASS.
+  const pBase = judgeProgress(null, { surveyPass: 17, distinctHosts: 72 });
+  expect("progress baseline (no prev) -> PASS", pBase.ok, true);
+  const pFrozen = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 17, distinctHosts: 72 });
+  expect("surveyPass unchanged (the 22h freeze) -> FAIL", pFrozen.ok, false);
+  const pRegress = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 16, distinctHosts: 72 });
+  expect("surveyPass regressed -> FAIL", pRegress.ok, false);
+  const pHostsDown = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 18, distinctHosts: 40 });
+  expect("distinctHosts decreased -> FAIL", pHostsDown.ok, false);
+  const pGood = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 18, distinctHosts: 75 });
+  expect("survey progressing -> PASS", pGood.ok, true);
+  const pNan = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: NaN, distinctHosts: NaN });
+  expect("state stats not numeric -> FAIL (not silently ok)", pNan.ok, false);
+  const exitOnFreeze = evaluate([{ name: "nasa-exoplanet-archive", ok: true, detail: "x" }, pFrozen]);
+  expect("evaluate() alerts (exit 1) on a frozen survey", exitOnFreeze, 1);
 
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log("audit-10 #8 live-probe SELF-TEST (offline, no network):");

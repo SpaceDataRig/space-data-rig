@@ -35,6 +35,7 @@ import { R2ArtifactStore } from "./artifact-store.ts";
 import { hashScience, hashScienceLegacy } from "../bundle/bundle.ts";
 import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
+import { decideStart, decideFinish, decideAdvance, type MutexState } from "./run-mutex.ts";
 import {
   anchorOnEndpoints,
   anchorMemoOnEndpoints,
@@ -355,12 +356,22 @@ export class RigStateDO extends DurableObject<Env> {
 
   /** Advance the pass by one, once per runId. Returns the (possibly unchanged) pass count. */
   async advanceSurveyPass(runId: string): Promise<number> {
-    const current = Number(this.getMeta("surveyPass") ?? "0") || 0;
-    if (this.getMeta("lastPassRun") === runId) return current; // already advanced for this run
-    const next = current + 1;
-    await this.setMeta("surveyPass", String(next));
-    await this.setMeta("lastPassRun", runId);
-    return next;
+    const adv = decideAdvance({ surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0, lastPassRun: this.getMeta("lastPassRun") ?? null }, runId);
+    if (adv.changed) {
+      await this.setMeta("surveyPass", String(adv.surveyPass));
+      await this.setMeta("lastPassRun", adv.lastPassRun);
+    }
+    return adv.surveyPass;
+  }
+
+  /** The run-mutex slice of DO meta the claim/finish decisions read (see src/cf/run-mutex.ts). */
+  private runMutexState(): MutexState {
+    return {
+      activeRun: this.activeRun,
+      surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0,
+      lastPassRun: this.getMeta("lastPassRun") ?? null,
+      runId: this.getMeta("runId") ?? null,
+    };
   }
 
   // ---- run mutex -----------------------------------------------------------
@@ -371,53 +382,41 @@ export class RigStateDO extends DurableObject<Env> {
    * starts a fresh run (or resumes) and returns the runId to launch a Workflow with.
    */
   async startRunIfIdle(params: RunParams): Promise<{ ok: boolean; runId: string; code?: number }> {
-    const current = this.activeRun;
-    if (current?.running) {
-      // A slot claimed by a Workflow that died before releasing it would lock every
-      // future run (permanent 409). Treat a claim older than 30 minutes as stale and
-      // allow takeover; live runs of that length are far outside any normal path.
-      const started = Date.parse(current.startedAt);
-      const stale = !Number.isFinite(started) || Date.now() - started > 30 * 60 * 1000;
-      if (!stale) return { ok: false, runId: current.runId, code: 409 };
-      await this.emitEvent("reporter", "warn", `Releasing stale run ${current.runId} (claimed over 30 minutes ago and never finished); starting a new run.`);
+    // All claim/advance logic lives in the pure, unit-tested src/cf/run-mutex.ts; this method only reads
+    // meta, applies the decision, and emits the human events. The rotation cursor advances at the atomic
+    // CLAIM (decideStart), not in the workflow tail -- see the audit-6 comment below and run-mutex.ts.
+    const decision = decideStart(this.runMutexState(), params, { makeRunId: () => RigStateDO.makeRunId(), now: () => Date.now() });
+    if (!decision.ok) return { ok: false, runId: decision.runId, code: decision.code };
+    if (decision.releasedStaleRunId) {
+      await this.emitEvent("reporter", "warn", `Releasing stale run ${decision.releasedStaleRunId} (claimed over 30 minutes ago and never finished); starting a new run.`);
     }
-    const runId = params.resume ? this.getMeta("runId") ?? params.runId : params.runId || RigStateDO.makeRunId();
-    await this.setMeta("runId", runId);
-    this.activeRun = { runId, startedAt: new Date().toISOString(), running: true };
+    await this.setMeta("runId", decision.runId);
+    this.activeRun = decision.activeRun;
+    if (decision.cursorAdvanced) {
+      await this.setMeta("surveyPass", String(decision.surveyPass));
+      await this.setMeta("lastPassRun", decision.lastPassRun ?? "");
+    }
     await this.ctx.storage.sync();
-    // audit-6: advance the rotation cursor at the atomic CLAIM, not in the workflow's finish tail. The tail
-    // never runs for a hung/aborted pass, and that deadlocked the survey on a single window; the claim is
-    // exactly-once (DO-serialized), so one pass is consumed per launched run and the catalog keeps sweeping
-    // even when a step stalls. Manual top-N runs (rotation false) never move the cursor.
-    if (params.rotation) await this.advanceSurveyPass(runId);
     await this.emitEvent(
       "data-fetch",
       "info",
-      `Run ${runId} started from the dashboard: ${params.targets} target${params.targets === 1 ? "" : "s"}, ${params.offline ? "offline catalog" : "live NASA archive"}${params.resume ? ", resuming" : ""}.`,
+      `Run ${decision.runId} started from the dashboard: ${params.targets} target${params.targets === 1 ? "" : "s"}, ${params.offline ? "offline catalog" : "live NASA archive"}${params.resume ? ", resuming" : ""}.`,
     );
-    return { ok: true, runId };
+    return { ok: true, runId: decision.runId };
   }
 
   /** Release the run slot with a summary or an error (called by the Workflow tail). */
   async finishRun(runId: string, result: { summary?: ActiveRun["summary"]; error?: string }): Promise<void> {
-    const current = this.activeRun;
     // audit-6: a run may only release ITS OWN slot. After a stale-takeover starts a successor under a new
     // runId, the abandoned (zombie) workflow can still reach this tail late; without the guard it would
-    // clobber the live successor's slot and re-open the mutex to a concurrent launch. Ignore a finish whose
-    // runId is not the currently active run.
-    if (current && current.runId && current.runId !== runId) {
-      await this.emitEvent("reporter", "info", `Ignoring finish for superseded run ${runId}; the active run is ${current.runId}.`);
+    // clobber the live successor's slot and re-open the mutex to a concurrent launch. The decision lives
+    // in decideFinish (unit-tested); here we only apply it.
+    const decision = decideFinish(this.runMutexState(), { runId, summary: result.summary, error: result.error }, { now: () => Date.now() });
+    if (decision.ignore) {
+      await this.emitEvent("reporter", "info", `Ignoring finish for superseded run ${runId}; the active run is ${this.activeRun?.runId ?? ""}.`);
       return;
     }
-    const finished: ActiveRun = {
-      runId: runId || current?.runId || this.getMeta("runId") || "",
-      startedAt: current?.startedAt ?? new Date().toISOString(),
-      running: false,
-      finishedAt: new Date().toISOString(),
-      summary: result.summary,
-      error: result.error,
-    };
-    this.activeRun = finished;
+    this.activeRun = decision.activeRun;
     await this.ctx.storage.sync();
     await this.broadcastState();
   }

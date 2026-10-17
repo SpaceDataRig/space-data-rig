@@ -20,6 +20,7 @@
 
 import { readFileSync } from "node:fs";
 import { createHmac, randomBytes } from "node:crypto";
+import { overclaimViolations } from "./science-digest.ts";
 
 function penv(): Record<string, string | undefined> {
   const g = globalThis as { process?: { env?: Record<string, string | undefined> } };
@@ -75,6 +76,19 @@ if (!text) {
   process.exitCode = 1;
 } else if (text.length > MAXLEN) {
   text = `${text.slice(0, MAXLEN - 3).trimEnd()}...`;
+}
+
+// Output-level over-claim net (audit-6 #2): the per-post "discoveryClaim=false" stamp was removed, so honesty
+// now rests on wording alone. As a final, template-independent safety net, refuse to send ANY text that
+// affirmatively over-claims (a discover/confirm/first/novel stem in an un-hedged sentence). This is a hard
+// stop even in a manual dispatch -- the whole point is that no code path can post an over-claim.
+if (process.exitCode !== 1) {
+  const over = overclaimViolations(text);
+  if (over.length) {
+    console.error(`x:post: REFUSED -- final text contains ${over.length} affirmative over-claim(s); policy is no discovery/confirmation wording:`);
+    for (const h of over) console.error(`  - ${h}`);
+    process.exitCode = 1;
+  }
 }
 
 const ready = Boolean(API_KEY && API_SECRET && TOKEN && TOKEN_SECRET);

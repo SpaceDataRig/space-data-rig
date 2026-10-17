@@ -1,5 +1,13 @@
 {
   "meta": {
+    "generatedAt": "2026-10-17T14:31:21.174Z",
+    "gitSha": "b185f45bb492da9be9d201edb01e051112b449e7",
+    "inputs": [
+      {
+        "path": "out/scaled/centroid.jsonl",
+        "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
+      }
+    ],
     "generatedFrom": "out/scaled/centroid.jsonl",
     "rows": 500,
     "statistic": "eumemic per-contaminant multi-sector centroid F-test (src/detect/centroidFtest.ts)",
@@ -7,9 +15,9 @@
   },
   "coverage": {
     "total": 500,
-    "testable": 109,
-    "notLocalised": 391,
-    "testablePct": 21.8
+    "testable": 114,
+    "notLocalised": 386,
+    "testablePct": 22.8
   },
   "methodChoices": {
     "whichStarFits": "max-p across bright-enough contaminants (a neighbour 'explains' the mean offset); NOT a joint/min-p test",
@@ -19,36 +27,36 @@
   "sensitivity": [
     {
       "alpha": 0.0001,
-      "planetsTestable": 53,
+      "planetsTestable": 55,
       "planetFalseReject": 0,
-      "blendsTestable": 56,
+      "blendsTestable": 59,
       "blendCaught": 0,
-      "blendsWithViable": 56,
-      "blendContaminantFits": 56
+      "blendsWithViable": 52,
+      "blendContaminantFits": 50
     },
     {
       "alpha": 0.001,
-      "planetsTestable": 53,
-      "planetFalseReject": 1,
-      "blendsTestable": 56,
+      "planetsTestable": 55,
+      "planetFalseReject": 2,
+      "blendsTestable": 59,
       "blendCaught": 0,
-      "blendsWithViable": 56,
-      "blendContaminantFits": 54
+      "blendsWithViable": 52,
+      "blendContaminantFits": 49
     },
     {
       "alpha": 0.01,
-      "planetsTestable": 53,
-      "planetFalseReject": 3,
-      "blendsTestable": 56,
-      "blendCaught": 2,
-      "blendsWithViable": 56,
-      "blendContaminantFits": 40
+      "planetsTestable": 55,
+      "planetFalseReject": 5,
+      "blendsTestable": 59,
+      "blendCaught": 1,
+      "blendsWithViable": 52,
+      "blendContaminantFits": 43
     }
   ],
   "headline": {
-    "planetFalseReject": "1/53",
-    "blendCaught": "0/56",
-    "blendContaminantFitRateAmongViable": "54/56"
+    "planetFalseReject": "2/55",
+    "blendCaught": "0/59",
+    "blendContaminantFitRateAmongViable": "49/52"
   },
   "safeToGate": false,
   "discoveryClaim": false

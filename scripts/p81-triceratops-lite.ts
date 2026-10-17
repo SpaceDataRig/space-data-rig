@@ -21,6 +21,7 @@
 //          --min-corr 2 --aperture 21 --alpha 0.001 --centroid 1 --maxcentroid 20]
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { iterativeBls } from "../src/detect/iterative.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { fetchToiTable, isPlaceable, type ToiRecord } from "../src/data/toiDispositions.ts";
@@ -201,7 +202,7 @@ async function main(): Promise<void> {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p81-triceratops-lite.ts", protocol: "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test", wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, apertureArcsec: APERTURE, centroidAlpha: ALPHA, centroidEnabled: DO_CENTROID, falseCoincidenceBase: fcBase, ebPriorShortPeriod: 0.015, note: "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false." },
+    meta: { ...buildStamp(["reports/p78-blind-multisector.json", "src/data/toiDispositions.ts"]), generatedBy: "scripts/p81-triceratops-lite.ts", protocol: "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test", wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, apertureArcsec: APERTURE, centroidAlpha: ALPHA, centroidEnabled: DO_CENTROID, falseCoincidenceBase: fcBase, ebPriorShortPeriod: 0.015, note: "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false." },
     totals: { validated: totalValid, kpValidated: kpValid.length, cpValidated: cpValid.length, cpTricGrade: cpGrade, kpTricGrade: kpGrade, cpLowOrModerate: cpLowOrMod, censusDetermined: determined, censusUndetermined: undetermined, inconsistentDepth: contradict.length },
     rows, verdict, discoveryClaim: false, safeToGate: false,
   };

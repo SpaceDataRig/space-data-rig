@@ -17,6 +17,7 @@
 // Usage: npm run p84:centroid-diagnosis [-- --alpha 0.001 --checkpoint out/scaled/centroid.jsonl]
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -77,7 +78,7 @@ function main(): void {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p84-centroid-diagnosis.ts", checkpoint: CHECKPOINT, alpha: ALPHA, eumemicReference: { planetFalseReject: "0/565 at p<0.001", blendCatch: "127/175 (73%); 38% within 15 arcsec" }, note: "decomposes the P82 centroid result into COVERAGE (localisable fraction) vs POWER (F-test discrimination); research-only; discoveryClaim false, safeToGate false." },
+    meta: { ...buildStamp([CHECKPOINT]), generatedBy: "scripts/p84-centroid-diagnosis.ts", checkpoint: CHECKPOINT, alpha: ALPHA, eumemicReference: { planetFalseReject: "0/565 at p<0.001", blendCatch: "127/175 (73%); 38% within 15 arcsec" }, note: "decomposes the P82 centroid result into COVERAGE (localisable fraction) vs POWER (F-test discrimination); research-only; discoveryClaim false, safeToGate false." },
     planets, blends, verdict, discoveryClaim: false, safeToGate: false,
   };
   writeFileSync("reports/p84-centroid-diagnosis.json", JSON.stringify(json, null, 2) + "\n");
@@ -94,8 +95,11 @@ function main(): void {
     "",
     `Reproduce: \`npm run p84:centroid-diagnosis -- --alpha ${ALPHA}\` (reads the P82 centroid checkpoint; run \`npm run p82:scaled -- --probe centroid\` first).`,
     "",
-    "The scaled centroid result (P82) was asymmetric: known planets false-reject 1/53, but labelled blends caught",
-    "0/56. This splits the WHY into (A) COVERAGE -- did the target-pixel-cube even yield >=2 localisable sector",
+    "Provenance: this diagnosis is re-derived on every run from the checkpoint's content-addressed sha256 (see meta),",
+    "so it always matches the current P82 sweep -- here, the corrected host coordinates after the ExoFOP RA-unit fix.",
+    "",
+    `The scaled centroid result (P82) was asymmetric: known planets false-reject ${planets.falseReject}/${planets.testable}, but labelled blends caught`,
+    `${blends.caught}/${blends.testable}. This splits the WHY into (A) COVERAGE -- did the target-pixel-cube even yield >=2 localisable sector`,
     "offsets? -- and (B) POWER -- among the localisable ones, does the F-test align the offset cloud with the target",
     "or with any Gaia-viable contaminant? High pTarget AND high bestNeighbourP on REAL blends means the offsets",
     "match neither, which points at our pixel baseline (WCS / centroid precision / sector alignment), not the test.",

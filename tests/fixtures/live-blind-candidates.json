@@ -1,0 +1,50 @@
+{
+  "capturedAt": "2026-10-17T06:50:23.062Z",
+  "base": "https://spacedatarig.app",
+  "note": "Real origin=blind-toi rows from /api/state. digest/heartbeat must count only verdict!=='rejected'.",
+  "total": 4,
+  "surviving": 2,
+  "rejected": 2,
+  "candidates": [
+    {
+      "targetId": "TOI-1821.01",
+      "verdict": "needs-more-data",
+      "origin": "blind-toi",
+      "createdAt": "2026-10-17T06:29:33.508Z",
+      "periodDays": 9.476139639228494,
+      "matchedKnownPlanet": false,
+      "discoveryClaim": false,
+      "anchored": false
+    },
+    {
+      "targetId": "TOI-5099.01",
+      "verdict": "needs-more-data",
+      "origin": "blind-toi",
+      "createdAt": "2026-10-17T06:29:18.172Z",
+      "periodDays": 1.1477128269950976,
+      "matchedKnownPlanet": false,
+      "discoveryClaim": false,
+      "anchored": false
+    },
+    {
+      "targetId": "TOI-4568.01",
+      "verdict": "rejected",
+      "origin": "blind-toi",
+      "createdAt": "2026-10-17T06:27:54.432Z",
+      "periodDays": 16,
+      "matchedKnownPlanet": false,
+      "discoveryClaim": false,
+      "anchored": false
+    },
+    {
+      "targetId": "TOI-5724.01",
+      "verdict": "rejected",
+      "origin": "blind-toi",
+      "createdAt": "2026-10-17T06:27:34.115Z",
+      "periodDays": 6.611948153603162,
+      "matchedKnownPlanet": false,
+      "discoveryClaim": false,
+      "anchored": false
+    }
+  ]
+}

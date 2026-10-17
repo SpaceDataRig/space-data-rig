@@ -227,7 +227,9 @@ function heartbeat(input: DigestInput): string {
     "The survey is running on its own against public NASA TESS light curves, and there is nothing newly sealed on-chain or newly flagged to report at this check.",
   ];
   if (stars != null) body.push(`The detector keeps operating against its characterization on ${stars} real public TESS-SPOC stars.`);
-  const blindTotal = findings.filter((f) => f && f.origin === "blind-toi").length;
+  // Surviving blind candidates only -- a rejected blind row is noise the critic cleared, not something held for
+  // follow-up, so it must not inflate the "records N candidates" count (mirrors the science tier above).
+  const blindTotal = findings.filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected").length;
   body.push(
     blindTotal > 0
       ? `The catalog currently records ${blindTotal} UNCONFIRMED blind candidate${blindTotal === 1 ? "" : "s"}, held for human follow-up rather than any claim.`
@@ -315,9 +317,12 @@ export function composeDigest(input: DigestInput): string {
 
   // (2) Newly flagged UNCONFIRMED blind candidates (newest first, for the example). These are contractually
   //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). This path
-  //     anchors nothing on-chain, so its Proof block carries no transaction link.
+  //     anchors nothing on-chain, so its Proof block carries no transaction link. Only SURVIVING candidates count:
+  //     a blind row the critic already rejected (verdict="rejected") is noise, not a candidate awaiting follow-up,
+  //     so it must not inflate the reported count (the live catalog holds both surviving needs-more-data rows AND
+  //     rejected rows for the same survey pass).
   const blind = findings
-    .filter((f) => f && f.origin === "blind-toi" && within(f.createdAt, start, end))
+    .filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected" && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   if (blind.length) {
     const n = blind.length;

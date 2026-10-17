@@ -56,6 +56,17 @@ the runner WITHOUT touching the feed: it composes a heartbeat over a valid-but-e
 non-empty and ASCII-only, prints it, and exits before any post. The workflow header now records that `npm test`
 being green does NOT exercise the compose/watchdog path, so this dry dispatch is the real pre-merge gate.
 
+### Blind-candidate counts now exclude critic-rejected dips (live-data verified) (2026-10-17)
+With the rotation unfrozen, live /api/state began producing origin="blind-toi" rows for real -- a mix of SURVIVING
+needs-more-data candidates AND critic-REJECTED dips. The digest blind tier (priority 2) and the silence heartbeat
+counted EVERY blind-toi row in the window, so a rejected dip (noise) was reported as an "UNCONFIRMED candidate for
+human follow-up" -- an over-count that overstated the catalog. Both now filter verdict !== "rejected", so only
+surviving candidates are cited. Per the project's live-data doctrine, this is guarded by tests/live-blind-digest.test.ts
+over tests/fixtures/live-blind-candidates.json (captured from the real site by the new npm run fixtures:capture-blind,
+re-runnable) -- it drives the actual composeDigest and asserts the reported count equals the surviving count and
+never the total, plus the honesty invariants on production bytes (no discoveryClaim, none auto-anchored). The live
+fixture at capture time held 2 surviving + 2 rejected; before the fix the digest/heartbeat reported 4.
+
 ### Audit-6: X auto-post switched from per-push to an hourly commit digest (2026-10-16)
 Posting one tweet per qualifying push got noisy: a run of consecutive commits (like this audit remediation)
 produced a run of consecutive tweets. `.github/workflows/x-post.yml` no longer has a push trigger -- it is now

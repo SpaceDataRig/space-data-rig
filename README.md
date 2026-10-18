@@ -280,6 +280,15 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   previews the memo, and `live` spends real SOL only while a per-UTC-day cap
   (`AUTO_ANCHOR_DAILY_CAP`, default `0`) leaves room, and never repeats an already-anchored
   hash. On-chain anchoring therefore stays an explicit, cost-capped operator decision.
+- **Two anchor counts, because they answer two questions.** The dashboard shows `sealed as published` and `chain
+  commitments` side by side. The first is `stats.bundlesAnchored`: findings whose CURRENT bundle bytes still match a
+  commitment -- the property a provenance claim needs, and one that can go DOWN when the rotating survey re-measures a
+  sealed host, because a `bundleHash` folds the run timestamp and a re-derived bundle is a hash the chain never saw.
+  The second is `stats.ledgerAnchored`: ledger rows recording a commitment that landed (status `anchored` AND a
+  signature), which survives a re-derivation and answers "how many results has this rig put on chain". Production held
+  7 and 18 at the same moment; publishing one number under the other's label was the defect. A landed ledger row is
+  never demoted by a later attempt that failed (`mergeLedgerRow`, applied by both the Durable Object and the
+  filesystem ledger), so a transient RPC error cannot destroy the evidence for a transaction still live on mainnet.
 - **A rotating survey, and honest blind candidates.** With `AUTO_RESEARCH_ROTATION=1` the autonomous run no
   longer re-runs the same brightest handful and overwrites it in place: it rotates through a broad real pool
   -- known-planet re-validation rows plus UNCONFIRMED TESS Objects of Interest -- chosen from a persisted pass

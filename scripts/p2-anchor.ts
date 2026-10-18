@@ -19,6 +19,7 @@ import {
   verifyAnchor,
   upsertLedger,
   readLedger,
+  countCommittedLedger,
   explorerUrl,
   buildMemo,
   type LedgerEntry,
@@ -132,11 +133,13 @@ async function main(): Promise<void> {
     }
   }
 
-  if (!args.dryRun && !args.verify) store.save(args.snapshot);
-
   const ledger = readLedger(args.ledger);
-  const anchored = ledger.filter((e) => e.status === "anchored").length;
-  console.log(`\nDone: ${nOk} succeeded. Ledger ${args.ledger} has ${anchored}/${ledger.length} anchored.`);
+  // Read the ledger BEFORE writing the snapshot: the snapshot carries the published counters, so saving first
+  // would freeze `ledgerAnchored` at whatever the previous run left in the file and miss this run's anchors.
+  if (!args.dryRun && !args.verify) store.save(args.snapshot, ledger);
+
+  const anchored = countCommittedLedger(ledger);
+  console.log(`\nDone: ${nOk} succeeded. Ledger ${args.ledger} has ${anchored}/${ledger.length} row(s) recording a commitment that landed.`);
   if (args.dryRun) console.log(`(dry-run: example memo -> ${buildMemo(withHash[0].id, withHash[0].bundleHash!)})`);
   console.log("");
 }

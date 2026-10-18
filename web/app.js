@@ -230,7 +230,12 @@ function renderStats(stats) {
   $("#stat-confirmed").textContent = stats.findingsAccepted ?? 0;
   $("#stat-watch").textContent = stats.findingsReview ?? 0;
   $("#stat-rejected").textContent = stats.findingsRejected ?? 0;
+  // Two anchor numbers on purpose. `bundlesAnchored` is "the bytes published now match a chain commitment";
+  // `ledgerAnchored` is "commitments this rig has made, superseded ones included". They are routinely unequal
+  // (production held 7 and 18), and showing only the small one under a label that reads like a total -- which is
+  // what this tile did -- reports a falling number every time a sealed record is re-measured.
   $("#stat-anchored").textContent = stats.bundlesAnchored ?? 0;
+  $("#stat-commitments").textContent = stats.ledgerAnchored ?? 0;
   $("#stat-done").textContent = stats.tasksDone ?? 0;
   if (surveyStatsEl) surveyStatsEl.textContent = `survey pass ${stats.surveyPass ?? 0} - ${stats.distinctHosts ?? 0} distinct targets - ${stats.blindCandidates ?? 0} blind candidates (unconfirmed)`;
   renderFeedTicker(researchData, stats);
@@ -1143,7 +1148,8 @@ function renderFeedTicker(research, stats) {
   }
   if (stats) {
     chips.push(["targets analyzed", stats.tasksDone ?? 0]);
-    chips.push(["results sealed on-chain", stats.bundlesAnchored ?? 0]);
+    chips.push(["published results matching their chain commitment", stats.bundlesAnchored ?? 0]);
+    chips.push(["chain commitments recorded", stats.ledgerAnchored ?? 0]);
   }
   feedTickerEl.innerHTML = chips.map(([k, v]) => `<span class="ticker-chip"><b>${esc(String(v))}</b> ${esc(k)}</span>`).join("");
 }

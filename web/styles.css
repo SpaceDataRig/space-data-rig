@@ -138,7 +138,7 @@ a:hover { text-decoration: underline; }
 .trow.error .t-text { color: #ff9bb6; }
 
 /* ---- telemetry ---- */
-.telemetry { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 4px; }
+.telemetry { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; padding: 4px; }
 .tel { text-align: center; padding: 16px 6px; border-radius: 12px; background: rgba(120, 180, 255, 0.04); }
 .tel-num { display: block; font: 700 30px var(--mono); color: #eafcff; text-shadow: 0 0 14px rgba(58, 224, 255, 0.35); }
 .tel-lbl { font: 600 10px var(--mono); letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; }

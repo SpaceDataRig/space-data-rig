@@ -5,6 +5,50 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Two different anchor counts were being published as one, and chasing it found a ledger that could forget (2026-10-18, sixth pass)
+`/api/state` reported `bundlesAnchored: 7` while `/api/ledger` listed 18 anchored rows, and the dashboard rendered the 7
+under the label "on-chain" -- which every reader, including the operator writing a summary, reads as the total. Both
+numbers were correct. `bundlesAnchored` counts findings whose CURRENTLY PUBLISHED bundle carries a confirmed stamp: the
+bytes you can download now are the bytes a commitment covers. A bundle hash folds the run's `createdAt`, so any
+re-derivation by the rotating survey produces a hash the chain never saw, the stale stamp is dropped rather than
+inherited, and the record leaves the 7 while its transaction stays on mainnet. Eleven rows were in that state when this
+was found; a re-reading during the same pass had the split moved to 9 and 9 with the total unchanged -- which is the
+point: the smaller figure moves while nothing is being un-anchored, so it was never a total. The metric that answers
+"how many results has this rig put on chain" did not exist anywhere.
+
+Both exist now. `RigStats.ledgerAnchored` counts ledger rows that record a commitment which landed -- status `anchored`
+AND a signature somebody can look up, so a row that never resolved is not counted as evidence. The rule is
+`isCommittedLedgerRow` in `src/core/anchor-verify.ts` (generic over the row shape, because the Durable Object and the
+filesystem ledger declare different `LedgerEntry` types and must not hold two versions of this), with the Durable
+Object's SQL form exported as `LEDGER_COMMITTED_SQL` so a test can compare the query against the predicate: the DO
+imports `cloudflare:workers` and cannot be loaded by the Node runner, exactly as in `tests/run-mutex.test.ts`. The
+dashboard gained a second tile -- "sealed as published" beside "chain commitments" -- each carrying its definition in a
+hover attribute, and the feed ticker chips were split the same way.
+
+Following the discrepancy into the write path found something worse than a mislabelled number. The ledger keeps ONE row
+per finding (`INSERT OR REPLACE`, primary key `finding_id`; the fs ledger matches by findingId and replaces in place),
+and both runtimes stored whatever the newest attempt produced. A FAILED re-anchor of an already-anchored finding
+therefore overwrote the signature, slot and explorer URL of a commitment that is still live on mainnet: provenance
+evidence destroyed by a transient RPC error, and the cumulative count falling on a network hiccup. `mergeLedgerRow`
+(now the single rule both runtimes call) refuses the demotion: a landed row keeps its proof, the lost attempt is
+recorded beside it in `lastAttemptError` / `lastAttemptBundleHash` / `lastAttemptAt`, and a genuinely newer successful
+anchor still replaces the row as it should. The anchoring CLI had a third copy of the count, a looser one
+(`status === "anchored"`, ignoring the signature); it now calls the shared predicate, and it reads the ledger before
+writing the snapshot it persists, which previously froze whatever total the earlier run had left.
+
+`tests/anchored-stats.test.ts` (11 tests) pins the predicate over anchored/failed/pending rows with and without a
+signature, the merge in both directions, the two counters disagreeing on one store by construction, and then the wiring:
+that the DO reads the prior row, merges, and writes the merged value; that the fs ledger no longer contains the spread
+that allowed the demotion; that the Node API server passes ledger rows to every surface that renders these numbers and
+to both snapshot writes; that the served `index.html` has six tiles whose labels no longer include the word
+"confirmed" -- a verdict tile bearing that word contradicted the project's own wording rule, since a card for the same
+verdict says RECOVERED -- and that the stylesheet's grid column count equals the number of tiles the page actually
+renders. No test touched `web/index.html` before this pass.
+
+Suite 737 of 737 (from 726), typecheck and lint clean, coverage 95.5% lines / 82.3% branches, English-only gate green.
+No verdict, gate, threshold, bundle field or anchored address moved: this changed how counts are computed, labelled and
+preserved, not what the pipeline decides.
+
 ### /health certified a commit that was not what production was running (2026-10-18, fifth pass)
 Found by looking at live records instead of trusting the deploy log: seven rows carried narration that the shipped
 code could not have written. The depth bars were computed from a constant that had been superseded, and the sentence

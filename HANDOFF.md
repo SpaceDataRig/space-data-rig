@@ -515,6 +515,17 @@ the Actions web page when the anonymous API is rate-limited.
   because a live record's sentence did not match any committed renderer. When you verify a deploy, compare a
   rendered artifact against the code that should have produced it; the self-report is the thing being audited, not
   the evidence.
+- A count is a claim about a question, and one field can only answer one. `stats.bundlesAnchored` (7) counted findings
+  whose CURRENT bundle still matches a chain commitment, while the tile under it said "on-chain", which asks how many
+  commitments exist (18, from `/api/ledger`). They differ because a bundle hash folds the run timestamp: re-derive a
+  sealed record and it leaves the first count without leaving the chain. If two questions are visible to a reader, both
+  need a field and a label -- and put the definition where the code is read (src/core/state-types.ts), not in a chat log.
+- An append-only ledger keyed by finding id is NOT append-only. Both ledger writers stored the newest attempt over the
+  row (`INSERT OR REPLACE`, and `{...prior, ...next}` on the fs side), so a failed re-anchor erased the signature and
+  explorer URL of a commitment still live on mainnet, and the total fell on an RPC hiccup. `mergeLedgerRow`
+  (src/core/anchor-verify.ts, used by BOTH runtimes) refuses to demote a landed row; the failed attempt lands in
+  `lastAttempt*`. When you add a counter over a keyed-mutable table, check what the write path can destroy, not only
+  what the read path filters.
 
 ## 13. Current state (as of 2026-10-13)
 

@@ -17,6 +17,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Keypair } from "@solana/web3.js";
+import { isCommittedLedgerRow, mergeLedgerRow } from "../core/anchor-verify.ts";
 import {
   anchorOnEndpoints,
   anchorMemoOnEndpoints,
@@ -76,6 +77,11 @@ export interface LedgerEntry {
   explorerUrl?: string;
   error?: string;
   anchoredAt?: string;
+  /** A failed re-anchor attempt beside a commitment that landed. Same fields, same meaning as the Worker
+   *  ledger entry (src/core/state-types.ts); the fs ledger keeps one row per finding too. */
+  lastAttemptError?: string;
+  lastAttemptBundleHash?: string;
+  lastAttemptAt?: string;
 }
 
 // ---- .env + RPC endpoint resolution (Node: reads process.env) ---------------
@@ -268,12 +274,21 @@ export function writeLedger(path: string, entries: LedgerEntry[]): void {
   writeFileSync(abs, JSON.stringify(entries, null, 2), "utf8");
 }
 
-/** Insert or update a ledger entry keyed by findingId; returns the new ledger. */
+/**
+ * Insert or update a ledger entry keyed by findingId; returns the new ledger.
+ * A row that already records a landed commitment is never demoted by an attempt that did not land -- the shared
+ * rule is `mergeLedgerRow` (src/core/anchor-verify.ts), the same one the Durable Object applies.
+ */
 export function upsertLedger(path: string, entry: LedgerEntry): LedgerEntry[] {
   const ledger = readLedger(path);
   const i = ledger.findIndex((e) => e.findingId === entry.findingId);
-  if (i >= 0) ledger[i] = { ...ledger[i], ...entry };
+  if (i >= 0) ledger[i] = mergeLedgerRow(ledger[i], entry, new Date().toISOString());
   else ledger.push(entry);
   writeLedger(path, ledger);
   return ledger;
+}
+
+/** How many ledger rows record a commitment that actually landed -- the cumulative anchor count. */
+export function countCommittedLedger(ledger: LedgerEntry[]): number {
+  return ledger.filter(isCommittedLedgerRow).length;
 }

@@ -19,7 +19,7 @@
 
 import { DurableObject } from "cloudflare:workers";
 import type { Finding, RigEvent, SeatName, Task } from "../core/types.ts";
-import { anchorStampIsValid } from "../core/anchor-verify.ts";
+import { anchorStampIsValid, LEDGER_COMMITTED_SQL, mergeLedgerRow } from "../core/anchor-verify.ts";
 import {
   SEAT_ORDER,
   defaultSeats,
@@ -245,6 +245,10 @@ export class RigStateDO extends DurableObject<Env> {
       findingsRejected: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.verdict') = 'rejected'`),
       findingsReview: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.verdict') = 'needs-more-data'`),
       bundlesAnchored: scalar(`SELECT COUNT(*) AS n FROM bundles WHERE json_extract(data,'$.solanaTx') IS NOT NULL`),
+      // The OTHER anchor number, and the one this field used to be mistaken for: how many findings the rig has
+      // actually put on chain, whether or not their current bytes still match what was committed. Both are true
+      // at once (production held 7 and 18), so both have to be published -- see src/core/anchor-verify.ts.
+      ledgerAnchored: scalar(`SELECT COUNT(*) AS n FROM ledger WHERE ${LEDGER_COMMITTED_SQL}`),
       // audit-5 rotation/breadth counters. surveyPass comes from DO meta (advanced once per completed
       // autonomous run); distinctHosts is the honest breadth measure; blindCandidates counts UNCONFIRMED
       // TOI rows so the UI can never imply they are discoveries.
@@ -545,10 +549,15 @@ export class RigStateDO extends DurableObject<Env> {
   }
 
   async upsertLedger(entry: LedgerEntry): Promise<LedgerEntry> {
-    this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO ledger (finding_id, anchored_at, data) VALUES (?, ?, ?)`, entry.findingId, entry.anchoredAt ?? null, JSON.stringify(entry));
+    // Never let an attempt that failed overwrite a commitment that landed: the ledger holds one row per finding,
+    // so a plain replace would erase the signature and explorer URL of a tx still live on mainnet (and drop
+    // ledgerAnchored with it). mergeLedgerRow is shared with the Node ledger so both runtimes keep the rule.
+    const priorRow = this.row<{ data: string }>(`SELECT data FROM ledger WHERE finding_id = ?`, entry.findingId);
+    const merged = mergeLedgerRow(priorRow ? (JSON.parse(priorRow.data) as LedgerEntry) : undefined, entry, new Date().toISOString());
+    this.ctx.storage.sql.exec(`INSERT OR REPLACE INTO ledger (finding_id, anchored_at, data) VALUES (?, ?, ?)`, merged.findingId, merged.anchoredAt ?? null, JSON.stringify(merged));
     await this.ctx.storage.sync();
     await this.broadcastState();
-    return entry;
+    return merged;
   }
 
   /**

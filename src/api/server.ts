@@ -80,6 +80,11 @@ const ai = { mode: discussionMode(), provider: llmProviderLabel() };
 const store = new RigStore();
 const snapshotLoaded = store.load(STATE_PATH);
 
+// The two anchor counts answer different questions (see src/core/state-types.ts), and the store cannot read the
+// fs ledger itself -- so every surface this server renders passes the live rows. Read per request rather than
+// once at boot: anchoring happens while the server is running, and a cached copy would report a stale total.
+const ledgerRows = (): LedgerEntry[] => readLedger(LEDGER_PATH);
+
 interface ActiveRun {
   runId: string;
   startedAt: string;
@@ -164,7 +169,7 @@ app.get("/api/state", (c) =>
     codeVersion,
     snapshotLoaded,
     activeRun,
-    stats: store.computeStats(),
+    stats: store.computeStats(ledgerRows()),
     seats: store.listSeats().map((s) => ({ ...s, role: seatRole(s.name) })),
     findings: store.listFindings().map(findingView),
     bundles: store.listBundles(),
@@ -436,7 +441,7 @@ app.get("/api/events", (c) =>
       stream
         .writeSSE({
           event: "state",
-          data: JSON.stringify({ runId: store.runId, stats: store.computeStats(), seats: store.listSeats(), activeRun }),
+          data: JSON.stringify({ runId: store.runId, stats: store.computeStats(ledgerRows()), seats: store.listSeats(), activeRun }),
         })
         .catch(() => {});
 
@@ -548,7 +553,7 @@ app.post("/api/anchor/:id", async (c) => {
     if (f.solanaTx !== prior.signature) {
       store.updateFinding(f.id, { solanaTx: prior.signature });
       store.updateBundle(f.id, { solanaTx: prior.signature });
-      store.save(STATE_PATH);
+      store.save(STATE_PATH, ledgerRows());
     }
     return c.json({ ok: true, memo: prior.memo, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl, alreadyAnchored: true });
   }
@@ -569,11 +574,13 @@ app.post("/api/anchor/:id", async (c) => {
       error: res.error,
       anchoredAt: res.ok ? new Date().toISOString() : undefined,
     };
-    upsertLedger(LEDGER_PATH, entry);
+    // `upsertLedger` returns the ledger as it now stands, including whatever `mergeLedgerRow` kept -- so the
+    // snapshot is written against the rows that are really on disk, not a re-read or an empty default.
+    const nextLedger = upsertLedger(LEDGER_PATH, entry);
     if (res.ok && res.signature) {
       store.updateFinding(f.id, { solanaTx: res.signature });
       store.updateBundle(f.id, { solanaTx: res.signature });
-      store.save(STATE_PATH);
+      store.save(STATE_PATH, nextLedger);
     }
   }
 
@@ -662,7 +669,7 @@ console.log("\n=== Space Data Rig :: P2 API + dashboard ===\n");
 console.log(`  code version : ${codeVersion}`);
 console.log(`  snapshot     : ${snapshotLoaded ? STATE_PATH + " (loaded)" : "none yet (start a run)"}`);
 console.log(`  run id       : ${store.runId}`);
-console.log(`  findings     : ${store.listFindings().length}  bundles: ${store.listBundles().length}  anchored: ${store.computeStats().bundlesAnchored}`);
+console.log(`  findings     : ${store.listFindings().length}  bundles: ${store.listBundles().length}  anchored now: ${store.computeStats(ledgerRows()).bundlesAnchored}  commitments on chain: ${store.computeStats(ledgerRows()).ledgerAnchored}`);
 
 serve({ fetch: app.fetch, port: PORT, hostname: HOST }, (info) => {
   const addr = info.address === "0.0.0.0" || info.address === "::" ? "127.0.0.1" : info.address;

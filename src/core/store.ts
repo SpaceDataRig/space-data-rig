@@ -13,7 +13,7 @@ import { EventEmitter } from "node:events";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Finding, RigEvent, SeatName, Task } from "./types.ts";
-import { anchorStampIsValid, indexLedgerByFinding } from "./anchor-verify.ts";
+import { anchorStampIsValid, indexLedgerByFinding, isCommittedLedgerRow, type LedgerRowLike } from "./anchor-verify.ts";
 import {
   SEAT_ORDER,
   type BundleRecord,
@@ -225,7 +225,19 @@ export class RigStore {
 
   // ---- stats ---------------------------------------------------------------
 
-  computeStats(): RigStats {
+  /**
+   * Aggregate counters for the dashboard header.
+   *
+   * `ledger` is the current ledger rows, passed in by the caller: on the Node runtime the append-only ledger is
+   * owned by the filesystem file in src/solana/anchor.ts, not by this store, so the store must not read it behind
+   * the caller's back. Leaving it out is not silent -- it reports ZERO commitments, which is the honest reading
+   * for a store that was never told about a ledger. src/api/server.ts (the only Node surface that renders these
+   * numbers) passes readLedger(LEDGER_PATH), and tests/anchored-stats.test.ts pins that wiring, because the two
+   * anchor counts differing is only informative if both are real. Typed as the minimum the counters read
+   * (`LedgerRowLike`) rather than one runtime's concrete row type, because the DO ledger and the fs ledger declare
+   * different LedgerEntry shapes and both feed this.
+   */
+  computeStats(ledger: LedgerRowLike[] = []): RigStats {
     const tasks = this.listTasks();
     const findings = this.listFindings();
     return {
@@ -235,7 +247,9 @@ export class RigStore {
       findingsAccepted: findings.filter((f) => f.verdict === "accepted").length,
       findingsRejected: findings.filter((f) => f.verdict === "rejected").length,
       findingsReview: findings.filter((f) => f.verdict === "needs-more-data").length,
+      // Two different questions, both true at once, so both published. See src/core/state-types.ts.
       bundlesAnchored: this.listBundles().filter((b) => b.solanaTx).length,
+      ledgerAnchored: ledger.filter(isCommittedLedgerRow).length,
       // Rotation is an edge (autonomous-cron) concern; the Node orchestrator does not advance a survey
       // cursor, so it reports pass 0 here. Breadth + blind counts are still meaningful local mirrors.
       surveyPass: 0,
@@ -247,7 +261,7 @@ export class RigStore {
   // ---- snapshot / restore --------------------------------------------------
 
   /** Serialize the full rig state (OpenRig-style checkpoint). */
-  snapshot(): RigSnapshot {
+  snapshot(ledger: LedgerRowLike[] = []): RigSnapshot {
     return {
       version: SNAPSHOT_VERSION,
       savedAt: new Date().toISOString(),
@@ -257,14 +271,14 @@ export class RigStore {
       seats: this.listSeats(),
       bundles: this.listBundles(),
       events: this.events.slice(-MAX_EVENTS),
-      stats: this.computeStats(),
+      stats: this.computeStats(ledger),
     };
   }
 
   /** Write a snapshot to disk. Creates parent dirs as needed. */
-  save(path: string): void {
+  save(path: string, ledger: LedgerRowLike[] = []): void {
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, JSON.stringify(this.snapshot(), null, 2), "utf8");
+    writeFileSync(path, JSON.stringify(this.snapshot(ledger), null, 2), "utf8");
   }
 
   /** Load a snapshot into this store, replacing current state. */

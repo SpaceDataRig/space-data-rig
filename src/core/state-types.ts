@@ -34,7 +34,23 @@ export interface RigStats {
   findingsAccepted: number;
   findingsRejected: number;
   findingsReview: number;
+  /**
+   * Findings whose CURRENTLY PUBLISHED bundle carries a confirmed on-chain stamp -- read it as "the bytes you
+   * can download from this rig now are the bytes a chain commitment covers", which is the property a provenance
+   * claim needs. It is NOT a count of how many results were ever anchored: a bundle hash folds the run's
+   * timestamp, so any re-derivation produces a new hash that the chain has never seen, and the stale stamp is
+   * then dropped by the integrity sweep rather than inherited. Those findings leave this number while their
+   * commitment stays on chain, so this figure can fall without anything being un-anchored.
+   * (audit-6: this and `ledgerAnchored` were one field, labelled as the other.)
+   */
   bundlesAnchored: number;
+  /**
+   * Chain commitments recorded in the ledger: rows with status `anchored` and a signature. Unlike
+   * `bundlesAnchored` this survives a re-derivation -- it answers "how many results has this rig put on
+   * chain", including bundles that have since been superseded. One row per finding (the ledger is keyed by
+   * finding id), so it is a finding count, not a transaction count.
+   */
+  ledgerAnchored: number;
   /** audit-5: how many rotating survey passes the autonomous cron has completed (from DO meta). */
   surveyPass: number;
   /** distinct target hosts recorded so far -- the honest measure of catalog breadth/rotation. */
@@ -93,6 +109,15 @@ export interface LedgerEntry {
   explorerUrl?: string;
   error?: string;
   anchoredAt?: string;
+  /**
+   * A failed re-anchor attempt against a finding whose earlier anchor SUCCEEDED. The ledger keeps one row per
+   * finding, so writing the failure into `status`/`error` here would delete the evidence of a commitment that is
+   * still on chain -- see `mergeLedgerRow` in src/core/anchor-verify.ts. The prior row is therefore kept and the
+   * lost attempt is recorded beside it, in fields a reader cannot mistake for the row's state.
+   */
+  lastAttemptError?: string;
+  lastAttemptBundleHash?: string;
+  lastAttemptAt?: string;
 }
 
 /** Full dashboard payload the frontend renders (GET /api/state + WS "state" pulses). */

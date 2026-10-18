@@ -86,10 +86,11 @@
   <!-- ============ telemetry ============ -->
   <section class="section">
     <div class="telemetry glass">
-      <div class="tel" data-tone="good"><span class="tel-num" id="stat-confirmed">0</span><span class="tel-lbl">confirmed</span></div>
+      <div class="tel" data-tone="good" title="Records the pipeline's own guard accepted: the injected signal was recovered from the photometry. This is the verdict named 'accepted' in the API and 'RECOVERED' on a card -- it is NOT a confirmed planet, and no row on this board is one."><span class="tel-num" id="stat-confirmed">0</span><span class="tel-lbl">recovered</span></div>
       <div class="tel" data-tone="warn"><span class="tel-num" id="stat-watch">0</span><span class="tel-lbl">watchlist</span></div>
       <div class="tel" data-tone="bad"><span class="tel-num" id="stat-rejected">0</span><span class="tel-lbl">rejected</span></div>
-      <div class="tel" data-tone="chain"><span class="tel-num" id="stat-anchored">0</span><span class="tel-lbl">on-chain</span></div>
+      <div class="tel" data-tone="chain" title="Findings whose CURRENTLY PUBLISHED bundle carries a confirmed on-chain stamp: the bytes you can download now are the bytes the commitment covers. A record re-derived after it was anchored leaves this count, so the number can fall without anything being un-anchored."><span class="tel-num" id="stat-anchored">0</span><span class="tel-lbl">sealed as published</span></div>
+      <div class="tel" data-tone="chain" title="Ledger rows recording a commitment that actually landed, one row per finding: how many results this rig has put on chain, including bundles since superseded by a re-derivation. This is the larger of the two whenever a sealed record has been re-measured."><span class="tel-num" id="stat-commitments">0</span><span class="tel-lbl">chain commitments</span></div>
       <div class="tel"><span class="tel-num" id="stat-done">0</span><span class="tel-lbl">targets</span></div>
     </div>
   </section>

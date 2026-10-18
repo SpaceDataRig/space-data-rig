@@ -45,7 +45,34 @@ to both snapshot writes; that the served `index.html` has six tiles whose labels
 verdict says RECOVERED -- and that the stylesheet's grid column count equals the number of tiles the page actually
 renders. No test touched `web/index.html` before this pass.
 
-Suite 737 of 737 (from 726), typecheck and lint clean, coverage 95.5% lines / 82.3% branches, English-only gate green.
+The discrepancy is also drawn, from production rather than from prose: `npm run figure:anchor-counts` reads
+`/api/state` and `/api/ledger`, writes `reports/anchor-counts.json` (the rows, the two published counters, the read
+instant) and `web/anchor-counts-figure.svg`, and the builder in `src/figures/anchorCountsFigure.ts` REFUSES to draw
+when the published counters do not follow from the rows -- first reading: 19 commitments, 12 sealed as published, 7
+superseded by a re-derivation, 0 anomalies. The geometry is a pure function of the snapshot (no network, no clock),
+so `tests/anchor-counts-figure.test.ts` rebuilds the shipped SVG from the shipped JSON and requires byte equality,
+and checks each refusal separately. A number in a `<text>` element has the same authority as a number in a table and
+none of the same friction; that is why the picture gets the strictest check of the three.
+
+One inherited decision item closed in the same pass, on my own authority and stated rather than asked: the suite's
+own floors were raised. Coverage gate 85/75 (lines/branches) to 90/78, measured headroom 95.7/82.5; test-file
+discovery floor 60 to 90, measured 97. A floor that does not move while the number above it climbs for six audit
+passes records a permission, not a gate -- the old discovery floor would have waved through the loss of a third of
+the suite. Headroom is kept deliberately, because a gate that fails on measurement noise between local and CI runs
+gets switched off, which is worse than a slightly lower gate.
+
+Registering the new panel also exposed a fourth gap of the kind this pass keeps finding: `web/figures.json`, the
+manifest the dashboard Gallery builds itself from, had not been regenerated since the depth-precision figure was
+added. That figure was reachable -- `web/*.svg` is served straight off the directory -- and was cited in a published
+summary, while the page a reader goes to for "all the figures" did not list it. A served file and an inventoried
+file are two different claims. Regenerated (26 figures, both new panels present) and pinned by
+`tests/figures-manifest.test.ts`, which fails if any committed SVG is missing from the manifest, if a card points at
+a file that is not there, or if the declared count and the list disagree -- the same shape of gate as
+`tests/report-library.test.ts` for reports. It names the two figures added here rather than only counting entries,
+because "the manifest has 26 items" stays green while the two nobody looks for are the two that are missing.
+
+Suite 747 of 747, typecheck and lint clean, coverage 95.7% lines / 82.5% branches, `anchor-verify.ts` and
+`anchorCountsFigure.ts` both at 100% lines, English-only gate green.
 No verdict, gate, threshold, bundle field or anchored address moved: this changed how counts are computed, labelled and
 preserved, not what the pipeline decides.
 

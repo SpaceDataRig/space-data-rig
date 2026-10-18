@@ -1,9 +1,9 @@
 {
   "schema": "sdr-figures/1",
-  "generatedAt": "2026-10-17T00:15:49.511Z",
+  "generatedAt": "2026-10-18T12:18:45.221Z",
   "generatedBy": "scripts/p87-figures-manifest.ts (from committed web/*.svg)",
   "note": "Every figure the rig has published, inventoried from the committed web/ directory. Titles are derived mechanically from each filename; each card links to the SVG exactly as deployed.",
-  "count": 23,
+  "count": 26,
   "figures": [
     {
       "src": "results-figure.svg",
@@ -16,6 +16,10 @@
     {
       "src": "milestone-figure.svg",
       "title": "Milestone"
+    },
+    {
+      "src": "anchor-counts-figure.svg",
+      "title": "Anchor Counts"
     },
     {
       "src": "anchor-decode-proof.svg",
@@ -72,6 +76,14 @@
     {
       "src": "deploy-retest-round-figure.svg",
       "title": "Deploy Retest Round"
+    },
+    {
+      "src": "depth-precision-figure.svg",
+      "title": "Depth Precision"
+    },
+    {
+      "src": "depth-significance-figure.svg",
+      "title": "Depth Significance"
     },
     {
       "src": "followups-figure.svg",

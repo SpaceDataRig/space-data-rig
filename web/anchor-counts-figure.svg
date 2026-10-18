@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">
+<rect width="980" height="560" fill="#0b1020"/>
+<text x="70" y="34" fill="#7dd3fc" font-size="21">How many results are on chain? Two questions, so two numbers.</text>
+<text x="70" y="58" fill="#94a3b8" font-size="13">Live rig, read at 2026-10-18T11:56:40.823Z. Recomputed from /api/ledger and the published bundles,</text>
+<text x="70" y="76" fill="#94a3b8" font-size="13">then compared against the two counters /api/state publishes; the figure refuses to draw if they disagree.</text>
+<text x="70" y="118" fill="#e6edf7" font-size="14">chain commitments -- a transaction exists that anybody can look up</text>
+<rect x="70" y="130" width="850" height="42" rx="6" fill="#4ade80" opacity="0.75"/>
+<text x="82" y="157" fill="#0b1020" font-size="18" font-weight="bold">19</text>
+<text x="70" y="198" fill="#e6edf7" font-size="14">sealed as published -- the bytes on the site NOW are the bytes that commitment covers</text>
+<rect x="70" y="210" width="536.8421052631579" height="42" rx="6" fill="#7dd3fc" opacity="0.85"/>
+<text x="82" y="237" fill="#0b1020" font-size="18" font-weight="bold">12</text>
+<rect x="606.8421052631579" y="210" width="313.1578947368421" height="42" rx="6" fill="#fbbf24" opacity="0.55"/>
+<text x="616.8421052631579" y="237" fill="#0b1020" font-size="14" font-weight="bold">7 re-derived</text>
+<text x="70" y="286" fill="#fbbf24" font-size="13">The amber block is not missing work. Those 7 records were sealed on chain, then measured again</text>
+<text x="70" y="304" fill="#fbbf24" font-size="13">by the rotating survey: a bundle hash folds the run's timestamp, so the new bundle is a hash the chain</text>
+<text x="70" y="322" fill="#fbbf24" font-size="13">never saw, and its stale stamp is dropped rather than inherited. The transaction stays; the count falls.</text>
+<rect x="70" y="350" width="850" height="150" rx="10" fill="#131a2e" stroke="#243049"/>
+<text x="88" y="376" fill="#e6edf7" font-size="14">Before this pass, one field fed a tile labelled "on-chain". It carried the smaller number.</text>
+<text x="88" y="402" fill="#94a3b8" font-size="12">Both are published now, each with the question it answers, because a single total would be wrong</text>
+<text x="88" y="420" fill="#94a3b8" font-size="12">in both directions: the small one understates what was committed, the big one overstates</text>
+<text x="88" y="438" fill="#94a3b8" font-size="12">what a reader can verify against the record in front of them.</text>
+<text x="88" y="464" fill="#94a3b8" font-size="12">Excluded from the total: 0 anchored row(s) with no signature, 0 stamped</text>
+<text x="88" y="482" fill="#94a3b8" font-size="12">bundle(s) with no ledger row. A failed retry can no longer demote a landed row (mergeLedgerRow).</text>
+<text x="70" y="544" fill="#94a3b8" font-size="12">Source: https://spacedatarig.app/api/state and https://spacedatarig.app/api/ledger | generator: scripts/anchor-counts-figure.ts | nothing gated, claimed or spent.</text>
+</svg>

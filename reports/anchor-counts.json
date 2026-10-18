@@ -1,0 +1,1380 @@
+{
+  "measuredAt": "2026-10-18T11:56:40.823Z",
+  "source": {
+    "state": "https://spacedatarig.app/api/state",
+    "ledger": "https://spacedatarig.app/api/ledger"
+  },
+  "stats": {
+    "bundlesAnchored": 12,
+    "ledgerAnchored": 19
+  },
+  "bundles": [
+    {
+      "findingId": "F-TOI-801-01",
+      "hash": "4fc4018b70840d55886d5c2a7957d4a162a73c91a72479fafaa8cc285385783e",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:49:28.199Z"
+    },
+    {
+      "findingId": "F-TOI-1776-b",
+      "hash": "038db4d3e109444388a5a31d02362a42f9b4572e509ddce79bb2bdabe171883b",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:49:02.521Z"
+    },
+    {
+      "findingId": "F-TOI-5082-01",
+      "hash": "5e65bb561350416ea174a4a1b5ba1a8857a03e0e3f427a8ae051edf444436fc0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:48:48.242Z"
+    },
+    {
+      "findingId": "F-KELT-9-b",
+      "hash": "7aedf0a24c1956794afbdc59272ace3af0be0da6b7184f9ef83a440a022c3ae4",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:48:06.682Z",
+      "solanaTx": "52tHu5ARCct8afJexhBg2uz57795D8S74kmM6UmyihekacTpNzQEjHdC3MUMLERu8maca2HEpds27XKQZHew75D"
+    },
+    {
+      "findingId": "F-KELT-20-b",
+      "hash": "3f3080d3a86e1af73844f61d7776873855a346159632784cedf45f8876cbe8c6",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:46:32.549Z",
+      "solanaTx": "4W4p2LKABhNZZECZYXebwYocHaY5KYdbB8MDoQAzTMCs7cu4WWuEVJXVNgRdmgL2btWa9YGDoqXArTcSvVXCLcvw"
+    },
+    {
+      "findingId": "F-TOI-802-01",
+      "hash": "6dfcde76a7ab6c4826cbfc1c4633b7a48e4927735c95006ef649413387feb518",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:33:27.332Z"
+    },
+    {
+      "findingId": "F-TOI-6265-02",
+      "hash": "df2417a4cc3a2c62c33f89f0002a5a68eac3cbb32a4ba87ce57942607a8553e9",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:33:10.454Z"
+    },
+    {
+      "findingId": "F-TOI-6265-01",
+      "hash": "196b0c09dc7a79bbcf079f5317b6831f00ab17ec428d92a83fdc60510130f418",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:32:51.409Z"
+    },
+    {
+      "findingId": "F-TOI-1271-01",
+      "hash": "7601debde71b3d48ae1e06e8d295a560869a09def606d8c6e62a225d333b8564",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:32:32.418Z"
+    },
+    {
+      "findingId": "F-TOI-6054-02",
+      "hash": "1a7017dee2b13c68b7af867bfdd86dc02912fc91566441e9bedb256f8f3008f6",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:32:13.778Z"
+    },
+    {
+      "findingId": "F-TOI-6054-01",
+      "hash": "3db294a1dd66a4b16fdb26dbea1b9e22f9e5ec06b34e0c219ad75e74d7f32c26",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:31:58.181Z"
+    },
+    {
+      "findingId": "F-HD-213885-b",
+      "hash": "a9023291a54d40a332be2c25a1e4be26a45e101f92419749b06a6533ac69a88a",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:31:39.144Z",
+      "solanaTx": "crPfZpvbMtVCmfq5uUv3f1RoTeS7NuNGXaj1EKciztpmzKTzPab8pmgF29Bp6HmB5QvWaQsBXbE4KETfKDU54hz"
+    },
+    {
+      "findingId": "F-HD-207496-b",
+      "hash": "4578fb65fbb407e1ccb7cad0d310eda83ad5557af67a5dd06b7c4300ec185349",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:30:43.509Z"
+    },
+    {
+      "findingId": "F-TOI-1831-01",
+      "hash": "74517dd8af381fac4d16cb1f56f83d1d621e6cba1fcc9a79bfa298dd42a6ae74",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:19:06.161Z"
+    },
+    {
+      "findingId": "F-TOI-1608-01",
+      "hash": "3ad0bae4830292dbbed536994aed81365ca75c7d0e3d464bd315e3edb7ae951c",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:18:39.480Z"
+    },
+    {
+      "findingId": "F-TOI-522-01",
+      "hash": "ed46351c17a3b5fd43914fa805c7726663860ef614617f6d35f25589af8a2e91",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:18:13.505Z"
+    },
+    {
+      "findingId": "F-TOI-2009-01",
+      "hash": "4811d383b145b5bafff630664cdf92cb4cb8548c5103a2a6511fdebd82147604",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:17:43.587Z"
+    },
+    {
+      "findingId": "F-HD-86226-c",
+      "hash": "4f3d0dc376b4568d565a4cd55c85ce0a848a1a6cd0d3e1d5a4a7e5d6b2f9b109",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:16:50.964Z",
+      "solanaTx": "2rSh7KK8nu3RD9VGQxFjSghRrQvvE1VN8MyFsjiMMS8AVgmcKKGydycfwrDeb2NYMqCWtCvyqCGbiaFoFtryN6Pi"
+    },
+    {
+      "findingId": "F-KELT-11-b",
+      "hash": "785fe5783ad65210b8d934e049112c5d48055b0fd50a8c3cce8cb44c64273e94",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:16:19.320Z",
+      "solanaTx": "5uTxs8dbgef3EQokq9gq9BjsKacfaSJFLwxRnjr12axLqTxK2C4JfrzRhJriHE6VbaWC6g2Y7o99kC5JXDtrj4va"
+    },
+    {
+      "findingId": "F-TOI-5739-b",
+      "hash": "0632e13d6d399b8aef501c583b8c24e69defb3d4227c9eec92bf2b85158420eb",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:15:52.489Z"
+    },
+    {
+      "findingId": "F-HD-1397-b",
+      "hash": "12f40057a304bfedf98a4d9bfe37160ebce933bf6ee6853921d073ba3bf1a809",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T11:15:38.585Z"
+    },
+    {
+      "findingId": "F-TOI-5789-c",
+      "hash": "acf91d48fb93d6fba549ffc50212642728d7fb5a34b6a9d8074949530aff381a",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T10:01:22.167Z"
+    },
+    {
+      "findingId": "F-HD-25463-c",
+      "hash": "7b274a3af56ebf6797cfcaf1552323b281c4177505611049b59ab4e0ee7270e6",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T10:01:01.145Z"
+    },
+    {
+      "findingId": "F-HD-25463-b",
+      "hash": "c3ec8f61224535fb0562c0edda3d6e0b4088687baf2bad06923d84205633a218",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T10:00:43.315Z"
+    },
+    {
+      "findingId": "F-WASP-189-b",
+      "hash": "9a133d2cb801e043c8a371de9f0268683e386e5a587271d42f04ed99acf71678",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:31:53.798Z"
+    },
+    {
+      "findingId": "F-HD-50554-c",
+      "hash": "6160b07bcce60be0b544f14cd542ba8e025712736da3f8a962e1f4bb4e6e895e",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:31:35.627Z"
+    },
+    {
+      "findingId": "F-HD-63433-d",
+      "hash": "cc424d4e454fc078fc81cf2e204cc9a0c6fa8fecbe79b3c70d6a3eb6f8c48fcb",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:31:03.639Z"
+    },
+    {
+      "findingId": "F-HD-63433-b",
+      "hash": "bebe4912e4744453ffafeb33482f3ffeb9838680820c3e49eddd30d89b9edf63",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:30:44.245Z"
+    },
+    {
+      "findingId": "F-TOI-6260-01",
+      "hash": "1a59c583fda09d5d9256f1476170bb1a0bc0a68b2202d667ecd58fc522631e82",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:19:00.996Z"
+    },
+    {
+      "findingId": "F-TOI-909-01",
+      "hash": "1aa49771cc5e16bbf99d4e5d01694259f4ada79979b59cbc87c6c58f906dbeea",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:18:20.388Z"
+    },
+    {
+      "findingId": "F-TOI-6713-01",
+      "hash": "f0236a48baa9a1eedc6764d1e746b1d3457fba093c38481f06167099d1fb3d15",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:18:00.085Z"
+    },
+    {
+      "findingId": "F-TOI-1830-01",
+      "hash": "04a7cf75cb49b356d2c8a636fd79798b31afb0879abb48dafb8052bfa8921df0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:17:44.921Z"
+    },
+    {
+      "findingId": "F-HR-858-d",
+      "hash": "9999776ef47bf060775ba9ed4b126ad7f5398ea6ac403c5e585634fd76292baa",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:17:28.864Z"
+    },
+    {
+      "findingId": "F-HR-858-c",
+      "hash": "aa567efc52e8230653c89add0981d7582d63c0b7571010de009a27353b317377",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:16:58.745Z"
+    },
+    {
+      "findingId": "F-HR-858-b",
+      "hash": "b14fbb36527b254754307f986c0ad5af7bd27acd97d963d633c5b1989299abc2",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:16:08.290Z",
+      "solanaTx": "2rHPutf5dGGJQqp7816VCv61o3PY2uYXE2ciAqVMxnUVdiNHwBRu5ERSUHWXQHcpeGrXCmhZXLry3ePuinQdQwx2"
+    },
+    {
+      "findingId": "F-pi-Men-c",
+      "hash": "621d14c96aa9c87b5dc5e62bb00ba94d4b8c738f871e7ced407cc00e38245c1c",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T09:15:43.197Z"
+    },
+    {
+      "findingId": "F-TOI-4568-01",
+      "hash": "2ec8b1d79015c622ba7fdf7db7b719febe6f49a70a3b3c075c189d4d74b8ce79",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:35:08.674Z"
+    },
+    {
+      "findingId": "F-TOI-5724-01",
+      "hash": "2b6f17f9c8bdb5cc9ffac0621e2c8eea6a2c4e5103053ed21899025c11367598",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:34:43.309Z"
+    },
+    {
+      "findingId": "F-KELT-24-b",
+      "hash": "1fa913344925046fe17afc8b57471e6795f64267e5577eb50cbfaa41008ad014",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:33:50.558Z",
+      "solanaTx": "4ssz6u44qoe4GMshykW3jaaiJPCfKzJiXAGBN6XAT6dVQZBTNYKUtXQVXS5Xaak2X9nqiNFCoJCTYMwRyLNBo73J"
+    },
+    {
+      "findingId": "F-TOI-4443-01",
+      "hash": "531fe444eb9d040591fb2fafd6ed36f54d2f490a406ac16e8321976fc3df08e2",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:33:25.692Z"
+    },
+    {
+      "findingId": "F-TOI-4443-c",
+      "hash": "0bf5423b0241b26d1a3b4da82d785d40005ba4a013dfe427d449cd762c1d9fb3",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:32:41.113Z"
+    },
+    {
+      "findingId": "F-HD-260655-c",
+      "hash": "0652a494cea2ca7e884c6f5a66175ce7ddffda956ba2e5518e9e933d1c68ae0d",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T08:31:54.312Z"
+    },
+    {
+      "findingId": "F-HD-260655-b",
+      "hash": "baa85a703d85d4653c041f3e480f345b06d41712ce6adf1808e183111b02f037",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:59:16.115Z",
+      "solanaTx": "5jgtiGEmyF67sU6Ui39SLYdQTF9yjTLMXv3M4X313q2HaDccezcooUjneLrQc8AiZTKkSRb7ZCUkvTLMJdFUxbSE"
+    },
+    {
+      "findingId": "F-WASP-33-b",
+      "hash": "d3d825cda5eae3762ab0c840557b99414fe934aa2aa86dbfe4308625b38120b0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:57:50.224Z",
+      "solanaTx": "XZuFvbFtQt6UpsEhjTBFXBB55CkdTEQwazvyxdqLLZF6bJ9BHQH9jCS7nV9AAWkmmG4Uv19TWoPtyEpx7xc97ZU"
+    },
+    {
+      "findingId": "F-HD-202772-A-b",
+      "hash": "ff33be9c3adce8f5b3c4c98faa0ca5c4a4f52602ece6be6c1dc7ace0c7c99c72",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:57:20.230Z",
+      "solanaTx": "5HiBWDGh9PJjqAsJ3utWxyPn8HFmEM6J4JDZDE5uoKwVqZkV7cyeGC5kzcns6XFMnChHBpvoSd5cLsR8y6HhxZm"
+    },
+    {
+      "findingId": "F-DS-Tuc-A-b",
+      "hash": "386f2ffde1cda7c740c8caf4f72da3804666e141cc7c6e2c294903310ced439d",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:45:58.518Z"
+    },
+    {
+      "findingId": "F-TOI-1431-b",
+      "hash": "3b009a400ee40b1f563ddd5a3e5285d152751ca2e23bcd343e22be27ac44a9cd",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:02:43.634Z"
+    },
+    {
+      "findingId": "F-TOI-2134-b",
+      "hash": "718511a3bc9abf4fe7efe37e48e17bb5910e4376df97298688cb7ddeb5735a1c",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:02:09.967Z",
+      "solanaTx": "2L19mhWpPtJU4yQPckio5S6WR9mUxi7PeYALmMMNNcnNyCDPbFcDZad9fFhWijHom3TVVMKt3fTKq9AngEcXj7YT"
+    },
+    {
+      "findingId": "F-TOI-1860-b",
+      "hash": "7573f41fbcd4f46ad630397cdc91592064caba21645da0d8bacfbc8c66a645a2",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:01:49.304Z"
+    },
+    {
+      "findingId": "F-TOI-4602-01",
+      "hash": "246ff6f21bccf7345e4eca60450b65b2c124ba4f1e8c39d2a8a4b9700dd4527d",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T07:01:30.368Z"
+    },
+    {
+      "findingId": "F-TOI-5401-01",
+      "hash": "a4c5b57f2301e6691912305ceb557b7666b1438021d55c8519d30bfa1b7b2c5d",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:48:16.485Z"
+    },
+    {
+      "findingId": "F-TOI-1689-01",
+      "hash": "e9db9769529ce2178cd4a9068e92772f39f60f904f660659bc3686ee789bfd1a",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:48:01.809Z"
+    },
+    {
+      "findingId": "F-TOI-1462-01",
+      "hash": "8f3ecb25d0e80e919424b73a6345c554da53d3b4b4d4585f09dac07ec6136c40",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:47:46.602Z"
+    },
+    {
+      "findingId": "F-TOI-6902-01",
+      "hash": "7da66e6915d9f88ae94dc2e953394e1b3d2200d828d7bfd03bab3c21662e3917",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:47:27.934Z"
+    },
+    {
+      "findingId": "F-Kepler-21-b",
+      "hash": "a3e2aa907b475d67171073cb6a86cd5bc2dc5aed91b3520695daccb040c460c0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:47:07.680Z"
+    },
+    {
+      "findingId": "F-HIP-94235-b",
+      "hash": "ca3ec1ab444de0625d692507c33e0772dd9d562e6ec9e8cd2a592858c1074046",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:46:31.847Z"
+    },
+    {
+      "findingId": "F-TOI-411-c",
+      "hash": "d7550dff4125364f57f27d4a0e94aa0647a79acfcfd2651c5169b8143c07ee86",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:45:53.229Z"
+    },
+    {
+      "findingId": "F-TOI-411-b",
+      "hash": "3b8111451671b278b0c0c4ce13b4abd5a8dc498513df235b0b893895e661d2bd",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:45:38.416Z"
+    },
+    {
+      "findingId": "F-TOI-1978-01",
+      "hash": "000956eefbecd058c2f083dd41f74e9d4b8c04a95d0fe12d34f328482d7246e8",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:34:03.421Z"
+    },
+    {
+      "findingId": "F-TOI-1025-01",
+      "hash": "43f5098f1148618989d4d42f2467d0153dbc22ba67301a1caae9f0d3cb3da3a0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:33:25.401Z"
+    },
+    {
+      "findingId": "F-TOI-1487-01",
+      "hash": "e65e13cedf8257de512b5435b78b80f802862b6aa39bf4922e242daabe6c6200",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:33:13.344Z"
+    },
+    {
+      "findingId": "F-TOI-1773-01",
+      "hash": "89742e6ef7dd37f971bad7dc7db344a0ad1e85dc6e9a78c4afe8b32d1ccc25ac",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:31:46.537Z"
+    },
+    {
+      "findingId": "F-K2-167-b",
+      "hash": "fa90fd9d278e413ff62a76873b230153f18480e9d7de3e0b63b9f53d99eeb58d",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:31:15.113Z"
+    },
+    {
+      "findingId": "F-GJ-341-b",
+      "hash": "75c0ea4bb23968d0ed454f63c070e49a1c4ec6b93c580f00e16f15cd79d29850",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:31:01.167Z"
+    },
+    {
+      "findingId": "F-HD-110067-c",
+      "hash": "018eb9785c3880fd4452fc210ae685785b53e4b9fb0943327f8dd90614422833",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:30:47.597Z"
+    },
+    {
+      "findingId": "F-HD-110067-b",
+      "hash": "8ff82d669b883578c8caa7abc6271edf40f06cf8aaef05c779964533aece12ac",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:30:34.834Z"
+    },
+    {
+      "findingId": "F-TOI-2011-02",
+      "hash": "530e3d9595938ae4fc7e3cd0357c9d4dc2def1a3a25f62640419ff99d83b4b49",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:19:16.127Z"
+    },
+    {
+      "findingId": "F-TOI-2011-01",
+      "hash": "960970f5e6a4393163b06a2746750e03f02dff2f116c4c540720399d38a09ae6",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:19:01.583Z"
+    },
+    {
+      "findingId": "F-TOI-1469-02",
+      "hash": "461afc4d761d9d8b8416c12881415e6f8d9396ef2b6f124de67bf5d313f19931",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:18:43.394Z"
+    },
+    {
+      "findingId": "F-TOI-1469-01",
+      "hash": "52daed86386ce5d8ded78737126d93d74107a9c1d4e304199759e03b4dbc06e0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:18:10.746Z"
+    },
+    {
+      "findingId": "F-TOI-2024-01",
+      "hash": "d9a6d3ea2010f40680d5e9bdfb98d6af11a4b5f9006337747c4e05a1ebc1fd34",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:04:04.890Z"
+    },
+    {
+      "findingId": "F-TOI-5084-01",
+      "hash": "7ca3022a2a5819c38d349f1230ce5b0eb1ad8722efbaadd12038805128f94713",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:03:26.558Z"
+    },
+    {
+      "findingId": "F-TOI-1104-01",
+      "hash": "36fc67095248ebd22df87c169446cd574939897a3a32598e493ce73c5c3cf489",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:03:00.041Z"
+    },
+    {
+      "findingId": "F-TOI-6978-01",
+      "hash": "d4f874613e757585426abbced49dd0973c278e7394b319564df3b3a6a1f69c3b",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T06:02:37.447Z"
+    },
+    {
+      "findingId": "F-TOI-588-01",
+      "hash": "2df76e4c10432e59fea07922c5048c0a88b940e9c24b4a8954c46a1eca724300",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T04:03:32.125Z"
+    },
+    {
+      "findingId": "F-TOI-6673-01",
+      "hash": "68f9992e55f6ec3a9e62da247288d65ba5aad06745f719f5a9cf38bf8c24ab84",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T04:03:14.985Z"
+    },
+    {
+      "findingId": "F-TOI-1124-01",
+      "hash": "c85e7e2e7e7a6bfab1e3e4b07e981d4351ecc837ddfea86ee9cbfefc7a475258",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T04:02:50.210Z"
+    },
+    {
+      "findingId": "F-TOI-381-01",
+      "hash": "fb2e41f91c16027537c3ae9d0bb25e9426cffacda5ff377f273924e54d3d0e8f",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T04:02:29.094Z"
+    },
+    {
+      "findingId": "F-TOI-1962-01",
+      "hash": "ff9f9a9a92f7fb0661c0f713c00f08eed5763de222bbf2ac528f55352b3bb8d4",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T03:50:10.094Z"
+    },
+    {
+      "findingId": "F-TOI-2112-02",
+      "hash": "c7dd5094ce377233bc04d9299e48c6e1091e2686e82eb4bb015795ec4693e5c8",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T03:49:37.366Z"
+    },
+    {
+      "findingId": "F-TOI-2112-01",
+      "hash": "23e829b15a2f5166902d06f862fbdf01f482c847f5042f94cdee94ea9736e7a8",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T03:48:56.199Z"
+    },
+    {
+      "findingId": "F-TOI-6837-01",
+      "hash": "5b24013c1e3f3f13ff8a915cb1afc0e25b7254acbf7ebfe3dbb721e6cbf253a0",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T03:48:06.960Z"
+    },
+    {
+      "findingId": "F-TOI-1250-01",
+      "hash": "025a947d80b94970ce6c2181b94c4f010ce2cac14c9c7e2555433537e0720313",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T02:18:49.588Z"
+    },
+    {
+      "findingId": "F-TOI-4470-01",
+      "hash": "7616c81152bab8ee75ca5e2af5300c32d2574001922a050c52353b18ff44aaf8",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T02:18:22.699Z"
+    },
+    {
+      "findingId": "F-TOI-1418-01",
+      "hash": "87836edc4bb7f8141612280c7c9a5857aa84fa23ef046c55728c8625e2cd5773",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T01:34:11.677Z"
+    },
+    {
+      "findingId": "F-TOI-589-01",
+      "hash": "b2cfdca1d9632a5539edadc4e88d8078c1e4f8278c4b94aa58cb97c803afcf4f",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-18T01:33:47.174Z"
+    },
+    {
+      "findingId": "F-TOI-2056-01",
+      "hash": "1f4fd4ca9a0dc7d023ab754a0dd5795ed7ed8dc309c4a92aa6f6eb24113828b5",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T21:50:23.385Z"
+    },
+    {
+      "findingId": "F-GJ-1214-b",
+      "hash": "975a59c08bb0f88c981dc86a5ac2ad348236c774f35f8ada4e417aa08c17500e",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T17:48:53.529Z",
+      "solanaTx": "3aSKUbaKJd3EomUk3EWnB8aex3ddB3XDT1cCBswLzE2h7yH1ryM3JgXUFTks8GVfbZr3EJCemh5Mz6GpCZfBioFQ"
+    },
+    {
+      "findingId": "F-HAT-P-11-b",
+      "hash": "15544383270f1ce6e7086e99092cdc8af35ada701a38637a745ae61c0690d37f",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T17:48:13.721Z"
+    },
+    {
+      "findingId": "F-TOI-1684-01",
+      "hash": "9fe09a044154ef4228594e41e980842dd4567ee88b4fdf047ca40b5e22ea8507",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T15:19:22.175Z"
+    },
+    {
+      "findingId": "F-TOI-1821-01",
+      "hash": "6f01b1908b03c4151cb83b0fdc7f45e3d9d4bae6881602e026a0b24e017d5119",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T06:29:33.508Z"
+    },
+    {
+      "findingId": "F-TOI-5099-01",
+      "hash": "60a19166c4be0812e55669dfe729fcdf4023d4a4288378198845c2d7143ee649",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-17T06:29:18.172Z"
+    },
+    {
+      "findingId": "F-WASP-121-b",
+      "hash": "cd820fbebdb041bad185ee52820247ccd3d73b3bffcdbd18c613e8ab560964a7",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-12T16:11:42.259Z"
+    },
+    {
+      "findingId": "F-HD-189733-b",
+      "hash": "ecb4bc3e740e57ce5af4de1838db85b27c4a31c1edbab9e6de9c8949e778af9b",
+      "files": [
+        "folded.svg",
+        "periodogram.svg",
+        "timeseries.svg",
+        "manifest.json",
+        "HASH.txt"
+      ],
+      "createdAt": "2026-10-12T16:00:50.197Z"
+    }
+  ],
+  "ledger": [
+    {
+      "findingId": "F-KELT-9-b",
+      "bundleHash": "7aedf0a24c1956794afbdc59272ace3af0be0da6b7184f9ef83a440a022c3ae4",
+      "scienceHash": "1998021f59d11987f54fb32787e3c24712c42ca45c43d0caa7550564e5913170",
+      "memo": "sdr:1|F-KELT-9-b|7aedf0a24c1956794afbdc59272ace3af0be0da6b7184f9ef83a440a022c3ae4|1998021f59d11987f54fb32787e3c24712c42ca45c43d0caa7550564e5913170",
+      "status": "anchored",
+      "signature": "52tHu5ARCct8afJexhBg2uz57795D8S74kmM6UmyihekacTpNzQEjHdC3MUMLERu8maca2HEpds27XKQZHew75D",
+      "slot": 458423694,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/52tHu5ARCct8afJexhBg2uz57795D8S74kmM6UmyihekacTpNzQEjHdC3MUMLERu8maca2HEpds27XKQZHew75D?cluster=mainnet",
+      "anchoredAt": "2026-10-18T11:48:10.829Z"
+    },
+    {
+      "findingId": "F-KELT-20-b",
+      "bundleHash": "3f3080d3a86e1af73844f61d7776873855a346159632784cedf45f8876cbe8c6",
+      "scienceHash": "350b148cfa92454e546d219d82dd089ac9507a0d562ff1945207b557543626b9",
+      "memo": "sdr:1|F-KELT-20-b|3f3080d3a86e1af73844f61d7776873855a346159632784cedf45f8876cbe8c6|350b148cfa92454e546d219d82dd089ac9507a0d562ff1945207b557543626b9",
+      "status": "anchored",
+      "signature": "4W4p2LKABhNZZECZYXebwYocHaY5KYdbB8MDoQAzTMCs7cu4WWuEVJXVNgRdmgL2btWa9YGDoqXArTcSvVXCLcvw",
+      "slot": 458423271,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/4W4p2LKABhNZZECZYXebwYocHaY5KYdbB8MDoQAzTMCs7cu4WWuEVJXVNgRdmgL2btWa9YGDoqXArTcSvVXCLcvw?cluster=mainnet",
+      "anchoredAt": "2026-10-18T11:47:03.488Z"
+    },
+    {
+      "findingId": "F-HD-213885-b",
+      "bundleHash": "a9023291a54d40a332be2c25a1e4be26a45e101f92419749b06a6533ac69a88a",
+      "scienceHash": "40d5c797a5d533f14c4d462f8f43bda61ada2260ae799a2078985b0102c22841",
+      "memo": "sdr:1|F-HD-213885-b|a9023291a54d40a332be2c25a1e4be26a45e101f92419749b06a6533ac69a88a|40d5c797a5d533f14c4d462f8f43bda61ada2260ae799a2078985b0102c22841",
+      "status": "anchored",
+      "signature": "crPfZpvbMtVCmfq5uUv3f1RoTeS7NuNGXaj1EKciztpmzKTzPab8pmgF29Bp6HmB5QvWaQsBXbE4KETfKDU54hz",
+      "slot": 0,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/crPfZpvbMtVCmfq5uUv3f1RoTeS7NuNGXaj1EKciztpmzKTzPab8pmgF29Bp6HmB5QvWaQsBXbE4KETfKDU54hz?cluster=mainnet",
+      "anchoredAt": "2026-10-18T11:31:44.369Z"
+    },
+    {
+      "findingId": "F-HD-86226-c",
+      "bundleHash": "4f3d0dc376b4568d565a4cd55c85ce0a848a1a6cd0d3e1d5a4a7e5d6b2f9b109",
+      "scienceHash": "e1a8a491f3be61a7f717b72c5fdeb1c7086f5fb44f1013259e36746a2a72efd7",
+      "memo": "sdr:1|F-HD-86226-c|4f3d0dc376b4568d565a4cd55c85ce0a848a1a6cd0d3e1d5a4a7e5d6b2f9b109|e1a8a491f3be61a7f717b72c5fdeb1c7086f5fb44f1013259e36746a2a72efd7",
+      "status": "anchored",
+      "signature": "2rSh7KK8nu3RD9VGQxFjSghRrQvvE1VN8MyFsjiMMS8AVgmcKKGydycfwrDeb2NYMqCWtCvyqCGbiaFoFtryN6Pi",
+      "slot": 458415034,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/2rSh7KK8nu3RD9VGQxFjSghRrQvvE1VN8MyFsjiMMS8AVgmcKKGydycfwrDeb2NYMqCWtCvyqCGbiaFoFtryN6Pi?cluster=mainnet",
+      "anchoredAt": "2026-10-18T11:17:20.202Z"
+    },
+    {
+      "findingId": "F-KELT-11-b",
+      "bundleHash": "785fe5783ad65210b8d934e049112c5d48055b0fd50a8c3cce8cb44c64273e94",
+      "scienceHash": "6cf6064c4f7253fe46f4f37b37915face762a9780d2172803e923134b77d9713",
+      "memo": "sdr:1|F-KELT-11-b|785fe5783ad65210b8d934e049112c5d48055b0fd50a8c3cce8cb44c64273e94|6cf6064c4f7253fe46f4f37b37915face762a9780d2172803e923134b77d9713",
+      "status": "anchored",
+      "signature": "5uTxs8dbgef3EQokq9gq9BjsKacfaSJFLwxRnjr12axLqTxK2C4JfrzRhJriHE6VbaWC6g2Y7o99kC5JXDtrj4va",
+      "slot": 458414891,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/5uTxs8dbgef3EQokq9gq9BjsKacfaSJFLwxRnjr12axLqTxK2C4JfrzRhJriHE6VbaWC6g2Y7o99kC5JXDtrj4va?cluster=mainnet",
+      "anchoredAt": "2026-10-18T11:16:29.432Z"
+    },
+    {
+      "findingId": "F-HR-858-b",
+      "bundleHash": "b14fbb36527b254754307f986c0ad5af7bd27acd97d963d633c5b1989299abc2",
+      "scienceHash": "94930e29bf56692f314f22130314c2dea73ca2427726445b2b162bb0ba36bd6c",
+      "memo": "sdr:1|F-HR-858-b|b14fbb36527b254754307f986c0ad5af7bd27acd97d963d633c5b1989299abc2|94930e29bf56692f314f22130314c2dea73ca2427726445b2b162bb0ba36bd6c",
+      "status": "anchored",
+      "signature": "2rHPutf5dGGJQqp7816VCv61o3PY2uYXE2ciAqVMxnUVdiNHwBRu5ERSUHWXQHcpeGrXCmhZXLry3ePuinQdQwx2",
+      "slot": 458381600,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/2rHPutf5dGGJQqp7816VCv61o3PY2uYXE2ciAqVMxnUVdiNHwBRu5ERSUHWXQHcpeGrXCmhZXLry3ePuinQdQwx2?cluster=mainnet",
+      "anchoredAt": "2026-10-18T09:16:37.985Z"
+    },
+    {
+      "findingId": "F-KELT-24-b",
+      "bundleHash": "1fa913344925046fe17afc8b57471e6795f64267e5577eb50cbfaa41008ad014",
+      "scienceHash": "9b619992c95667b71d00e8f7b107b350d6f8d47960e461d1683b503640d64d38",
+      "memo": "sdr:1|F-KELT-24-b|1fa913344925046fe17afc8b57471e6795f64267e5577eb50cbfaa41008ad014|9b619992c95667b71d00e8f7b107b350d6f8d47960e461d1683b503640d64d38",
+      "status": "anchored",
+      "signature": "4ssz6u44qoe4GMshykW3jaaiJPCfKzJiXAGBN6XAT6dVQZBTNYKUtXQVXS5Xaak2X9nqiNFCoJCTYMwRyLNBo73J",
+      "slot": 458369857,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/4ssz6u44qoe4GMshykW3jaaiJPCfKzJiXAGBN6XAT6dVQZBTNYKUtXQVXS5Xaak2X9nqiNFCoJCTYMwRyLNBo73J?cluster=mainnet",
+      "anchoredAt": "2026-10-18T08:34:19.942Z"
+    },
+    {
+      "findingId": "F-HD-260655-b",
+      "bundleHash": "baa85a703d85d4653c041f3e480f345b06d41712ce6adf1808e183111b02f037",
+      "scienceHash": "a2442493819be6d1d256978b71af0600b0a38189fa73d2b79f884f491d0aaf0b",
+      "memo": "sdr:1|F-HD-260655-b|baa85a703d85d4653c041f3e480f345b06d41712ce6adf1808e183111b02f037|a2442493819be6d1d256978b71af0600b0a38189fa73d2b79f884f491d0aaf0b",
+      "status": "anchored",
+      "signature": "5jgtiGEmyF67sU6Ui39SLYdQTF9yjTLMXv3M4X313q2HaDccezcooUjneLrQc8AiZTKkSRb7ZCUkvTLMJdFUxbSE",
+      "slot": 458360275,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/5jgtiGEmyF67sU6Ui39SLYdQTF9yjTLMXv3M4X313q2HaDccezcooUjneLrQc8AiZTKkSRb7ZCUkvTLMJdFUxbSE?cluster=mainnet",
+      "anchoredAt": "2026-10-18T07:59:46.255Z"
+    },
+    {
+      "findingId": "F-WASP-33-b",
+      "bundleHash": "d3d825cda5eae3762ab0c840557b99414fe934aa2aa86dbfe4308625b38120b0",
+      "scienceHash": "1cccd2c5bc545c15023bd3bf97550c80fa08bdca5725502d57e2177a3f589afa",
+      "memo": "sdr:1|F-WASP-33-b|d3d825cda5eae3762ab0c840557b99414fe934aa2aa86dbfe4308625b38120b0|1cccd2c5bc545c15023bd3bf97550c80fa08bdca5725502d57e2177a3f589afa",
+      "status": "anchored",
+      "signature": "XZuFvbFtQt6UpsEhjTBFXBB55CkdTEQwazvyxdqLLZF6bJ9BHQH9jCS7nV9AAWkmmG4Uv19TWoPtyEpx7xc97ZU",
+      "slot": 0,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/XZuFvbFtQt6UpsEhjTBFXBB55CkdTEQwazvyxdqLLZF6bJ9BHQH9jCS7nV9AAWkmmG4Uv19TWoPtyEpx7xc97ZU?cluster=mainnet",
+      "anchoredAt": "2026-10-18T07:57:54.216Z"
+    },
+    {
+      "findingId": "F-HD-202772-A-b",
+      "bundleHash": "ff33be9c3adce8f5b3c4c98faa0ca5c4a4f52602ece6be6c1dc7ace0c7c99c72",
+      "scienceHash": "bbfcdbc4ee2a7e21858e189b3b5644117c15cc2e6d9e92195ae8289bf98a96b3",
+      "memo": "sdr:1|F-HD-202772-A-b|ff33be9c3adce8f5b3c4c98faa0ca5c4a4f52602ece6be6c1dc7ace0c7c99c72|bbfcdbc4ee2a7e21858e189b3b5644117c15cc2e6d9e92195ae8289bf98a96b3",
+      "status": "anchored",
+      "signature": "5HiBWDGh9PJjqAsJ3utWxyPn8HFmEM6J4JDZDE5uoKwVqZkV7cyeGC5kzcns6XFMnChHBpvoSd5cLsR8y6HhxZm",
+      "slot": 0,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/5HiBWDGh9PJjqAsJ3utWxyPn8HFmEM6J4JDZDE5uoKwVqZkV7cyeGC5kzcns6XFMnChHBpvoSd5cLsR8y6HhxZm?cluster=mainnet",
+      "anchoredAt": "2026-10-18T07:57:24.368Z"
+    },
+    {
+      "findingId": "F-TOI-2134-b",
+      "bundleHash": "718511a3bc9abf4fe7efe37e48e17bb5910e4376df97298688cb7ddeb5735a1c",
+      "scienceHash": "16a262185c27e99a11585b71a9097dc7eadc902ed934711f141bbcd781ed0501",
+      "memo": "sdr:1|F-TOI-2134-b|718511a3bc9abf4fe7efe37e48e17bb5910e4376df97298688cb7ddeb5735a1c|16a262185c27e99a11585b71a9097dc7eadc902ed934711f141bbcd781ed0501",
+      "status": "anchored",
+      "signature": "2L19mhWpPtJU4yQPckio5S6WR9mUxi7PeYALmMMNNcnNyCDPbFcDZad9fFhWijHom3TVVMKt3fTKq9AngEcXj7YT",
+      "slot": 458344449,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/2L19mhWpPtJU4yQPckio5S6WR9mUxi7PeYALmMMNNcnNyCDPbFcDZad9fFhWijHom3TVVMKt3fTKq9AngEcXj7YT?cluster=mainnet",
+      "anchoredAt": "2026-10-18T07:02:14.298Z"
+    },
+    {
+      "findingId": "F-pi-Men-c",
+      "bundleHash": "5efc88d205e5003b11e0e38dd80124294c9b010f498054a61f5bade565084fa2",
+      "scienceHash": "238f95fa0deec62ab6ec8db6915142c02e093a26e2255f3a98718ba9fd9854d9",
+      "memo": "sdr:1|F-pi-Men-c|5efc88d205e5003b11e0e38dd80124294c9b010f498054a61f5bade565084fa2|238f95fa0deec62ab6ec8db6915142c02e093a26e2255f3a98718ba9fd9854d9",
+      "status": "anchored",
+      "signature": "43GW1EL7FKd5p4jJRWr7N967utbHbLgF8vaqCqp3BMWheSkDeNTPvGcJcRRwSLCo76pF2gEdfWuy4uL3sN9q5vaz",
+      "slot": 458125411,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/43GW1EL7FKd5p4jJRWr7N967utbHbLgF8vaqCqp3BMWheSkDeNTPvGcJcRRwSLCo76pF2gEdfWuy4uL3sN9q5vaz?cluster=mainnet",
+      "anchoredAt": "2026-10-17T17:50:24.665Z"
+    },
+    {
+      "findingId": "F-GJ-1214-b",
+      "bundleHash": "975a59c08bb0f88c981dc86a5ac2ad348236c774f35f8ada4e417aa08c17500e",
+      "scienceHash": "acd04c45770f458ac651e3e35bf99fa706902c2526bd9df74d5a18329154299f",
+      "memo": "sdr:1|F-GJ-1214-b|975a59c08bb0f88c981dc86a5ac2ad348236c774f35f8ada4e417aa08c17500e|acd04c45770f458ac651e3e35bf99fa706902c2526bd9df74d5a18329154299f",
+      "status": "anchored",
+      "signature": "3aSKUbaKJd3EomUk3EWnB8aex3ddB3XDT1cCBswLzE2h7yH1ryM3JgXUFTks8GVfbZr3EJCemh5Mz6GpCZfBioFQ",
+      "slot": 458125129,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/3aSKUbaKJd3EomUk3EWnB8aex3ddB3XDT1cCBswLzE2h7yH1ryM3JgXUFTks8GVfbZr3EJCemh5Mz6GpCZfBioFQ?cluster=mainnet",
+      "anchoredAt": "2026-10-17T17:48:57.258Z"
+    },
+    {
+      "findingId": "F-WASP-189-b",
+      "bundleHash": "981e80242e47c8f25ba011671a5b11838a4115a643ef7165c97e14cff6fdc7c4",
+      "scienceHash": "039b2ab5df75f5e5913e83b65754312467095aaeb01181f7e61d9b11c03580cc",
+      "memo": "sdr:1|F-WASP-189-b|981e80242e47c8f25ba011671a5b11838a4115a643ef7165c97e14cff6fdc7c4|039b2ab5df75f5e5913e83b65754312467095aaeb01181f7e61d9b11c03580cc",
+      "status": "anchored",
+      "signature": "mK5yhutMnTGqKNXdUa3wMNNVCdHvjh1ixwesCc923x5W4hh8VA5qLvpGmSQSpJVXgkJCh6JtYX8RpWhK7hxTiht",
+      "slot": 457509884,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/mK5yhutMnTGqKNXdUa3wMNNVCdHvjh1ixwesCc923x5W4hh8VA5qLvpGmSQSpJVXgkJCh6JtYX8RpWhK7hxTiht?cluster=mainnet",
+      "anchoredAt": "2026-10-16T04:50:18.982Z"
+    },
+    {
+      "findingId": "F-HR-858-d",
+      "bundleHash": "8e5ecccf13991e2d9c2d9dabdbea58d94783cd9ec21ca6ea337a371f942522f1",
+      "scienceHash": "66a8db3f1c78f7ab67ea7d5d8bd120a60d27ee445063b7cf8f04880fe2153cef",
+      "memo": "sdr:1|F-HR-858-d|8e5ecccf13991e2d9c2d9dabdbea58d94783cd9ec21ca6ea337a371f942522f1|66a8db3f1c78f7ab67ea7d5d8bd120a60d27ee445063b7cf8f04880fe2153cef",
+      "status": "anchored",
+      "signature": "3A6ZUZUjv1nd99c17waGiPDbTpv9ehjcBvr1Vx3uYyve7GzswpBSK6p3DYGNL6dHwiKykM1RntiTRDWPgEK61XGQ",
+      "slot": 457467690,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/3A6ZUZUjv1nd99c17waGiPDbTpv9ehjcBvr1Vx3uYyve7GzswpBSK6p3DYGNL6dHwiKykM1RntiTRDWPgEK61XGQ?cluster=mainnet",
+      "anchoredAt": "2026-10-16T02:18:26.357Z"
+    },
+    {
+      "findingId": "F-HR-858-c",
+      "bundleHash": "0eb28786899382b3f1ec2a3c4e3d5130c56d7cca4b0ee6e119d3d613d21f0c41",
+      "scienceHash": "e154b8b1a75da03bf7e3b7fe38d3c55b5cd4b5a122d56d0847de05916d2e50f4",
+      "memo": "sdr:1|F-HR-858-c|0eb28786899382b3f1ec2a3c4e3d5130c56d7cca4b0ee6e119d3d613d21f0c41|e154b8b1a75da03bf7e3b7fe38d3c55b5cd4b5a122d56d0847de05916d2e50f4",
+      "status": "anchored",
+      "signature": "2jbaGbTUJHZ3vWZtC8xPG8884tRrPrRUutjWjw6gjWGSTrvbrs8D4V37EVuXDkYof8YupcLKWcPWeNrumZuUB35P",
+      "slot": 457467448,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/2jbaGbTUJHZ3vWZtC8xPG8884tRrPrRUutjWjw6gjWGSTrvbrs8D4V37EVuXDkYof8YupcLKWcPWeNrumZuUB35P?cluster=mainnet",
+      "anchoredAt": "2026-10-16T02:17:34.171Z"
+    },
+    {
+      "findingId": "F-HAT-P-11-b",
+      "bundleHash": "3644321eaf047d79b9bd8fa79a966ebd228028b02441a1940ec8501bd8c69a01",
+      "memo": "sdr:1|F-HAT-P-11-b|3644321eaf047d79b9bd8fa79a966ebd228028b02441a1940ec8501bd8c69a01",
+      "status": "anchored",
+      "signature": "4p5essAoH1LmQvguzY6ZB5gWvACEizp3dGVNYsXf6gwc66ncaehP14a59kHgWPdN3VauYCbEzbiTcmxRd2tWFfsy",
+      "slot": 0,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/4p5essAoH1LmQvguzY6ZB5gWvACEizp3dGVNYsXf6gwc66ncaehP14a59kHgWPdN3VauYCbEzbiTcmxRd2tWFfsy?cluster=mainnet",
+      "anchoredAt": "2026-10-12T08:21:43.858Z"
+    },
+    {
+      "findingId": "F-HD-189733-b",
+      "bundleHash": "102860c905e6bc4bfd69ec172091058928f305982289b95841604293bb0202e9",
+      "memo": "sdr:1|F-HD-189733-b|102860c905e6bc4bfd69ec172091058928f305982289b95841604293bb0202e9",
+      "status": "anchored",
+      "signature": "3m3ycmcDdQizLDbvzhaYbr4T58h7djNVnPqe56Z8NgBDGcj75cJcxLVHMRGS28ZUqfLjKHMqaAkdf9qVkVNz1s4X",
+      "slot": 455891640,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/3m3ycmcDdQizLDbvzhaYbr4T58h7djNVnPqe56Z8NgBDGcj75cJcxLVHMRGS28ZUqfLjKHMqaAkdf9qVkVNz1s4X?cluster=mainnet",
+      "anchoredAt": "2026-10-12T03:04:48.700Z"
+    },
+    {
+      "findingId": "F-HD-63433-d",
+      "bundleHash": "6e48b0410a30e36c93ee98c1eae2d6683fba4aff16dc2a0297adf3277fccd864",
+      "memo": "sdr:1|F-HD-63433-d|6e48b0410a30e36c93ee98c1eae2d6683fba4aff16dc2a0297adf3277fccd864",
+      "status": "anchored",
+      "signature": "5aUoaeyfk5rLrsNKZypVKcAata7RQWNoTZq5aRmvyZQcBNPD5gVybqUF3HxHUHatz8fyGqucaZT7s4u4zHP1NDu4",
+      "slot": 455224366,
+      "publicKey": "HtFLWx4gHsnGSgT4uPa5PXZbhsuVZGCNCGN2sc1YHujK",
+      "explorerUrl": "https://explorer.solana.com/tx/5aUoaeyfk5rLrsNKZypVKcAata7RQWNoTZq5aRmvyZQcBNPD5gVybqUF3HxHUHatz8fyGqucaZT7s4u4zHP1NDu4?cluster=mainnet",
+      "anchoredAt": "2026-10-10T10:35:42.927Z"
+    }
+  ]
+}

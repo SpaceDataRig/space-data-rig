@@ -125,6 +125,7 @@
     "x:health": "tsx scripts/xpost-health.ts",
     "figure:depth-significance": "tsx scripts/depth-significance-figure.ts",
     "figure:depth-precision": "tsx scripts/depth-precision-figure.ts",
+    "figure:anchor-counts": "tsx scripts/anchor-counts-figure.ts",
     "x:lastpost": "tsx scripts/x-last-post.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",

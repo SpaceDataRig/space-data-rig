@@ -20,7 +20,10 @@ const files = readdirSync(testsDir)
   .filter((f) => f.endsWith(".test.ts"))
   .sort();
 
-const FLOOR = 60; // bumped as the suite grows; guards against a discovery regression, not a per-PR target
+const FLOOR = 90; // guards against a discovery regression, not a per-PR target. Measured 2026-10-18: 97 files.
+// Raised from 60 for the same reason the coverage floors below were raised: a floor 37 files behind reality
+// stops being a tripwire and starts being a formality -- it would have waved through the loss of a third of the
+// suite. Deliberately below the real count, because consolidating two files is a legitimate change.
 if (files.length < FLOOR) {
   console.error(`FAIL: only ${files.length} test files discovered in tests/ (< floor ${FLOOR}).`);
   console.error("A new test was likely left off -- or discovery broke. Fix before trusting a green run.");
@@ -30,10 +33,13 @@ if (files.length < FLOOR) {
 const wantCoverage = process.argv.includes("--coverage");
 const runnerArgs = ["--import", "tsx", "--test"];
 if (wantCoverage) {
-  // Node's built-in V8 coverage -- no third-party dependency. Measured: line ~96%, branch ~80%, function ~92%.
-  // Floors sit at 85 (lines) / 75 (branches) to leave headroom for runtime differences while still failing a
-  // real drop. audit-10 #11 widened the gate from lines-only to also enforce BRANCH coverage.
-  runnerArgs.push("--experimental-test-coverage", "--test-coverage-lines=85", "--test-coverage-branches=75");
+  // Node's built-in V8 coverage -- no third-party dependency. Measured 2026-10-18: lines 95.7%, branches 82.5%,
+  // functions 90.9%.
+  // Floors raised from 85/75 to 90/78 (audit-6 decision, self-assigned): a floor that has not moved while the
+  // number above it climbed for six audit passes records a permission, not a gate. Headroom is kept on purpose --
+  // V8 attribution differs between local and CI runs, and a gate that fails on noise gets disabled, which is worse
+  // than a slightly lower gate. audit-10 #11 widened the gate from lines-only to also enforce BRANCH coverage.
+  runnerArgs.push("--experimental-test-coverage", "--test-coverage-lines=90", "--test-coverage-branches=78");
 }
 runnerArgs.push(...files.map((f) => join(testsDir, f)));
 

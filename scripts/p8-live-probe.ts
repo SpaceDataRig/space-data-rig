@@ -192,28 +192,37 @@ async function probeProgress(prevFile: string, curFile: string, url: string): Pr
   return judgeProgress(prev, cur);
 }
 
-/** Shared verdict + exit-code logic, driven purely off the Check list so both live and self-test use it. */
-export function evaluate(checks: Check[]): number {
+/**
+ * Shared verdict + exit-code logic, driven purely off the Check list so both live and self-test use it.
+ *
+ * `selfTest` prefixes every line with `[drill]`. Without it the OFFLINE positive control -- which deliberately
+ * feeds a fake drifted GAIA row to prove the alarm still rings -- prints a real-looking
+ * "VERDICT: FAIL -- 1 upstream(s drifted schema" into `npm test` output, and the next reader to skim that log
+ * files an upstream-drift bug report against a healthy endpoint. An alarm and a rehearsal of an alarm must not
+ * share a shape; that is the same lesson the posting auditor learned from a post body that said "DRY RUN".
+ */
+export function evaluate(checks: Check[], selfTest = false): number {
+  const tag = selfTest ? "[drill] " : "";
   let net = 0, fail = 0, pass = 0;
   for (const c of checks) {
     const isNet = !c.ok && c.detail.startsWith("network:");
     const v: Verdict = c.ok ? "PASS" : isNet ? "NET" : "FAIL";
     if (v === "PASS") pass++; else if (v === "NET") net++; else fail++;
-    console.log(`  ${v.padEnd(4)}  ${c.name.padEnd(22)} ${c.detail}`);
+    console.log(`${tag}  ${v.padEnd(4)}  ${c.name.padEnd(22)} ${c.detail}`);
   }
   if (fail > 0) {
-    console.log(`VERDICT: FAIL -- ${fail} upstream(s) drifted schema / row-count (pass ${pass}, net ${net}, fail ${fail}). Open an issue: science assumptions on that upstream are now unverified.`);
+    console.log(`${tag}VERDICT: FAIL -- ${fail} upstream(s) drifted schema / row-count (pass ${pass}, net ${net}, fail ${fail}). Open an issue: science assumptions on that upstream are now unverified.`);
     return 1;
   }
   if (pass === 0 && net === checks.length) {
-    console.log("VERDICT: INCONCLUSIVE-NETWORK -- every upstream had a transport error; not a schema alarm. Retry next scheduled run.");
+    console.log(`${tag}VERDICT: INCONCLUSIVE-NETWORK -- every upstream had a transport error; not a schema alarm. Retry next scheduled run.`);
     return 2;
   }
   if (net > 0) {
-    console.log(`VERDICT: PASS-PARTIAL -- ${pass} upstreams healthy, ${net} had transient network errors (retry next scheduled run).`);
+    console.log(`${tag}VERDICT: PASS-PARTIAL -- ${pass} upstreams healthy, ${net} had transient network errors (retry next scheduled run).`);
     return 0;
   }
-  console.log(`VERDICT: PASS -- all ${pass} upstreams healthy.`);
+  console.log(`${tag}VERDICT: PASS -- all ${pass} upstreams healthy.`);
   return 0;
 }
 
@@ -268,11 +277,11 @@ export function selfTest(): number {
   expect("gaia empty cone -> FAIL", judgeGaia(gaiaEmpty).ok, false);
 
   // Exit-code wiring: one drifted upstream MUST produce the alert code 1, not a silent 0.
-  const exitOnDrift = evaluate([{ name: "nasa-exoplanet-archive", ok: true, detail: "x" }, { name: "gaia-tap", ok: false, detail: "missing columns: parallax" }]);
+  const exitOnDrift = evaluate([{ name: "nasa-exoplanet-archive", ok: true, detail: "x" }, { name: "gaia-tap", ok: false, detail: "missing columns: parallax" }], true);
   expect("evaluate() alerts (exit 1) on a single drift", exitOnDrift, 1);
-  const exitAllNet = evaluate([{ name: "a", ok: false, detail: "network: down" }, { name: "b", ok: false, detail: "network: down" }, { name: "c", ok: false, detail: "network: down" }]);
+  const exitAllNet = evaluate([{ name: "a", ok: false, detail: "network: down" }, { name: "b", ok: false, detail: "network: down" }, { name: "c", ok: false, detail: "network: down" }], true);
   expect("evaluate() inconclusive-network is NOT an alarm (exit 2)", exitAllNet, 2);
-  const exitHealthy = evaluate([{ name: "a", ok: true, detail: "x" }, { name: "b", ok: true, detail: "x" }, { name: "c", ok: true, detail: "x" }]);
+  const exitHealthy = evaluate([{ name: "a", ok: true, detail: "x" }, { name: "b", ok: true, detail: "x" }, { name: "c", ok: true, detail: "x" }], true);
   expect("evaluate() healthy -> exit 0", exitHealthy, 0);
 
   // Survey progress (audit-6 #4): the freeze class. A stuck/ regressed survey MUST trip FAIL (exit 1); a
@@ -289,7 +298,7 @@ export function selfTest(): number {
   expect("survey progressing -> PASS", pGood.ok, true);
   const pNan = judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: NaN, distinctHosts: NaN });
   expect("state stats not numeric -> FAIL (not silently ok)", pNan.ok, false);
-  const exitOnFreeze = evaluate([{ name: "nasa-exoplanet-archive", ok: true, detail: "x" }, pFrozen]);
+  const exitOnFreeze = evaluate([{ name: "nasa-exoplanet-archive", ok: true, detail: "x" }, pFrozen], true);
   expect("evaluate() alerts (exit 1) on a frozen survey", exitOnFreeze, 1);
 
   const failed = results.filter((r) => r.startsWith("FAIL")).length;

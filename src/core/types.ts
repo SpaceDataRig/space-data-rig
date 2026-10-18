@@ -26,8 +26,35 @@ export interface TransitCandidate {
   periodDays: number; // best-fit orbital period
   epochBjd: number; // best-fit transit center time (T0)
   durationHours: number; // transit duration
-  depthPpt: number; // transit depth in parts-per-thousand
+  depthPpt: number; // transit depth in parts-per-thousand; ALWAYS depthFrac * 1000, the same number in another unit
   depthFrac: number; // transit depth as a fraction (e.g. 0.01 = 1%)
+  /**
+   * Which of the two available measurements this depth is, because they are not the same measurement. The BLS
+   * box (`bls-box`) is what the detection was gated on and what the quoted SNR was computed against; the
+   * per-sector limb-darkened median (`per-sector-median`) is a shape fit performed sector by sector at the
+   * candidate ephemeris. Adopting the latter is guarded by src/detect/depthAdoption.ts, and a record's
+   * `depthPpt`/`depthFrac` pair is kept in step by that module rather than by whoever assigns them -- the
+   * workflow used to replace `depthFrac` alone, leaving 84 of 90 published records carrying two depths that
+   * contradicted each other (one row by a factor of 159, on a catalogued hot Jupiter).
+   */
+  depthSource?: "bls-box" | "per-sector-median";
+  /**
+   * The per-sector estimate, recorded even when it was REFUSED, so a reader can see the two estimators and the
+   * size of their disagreement instead of only the surviving number. Present whenever the estimator produced one.
+   */
+  perSectorDepthFrac?: number;
+  /**
+   * The detector's own box depth, kept even when a per-sector refinement is what got published, so the record can
+   * always answer "how far apart were the two measurements?". Without it an adopted refinement would erase the
+   * evidence it replaced.
+   */
+  blsBoxDepthFrac?: number;
+  /**
+   * The out-of-transit scatter (MAD) the SNR was divided by, as a fraction of the flux. The SNR alone is not
+   * interpretable without it: `snr = depth/sigma * sqrt(nIn)`, so a quoted depth that implies a per-point noise
+   * below the instrument's photon floor is a depth that was not what the SNR measured.
+   */
+  noiseSigmaFrac?: number;
   snr: number; // signal-to-noise of the detection
   /**
    * Grid-limited 1-sigma period uncertainty in DAYS: P^2 * df, where df = 1/(oversample*baseline). The period is

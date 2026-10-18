@@ -410,5 +410,29 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
     });
   }
 
+  // THE DEPTH AND THE SIGNIFICANCE MUST DESCRIBE THE SAME NUMBER. `snr` is not an independent measurement: it is
+  // depth/sigma*sqrt(nIn), computed by the detector from the BOX depth and the out-of-box scatter. If the record
+  // publishes a different depth -- one refined by a per-sector shape fit -- then the quoted significance belongs to
+  // a depth the record no longer shows, and the two cannot be read together. Inverting the same formula recovers the
+  // depth the SNR was actually measured on, which is what makes this checkable rather than a matter of opinion:
+  // on KELT-24 b it returned 6100 ppm against a published 38 ppm, and 38 ppm on that scatter would require a
+  // per-point noise below the instrument's photon floor. Recorded, never gated: whether a refined depth SHOULD
+  // override the depth a detection was gated on is a calibration question with a real answer, and this round's
+  // evidence (the adoption guard in src/detect/depthAdoption.ts) says "only when the two agree".
+  if (Number.isFinite(c.noiseSigmaFrac as number) && (c.noiseSigmaFrac as number) > 0 && Number.isFinite(c.snr)) {
+    const nIn = Math.max(1, c.nPointsInTransit || 1);
+    const snrDepth = (c.snr * (c.noiseSigmaFrac as number)) / Math.sqrt(nIn);
+    if (snrDepth > 0 && c.depthFrac > 0) {
+      const f = snrDepth / c.depthFrac;
+      if (f > 1.5 || f < 1 / 1.5) {
+        checks.push({
+          name: "depth-vs-significance-consistency (informational, non-gating)",
+          pass: false,
+          detail: `the quoted SNR ${c.snr.toFixed(1)} on ${(1e6 * (c.noiseSigmaFrac as number)).toFixed(1)} ppm scatter over ${nIn} in-transit points describes a ${(1e6 * snrDepth).toFixed(0)} ppm depth, while the record publishes ${(1e6 * c.depthFrac).toFixed(0)} ppm (${f.toFixed(1)}x apart); the significance is the detector's box measurement, not the published depth${c.depthSource === "per-sector-median" ? ", which was refined by a per-sector shape fit" : ""}`,
+        });
+      }
+    }
+  }
+
   return { verdict, reason, score, crossmatch: cm, checks };
 }

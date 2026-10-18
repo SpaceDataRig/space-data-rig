@@ -1,0 +1,925 @@
+{
+  "meta": {
+    "stars": 30,
+    "maxSectors": 4,
+    "injPeriod": 3,
+    "depthsPpm": [
+      300,
+      500,
+      800,
+      1500,
+      3000
+    ],
+    "seed": 7,
+    "matchTolPct": 5,
+    "minPeriodDays": 1,
+    "maxPeriodDays": 13,
+    "hostsSampled": 30,
+    "usableHosts": 29,
+    "multiSectorHosts": 25,
+    "meanSectorsPerHost": 2.69,
+    "generatedBy": "scripts/p41-longbaseline.ts",
+    "generatedAt": "2026-10-18T06:19:54.920Z",
+    "gitSha": "ba8ba67abf80aa2e1bdb94e185a98972c461f1f6",
+    "inputs": [
+      {
+        "path": "scripts/p41-longbaseline.ts",
+        "sha256": "76baf3576d7ee2fdb0bd0ac0e669ee2566e074e478f56ebb0380ad57041c05dd"
+      },
+      {
+        "path": "src/detect/bls.ts",
+        "sha256": "9af00bb5d25e6f96bca9b04c2e71b9bfe8c5ef7e809f5471d7f9ed48361d08c6"
+      },
+      {
+        "path": "src/detect/detrend.ts",
+        "sha256": "e6bf24de23ba1a6dad9ace8e01f9b7b259cc0b030342977f880ae7d599b558df"
+      },
+      {
+        "path": "src/sim/injectInto.ts",
+        "sha256": "dbf0deb5a5180dcd9840f6a59de6f964f261c594c3406d42bbb27aebdec142a4"
+      },
+      {
+        "path": "src/data/mastS3.ts",
+        "sha256": "017ff9a2728df1741ea9fd90f96625f66896792d1700db761e00b4729b1418ce"
+      },
+      {
+        "path": "src/data/mast.ts",
+        "sha256": "dbfa9c012589637a16d3e7271fbc2f62aad12587a0edf12e1e5b5b239c5350fd"
+      },
+      {
+        "path": "src/candidate/falsePositive.ts",
+        "sha256": "199c5c37cfa7c1e90ac1dad62cbabad89e08cd27858ef2251d055d1067382414"
+      }
+    ]
+  },
+  "completeness": {
+    "300": {
+      "single": 15,
+      "multi": 11,
+      "usable": 29
+    },
+    "500": {
+      "single": 19,
+      "multi": 19,
+      "usable": 29
+    },
+    "800": {
+      "single": 22,
+      "multi": 22,
+      "usable": 29
+    },
+    "1500": {
+      "single": 24,
+      "multi": 22,
+      "usable": 29
+    },
+    "3000": {
+      "single": 26,
+      "multi": 23,
+      "usable": 29
+    }
+  },
+  "hosts": [
+    {
+      "tic": 261136679,
+      "name": "HD 39091",
+      "sectors": 4,
+      "singlePoints": 937,
+      "stitchedPoints": 3418,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 178155732,
+      "name": "HR 858",
+      "sectors": 4,
+      "singlePoints": 3318,
+      "stitchedPoints": 8238,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 130181866,
+      "name": "HD 63433",
+      "sectors": 4,
+      "singlePoints": 3331,
+      "stitchedPoints": 10566,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": true
+        },
+        "800": {
+          "single": false,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 80224448,
+      "name": "HD 50554",
+      "sectors": 2,
+      "singlePoints": 3211,
+      "stitchedPoints": 6357,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 157910432,
+      "name": "WASP-189",
+      "sectors": 1,
+      "singlePoints": 1601,
+      "stitchedPoints": null,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": false
+        },
+        "1500": {
+          "single": false,
+          "multi": false
+        },
+        "3000": {
+          "single": false,
+          "multi": false
+        }
+      }
+    },
+    {
+      "tic": 407966340,
+      "name": "HD 25463",
+      "sectors": 4,
+      "singlePoints": 3455,
+      "stitchedPoints": 10836,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 87216634,
+      "name": "TOI-5789",
+      "sectors": 1,
+      "singlePoints": 3571,
+      "stitchedPoints": null,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": false
+        },
+        "800": {
+          "single": true,
+          "multi": false
+        },
+        "1500": {
+          "single": true,
+          "multi": false
+        },
+        "3000": {
+          "single": true,
+          "multi": false
+        }
+      }
+    },
+    {
+      "tic": 441420236,
+      "name": "AU Mic",
+      "sectors": 2,
+      "singlePoints": 3328,
+      "stitchedPoints": 4470,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": false
+        },
+        "1500": {
+          "single": false,
+          "multi": false
+        },
+        "3000": {
+          "single": false,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 317548889,
+      "name": "TOI-480",
+      "sectors": 2,
+      "singlePoints": 3485,
+      "stitchedPoints": 4455,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 279741379,
+      "name": "GJ 143",
+      "sectors": 4,
+      "singlePoints": 1195,
+      "stitchedPoints": 4093,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 394137592,
+      "name": "HD 1397",
+      "sectors": 2,
+      "singlePoints": 1194,
+      "stitchedPoints": 2372,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 328934980,
+      "name": "TOI-5739",
+      "sectors": 2,
+      "singlePoints": 2150,
+      "stitchedPoints": 2988,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 55092869,
+      "name": "KELT-11",
+      "sectors": 1,
+      "singlePoints": 1028,
+      "stitchedPoints": null,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": true,
+          "multi": false
+        },
+        "1500": {
+          "single": true,
+          "multi": false
+        },
+        "3000": {
+          "single": true,
+          "multi": false
+        }
+      }
+    },
+    {
+      "tic": 22221375,
+      "name": "HD 86226",
+      "sectors": 2,
+      "singlePoints": 2727,
+      "stitchedPoints": 3757,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": true
+        },
+        "500": {
+          "single": false,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 290348383,
+      "name": "HD 207496",
+      "sectors": 2,
+      "singlePoints": 3350,
+      "stitchedPoints": 4483,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": false
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 403224672,
+      "name": "HD 213885",
+      "sectors": 3,
+      "singlePoints": 3350,
+      "stitchedPoints": 7277,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 392681545,
+      "name": "TOI-6054",
+      "sectors": 2,
+      "singlePoints": 9650,
+      "stitchedPoints": 10759,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 69679391,
+      "name": "KELT-20",
+      "sectors": 4,
+      "singlePoints": 3916,
+      "stitchedPoints": 11353,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": false
+        },
+        "1500": {
+          "single": false,
+          "multi": false
+        },
+        "3000": {
+          "single": false,
+          "multi": false
+        }
+      }
+    },
+    {
+      "tic": 16740101,
+      "name": "KELT-9",
+      "sectors": 4,
+      "singlePoints": 3751,
+      "stitchedPoints": 9171,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 437011608,
+      "name": "TOI-5082",
+      "sectors": 2,
+      "singlePoints": 3151,
+      "stitchedPoints": 6232,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 21535395,
+      "name": "TOI-1776",
+      "sectors": 2,
+      "singlePoints": 3041,
+      "stitchedPoints": 4274,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 347332255,
+      "name": "HD 110067",
+      "sectors": 2,
+      "singlePoints": 2691,
+      "stitchedPoints": 3519,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 359271092,
+      "name": "GJ 341",
+      "sectors": 4,
+      "singlePoints": 3173,
+      "stitchedPoints": 8348,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 69747919,
+      "name": "K2-167",
+      "sectors": 3,
+      "singlePoints": 2766,
+      "stitchedPoints": 5907,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 100990000,
+      "name": "HD 22946",
+      "sectors": 4,
+      "singlePoints": 3363,
+      "stitchedPoints": 8455,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 464646604,
+      "name": "HIP 94235",
+      "sectors": 1,
+      "singlePoints": 3298,
+      "stitchedPoints": null,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": false
+        },
+        "1500": {
+          "single": false,
+          "multi": false
+        },
+        "3000": {
+          "single": true,
+          "multi": false
+        }
+      }
+    },
+    {
+      "tic": 121214185,
+      "name": "Kepler-21",
+      "sectors": 4,
+      "singlePoints": 3916,
+      "stitchedPoints": 11810,
+      "recovered": {
+        "300": {
+          "single": true,
+          "multi": true
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 467651916,
+      "name": "TOI-4602",
+      "sectors": 2,
+      "singlePoints": 3122,
+      "stitchedPoints": 6232,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": true,
+          "multi": true
+        },
+        "800": {
+          "single": true,
+          "multi": true
+        },
+        "1500": {
+          "single": true,
+          "multi": true
+        },
+        "3000": {
+          "single": true,
+          "multi": true
+        }
+      }
+    },
+    {
+      "tic": 202426247,
+      "name": "TOI-1860",
+      "sectors": 4,
+      "singlePoints": 1233,
+      "stitchedPoints": 4193,
+      "recovered": {
+        "300": {
+          "single": false,
+          "multi": false
+        },
+        "500": {
+          "single": false,
+          "multi": false
+        },
+        "800": {
+          "single": false,
+          "multi": false
+        },
+        "1500": {
+          "single": false,
+          "multi": false
+        },
+        "3000": {
+          "single": true,
+          "multi": false
+        }
+      }
+    }
+  ]
+}

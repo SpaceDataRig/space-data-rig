@@ -35,9 +35,24 @@ test("evaluate() alerts (exit 1) on a single drift, treats all-network as inconc
     { name: "nasa-exoplanet-archive", ok: true, detail: "ok" },
     { name: "gaia-tap", ok: false, detail: "missing columns: parallax" },
   ];
-  assert.equal(evaluate(drift), 1);
-  assert.equal(evaluate([0, 1, 2].map((i) => ({ name: `u${i}`, ok: false, detail: "network: down" }))), 2);
-  assert.equal(evaluate([0, 1, 2].map((i) => ({ name: `u${i}`, ok: true, detail: "ok" }))), 0);
+  assert.equal(evaluate(drift, true), 1);
+  assert.equal(evaluate([0, 1, 2].map((i) => ({ name: `u${i}`, ok: false, detail: "network: down" })), true), 2);
+  assert.equal(evaluate([0, 1, 2].map((i) => ({ name: `u${i}`, ok: true, detail: "ok" })), true), 0);
+});
+
+test("a rehearsal of the alarm is labelled, so drill output cannot be read as a live drift", (t) => {
+  // The audit lesson restated in the probe's own log: an alarm and a test of the alarm must not share a shape.
+  // This file used to print `FAIL gaia-tap missing columns: parallax` from a synthetic fixture into `npm test`,
+  // which is indistinguishable from the real thing -- and a reader skimming it would file a drift report
+  // against a healthy endpoint. The exit codes above are the contract; this pins that the rehearsal says so.
+  const logged: string[] = [];
+  const spy = t.mock.method(console, "log", (...args: unknown[]) => { logged.push(args.join(" ")); });
+  evaluate([{ name: "gaia-tap", ok: false, detail: "missing columns: parallax" }], true);
+  assert.equal(spy.mock.callCount(), 2, "one per check, one verdict line");
+  assert.ok(logged.every((l) => l.startsWith("[drill] ")), `every rehearsal line must be tagged, got: ${logged.join(" | ")}`);
+  logged.length = 0;
+  evaluate([{ name: "gaia-tap", ok: false, detail: "missing columns: parallax" }]);
+  assert.ok(logged.some((l) => l.startsWith("VERDICT: FAIL")), "a LIVE alarm keeps its untagged shape -- tagging it would blunt the alert it exists to raise");
 });
 
 test("the built-in offline self-test drill passes (no drift class is silently missed)", () => {
@@ -53,5 +68,5 @@ test("survey-progress judge (audit-6 #4): a frozen or regressed survey trips FAI
   assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: 18, distinctHosts: 72 }).ok, true); // cursor moved, breadth held
   assert.equal(judgeProgress({ surveyPass: 17, distinctHosts: 72 }, { surveyPass: NaN, distinctHosts: NaN }).ok, false); // bad stats, never silently ok
   // and a frozen survey must reach the alert exit code the workflow keys on.
-  assert.equal(evaluate([{ name: "survey-progress", ok: false, detail: "survey FROZEN" }]), 1);
+  assert.equal(evaluate([{ name: "survey-progress", ok: false, detail: "survey FROZEN" }], true), 1);
 });

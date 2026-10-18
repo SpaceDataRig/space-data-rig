@@ -35,6 +35,7 @@ import type { RunParams } from "./run-types.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
 import { computeDataHash, scout, simPlan, critique, report } from "../seats/seats.ts";
 import { recoveryTrial, combineTrials, predictEphemeris } from "../sim/confidence.ts";
+import { decideDepthAdoption, applyDepthDecision, type DepthAdoptionDecision } from "../detect/depthAdoption.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -389,6 +390,7 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         await stub.updateTask(meta.taskId, { status: "analyzing" });
         await stub.emitEvent("anomaly-scout", "info", `Running Box-Least-Squares transit search on ${rec.lc.targetId} ...`);
         const det = scout(rec.lc);
+        det.candidate.depthSource = "bls-box";
         // PER-SECTOR ROBUST DEPTH (env.PERSECTOR="1", real multi-sector SPOC only). OFF = this block
         // never runs and det.candidate is byte-for-byte the single-fit scout result (bundle unchanged).
         if (env.PERSECTOR === "1" && rec.spocSectors && rec.spocSectors.length > 1 && Number.isFinite(planet.st_rad) && (planet.st_rad ?? 0) > 0) {
@@ -401,12 +403,16 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
             starRadiusRsun: planet.st_rad!,
             fetchSector: (tic, s, label) => fetchSpocLightCurve(tic, [s], label),
           });
-          if (est) det.candidate.depthFrac = est.medianDepthFrac;
+          let decision: DepthAdoptionDecision | null = null;
+          if (est) {
+            decision = decideDepthAdoption(det.candidate.depthFrac, est.medianDepthFrac);
+            applyDepthDecision(det.candidate, decision, est.medianDepthFrac);
+          }
           await stub.emitEvent(
             "anomaly-scout",
-            "info",
+            decision && !decision.adopted ? "warn" : "info",
             est
-              ? `Per-sector robust depth (flag PERSECTOR=1): ${(est.medianDepthFrac * 1e6).toFixed(0)}ppm from ${est.nUsable}/${est.nSectors} sectors.`
+              ? `Per-sector robust depth (flag PERSECTOR=1): ${(est.medianDepthFrac * 1e6).toFixed(0)}ppm from ${est.nUsable}/${est.nSectors} sectors -- ${decision!.reason}.`
               : `PERSECTOR=1 but <2 sectors characterisable; kept the single-fit depth.`,
           );
         }

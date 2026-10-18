@@ -31,11 +31,18 @@ import {
   newestInputMs,
   reportMs,
   gitLastCommitIso,
+  gitTrackedPaths,
 } from "./report-freshness.ts";
 
 const REPORTS_DIR = "reports";
 const OUT_DIR = join("web", "reports");
 const ALLOW_STALE = process.argv.includes("--allow-stale");
+
+// Is a report's recorded input a file ANY checkout can produce? Answers from one `git ls-files` rather than
+// one subprocess per path, and stays silent (undefined, so nothing is disqualified) when git cannot answer:
+// "unknown" must not be published as "unverifiable", any more than "untracked" may be published as verified.
+const TRACKED = gitTrackedPaths();
+const isTracked = TRACKED ? (p: string) => TRACKED.has(p.split(/[\\/]/).join("/")) : undefined;
 
 // Tracked source files a report's numbers depend on, used only as the git-provenance fallback for
 // inputs that are NOT recorded as a hashed checkpoint (network reports, or legacy reports predating
@@ -90,7 +97,7 @@ function freshnessFor(id: string): { stamp: FreshnessStamp | null; verdict: Fres
   const provenancePaths = Array.from(new Set([...dataInputs, ...deps, ...(genScript ? [genScript] : [])]));
   const rmMs = reportMs(mdPath, stamp, (p) => (existsSync(p) ? gitLastCommitIso(p) : null));
   const inputNewestMs = newestInputMs(provenancePaths.filter((p) => existsSync(p) || deps.includes(p)));
-  const verdict = evaluateAgainst(stamp, { reportMs: rmMs, inputNewestMs });
+  const verdict = evaluateAgainst(stamp, { reportMs: rmMs, inputNewestMs, tracked: isTracked });
   return { stamp, verdict };
 }
 
@@ -117,6 +124,21 @@ const PROVENANCE_NOTE = (reasons: string[]): string =>
   (reasons.length ? `<ul style="margin:6px 0 0;padding-left:20px">${reasons.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "") +
   `</div>`;
 
+/**
+ * A report whose stamp WAS re-hashed, but not completely (audit b2, 2026-10-18). Its generator recorded
+ * checksums over inputs that are not present on this checkout -- typically a gitignored working file such as
+ * `out/scaled/centroid.jsonl`, which exists only on the machine that ran the report. Something was genuinely
+ * re-hashed and matched, so this is not the amber "unaudited" note; but the reader must be able to see that
+ * the check did not cover every input the numbers were derived from, and that on a fresh clone even the
+ * partial check could not run at all. Naming the missing paths is what makes the claim re-checkable elsewhere.
+ */
+const PARTIAL_NOTE = (rehashed: number, reasons: string[]): string =>
+  `<div class="report-provenance-note" style="border:1px solid #4a6d00;background:#f6fbef;color:#33500f;padding:8px 12px;margin:0 0 16px;border-radius:6px">` +
+  `PROVENANCE PARTLY RE-VERIFIED: the freshness gate re-hashed ${rehashed} recorded input checksum${rehashed === 1 ? "" : "s"} and every one still matches, but could not` +
+  (reasons.length ? ` cover everything the run recorded: ` : ` cover every input the run recorded. `) +
+  (reasons.length ? `<ul style="margin:6px 0 0;padding-left:20px">${reasons.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "") +
+  `</div>`;
+
 function main(): void {
   if (!existsSync(REPORTS_DIR)) {
     console.error(`p86: no ${REPORTS_DIR}/ directory found (run from the repo root).`);
@@ -135,10 +157,11 @@ function main(): void {
   if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean; verified: boolean }[] = [];
+  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean; verified: boolean; rehashed: number; reproducible: number; unverifiableInputs: number; untrackedInputs: number }[] = [];
   const staleIds: string[] = [];
   let stampedCount = 0;
   let verifiedCount = 0;
+  let fullCount = 0;
 
   for (const f of files) {
     const md = readFileSync(join(REPORTS_DIR, f), "utf8");
@@ -156,9 +179,19 @@ function main(): void {
     } else if (!verdict.verified) {
       // Not blocking (that would fail the build for every legacy report), but no longer invisible.
       html = PROVENANCE_NOTE(verdict.reasons) + "\n" + html;
+    } else if (verdict.unverifiableInputs > 0 || verdict.untrackedInputs > 0) {
+      // Re-hashed and matched, but not every input the run recorded could be re-hashed here, or the ones that
+      // matched are gitignored working files that exist only on the author's machine.
+      html = PARTIAL_NOTE(verdict.rehashed, verdict.reasons.filter((r) => /not present to re-verify|not tracked in the repository/.test(r))) + "\n" + html;
     }
+    if (verdict.verified && verdict.unverifiableInputs === 0 && verdict.untrackedInputs === 0) fullCount++;
     writeFileSync(join(OUT_DIR, `${slug}.html`), html, "utf8");
-    reports.push({ id, slug, title: meta.title, reproduce: meta.reproduce, summary: meta.summary, p: pnum(id), fresh: !verdict.stale, stamped: verdict.stamped, verified: verdict.verified });
+    reports.push({
+      id, slug, title: meta.title, reproduce: meta.reproduce, summary: meta.summary, p: pnum(id),
+      fresh: !verdict.stale, stamped: verdict.stamped, verified: verdict.verified,
+      rehashed: verdict.rehashed, reproducible: verdict.reproducible,
+      unverifiableInputs: verdict.unverifiableInputs, untrackedInputs: verdict.untrackedInputs,
+    });
   }
 
   reports.sort((a, b) => a.p - b.p || a.id.localeCompare(b.id));
@@ -186,17 +219,30 @@ function main(): void {
       "the pipeline's operating point and cross-checks on real public TESS data with positive controls -- " +
       "measurements and method checks, not claims of new planets. Each entry carries a freshness flag from " +
       "the report-freshness gate; stale reports are marked red both here and in their fragment. " +
-      "`stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate " +
-      "re-hashed at least one recorded input checksum and found it unchanged. Quote `verified`, not " +
-      "`stamped`, as the machine-checked count -- a report can be stamped and still record nothing checkable.",
+      "Three levels, and they are not interchangeable: `stamped` means only that a report carries a " +
+      "generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum " +
+      "against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can " +
+      "re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. " +
+      "Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that " +
+      "built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored " +
+      "working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths " +
+      "that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
     count: reports.length,
-    freshness: { stamped: stampedCount, verified: verifiedCount, total: reports.length, stale: staleIds },
-    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped, verified }) => ({ id, slug, title, reproduce, summary, fresh, stamped, verified })),
+    freshness: {
+      stamped: stampedCount,
+      verified: verifiedCount,
+      fullyVerified: fullCount,
+      total: reports.length,
+      stale: staleIds,
+    },
+    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, unverifiableInputs, untrackedInputs }) => ({
+      id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, unverifiableInputs, untrackedInputs,
+    })),
   };
   writeFileSync(join(OUT_DIR, "index.json"), JSON.stringify(index, null, 2) + "\n", "utf8");
   console.log(
     `p86: wrote ${reports.length} report fragments + index.json to ${OUT_DIR.replace(/\\/g, "/")}/ ` +
-      `(${verifiedCount} verified, ${stampedCount} stamped, ${staleIds.length} stale).`,
+      `(${fullCount} fully verified, ${verifiedCount} verified, ${stampedCount} stamped, ${staleIds.length} stale).`,
   );
 
   if (staleIds.length && !ALLOW_STALE) {

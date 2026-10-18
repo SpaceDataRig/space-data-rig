@@ -5,6 +5,147 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A record published a transit depth its own signal-to-noise ratio refuted (2026-10-18)
+The third pass of the audit loop asked the live rig a question its tests could not answer: inside a single
+published finding, do all the numbers describe the same transit? They did not.
+
+`src/core/types.ts` documents `depthPpt` as the transit depth in parts-per-thousand and `depthFrac` as the same
+depth as a fraction, and `src/detect/bls.ts` writes them as exactly that pair (`depthPpt = depthFrac * 1000`).
+`src/cf/workflow.ts` then replaced one of them: when `PERSECTOR=1`, the robust per-sector limb-darkened shape fit
+assigned `det.candidate.depthFrac = est.medianDepthFrac` and left `depthPpt` holding the detector's box depth.
+Measured on the live rig: **84 of 90 findings carried a pair that disagreed**, 82 of them by more than 5%, and
+8 of the 15 accepted ones by more than 1.5x. That is not a formatting slip -- it is two measurements of different
+things occupying the same quantity.
+
+The worst row is the one that proves the direction. KELT-24 b is a catalogued hot Jupiter, so its depth is known
+independently of us. The record carried a box depth of 6100 ppm and a published depth of 38 ppm, 160x apart.
+Its quoted SNR of 252.5 over 40 in-transit points is `depth/sigma*sqrt(nIn)`, which closes on 153 ppm of
+per-point scatter for the 6100 ppm depth -- ordinary for a TESS bright star -- and on 0.96 ppm for the 38 ppm one,
+below the instrument's photon floor. The record contained its own refutation, and the public finding card read
+"the star's brightness dips by about 38 parts per million" about a transit two hundred times deeper. The same
+pattern held for TOI-1431 b (57x), HD 202772 A b (29x), TOI-588.01 (14x).
+
+Two changes, and deliberately no third. `src/detect/depthAdoption.ts` now decides the adoption: a per-sector fit
+is accepted only when it agrees with the box depth within `DEPTH_ADOPTION_MAX_FACTOR` (5x, symmetric), and
+otherwise the box depth -- the number the detection was gated on and the SNR computed from -- is kept, with the
+refusal and its factor logged to the event stream. An estimator that disagrees by two orders of magnitude is not
+refining a measurement, it is measuring something else (a drifting ephemeris across sectors, a diluting blend, a
+fit onto noise), and the conservative failure mode is the depth whose detectability was actually proved. The
+record keeps BOTH estimators (`blsBoxDepthFrac`, `perSectorDepthFrac`, `depthSource`), and the only writer of a
+revised depth is `applyDepthDecision`, which updates both representations together -- so the pair cannot drift
+again and a reader can still see what was refused. The critic gained `depth-vs-significance-consistency (informational, non-gating)`, which
+inverts the SNR formula and states the disagreement in ppm -- non-gating by name, so `scienceProjection()` drops
+it and no already-anchored science re-prices. What this round did NOT do is re-gate anything on depth: verdict
+semantics move only with a calibration run, and the honest number of anchors whose published depth this guard
+would have refused is a measurement still to be made.
+
+Old records stay exactly as they are, including the inconsistency, because an anchored bundle must remain
+replayable byte-for-byte: deriving `depthPpt` at publication would have silently changed historical content
+addresses, which is a worse offence than a disclosed one. The fix is forward-only and the historical count above
+is the disclosure.
+
+Also from the same pass, in the freshness gate that decides whether a report may be quoted: `verified` had meant
+"a checksum was recorded" rather than "a checksum was compared", so three of the four reports the site called
+machine-verified were verified only on the workstation that generated them -- their stamps point at
+`out/scaled/*.jsonl`, which is gitignored and exists on no other checkout. `verified` now requires a recorded
+checksum re-hashed against a file the REPOSITORY CARRIES, `fullyVerified` requires every one of them, and a
+report whose inputs were only partly checkable says which paths could not be re-hashed instead of claiming a
+clean bill. The published count fell from 4 to **1 of 48** -- only `p59-offtarget-subset`, whose three inputs are
+all tracked files, survived the stricter definition -- and the downward correction is the point: a gate that
+over-counts is worse than a smaller number that is true. Raising it legitimately means re-running a generator so
+the stamp comes from the run itself, which is what p41 did: re-measured against the live archive and SPOC files, it
+reproduced its twelve published completeness figures **byte-for-byte** (`reports/p41-longbaseline.md` came back
+unchanged), and its report page is now the second one a stranger can re-hash end to end -- 2 of 48.
+`scripts/p41-longbaseline.ts` gained the JSON artifact and freshness stamp its twelve published completeness
+figures never had, re-measured live rather than transcribed.
+
+**A rehearsal of an alarm must not wear the alarm's shape.** `npm test` printed
+`FAIL gaia-tap missing columns: parallax` and `VERDICT: FAIL -- 1 upstream(s) drifted schema / row-count ... Open an
+issue`, and this audit nearly filed an upstream-drift report against a healthy Gaia endpoint. The lines came from
+the live-probe's own offline positive control: a synthetic drifted row fed to `evaluate()` to prove the exit-code
+wiring still trips (it does, and the probe is what caught the 22-hour freeze). The wiring was right; the log was
+illegible. `evaluate()` now tags every line it prints in self-test mode with `[drill]`, the live path keeps its
+untagged shape -- tagging a real alert would blunt the thing it exists to raise -- and a test pins both halves so
+the rehearsal cannot quietly become indistinguishable from the event again.
+
+Gates: 686 tests pass (+21 over the 665 that shipped the period fix), `typecheck:all` and
+`eslint --max-warnings 0` clean, the new `tests/repo-hygiene.test.ts`
+makes the English-only rule CI-enforced over 562 human-readable files instead of a gitignored scratch script,
+and `tests/depth-adoption.test.ts` + `tests/report-freshness.test.ts` pin both corrections in each direction.
+
+### The feed published a period precision the search never had, and named the weakest candidate as the example (2026-10-18)
+A third-party-perspective audit of the rig's own OUTPUT (not its tests) found two public-claim defects, plus one
+in the audit tooling itself. Both defects were measured before being fixed.
+
+**A grid node is not a measurement.** `src/detect/bls.ts` reports `periodDays = 1/(fMin + k*df)` -- a discrete
+trial-grid node, with no continuous period fit anywhere in the path. Node spacing grows as P^2 (dP = P^2 * df), so
+hundredths of a day are genuine at P=2 d and fiction at P=16 d. Everything published a fixed precision anyway: the
+feed and `src/reporter/narrate.ts` used `toFixed(2)`, and the frontend stats table used `toFixed(4)`. Measured: 3
+of 90 live findings sit at `periodDays` exactly `16.000000`, which is the k=0 node of the 16-day maximum
+`src/seats/seats.ts` scouts to -- a peak ON the boundary is the search running out of range, not a detection at
+that period. One of the three (TOI-588.01) had already been announced on the feed as "P=16.00d", a claim of
++/- 0.005 d where the grid step is about 1.2 d. The detector now records `periodResolutionDays`,
+`searchMaxPeriodDays` and `atSearchBoundary`; `src/core/periodFormat.ts` renders a value against its uncertainty
+(one significant figure on the uncertainty, value matched to it, and a conservative shortest-plausible-baseline
+bound for older records, which can only ever under-claim); every surface now says "at least 16 days (the search
+limit)" where that is what is known. The critic records it as an explicitly NON-gating check, so the fact enters the
+bundle commitment while `scienceProjection()` drops it -- the content address, and every already-anchored science,
+is unchanged and nothing re-prices. No verdict semantics moved: gating on the boundary would need its own
+calibration run, and this is a reporting fix.
+
+**"e.g." implies representative, so name the strongest.** The blind tier chose its example as the NEWEST candidate
+in the window. The newest row is not the best-supported one: in practice it could be a candidate the rig's own
+targeted re-injection recovered 0 out of 8 times, while a 7/8 candidate in the same batch went unmentioned -- and
+the recovery figure was never in the post at all. The example is now chosen by strength of evidence and published
+with its recovery count, so the reader who follows the named target sees the number the rig itself saw.
+
+**An audit that greps a log is unsound when the log contains the audited content.** The new
+`scripts/xpost-health.ts` reads job LOGS rather than run conclusions, because a run can be completed/success while
+posting nothing and completed/failure because the honesty guard refused text. Its first output was a false alarm it
+had to be fixed for: it reported "DRY RUN in production -- credentials missing" for a run that had in fact posted,
+because the summary it pushed contained the words "prints DRY RUN" and the workflow echoes post bodies into the
+log. Status signals are now anchored to the emitting tool's own prefix, and a DRY RUN that contradicts a confirmed
+post is treated as content. The same pass corrected a backlog rule pointed the wrong way: `build-note backlog: N`
+counts subjects in the window INCLUDING ones the feed already announced, so a non-zero N is not by itself a stall --
+the sound test is the residual against the already-announced count. Both directions are pinned by fixtures, along
+with a healthy-window case, so the tool cannot earn a clean verdict by never reporting anything.
+
+**Which tiers POSTED is not which tiers were ATTEMPTED.** Nothing in the log distinguished "this tier had nothing
+honest to report" from "this tier was never run" -- the same blind spot behind the 22-hour survey freeze recorded in
+HANDOFF. `x-post.yml` now echoes a per-tier manifest on every run, and `verify-xpost-shell.sh` extracts the real run
+block and asserts the manifest appears and names all five tiers.
+
+Live while writing this: `surveyPass` advanced 50 -> 51, so the rig is not frozen; three separate runs posted two
+items in one run.
+
+### The project's one hard external rule had no gate, and the report library's machine-verifiable coverage was measured (2026-10-18)
+The second pass of the same audit loop looked at the repository rather than at the feed, at two questions a stranger
+could ask about it.
+
+**"Everything published is English" was a preference, not a check.** It was policed only by a scratch script under
+`out/`, which is `.gitignored`: CI never ran it and a fresh clone could not reproduce it. The gap is not theoretical.
+While writing the HANDOFF pitfall recording this audit, two Chinese characters went into `HANDOFF.md` and were caught
+only by re-reading the diff. `tests/repo-hygiene.test.ts` now walks the working tree (skipping generated and
+unpublished directories), scans 562 human-readable files for CJK/kana/Hangul/fullwidth forms and for PEM private-key
+headers, asserts both sets are empty, and includes a self-check that the detectors FIRE -- a scanner whose regex never
+matches would otherwise report green forever. On its first run the gate scanned its own test fixture and flagged it as
+committed key material; correct behaviour for a scanner, so the fixture was changed rather than the file exempted, since
+an exclusion list is exactly the hole a secret scanner needs to grow.
+
+**Report artifacts: measured, then stated.** The site publishes 48 reports. All 48 have a served HTML page and an
+`index.json` entry, and no page is orphaned. 47 machine-readable JSON artifacts exist; 45 pair with their prose by
+slug, and two of the three remaining mismatches are deliberate and documented -- `p33-catalog.json` is the per-star
+recovery catalog downstream scripts re-fit from (`p34`, `p35`, `p37`, `p38` read it by that name) and
+`p39-candidates.json` is the candidate list, so both are named for their role, not for their page. One is not:
+`reports/p41-longbaseline.md` publishes twelve completeness figures and its generator (`scripts/p41-longbaseline.ts`)
+writes only prose, so that page is the one report whose numbers cannot be machine-checked at all. The honest reading
+of the freshness gate is the same shape: of 48 published reports, 6 carry a provenance stamp and only 4 are
+re-hashed against their inputs, so 44 pages carry the amber "provenance not machine-verifiable" note. That note is
+accurate and already on the pages, so this is a disclosed limitation, not a hidden one -- but closing it means
+RE-RUNNING the generators under stamping. A stamp written after the fact records when it was typed, not what the run
+read, which is the one thing the gate exists to prove; retroactive stamping would be fabrication dressed as
+provenance and is explicitly rejected as a way to raise the ratio.
+
 ### devlog/ archives what was pushed to the feed, and the un-rationing proved itself live (2026-10-18)
 Three long-form operator summaries are now archived in `devlog/`, each composed by `scripts/devlog-archive.ts`
 from the SAME BYTES handed to the dispatcher rather than re-typed, each carrying its dispatch evidence: the HTTP

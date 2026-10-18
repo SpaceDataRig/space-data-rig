@@ -380,6 +380,61 @@ the Actions web page when the anonymous API is rate-limited.
   ceiling, both cursors and the backlog count were echoed, and the script reached its summary line.
   After deploying, still read the NEXT scheduled run's job log: the cursors are logged on every run
   precisely so they can be verified from a run where some tier never fires.
+- Any fixed-decimal render of a measured quantity is a claim about its precision, so the number must be
+  rendered from the resolution the METHOD had, not from a format string. The BLS in `src/detect/bls.ts`
+  returns `P = 1/(fMin + k*df)`: a node of a discrete trial grid with no continuous fit anywhere in the
+  path, and node spacing grows as `dP = P^2 * df`. `toFixed(2)` therefore meant hundredths of a day were
+  honest at P=2 d and fiction at P=16 d, where one step is ~1.2 d -- and the feed had already published
+  "P=16.00d" for exactly that case. Two rules follow. (1) Carry the resolution with the value at the
+  point of measurement (`periodResolutionDays`) and render through one place, `src/core/periodFormat.ts`
+  (uncertainty to one significant figure, value matched to it, PDG convention); when a record predates
+  the field, fall back to the resolution the SHORTEST plausible baseline would have given, so the
+  fallback can only ever under-claim. (2) The `k=0` node IS the long-period boundary of the search, so
+  a peak there is the search running out of range, not a measurement -- keep the boundary flag
+  (`atSearchBoundary`) and say "at least N days (the search limit)". Record such a fact as an
+  INFORMATIONAL NON-GATING check: `scienceProjection()` drops checks named `/non-gating|post-hoc/i`, so
+  the bundle keeps its commitment, the content address and every already-anchored science are unchanged,
+  and no verdict semantics move without a calibration run.
+- When a pipeline refines a measurement, EVERY number derived from the old one has to move with it -- or the
+  refinement must be refused. Two traps of the same kind fired together in src/cf/workflow.ts, and the record
+  itself proved it: (1) the per-sector depth fit assigned `candidate.depthFrac` and left `depthPpt` holding the
+  box depth, although the type documents them as the same quantity in different units, so 84 of 90 published
+  records carried a self-contradiction and the anchored bundle inherited it; (2) `snr` is `depth/sigma*sqrt(nIn)`,
+  computed from the BOX depth, so after the replacement the quoted significance described a depth the record no
+  longer showed. KELT-24 b published 38 ppm beside an SNR of 252.5/40 points, which needs 0.96 ppm of per-point
+  scatter -- under TESS's photon floor -- while 6100 ppm (the surviving box depth) needs a normal 153 ppm. Rules
+  that generalise: never store a value in two units and update one of them (make a single writer own the pair);
+  when a second estimator replaces the first, keep both and label which one is published; and sanity-bound the
+  adoption -- an estimate that disagrees with the measurement it is refining by more than a stated factor is
+  measuring something else, so refuse it and keep the value the verdict was gated on. Decide this in a pure
+  module (src/detect/depthAdoption.ts) the tests can drive, not inline in a Durable-Object workflow that Node
+  cannot load. Fix FORWARD only: historical anchored bundles keep their inconsistency, because re-deriving a
+  published field would change content addresses that are already committed, and a disclosed stale record beats
+  a silently re-priced one.
+- A log-grep auditor is unsound once the log contains the audited content, and a job log does. The first
+  `scripts/xpost-health.ts` reported "DRY RUN in production -- credentials missing" for a run that had in
+  fact posted, because the summary it pushed contained the words "prints DRY RUN" and the workflow echoes
+  whole post bodies into the log. Anchor every status signal to the emitting tool's own prefix
+  (`^x:post: OK posted`, `^tier manifest:`), after stripping the timestamp, and treat a failure-looking signal
+  that contradicts positive evidence from the same run as content, not status -- then pin BOTH directions
+  with fixtures, or the next "tidy" will unanchor it again. The corollary for the data model: counts that
+  include already-handled work are not stalls. `build-note backlog: N` counts subjects in the window
+  including ones the feed already announced, so the sound test is the RESIDUAL against
+  `alreadyReported`, not `N > 0`.
+- The same trap in a checksum gate: `verified` in scripts/report-freshness.ts was computed from whether a sha256
+  had been RECORDED, while the published definition it printed said the gate "re-hashed" it -- so three of the
+  four reports the site called machine-verified were checkable only on the workstation that generated them,
+  because their stamps hash `out/scaled/*.jsonl`, a gitignored path present on no other checkout. A gate must
+  measure its own act, not the presence of a promise to perform it: require an actual comparison against bytes
+  that exist (`rehashed`), require that the bytes are ones a stranger can obtain (`reproducible`, via
+  `gitTrackedPaths()`), and expose the shortfall (`unverifiableInputs`, `untrackedInputs`) instead of rounding a
+  partial check up to a clean one. Expect the honest count to FALL when you write this correctly; that fall is
+  the finding.
+- Which tiers POSTED is not which tiers were ATTEMPTED, and a log that records only the former cannot tell
+  "nothing honest to report" from "the tier never ran" -- the same blind spot that let a 22-hour survey
+  freeze pass green CI. Emit an explicit per-tier manifest on EVERY run (`tier manifest: ledger [...] blind
+  [...] ...`, `not-attempted` when the file is absent) and assert its presence and its full tier list in
+  `scripts/verify-xpost-shell.sh`, so absence of evidence becomes evidence that can be tested for.
 - The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
   Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
   runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions

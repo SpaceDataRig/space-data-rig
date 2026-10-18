@@ -38,6 +38,13 @@ export interface BLSResult {
    * measurement of that period -- it is the search running out of range -- so it must be reported as a limit.
    */
   atSearchBoundary: boolean;
+  /**
+   * The out-of-box MAD scatter the SNR was divided by, as a flux fraction. `snr = depth/sigma*sqrt(nIn)`, so
+   * without this the quoted SNR cannot be checked against a quoted depth -- which is how a record could publish
+   * a 38 ppm depth beside an SNR that only a 6100 ppm depth produces on the same noise (see the guard in
+   * src/detect/depthAdoption.ts).
+   */
+  noiseSigmaFrac: number;
 }
 
 const DEFAULTS: Required<BLSOptions> = {
@@ -274,6 +281,7 @@ export function bls(lc: LightCurve, opts: BLSOptions = {}): BLSResult {
     // dP = |dP/df| * df = P^2 * df. This is the resolution the grid actually offered at the adopted period.
     periodResolutionDays: P * P * df,
     atSearchBoundary: bestAtBoundary,
+    noiseSigmaFrac: sigma,
   };
 }
 
@@ -285,9 +293,14 @@ export function toCandidate(lc: LightCurve, r: BLSResult): TransitCandidate {
     durationHours: r.durationDays * 24,
     depthPpt: r.depth * 1000,
     depthFrac: r.depth,
+    // The scout's own measurement, labelled as such: the record is allowed to publish a refined depth later, and
+    // must never lose the number the detection was actually gated on (src/detect/depthAdoption.ts).
+    depthSource: "bls-box",
+    blsBoxDepthFrac: r.depth,
     snr: r.snr,
     periodResolutionDays: r.periodResolutionDays,
     atSearchBoundary: r.atSearchBoundary,
+    noiseSigmaFrac: r.noiseSigmaFrac,
     searchMaxPeriodDays: r.searchMaxPeriodDays,
     power: r.power,
     nPointsInTransit: r.nInTransit,

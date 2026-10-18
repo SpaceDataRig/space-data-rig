@@ -49,6 +49,13 @@ export interface InputState {
   path: string;
   recorded: string | null;
   current: string | null;
+  /**
+   * Is this path carried by the repository, so that ANY checkout can produce the same bytes?
+   * `null` means the caller had no git information (offline unit tests). `false` means the file exists on
+   * whoever ran the report but is gitignored -- `out/scaled/centroid.jsonl` is the real case -- so its
+   * checksum can be re-hashed on exactly one machine in the world and on no fresh clone at all.
+   */
+  tracked?: boolean | null;
 }
 
 export type HashFn = (path: string) => string | null;
@@ -109,6 +116,22 @@ export function gitLastCommitIso(path: string): string | null {
   }
 }
 
+/**
+ * The set of paths the repository carries, so a caller can tell "this input matches my working tree" apart
+ * from "this input could be re-hashed by anyone". Returns null on failure (no git, not a repo) rather than an
+ * empty set: an unknown answer must not disqualify every report, which would silently read as "nothing is
+ * verifiable anywhere".
+ */
+export function gitTrackedPaths(): Set<string> | null {
+  try {
+    const out = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    const set = new Set(out.split("\0").filter(Boolean));
+    return set.size ? set : null;
+  } catch {
+    return null;
+  }
+}
+
 function fileMtimeMs(path: string): number | null {
   try {
     return statSync(path).mtimeMs;
@@ -125,22 +148,47 @@ function fileMtimeMs(path: string): number | null {
  * rewritten since, exactly the "centroid.jsonl re-run but P84 not re-run" case. An input that is simply
  * GONE (gitignored checkpoint cleaned up) is NOT treated as stale: it cannot be verified, so it is noted
  * as a soft reason and left to the git-provenance fallback.
+ *
+ * The counts are the point of this rewrite (audit b2, 2026-10-18). `rehashed` is how many recorded
+ * checksums were actually compared against bytes that exist NOW; `missing` is how many could not be, because
+ * the file is absent. A stamp over a gitignored path (`out/scaled/*.jsonl` is the real case) records a hash
+ * that only exists on the machine that ran the report, so on a fresh clone NOTHING can be re-hashed -- and a
+ * gate that counts "a hash was recorded" as "a hash was checked" reports a report as machine-verified on a
+ * checkout where it re-hashed nothing. That is the difference between verifying and asserting.
+ *
+ * `reproducible` narrows `rehashed` further: a checksum re-hashed here over a path that no other checkout has
+ * is still a private fact about one workstation, not a public verification. Only a tracked path that exists,
+ * matches, and would match for anyone counts. `tracked === null` (the caller had no git information) is not
+ * held against the input, because absence of git data is not evidence of being gitignored.
  */
-export function compareInputs(states: InputState[]): { hardStale: boolean; reasons: string[] } {
+export function compareInputs(states: InputState[]): { hardStale: boolean; reasons: string[]; rehashed: number; missing: number; reproducible: number; untracked: number } {
   const reasons: string[] = [];
   let hardStale = false;
+  let rehashed = 0;
+  let missing = 0;
+  let reproducible = 0;
+  let untracked = 0;
   for (const s of states) {
     if (!s.recorded) continue; // nothing was recorded for this input at generation time
     if (s.current === null) {
+      missing++;
       reasons.push(`input ${s.path} is not present to re-verify`);
       continue;
     }
     if (s.current !== s.recorded) {
       hardStale = true;
       reasons.push(`input ${s.path} changed since this report was generated (sha256 differs)`);
+      continue;
     }
+    rehashed++; // present, and its bytes still match what the run recorded
+    if (s.tracked === false) {
+      untracked++;
+      reasons.push(`input ${s.path} matches but is not tracked in the repository, so only the machine that ran this report can re-hash it`);
+      continue;
+    }
+    reproducible++;
   }
-  return { hardStale, reasons };
+  return { hardStale, reasons, rehashed, missing, reproducible, untracked };
 }
 
 /**
@@ -167,8 +215,28 @@ export interface FreshnessVerdict {
    * false comfort one level up -- the site read "6 stamped" as "6 checked" when only the ones carrying real
    * checksums had been. `verified` is the number that may be quoted as machine-checked; `stamped` is kept
    * unchanged so existing consumers and tests are not silently reinterpreted.
+   *
+   * WHY IT IS NOT THE SAME AS "HAS A CHECKSUM" either (audit b2, 2026-10-18). The first version computed
+   * `verified` from the RECORDED checksum's existence, so a stamp over a gitignored input counted as
+   * machine-verified on a checkout where the file does not exist and nothing could be re-hashed. `verified`
+   * now requires `rehashed > 0`: a real byte comparison actually happened. `unverifiableInputs` keeps the
+   * rest visible, so a report whose inputs were only partly checkable can never read as wholly checked.
+   *
+   * WHAT `verified` MEANS IN PRACTICE (audit b2, same day, one layer deeper). A re-hash that only the
+   * generating machine can perform is not a public verification, so `verified` counts only inputs that are
+   * TRACKED in the repository as well as present and matching. p86 supplies the git answer; when a caller
+   * supplies none (unit tests, no git), tracked-ness is unknown rather than false and nothing is disqualified.
+   * `rehashed` stays the raw count so the two can never be quietly merged again.
    */
   verified: boolean;
+  /** Recorded checksums the gate compared against bytes present now and found unchanged. */
+  rehashed: number;
+  /** Of those, the ones a stranger could reproduce: tracked in git, present, and matching. */
+  reproducible: number;
+  /** Recorded inputs that exist on no checkout here, so their checksums could not be compared at all. */
+  unverifiableInputs: number;
+  /** Recorded inputs that matched here but are gitignored, so only their author's machine can re-hash them. */
+  untrackedInputs: number;
   fresh: boolean; // !stale
   stale: boolean;
   reasons: string[];
@@ -193,6 +261,7 @@ export function evaluateAgainst(
     hash?: HashFn;
     mtime?: MtimeFn;
     toleranceMs?: number;
+    tracked?: (path: string) => boolean | null;
   },
 ): FreshnessVerdict {
   const hash = opts.hash ?? sha256File;
@@ -200,7 +269,12 @@ export function evaluateAgainst(
   const stamped = Boolean(stamp && stamp.generatedAt);
 
   if (stamp && stamp.inputs && stamp.inputs.length) {
-    const states: InputState[] = stamp.inputs.map((i) => ({ path: i.path, recorded: i.sha256, current: i.sha256 ? hash(i.path) : null }));
+    const states: InputState[] = stamp.inputs.map((i) => ({
+      path: i.path,
+      recorded: i.sha256,
+      current: i.sha256 ? hash(i.path) : null,
+      tracked: opts.tracked ? opts.tracked(i.path) : null,
+    }));
     const cmp = compareInputs(states);
     reasons.push(...cmp.reasons);
     const stale = cmp.hardStale; // ONLY a changed recorded input blocks.
@@ -209,19 +283,42 @@ export function evaluateAgainst(
     const anyChecksum = stamp.inputs.some((i) => i.sha256);
     if (!anyChecksum) {
       reasons.push(`report declares ${stamp.inputs.length} input path(s) but records no sha256 for them, so they cannot be re-verified`);
+    } else if (cmp.reproducible === 0) {
+      // The distinction this gate exists for: a recorded checksum is a PROMISE to check, not a check.
+      // Either no checksum could be compared (the files are not here) or every one that matched sits on a
+      // gitignored path, so nobody but the author's workstation could reproduce the comparison. Either way the
+      // report is not machine-verified in the only sense worth publishing.
+      reasons.push(
+        cmp.rehashed === 0
+          ? `none of the ${stamp.inputs.filter((i) => i.sha256).length} recorded input checksum(s) could be re-hashed here, so this report is not machine-verified on this checkout`
+          : `all ${cmp.rehashed} re-hashed input(s) are untracked working files, so this report is machine-verified only on the workstation that generated it`,
+      );
     }
     // Optional soft note: a dependency is newer than the report even though the hashed inputs still match.
-    if (!stale && isProvenanceStale(opts.reportMs, opts.inputNewestMs, opts.toleranceMs)) {
+    if (!stale && isProvenanceStale(opts.reportMs, opts.inputNewestMs, opts.toleranceMs ?? 0)) {
       reasons.push("note: a source this report reads is newer than the report itself (informational, not blocking)");
     }
-    return { stamped, verified: anyChecksum && !stale, fresh: !stale, stale, reasons };
+    return {
+      stamped,
+      verified: cmp.reproducible > 0 && !stale,
+      rehashed: cmp.rehashed,
+      reproducible: cmp.reproducible,
+      unverifiableInputs: cmp.missing,
+      untrackedInputs: cmp.untracked,
+      fresh: !stale,
+      stale,
+      reasons,
+    };
   }
 
   // No recorded input hashes (legacy or network report not yet re-run): never hard-stale, but make the gap
   // visible so it can be prioritised for stamping.
   if (!stamped) reasons.push("report carries no freshness stamp (generatedAt/gitSha/inputs)");
   else reasons.push("report is stamped but records no input checkpoint to re-verify");
-  return { stamped, verified: false, fresh: true, stale: false, reasons };
+  return {
+    stamped, verified: false, rehashed: 0, reproducible: 0, unverifiableInputs: 0, untrackedInputs: 0,
+    fresh: true, stale: false, reasons,
+  };
 }
 
 // ---- I/O helpers used by generators and p86 ----

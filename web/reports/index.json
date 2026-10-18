@@ -1,14 +1,15 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-17T16:26:50.143Z",
-  "builtAtGitSha": "33e8758de15dda0f65c385e74eaa12f0cbbe8cbd",
+  "generatedAt": "2026-10-18T06:20:48.815Z",
+  "builtAtGitSha": "ba8ba67abf80aa2e1bdb94e185a98972c461f1f6",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
-  "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum and found it unchanged. Quote `verified`, not `stamped`, as the machine-checked count -- a report can be stamped and still record nothing checkable.",
+  "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 48,
   "freshness": {
-    "stamped": 6,
-    "verified": 4,
+    "stamped": 7,
+    "verified": 2,
+    "fullyVerified": 2,
     "total": 48,
     "stale": []
   },
@@ -21,7 +22,11 @@
       "summary": "Sample: first 250 TIC-bearing hosts (T<=12, P in [1,13] d) in deterministic catalog order; 204 had usable public TESS-SPOC curves (<=2 sectors stitched), 46 coverage misses. Inject period 3 d; depths [300, 500, 1000, 2000, 4000, 8000]...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p34-cost-model",
@@ -31,7 +36,11 @@
       "summary": "Grounded in reports/p33-catalog.json (33 real TESS-SPOC curves). Re-fit every run; nothing hardcoded.",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p35-pdm-crosscheck",
@@ -41,7 +50,11 @@
       "summary": "Sample: first 40 TIC-bearing hosts (T<=12, P in [1,13] d) in deterministic catalog order (the SAME seeded sample as p33); 33 had usable public TESS-SPOC curves (<=2 sectors stitched), 7 coverage misses. PDM (Stellingwerf 1978,...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p39-instrumental-fp",
@@ -51,7 +64,11 @@
       "summary": "Data: real TGLC sector 1 full-frame curves (token-free public S3). Module: src/detect/instrumentalNull.ts (unit-tested, deterministic, research-only). Raw common-mode template RMS 5387 ppm / peak 104010 ppm; residual after subtraction...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p40-fp-safety",
@@ -61,7 +78,11 @@
       "summary": "Data: real TGLC sector 1 curves, common-mode subtracted first (the intended subtract-then-gate posture). Residual coherent template after subtraction: RMS 44 ppm / peak 268 ppm.",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p41-longbaseline",
@@ -70,8 +91,12 @@
       "reproduce": "npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7",
       "summary": "Sample: first 30 seeded hosts (T<=12, P in [1,13] d); 29 had a public SPOC curve, 25 had >=2 sectors stitched. Identical injection-recovery depth grid on (a) each host's longest single sector and (b) its stitched multi-sector baseline;...",
       "fresh": true,
-      "stamped": false,
-      "verified": false
+      "stamped": true,
+      "verified": true,
+      "rehashed": 7,
+      "reproducible": 7,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p42-fp-scale",
@@ -81,7 +106,11 @@
       "summary": "Data: real TGLC full-frame curves (token-free public S3), subtract-then-gate posture. Module:",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p43-window-alias",
@@ -91,7 +120,11 @@
       "summary": "Data: real TGLC full-frame curves (token-free public S3). Module: src/detect/windowAlias.ts. Positives = a P=3 d / 8000 ppm transit injected onto a real curve and recovered by the A-gate; negatives = the A-gate survivors of the quiet...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p44-diff-imaging",
@@ -101,7 +134,11 @@
       "summary": "Data: real TESS-SPOC target-pixel cubes (token-free public S3), confirmed-planet catalog ephemerides. Module: src/detect/diffImaging.ts. A confirmed planet transits its host, so the difference-image offset (where flux dropped vs where...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p45-fp-probability",
@@ -111,7 +148,11 @@
       "summary": "Data: real Gaia DR3 neighbours of confirmed planets. Module: src/candidate/falsePositiveProbability.ts. Every row here is a REAL planet, so the honest question is how often the blended-EB prior wrongly elevates P(FP).",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p46-coherence",
@@ -121,7 +162,11 @@
       "summary": "Data: real TESS-SPOC multi-sector stitched light curves of confirmed planets. Module: src/detect/multiYearCoherence.ts.",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p47-completeness-grid",
@@ -131,7 +176,11 @@
       "summary": "Target selection function (stated a priori): unique TIC hosts from the confirmed-planet catalog at Tmag<=11, first SPOC light curve with >=200 points among up to 3 sectors containing the coordinate; injection grid...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p48-novelty",
@@ -141,7 +190,11 @@
       "summary": "For each live board candidate we ask a narrow, checkable question: has anyone ALREADY announced a transit signal at or near this position (within 30\"), and does any announcement share our period? A control query against a known TOI...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p49-blind-test",
@@ -151,7 +204,11 @@
       "summary": "A seeded coin planted one synthetic planet (random period/depth from a documented prior, logged in a sealed answer key the detector never saw) on some real TESS-SPOC curves and left the rest null; the production gated detector then ran...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p50-replay",
@@ -161,7 +218,11 @@
       "summary": "We fetched the raw TESS-SPOC FITS bytes for one real target from the public S3 bucket, ran the full detection chain (parse -> canonical data hash -> iterativeBls under the production gate -> recovered candidate), and folded only the...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p51-crowding-stratified",
@@ -171,7 +232,11 @@
       "summary": "A reviewer's correct objection: a synthetic-data pass is not enough for a veto tool; acceptance testing also needs localization on confirmed planets AND performance in crowded fields where blends matter. Our P45 (blended-EB P(FP)) had...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p52-negative-class",
@@ -181,7 +246,11 @@
       "summary": "P51 measured the veto tools on crowded-field POSITIVES (confirmed planets). A reviewer's standard goes further: to accept a veto you must also show it CATCHES real blends, which needs a labelled NEGATIVE class -- real off-target...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p53-psf-diff-imaging",
@@ -191,7 +260,11 @@
       "summary": "Data: real TESS-SPOC target-pixel cubes (token-free public S3), confirmed-planet catalog ephemerides. Modules: src/detect/psfDiffImaging.ts (under test) vs src/detect/diffImaging.ts (naive, shown unsafe in P44). A confirmed planet...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p54-selection-function",
@@ -201,7 +274,11 @@
       "summary": "Module: src/sim/selectionFunction.ts. Inputs: the REAL 2-D completeness map from reports/p47 (period x observed-depth detector efficiency on real TESS-SPOC photometry), composed with a geometric transit probability and a dilution window.",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p56-real-selection",
@@ -211,7 +288,11 @@
       "summary": "Data: NASA Exoplanet Archive stellar radius/mass + Gaia DR3 aperture neighbours (both token-free), combined with the committed P47 completeness grid via src/sim/selectionFunction.ts.",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p57-true-veto",
@@ -221,7 +302,11 @@
       "summary": "Labels come from the PUBLIC ExoFOP TOI table (no token): known planets (KP) = must keep, and false positives / eclipsing binaries (FP/EB) = should veto. Each case's ephemeris drives a real TESS-SPOC target-pixel cube through the PSF...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p58-veto-2x2",
@@ -231,7 +316,11 @@
       "summary": "Same token-free ExoFOP labels as P57 (KP = keep, FP/EB = veto), but with more cases and a transit-phase refinement: the fold is modulo the period, so we sweep one full period and localize at the phase of the strongest real dip. This...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p59-offtarget-subset",
@@ -241,7 +330,11 @@
       "summary": "P57/P58 reported the PSF veto's blend catch-rate over ALL FP/EB labels, and flagged it was a LOWER bound because that class mixes off-target blends (which localization is built to catch) with on-target eclipsing binaries (which it...",
       "fresh": true,
       "stamped": true,
-      "verified": true
+      "verified": true,
+      "rehashed": 3,
+      "reproducible": 3,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p60-joint-vs-single",
@@ -251,7 +344,11 @@
       "summary": "On 20 confirmed planets that have >= 2 usable real TESS-SPOC sectors, both arms run the same production-like detector (BLS + SNR>=7 + period within 5% of catalog truth): the SINGLE arm takes the best independent sector, the JOINT arm...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p61-llm-hypothesis",
@@ -261,7 +358,11 @@
       "summary": "Both classes come from ONE token-free public source (the ExoFOP TOI table): 24 confirmed planets (positives) and 18 FP/EB dispositions (labelled blends). Each menu test is run on real photometry and scored as a full 2x2 via...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p62-phase-aligned-joint",
@@ -271,7 +372,11 @@
       "summary": "P60 found joint == single re-find (6/20 each) and the per-planet rows showed why: most misses were PERIOD MISMATCH on the stitched long baseline (a high-SNR peak at the wrong period from phase drift), not low SNR. This script tests the...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p63-soft-score",
@@ -281,7 +386,11 @@
       "summary": "no new measurement). P57-P59 showed the pixel/dilution tools false-kill known planets, so they are turned into a continuous 0..1 blend-likelihood (src/candidate/softScore.ts) that the critic may use ONLY as a bounded ranking weight --...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p64-fetch-telemetry",
@@ -291,7 +400,11 @@
       "summary": "Over 8 real TOI hosts (<= 4 sectors each), the helper was swept twice. The cold pass made 24 byte requests (17 downloads, ~1062ms each, 7714ms wall). The warm pass reused the same keys and hit cache 24/24 = 100% of requests, finishing...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p65-external-audit",
@@ -301,7 +414,11 @@
       "summary": "This is the community / external audit ENTRY (research mode, NOT on-chain): it runs the independent audit (novelty, Gaia dilution/blend, geometry, our OWN blind re-detection + power rank, a detectability floor) AND the deterministic...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p67-seed-precision",
@@ -311,7 +428,11 @@
       "summary": "P62 localised the joint-search bottleneck to seed acquisition, but seeded the refinement from a NAIVE single-sector BLS peak. The production detector (p33/p49/p50) is iterativeBls -- mask-and-refind top-k signals. This study measures...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p68-discriminator-roc",
@@ -321,7 +442,11 @@
       "summary": "P61 collapsed each vetting tool to a binary at one hard-coded cut. This study sweeps the FULL continuous threshold for every discriminator on the committed P61 per-target metrics (24 known planets + 18 labelled FP/EB blends, run...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p69-rednoise-significance",
@@ -331,7 +456,11 @@
       "summary": "The production gate calibrates against an AR(1) null matched to lag-1 rho. This study masks the transit on real known-planet hosts and compares, on the SAME noise-only residual bump, the AR(1)-model FAP against a model-free...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p70-llm-ablation",
@@ -341,7 +470,11 @@
       "summary": "(1) Structural ablation. The per-test 2x2 and every gate flag come only from runHypothesisTest (real photometry); a model prediction is never an input. We verify this by recomputing each decision after the models run -- identical,...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p71-audit-positive-control",
@@ -351,7 +484,11 @@
       "summary": "P65 capped 0/2 novel external claims at needs-more-data. Is that the intended BLIND guard (a novel signal with no catalog cross-match can never be accepted -- src/critic/review.ts:282-296) or a broken, unsatisfiable gate? This control...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p73-masked-recovery",
@@ -361,7 +498,11 @@
       "summary": "P62/P67 put the joint-search bottleneck on SEED ACQUISITION: a blind fold locks onto a neighbouring planet or a harmonic and re-finds only 4-6/20, while a truth-seeded ORACLE fold reaches 10/20. The external eumemic/exoplanets pipeline...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p74-centroid-consistency",
@@ -371,7 +512,11 @@
       "summary": "P53/P57/P58 proved the SINGLE difference-image centroid veto is not safe to gate (it false-kills real planets). Attribution corrected after the eumemic author (@dysmemic) replied: eumemic's real cross-sector check runs an F-test on the...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p75-inverted-fp",
@@ -381,7 +526,11 @@
       "summary": "P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every catalogued planet...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p76-multisource-novelty",
@@ -391,7 +540,11 @@
       "summary": "AND the token-free ExoFOP-TESS public TOI/CTOI table).",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p77-centroid-ctest",
@@ -401,7 +554,11 @@
       "summary": "P74 mislabelled eumemic's cross-sector centroid check; the author corrected us -- it is an F-test on the mean offset (1\"/axis floor, >=2 sectors) against the target and each star within 2'. src/detect/centroidFtest.ts now reproduces...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p78-blind-multisector",
@@ -411,7 +568,11 @@
       "summary": "Where P49 stitched sectors into one baseline and forced corroboratedSectors=1 (so the 2-sector bar accepted nothing by construction), P78 runs the detector SECTOR BY SECTOR on real TESS-SPOC curves, plants one phase-coherent ephemeris...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p79-benchmark",
@@ -421,7 +582,11 @@
       "summary": "We cannot run those projects' production pipelines, so we re-implement each one's headline statistic (src/detect/benchmark.ts, 8 offline tests) and apply it to numbers our own pipeline measured on real TESS-SPOC photometry. The TPM...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p80-external-validation",
@@ -431,7 +596,11 @@
       "summary": "Closes the structural gap behind the old 0/2: P65 audits an outside claim while running the detector blind on an empty catalog, so it can never self-corroborate. Here we build an INDEPENDENT validation path: the detector never sees the...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p81-triceratops-lite",
@@ -441,7 +610,11 @@
       "summary": "P80 confirmed external (ExoFOP) claims via a BLIND, non-circular per-sector corroboration match, but its residual risks -- blends and period aliasing (P78: 2-sector precision ~47%) -- were only bounded statistically. Here each...",
       "fresh": true,
       "stamped": false,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p82-scaled",
@@ -451,7 +624,11 @@
       "summary": "Same three audit-9 probes, run over a MUCH larger real target pool via one resumable, concurrent, byte-cached engine (out/scaled/*.jsonl checkpoints). Every number is measured on real public TESS-SPOC / Gaia / ExoFOP data.",
       "fresh": true,
       "stamped": true,
-      "verified": true
+      "verified": false,
+      "rehashed": 3,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 3
     },
     {
       "id": "p84-centroid-diagnosis",
@@ -461,7 +638,11 @@
       "summary": "Provenance: this diagnosis is re-derived on every run from the checkpoint's content-addressed sha256 (see meta), so it always matches the current P82 sweep -- here, the corrected host coordinates after the ExoFOP RA-unit fix.",
       "fresh": true,
       "stamped": true,
-      "verified": true
+      "verified": false,
+      "rehashed": 1,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 1
     },
     {
       "id": "p85-contaminant-fit",
@@ -471,7 +652,11 @@
       "summary": "Statistic: src/detect/centroidFtest.ts -- F = n(n-1)|m-s|^2 / RSS, 1\"/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (neighbourCanCauseDip). Source:...",
       "fresh": true,
       "stamped": true,
-      "verified": true
+      "verified": false,
+      "rehashed": 1,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 1
     },
     {
       "id": "p88-independent-corroboration",
@@ -481,7 +666,11 @@
       "summary": "Headline (read first): 0 of 17 hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for 6/17) -- NOT a Gaia-vs-TESS period crossmatch. With 0 period matches the two...",
       "fresh": true,
       "stamped": true,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     },
     {
       "id": "p89-multiepoch-di",
@@ -491,7 +680,11 @@
       "summary": "The PSF double-difference localizer is run for 2 confirmed planets (must keep) and 3 community FP/EB blends (should be caught), each across up to 2 covering sectors. A target is vetoed if ANY epoch places the transit flux more than 2...",
       "fresh": true,
       "stamped": true,
-      "verified": false
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
     }
   ]
 }

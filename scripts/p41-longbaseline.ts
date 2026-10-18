@@ -23,6 +23,7 @@ import { fitsToLightCurve } from "../src/data/mast.ts";
 import { injectTransitInto, periodMatched } from "../src/sim/injectInto.ts";
 import { preprocess } from "../src/detect/detrend.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import type { LightCurve, ArchivePlanet } from "../src/core/types.ts";
 
 function arg(name: string, d: string): string {
@@ -74,6 +75,11 @@ async function main(): Promise<void> {
   const single: Record<number, number> = {}; const multi: Record<number, number> = {};
   depthsPpm.forEach((d) => { single[d] = 0; multi[d] = 0; });
   let usable = 0, multiSector = 0, sectorCountSum = 0;
+  // Per-host rows for the JSON artifact: a reader who wants to re-derive the table (or check that the arms really
+  // share the same hosts) must be able to, without re-downloading anything. reports/p41-longbaseline.md quotes
+  // twelve completeness figures; until this array existed, p41 was the ONLY published report with no machine-
+  // readable counterpart behind its numbers.
+  const rows: { tic: number; name: string; sectors: number; singlePoints: number; stitchedPoints: number | null; recovered: Record<string, { single: boolean; multi: boolean }> }[] = [];
 
   for (const [tic, hp] of hosts) {
     const name = hp[0].hostname ?? `TIC ${tic}`;
@@ -87,10 +93,15 @@ async function main(): Promise<void> {
     sectorCountSum += sectors.length;
     if (sectors.length >= 2 && stitched) multiSector++;
     console.log(`  ${name.padEnd(16)}: ${sectors.length} sectors (single ${longest.points.length} pts, stitched ${stitched ? stitched.points.length + " pts" : "n/a"})`);
+    const recovered: Record<string, { single: boolean; multi: boolean }> = {};
     depthsPpm.forEach((d, di) => {
-      if (detectRecovered(longest, d, seed + di)) single[d]++;
-      if (stitched && detectRecovered(stitched, d, seed + di)) multi[d]++;
+      const s = detectRecovered(longest, d, seed + di);
+      const m = stitched ? detectRecovered(stitched, d, seed + di) : false;
+      if (s) single[d]++;
+      if (stitched && m) multi[d]++;
+      recovered[String(d)] = { single: s, multi: m };
     });
+    rows.push({ tic, name, sectors: sectors.length, singlePoints: longest.points.length, stitchedPoints: stitched ? stitched.points.length : null, recovered });
   }
 
   if (!usable) { console.log("\nNo usable hosts; VERDICT: NO-USEFUL-DATA"); return; }
@@ -120,7 +131,28 @@ async function main(): Promise<void> {
   L.push("claimed or deployed. Longer baselines (more sectors / full-frame surveys) are the honest lever against");
   L.push("the single-sector completeness ceiling; this quantifies its price on real data.");
   writeFileSync("reports/p41-longbaseline.md", L.join("\n"));
-  console.log(`\n[p41] wrote reports/p41-longbaseline.md`);
+  // The machine-readable half of the same run, stamped against the tracked source the detector came from, so
+  // p86 can RE-HASH it on any checkout (every input here is a committed file, not a gitignored checkpoint).
+  const completeness: Record<string, { single: number; multi: number; usable: number }> = {};
+  for (const d of depthsPpm) completeness[String(d)] = { single: single[d]!, multi: multi[d]!, usable };
+  writeFileSync(
+    "reports/p41-longbaseline.json",
+    JSON.stringify({
+      meta: {
+        stars: wantStars, maxSectors, injPeriod, depthsPpm, seed, matchTolPct: matchTol, minPeriodDays: minPeriod, maxPeriodDays: maxPeriod,
+        hostsSampled: hosts.length, usableHosts: usable, multiSectorHosts: multiSector,
+        meanSectorsPerHost: +(sectorCountSum / usable).toFixed(3),
+        generatedBy: "scripts/p41-longbaseline.ts",
+        ...buildStamp([
+          "scripts/p41-longbaseline.ts", "src/detect/bls.ts", "src/detect/detrend.ts",
+          "src/sim/injectInto.ts", "src/data/mastS3.ts", "src/data/mast.ts", "src/candidate/falsePositive.ts",
+        ]),
+      },
+      completeness,
+      hosts: rows,
+    }, null, 2) + "\n",
+  );
+  console.log(`\n[p41] wrote reports/p41-longbaseline.md and reports/p41-longbaseline.json`);
   console.log("\nVERDICT: P41-RAN");
 }
 

@@ -1,0 +1,68 @@
+{
+  "schema": "sdr-claims/1",
+  "note": "Input for npm run p91:claim-provenance. Each row is ONE public claim as published, plus the identifiers we could locate for it, plus the tier this rig EXPECTS its own rules to produce. The expectations are checked by tests/claim-provenance.test.ts against the pure rule layer offline, and re-checked against live resolvers by the script, so a rule that quietly changed direction is caught rather than admired.",
+  "claims": [
+    {
+      "id": "polymarket-jwst-void-2026-10-17",
+      "kind": "real-claim-under-review",
+      "label": "The post the operator asked about, quoted verbatim from the platform page",
+      "text": "JUST IN: NASA's James Webb Space Telescope detects a mysterious infrared light signal emanating from a seemingly empty void in space, leaving scientists puzzled.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "postedPrecisionNote": "The platform renders '2:54 PM / Oct 17, 2026' without a timezone. Day-level precision is all this study claims; lag is reported in whole days.",
+      "asserted": { "mission": "NASA's James Webb Space Telescope", "agency": "NASA" },
+      "citedIds": [],
+      "locatedIds": ["10.3847/1538-4357/ae9a94", "2610.12553"],
+      "coord": { "raDeg": 53.1625, "decDeg": -27.7914, "source": "operator-annotation", "note": "Hubble Ultra Deep Field centre. The post itself gives no position; this is supplied by the reviewer from the located paper's field, and is labelled as such wherever it is used." },
+      "expect": { "subject": "MATCH", "recency": "INFLATED", "attribution": "NO-CITATION", "corroboration": "NOT-IN-OUR-BAND" },
+      "expectNote": "MATCH because every mission token the post asserts (jwst/webb) appears in the located records and the phenomenon classes line/emission and single/unknown both recur in their abstracts. INFLATED because 'JUST IN' sits 26 days behind the earliest resolvable public date (the arXiv v1 posting of 2026-10-08; the journal's own registered date is 2026-09-22, so either way the lag is far past the 7-day allowance). NO-CITATION because the post links nothing. NOT-IN-OUR-BAND because the primary record states the line at 1.60 micron, outside TESS 0.6-1.0 micron -- the number comes from the record's text, not from anyone's memory of the instrument."
+    },
+    {
+      "id": "control-posted-on-publication-day",
+      "kind": "control-positive",
+      "label": "Same facts, honestly timed: posted the day the record was published, and citing it",
+      "text": "NASA's James Webb Space Telescope reports a single emission line from a region with no identified source. Our review of the published paper.",
+      "postedUtc": "2026-09-22T12:00:00Z",
+      "asserted": { "mission": "James Webb Space Telescope" },
+      "citedIds": ["10.3847/1538-4357/ae9a94"],
+      "locatedIds": [],
+      "expect": { "subject": "MATCH", "recency": "NO-TIMING-CLAIM", "attribution": "CITES-PRIMARY" },
+      "expectNote": "The guard against a verifier that only ever finds fault: a same-day, source-citing post must come back CITES-PRIMARY with no timing flag at all, and its subject must be allowed to AGREE -- the post's words (single, emission, line) are the paper's own words. When this fixture was drafted on title-only assumptions it declared PARTIAL; the live resolver turned out to expose the journal abstract too, and the grid follows the data, not the draft."
+    },
+    {
+      "id": "control-wrong-platform",
+      "kind": "control-negative",
+      "label": "A post that names the wrong observatory for the record it points at",
+      "text": "JUST IN: the Chandra X-ray Observatory detects an emission line where no source is known.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "asserted": { "mission": "Chandra X-ray Observatory" },
+      "citedIds": ["10.3847/1538-4357/ae9a94"],
+      "locatedIds": [],
+      "expect": { "subject": "MISMATCH", "attribution": "CITES-PRIMARY" },
+      "expectNote": "Attribution can be perfect and the subject still wrong: the cited DOI resolves, but its record names no X-ray observatory, so the asserted platform is absent from it. A check that only asked 'does the link resolve' would pass this. Hubble was the first draft of this control and was dropped once the real record was read: this paper's own abstract cites its deepest HST imaging, so a Hubble claim would have matched for a reason the control must not lean on."
+    },
+    {
+      "id": "control-dead-identifier",
+      "kind": "control-negative",
+      "label": "A post citing an identifier that does not exist at the registering body",
+      "text": "JUST IN: NASA's James Webb Space Telescope detects a mysterious signal. See doi:10.0000/this-identifier-does-not-exist",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "asserted": { "mission": "NASA's James Webb Space Telescope" },
+      "citedIds": ["10.0000/this-identifier-does-not-exist"],
+      "locatedIds": [],
+      "expect": { "subject": "UNRESOLVED", "attribution": "CITATION-DOES-NOT-RESOLVE", "recency": "UNVERIFIABLE" },
+      "expectNote": "The distinction that matters: 'the identifier does not exist' is evidence, while 'the request failed' is not. A transport error must never be reported as a broken citation, and a broken citation must never be reported as 'no such result exists in the literature'."
+    },
+    {
+      "id": "control-no-timing-word",
+      "kind": "control-negative",
+      "label": "A retrospective post: old result, no freshness wording, lag irrelevant",
+      "text": "Looking back at NASA's James Webb Space Telescope result on an unidentified emission line, two years after the observations.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "asserted": { "mission": "NASA's James Webb Space Telescope" },
+      "citedIds": ["2610.12553"],
+      "locatedIds": [],
+      "expect": { "recency": "NO-TIMING-CLAIM", "attribution": "CITES-PRIMARY", "subject": "MATCH" },
+      "expectNote": "A large lag is only a defect when the post claims freshness. Without a timing term the recency axis must stay silent rather than file a complaint about a date nobody asserted. Subject is MATCH -- the post speaks the record's own words (emission, line, unidentified) -- which is the point: this row isolates the timing axis, and the earlier draft's silence on subject was a title-only guess the records do not support."
+    }
+  ]
+}

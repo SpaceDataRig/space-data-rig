@@ -1,0 +1,415 @@
+{
+  "schema": "sdr-claim-provenance/1",
+  "mode": "live",
+  "axes": {
+    "subject": "does the resolved primary say the thing the post says it says",
+    "recency": "is the post's freshness wording compatible with the primary's own first-public date",
+    "attribution": "does the post point at a persistent identifier, and does that identifier exist",
+    "band": "does the claimed wavelength fall inside our instrument's band",
+    "corroboration": "could this rig in principle bear on the phenomenon (band AND coverage, never either alone)"
+  },
+  "rules": {
+    "recencyInflationDays": 7,
+    "micronHalfWindowMicron": 0.2,
+    "tessBandMicron": [
+      0.6,
+      1
+    ],
+    "timingTerms": [
+      "just in",
+      "breaking",
+      "today",
+      "yesterday",
+      "newly",
+      "this week",
+      "live now",
+      "exclusive"
+    ]
+  },
+  "reviews": [
+    {
+      "id": "polymarket-jwst-void-2026-10-17",
+      "kind": "real-claim-under-review",
+      "label": "The post the operator asked about, quoted verbatim from the platform page",
+      "postText": "JUST IN: NASA's James Webb Space Telescope detects a mysterious infrared light signal emanating from a seemingly empty void in space, leaving scientists puzzled.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "postedPrecisionNote": "The platform renders '2:54 PM / Oct 17, 2026' without a timezone. Day-level precision is all this study claims; lag is reported in whole days.",
+      "citedIds": [],
+      "locatedIds": [
+        "10.3847/1538-4357/ae9a94",
+        "2610.12553"
+      ],
+      "primaries": [
+        {
+          "kind": "doi",
+          "id": "10.3847/1538-4357/ae9a94",
+          "via": "located",
+          "resolved": true,
+          "reason": null,
+          "title": "A Single Line Emitter Identified in an Unbiased Search with JWST/NIRSpec: Multiobject Coronagraphy for Slitless Spectroscopy",
+          "publishedUtc": "2026-09-22T00:00:00Z",
+          "venue": "The Astrophysical Journal"
+        },
+        {
+          "kind": "arxiv",
+          "id": "2610.12553",
+          "via": "located",
+          "resolved": true,
+          "reason": null,
+          "title": "A Single Line-Emitter Identified in an Unbiased Search with JWST/NIRSpec: Multi-Object Coronagraphy for Slitless Spectroscopy",
+          "publishedUtc": "2026-10-08T18:00:01Z",
+          "venue": "arXiv"
+        }
+      ],
+      "coverage": {
+        "raDeg": 53.1625,
+        "decDeg": -27.7914,
+        "coordSource": "operator-annotation",
+        "note": "Hubble Ultra Deep Field centre. The post itself gives no position; this is supplied by the reviewer from the located paper's field, and is labelled as such wherever it is used.",
+        "sectors": [
+          4,
+          31,
+          105,
+          106,
+          107,
+          108
+        ]
+      },
+      "bandSource": "the located primary record states it; the post gives only a colour word",
+      "verdict": {
+        "id": "polymarket-jwst-void-2026-10-17",
+        "subject": {
+          "tier": "MATCH",
+          "basis": "every asserted platform [nasasjameswebbspacetelescope] appears in the primary record, and 1 phenomenon class(es) agree (single)"
+        },
+        "recency": {
+          "tier": "INFLATED",
+          "basis": "\"just in\" against a lag of 26 day(s) past the 7-day allowance"
+        },
+        "attribution": {
+          "tier": "NO-CITATION",
+          "basis": "the post carries no persistent identifier for the observation it announces"
+        },
+        "band": {
+          "tier": "DISJOINT",
+          "basis": "claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron"
+        },
+        "lagDays": 26,
+        "timingWords": [
+          "just in"
+        ],
+        "corroboration": {
+          "tier": "NOT-IN-OUR-BAND",
+          "basis": "the phenomenon is stated at claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron; a broadband optical photometer cannot detect or refute a line outside its band, even where the sky position is in our survey footprint (sectors: 4,31,105,106,107,108)"
+        },
+        "safeToGate": false,
+        "summary": "subject MATCH | attribution NO-CITATION | timing INFLATED (lag 26 d) | band DISJOINT | our reach NOT-IN-OUR-BAND"
+      },
+      "control": {
+        "expected": {
+          "subject": "MATCH",
+          "recency": "INFLATED",
+          "attribution": "NO-CITATION",
+          "corroboration": "NOT-IN-OUR-BAND"
+        },
+        "passed": true,
+        "failed": []
+      }
+    },
+    {
+      "id": "control-posted-on-publication-day",
+      "kind": "control-positive",
+      "label": "Same facts, honestly timed: posted the day the record was published, and citing it",
+      "postText": "NASA's James Webb Space Telescope reports a single emission line from a region with no identified source. Our review of the published paper.",
+      "postedUtc": "2026-09-22T12:00:00Z",
+      "postedPrecisionNote": null,
+      "citedIds": [
+        "10.3847/1538-4357/ae9a94"
+      ],
+      "locatedIds": [],
+      "primaries": [
+        {
+          "kind": "doi",
+          "id": "10.3847/1538-4357/ae9a94",
+          "via": "cited",
+          "resolved": true,
+          "reason": null,
+          "title": "A Single Line Emitter Identified in an Unbiased Search with JWST/NIRSpec: Multiobject Coronagraphy for Slitless Spectroscopy",
+          "publishedUtc": "2026-09-22T00:00:00Z",
+          "venue": "The Astrophysical Journal"
+        }
+      ],
+      "coverage": {
+        "raDeg": null,
+        "decDeg": null,
+        "coordSource": "none",
+        "sectors": null
+      },
+      "bandSource": "the located primary record states it; the post gives only a colour word",
+      "verdict": {
+        "id": "control-posted-on-publication-day",
+        "subject": {
+          "tier": "MATCH",
+          "basis": "every asserted platform [jameswebbspacetelescope] appears in the primary record, and 2 phenomenon class(es) agree (line, single)"
+        },
+        "recency": {
+          "tier": "NO-TIMING-CLAIM",
+          "basis": "the post makes no freshness claim, so there is no timing statement to test"
+        },
+        "attribution": {
+          "tier": "CITES-PRIMARY",
+          "basis": "at least one cited id resolves to a primary record (10.3847/1538-4357/ae9a94)"
+        },
+        "band": {
+          "tier": "DISJOINT",
+          "basis": "claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron"
+        },
+        "lagDays": null,
+        "timingWords": [],
+        "corroboration": {
+          "tier": "NOT-IN-OUR-BAND",
+          "basis": "the phenomenon is stated at claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron; a broadband optical photometer cannot detect or refute a line outside its band, even where the sky position is in our survey footprint (sectors: not checked)"
+        },
+        "safeToGate": false,
+        "summary": "subject MATCH | attribution CITES-PRIMARY | timing NO-TIMING-CLAIM | band DISJOINT | our reach NOT-IN-OUR-BAND"
+      },
+      "control": {
+        "expected": {
+          "subject": "MATCH",
+          "recency": "NO-TIMING-CLAIM",
+          "attribution": "CITES-PRIMARY"
+        },
+        "passed": true,
+        "failed": []
+      }
+    },
+    {
+      "id": "control-wrong-platform",
+      "kind": "control-negative",
+      "label": "A post that names the wrong observatory for the record it points at",
+      "postText": "JUST IN: the Chandra X-ray Observatory detects an emission line where no source is known.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "postedPrecisionNote": null,
+      "citedIds": [
+        "10.3847/1538-4357/ae9a94"
+      ],
+      "locatedIds": [],
+      "primaries": [
+        {
+          "kind": "doi",
+          "id": "10.3847/1538-4357/ae9a94",
+          "via": "cited",
+          "resolved": true,
+          "reason": null,
+          "title": "A Single Line Emitter Identified in an Unbiased Search with JWST/NIRSpec: Multiobject Coronagraphy for Slitless Spectroscopy",
+          "publishedUtc": "2026-09-22T00:00:00Z",
+          "venue": "The Astrophysical Journal"
+        }
+      ],
+      "coverage": {
+        "raDeg": null,
+        "decDeg": null,
+        "coordSource": "none",
+        "sectors": null
+      },
+      "bandSource": "the located primary record states it; the post gives only a colour word",
+      "verdict": {
+        "id": "control-wrong-platform",
+        "subject": {
+          "tier": "MISMATCH",
+          "basis": "the post asserts platform(s) absent from the primary record: chandraxrayobservatory"
+        },
+        "recency": {
+          "tier": "INFLATED",
+          "basis": "\"just in\" against a lag of 26 day(s) past the 7-day allowance"
+        },
+        "attribution": {
+          "tier": "CITES-PRIMARY",
+          "basis": "at least one cited id resolves to a primary record (10.3847/1538-4357/ae9a94)"
+        },
+        "band": {
+          "tier": "DISJOINT",
+          "basis": "claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron"
+        },
+        "lagDays": 26,
+        "timingWords": [
+          "just in"
+        ],
+        "corroboration": {
+          "tier": "NOT-IN-OUR-BAND",
+          "basis": "the phenomenon is stated at claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron; a broadband optical photometer cannot detect or refute a line outside its band, even where the sky position is in our survey footprint (sectors: not checked)"
+        },
+        "safeToGate": false,
+        "summary": "subject MISMATCH | attribution CITES-PRIMARY | timing INFLATED (lag 26 d) | band DISJOINT | our reach NOT-IN-OUR-BAND"
+      },
+      "control": {
+        "expected": {
+          "subject": "MISMATCH",
+          "attribution": "CITES-PRIMARY"
+        },
+        "passed": true,
+        "failed": []
+      }
+    },
+    {
+      "id": "control-dead-identifier",
+      "kind": "control-negative",
+      "label": "A post citing an identifier that does not exist at the registering body",
+      "postText": "JUST IN: NASA's James Webb Space Telescope detects a mysterious signal. See doi:10.0000/this-identifier-does-not-exist",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "postedPrecisionNote": null,
+      "citedIds": [
+        "10.0000/this-identifier-does-not-exist"
+      ],
+      "locatedIds": [],
+      "primaries": [
+        {
+          "kind": "doi",
+          "id": "10.0000/this-identifier-does-not-exist",
+          "via": "cited",
+          "resolved": false,
+          "reason": "not-found",
+          "title": null,
+          "publishedUtc": null,
+          "venue": null
+        }
+      ],
+      "coverage": {
+        "raDeg": null,
+        "decDeg": null,
+        "coordSource": "none",
+        "sectors": null
+      },
+      "bandSource": "no wavelength in the post or in any resolved record",
+      "verdict": {
+        "id": "control-dead-identifier",
+        "subject": {
+          "tier": "UNRESOLVED",
+          "basis": "no primary record resolved, so there is nothing to compare the post's asserted subject against"
+        },
+        "recency": {
+          "tier": "UNVERIFIABLE",
+          "basis": "the post says \"just in\" but no primary record with a date could be resolved, so the lag is unknown"
+        },
+        "attribution": {
+          "tier": "CITATION-DOES-NOT-RESOLVE",
+          "basis": "the cited id(s) do not exist at the registering body (10.0000/this-identifier-does-not-exist)"
+        },
+        "band": {
+          "tier": "UNSTATED",
+          "basis": "no wavelength range is available from the post or the located record, so whether our band could see it is unknown"
+        },
+        "lagDays": null,
+        "timingWords": [
+          "just in"
+        ],
+        "corroboration": {
+          "tier": "COVERAGE-NOT-CHECKED",
+          "basis": "wavelength reach and survey coverage were not both established, so no statement is made"
+        },
+        "safeToGate": false,
+        "summary": "subject UNRESOLVED | attribution CITATION-DOES-NOT-RESOLVE | timing UNVERIFIABLE | band UNSTATED | our reach COVERAGE-NOT-CHECKED"
+      },
+      "control": {
+        "expected": {
+          "subject": "UNRESOLVED",
+          "attribution": "CITATION-DOES-NOT-RESOLVE",
+          "recency": "UNVERIFIABLE"
+        },
+        "passed": true,
+        "failed": []
+      }
+    },
+    {
+      "id": "control-no-timing-word",
+      "kind": "control-negative",
+      "label": "A retrospective post: old result, no freshness wording, lag irrelevant",
+      "postText": "Looking back at NASA's James Webb Space Telescope result on an unidentified emission line, two years after the observations.",
+      "postedUtc": "2026-10-17T14:54:00Z",
+      "postedPrecisionNote": null,
+      "citedIds": [
+        "2610.12553"
+      ],
+      "locatedIds": [],
+      "primaries": [
+        {
+          "kind": "arxiv",
+          "id": "2610.12553",
+          "via": "cited",
+          "resolved": true,
+          "reason": null,
+          "title": "A Single Line-Emitter Identified in an Unbiased Search with JWST/NIRSpec: Multi-Object Coronagraphy for Slitless Spectroscopy",
+          "publishedUtc": "2026-10-08T18:00:01Z",
+          "venue": "arXiv"
+        }
+      ],
+      "coverage": {
+        "raDeg": null,
+        "decDeg": null,
+        "coordSource": "none",
+        "sectors": null
+      },
+      "bandSource": "the located primary record states it; the post gives only a colour word",
+      "verdict": {
+        "id": "control-no-timing-word",
+        "subject": {
+          "tier": "MATCH",
+          "basis": "every asserted platform [nasasjameswebbspacetelescope] appears in the primary record, and 2 phenomenon class(es) agree (line, single)"
+        },
+        "recency": {
+          "tier": "NO-TIMING-CLAIM",
+          "basis": "the post makes no freshness claim, so there is no timing statement to test"
+        },
+        "attribution": {
+          "tier": "CITES-PRIMARY",
+          "basis": "at least one cited id resolves to a primary record (2610.12553)"
+        },
+        "band": {
+          "tier": "DISJOINT",
+          "basis": "claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron"
+        },
+        "lagDays": null,
+        "timingWords": [],
+        "corroboration": {
+          "tier": "NOT-IN-OUR-BAND",
+          "basis": "the phenomenon is stated at claimed 1.4-1.8 micron (stated by the primary record (the post gave no number)) lies entirely outside TESS 0.6-1.0 micron; a broadband optical photometer cannot detect or refute a line outside its band, even where the sky position is in our survey footprint (sectors: not checked)"
+        },
+        "safeToGate": false,
+        "summary": "subject MATCH | attribution CITES-PRIMARY | timing NO-TIMING-CLAIM | band DISJOINT | our reach NOT-IN-OUR-BAND"
+      },
+      "control": {
+        "expected": {
+          "recency": "NO-TIMING-CLAIM",
+          "attribution": "CITES-PRIMARY",
+          "subject": "MATCH"
+        },
+        "passed": true,
+        "failed": []
+      }
+    }
+  ],
+  "controlsSummary": {
+    "rows": 5,
+    "withExpectations": 5,
+    "passed": 5,
+    "failed": []
+  },
+  "stamp": {
+    "generatedAt": "2026-10-18T13:45:33.315Z",
+    "gitSha": "f78241fe3205a21722191938f60744cee24c13ad",
+    "inputs": [
+      {
+        "path": "reports/p91-claims.json",
+        "sha256": "08b8d894fe560a75da6ad4559c7e383d73526dc3fe528ab05928a8b76450484e"
+      },
+      {
+        "path": "src/claims/claimReview.ts",
+        "sha256": "2f02f37fa82895dcd93e7f8736fbe28aae15a8b0e401c4c3bad1e154a27d7694"
+      },
+      {
+        "path": "scripts/p91-claim-provenance.ts",
+        "sha256": "9e63b4f39cbce1c67d6c5aa329da7e4374050ec96e998af37b7472801358e4b9"
+      }
+    ]
+  }
+}

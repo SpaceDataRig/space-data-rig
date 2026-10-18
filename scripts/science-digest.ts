@@ -84,6 +84,15 @@ export interface DigestInput {
   /** Notable commit subjects since the last post (from the workflow's git read). When a window has no science, a
    *  non-empty list lets composeDigest emit a BUILD NOTE (development-progress tier) instead of staying silent. */
   devCommits?: string[];
+  /** Bullet texts the feed has ALREADY announced (x-last-post.reportedSubjects). The dev window overlaps its own
+   *  cursor by a few minutes so a commit landing mid-run is never skipped forever; this set is what makes that
+   *  overlap safe -- an already-announced subject is dropped instead of being posted twice. */
+  alreadyReported?: string[];
+  /** Restrict composition to one tier: "ledger" | "blind" | "milestone" | "science" (those three) | "build-note"
+   *  | "heartbeat". Absent/"" keeps the historical behavior -- the FIRST tier with something to report wins and
+   *  exactly one post comes back. The workflow now asks tier by tier so ONE window can yield SEVERAL posts: the
+   *  one-post-per-window cap was a rationing decision, not an honesty one, and it silently dropped reportable work. */
+  only?: string;
 }
 
 function within(iso: string | undefined, start: number, end: number): boolean {
@@ -225,6 +234,23 @@ function proofBlock(char: Characterization, txUrl: string | null): string {
  * never mentions spend. It links only the live rig and (when a number is cited) research.json; no transaction,
  * since nothing was newly sealed. Disabled unless a threshold is supplied, so the default science path is byte-for-byte unchanged.
  */
+/**
+ * The heartbeat's opening line, kept here (the single place that composes it) for the same reason as
+ * BUILD_NOTE_HEADLINES: scripts/x-last-post.ts must recognise a status post on the feed so the SCIENCE cursor can
+ * skip it. A heartbeat fires only when the science tier found nothing, so letting it advance the science window
+ * would drop anything created during that run.
+ */
+export const HEARTBEAT_HEADLINE = "Space Data Rig status.";
+
+/**
+ * Hard ceiling on bullets in ONE build note -- a safety net, NOT a ration. The workflow batches the commit backlog
+ * into chunks smaller than this (DEV_BATCH) and posts one note per chunk, so nothing is dropped by the slice; if a
+ * caller hands over an unbatched list, this keeps the post inside X's long-form ceiling instead of letting clip()
+ * truncate mid-sentence (which would silently drop the tail). tests/science-digest.test.ts reads the workflow's
+ * DEV_BATCH default and asserts it stays under this number, so the two cannot drift apart.
+ */
+export const DEV_BULLETS_MAX = 40;
+
 function heartbeat(input: DigestInput): string {
   const findings = Array.isArray(input.findings) ? input.findings : [];
   const ledger = Array.isArray(input.ledger) ? input.ledger : [];
@@ -257,7 +283,7 @@ function heartbeat(input: DigestInput): string {
 
   return clip(
     blocks(
-      "Space Data Rig status.",
+      HEARTBEAT_HEADLINE,
       body.join("\n"),
       `Proof:\n${proof.join("\n")}`,
     ),
@@ -315,10 +341,16 @@ function sanitizeSubject(raw: string): string {
 }
 
 /**
- * Return the single most important honest post for the window -- a LONG-FORM Premium summary -- or "" when there
- * is nothing new to report (the workflow then posts NOTHING). Priority: (1) results sealed on-chain, (2) newly
- * flagged UNCONFIRMED blind candidates, (3) a research milestone (research.json landed this window), (4) a BUILD
- * NOTE over notable commits since the last post, (5) the silence heartbeat fallback.
+ * Return the most important honest post for the window -- a LONG-FORM Premium summary -- or "" when the selected
+ * tier has nothing new to report (the workflow then posts NOTHING for that tier). Priority: (1) results sealed
+ * on-chain, (2) newly flagged UNCONFIRMED blind candidates, (3) a research milestone (research.json landed this
+ * window), (4) a BUILD NOTE over notable commits since the last build note, (5) the silence heartbeat fallback.
+ *
+ * With the default `only: ""` the FIRST tier that has something wins, so exactly one post comes back. The workflow
+ * instead calls once per tier and posts every non-empty result: a window that both sealed results and landed five
+ * commits yields two posts, not one. There is deliberately NO cap on how many posts a window may produce -- the old
+ * one-line-per-window rule rationed the feed and dropped reportable work; the only remaining limits are a runaway
+ * guard in the workflow and per-item de-duplication, both of which protect the feed rather than ration it.
  *
  * Tone (the maintainer's standing rules): honesty is carried by PLAIN WORDING and numbers-with-basis, NOT by a
  * per-post "discoveryClaim=false" stamp (removed). The standing characterization block + its research/figure/blind-
@@ -331,6 +363,16 @@ export function composeDigest(input: DigestInput): string {
   const end = Date.parse(input.windowEnd);
   if (Number.isNaN(start) || Number.isNaN(end) || end < start) return "";
 
+  // Tier selector (see DigestInput.only). "" reproduces the historical first-match-wins behavior exactly, so every
+  // existing caller and test is unchanged; a named tier makes the OTHERS compose nothing, which is how one window
+  // now yields several posts instead of one.
+  const only = String(input.only ?? "").trim().toLowerCase();
+  const want = (tier: "ledger" | "blind" | "milestone" | "build-note" | "heartbeat"): boolean => {
+    if (only === "") return true;
+    if (only === "science") return tier === "ledger" || tier === "blind" || tier === "milestone";
+    return only === tier;
+  };
+
   const ledger = Array.isArray(input.ledger) ? input.ledger : [];
   const findings = Array.isArray(input.findings) ? input.findings : [];
   const byId = new Map<string, DigestFinding>();
@@ -340,7 +382,7 @@ export function composeDigest(input: DigestInput): string {
   //     re-validation; otherwise state the honest, origin-neutral count. LEAN by design: no standing
   //     characterization here, and a known-planet re-validation never borrows the real-photometry survey's
   //     provenance (its photons may be seeded stand-ins) -- the Proof block carries just the sealing tx + live rig.
-  const anchored = ledger.filter((e) => e && e.signature && within(e.anchoredAt, start, end));
+  const anchored = want("ledger") ? ledger.filter((e) => e && e.signature && within(e.anchoredAt, start, end)) : [];
   if (anchored.length) {
     const n = anchored.length;
     const plural = n === 1 ? "" : "s";
@@ -398,7 +440,7 @@ export function composeDigest(input: DigestInput): string {
   //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). Only
   //     SURVIVING candidates count: a critic-rejected blind row is noise, not a lead awaiting follow-up, so it must
   //     not inflate the count. LEAN: no characterization, no tx (this path anchors nothing), live rig only.
-  const blind = findings
+  const blind = (want("blind") ? findings : [])
     .filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected" && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   if (blind.length) {
@@ -430,7 +472,7 @@ export function composeDigest(input: DigestInput): string {
   // (3) A research milestone, only when web/research.json actually landed in this window. This is the ONE tier
   //     that carries the standing characterization (completeness span, purity LOWER bound, independent blind test)
   //     and its corresponding proof links -- there the numbers ARE the update. Framed as the operating point it is.
-  const survey = input.researchUpdated ? input.research?.survey : undefined;
+  const survey = want("milestone") && input.researchUpdated ? input.research?.survey : undefined;
   if (survey && survey.stars != null && Number.isFinite(survey.stars)) {
     const char = characterization(input.research, "Our autonomous TESS transit pipeline is characterized on");
     const head = pick(
@@ -445,16 +487,24 @@ export function composeDigest(input: DigestInput): string {
     return clip(blocks(head, note, char.block, proofBlock(char, null)));
   }
 
-  // (4) BUILD NOTE (development-progress tier): no new science this window, but the workflow passed notable commit
-  //     subjects. Plain-English bullets of the work keeping the rig running -- honest, no discovery framing, no
-  //     spend/wallet (sanitizeSubject enforces), linked to the repository + live rig. The workflow collects those
-  //     subjects against a DEV-TIER cursor (the newest build note on the feed, see BUILD_NOTE_HEADLINES), NOT the
-  //     shared last-post cursor -- otherwise every science post advances past unreported commits and starves this
-  //     tier permanently, which is exactly what it did before the cursors were split.
-  const devLines = (Array.isArray(input.devCommits) ? input.devCommits : [])
+  // (4) BUILD NOTE (development-progress tier): the workflow passed notable commit subjects. Plain-English bullets
+  //     of the work keeping the rig running -- honest, no discovery framing, no spend/wallet (sanitizeSubject
+  //     enforces), linked to the repository + live rig. Composed on request (`--only build-note`) ALONGSIDE the
+  //     science tiers rather than only when they are empty: suppressing it behind the science tier is what starved
+  //     it in the first place. The workflow collects those subjects against a DEV-TIER cursor (the newest build note
+  //     on the feed, see BUILD_NOTE_HEADLINES), NOT the science cursor.
+  const reported = new Set(
+    (Array.isArray(input.alreadyReported) ? input.alreadyReported : [])
+      .map((s) => String(s ?? "").replace(/\s+/g, " ").trim())
+      .filter(Boolean),
+  );
+  const devLines = (want("build-note") && Array.isArray(input.devCommits) ? input.devCommits : [])
     .map(sanitizeSubject)
     .filter((x) => x.length > 0)
-    .slice(0, 5);
+    // Drop what the feed already announced. Exact string match is sound here: a bullet IS sanitizeSubject(subject)
+    // verbatim, and x-last-post.reportedSubjects() lifts that same string back off the posted note.
+    .filter((x) => !reported.has(x))
+    .slice(0, DEV_BULLETS_MAX);
   if (devLines.length) {
     const head = pick([...BUILD_NOTE_HEADLINES], `dev:${input.windowStart}:${devLines[0]}`);
     const bullets = devLines.map((x) => `- ${x}`).join("\n");
@@ -467,7 +517,7 @@ export function composeDigest(input: DigestInput): string {
   //     workflow supplies BOTH a silence gap and a threshold, so the default science-only path is unchanged.
   const hb = Number(input.heartbeatAfterMinutes);
   const silent = Number(input.silentMinutes);
-  if (Number.isFinite(hb) && hb > 0 && Number.isFinite(silent) && silent >= hb) {
+  if (want("heartbeat") && Number.isFinite(hb) && hb > 0 && Number.isFinite(silent) && silent >= hb) {
     return heartbeat(input);
   }
   return ""; // nothing new and honest to report this window -> the workflow posts nothing
@@ -552,6 +602,23 @@ async function main(): Promise<void> {
       devCommits = undefined;
     }
   }
+  // Subjects the feed has already announced (written by x-last-post --reported-out). Lets the workflow OVERLAP the
+  // dev window past its cursor -- so a commit landing mid-run is picked up rather than skipped forever -- without
+  // re-posting a bullet that is already on the timeline. Absent/unreadable -> no de-duplication, exactly as before.
+  const reportedFile = arg("already-reported-file", "");
+  let alreadyReported: string[] | undefined;
+  if (reportedFile) {
+    try {
+      alreadyReported = readFileSync(reportedFile, "utf8")
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
+    } catch {
+      alreadyReported = undefined;
+    }
+  }
+  // One tier per invocation so a window can yield several posts; "" keeps the historical first-match-wins behavior.
+  const only = arg("only", "");
 
   const FALLBACK_MS = 40 * 60 * 1000; // ~40m (cadence is 30m), so a slightly-late tick cannot leave a gap
   const endParsed = untilArg ? new Date(untilArg) : new Date();
@@ -559,19 +626,29 @@ async function main(): Promise<void> {
   let startParsed = sinceArg ? new Date(sinceArg) : new Date(windowEnd.getTime() - FALLBACK_MS);
   if (Number.isNaN(startParsed.getTime())) startParsed = new Date(windowEnd.getTime() - FALLBACK_MS);
 
+  // --skip-fetch 1 composes from LOCAL inputs only (git subjects + web/research.json). The build-note tier needs no
+  // survey state, so this keeps it working when the live rig is unreachable and saves a network round trip per batch
+  // when a backlog is split across several notes.
+  const skipRaw = arg("skip-fetch", "").toLowerCase();
+  const skipFetch = skipRaw === "1" || skipRaw === "true";
+
   let findings: DigestFinding[] = [];
   let ledger: DigestLedgerEntry[] = [];
-  try {
-    const s = (await fetchJson(stateUrl)) as { findings?: DigestFinding[] } | null;
-    if (s && Array.isArray(s.findings)) findings = s.findings;
-  } catch (e) {
-    console.error(`science-digest: state fetch failed (${msg(e)}); treating as no findings.`);
-  }
-  try {
-    const l = (await fetchJson(ledgerUrl)) as { ledger?: DigestLedgerEntry[] } | null;
-    if (l && Array.isArray(l.ledger)) ledger = l.ledger;
-  } catch (e) {
-    console.error(`science-digest: ledger fetch failed (${msg(e)}); treating as no ledger.`);
+  if (skipFetch) {
+    console.error("science-digest: --skip-fetch set; composing from local inputs only (no state/ledger read).");
+  } else {
+    try {
+      const s = (await fetchJson(stateUrl)) as { findings?: DigestFinding[] } | null;
+      if (s && Array.isArray(s.findings)) findings = s.findings;
+    } catch (e) {
+      console.error(`science-digest: state fetch failed (${msg(e)}); treating as no findings.`);
+    }
+    try {
+      const l = (await fetchJson(ledgerUrl)) as { ledger?: DigestLedgerEntry[] } | null;
+      if (l && Array.isArray(l.ledger)) ledger = l.ledger;
+    } catch (e) {
+      console.error(`science-digest: ledger fetch failed (${msg(e)}); treating as no ledger.`);
+    }
   }
 
   let research: DigestResearch | null = null;
@@ -591,11 +668,13 @@ async function main(): Promise<void> {
     silentMinutes,
     heartbeatAfterMinutes,
     devCommits,
+    alreadyReported,
+    only,
   });
 
   console.error(
     `science-digest: window ${startParsed.toISOString()} .. ${windowEnd.toISOString()}; ` +
-      `findings=${findings.length} ledger=${ledger.length} researchUpdated=${researchUpdated}`,
+      `findings=${findings.length} ledger=${ledger.length} researchUpdated=${researchUpdated} only=${only || "(all tiers)"}`,
   );
   if (outPath) {
     const d = dirname(outPath);

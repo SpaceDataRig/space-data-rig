@@ -18,8 +18,10 @@
 // window already was. Recognising a build note requires the tweet TEXT, hence `text` in tweet.fields and the
 // larger page (a note is rare, so 5 tweets rarely reach back far enough).
 import { createHmac, randomBytes } from "node:crypto";
+import { writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
-import { BUILD_NOTE_HEADLINES } from "./science-digest.ts";
+import { BUILD_NOTE_HEADLINES, HEARTBEAT_HEADLINE } from "./science-digest.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -86,6 +88,60 @@ export function newestBuildNoteAt(
     .reverse()[0] ?? "";
 }
 
+// Is this tweet the silence heartbeat? Identified by its opening line, exported from science-digest.ts as the single
+// place that composes it -- same reasoning as the build-note matcher.
+export function isHeartbeatText(text: string | null | undefined): boolean {
+  const t = String(text ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  return t.startsWith(HEARTBEAT_HEADLINE.replace(/\s+/g, " ").trim());
+}
+
+// Newest created_at among rows that are NEITHER a build note NOR a heartbeat -- i.e. the newest post that actually
+// reported science (or one an operator authored). This is the SCIENCE cursor, and it must skip the other two:
+//
+//   A run now posts SEVERAL items (science tiers + one build note per commit batch). The science window is anchored
+//   to the newest tweet of any kind, so a build note posted ten seconds AFTER the science data was fetched pushed
+//   the cursor past that fetch time -- anything created in between fell outside the next window and was never
+//   reported. Same defect class as the starved build-note tier, one level up. Heartbeats are excluded for the same
+//   reason: a heartbeat fires precisely when the science tier found nothing, so advancing the cursor on one can only
+//   drop results.
+//
+// "" when the page holds no such post; the caller then falls back to newestCreatedAt (a wider window is safe -- it
+// re-reports nothing, because the science tiers filter on record timestamps, and it drops nothing).
+export function newestScienceAt(
+  rows: Array<{ created_at?: string; text?: string; [k: string]: unknown }> | null | undefined,
+): string {
+  return (rows ?? [])
+    .filter((r) => !isBuildNoteText(r?.text) && !isHeartbeatText(r?.text))
+    .map((r) => r?.created_at)
+    .filter((x): x is string => !!x)
+    .sort()
+    .reverse()[0] ?? "";
+}
+
+// The bullet subjects the account has ALREADY announced, lifted back off its own build notes. One per line, exactly
+// as posted (a bullet is `sanitizeSubject(subject)` verbatim, so composeDigest can de-duplicate by string equality).
+// This is what lets the dev window OVERLAP its cursor by a few minutes -- recovering a commit that lands mid-run --
+// without repeating a bullet that is already on the timeline.
+export function reportedSubjects(
+  rows: Array<{ created_at?: string; text?: string; [k: string]: unknown }> | null | undefined,
+): string[] {
+  const out = new Set<string>();
+  for (const r of rows ?? []) {
+    if (!isBuildNoteText(r?.text)) continue;
+    for (const line of String(r?.text ?? "").split("\n")) {
+      const t = line.replace(/\s+/g, " ").trim();
+      if (!t.startsWith("- ")) continue;
+      const body = t.slice(2).trim();
+      // The note's own trailing lines are bullets too ("- Repository (code + history): ..."), but they are never
+      // commit subjects and can never equal one, so leaving them in is harmless -- and filtering them by URL would
+      // be a guess. Kept verbatim: the consumer only tests membership.
+      if (body) out.add(body);
+    }
+  }
+  return [...out];
+}
+
 async function signedGet(path: string, query: Record<string, string>): Promise<JsonObject> {
   const oauth: Record<string, string> = {
     oauth_consumer_key: API_KEY,
@@ -116,6 +172,16 @@ async function signedGet(path: string, query: Record<string, string>): Promise<J
   }
 }
 
+// Minimal --name value / --name=value reader (same contract as science-digest.ts's arg), so `--reported-out` can be
+// passed through `npm run x:lastpost -- --reported-out <path>`.
+function arg(name: string, dflt = ""): string {
+  const argv = process.argv;
+  const hit = argv.find((a) => a.startsWith(`--${name}=`));
+  if (hit) return hit.slice(name.length + 3);
+  const i = argv.indexOf(`--${name}`);
+  return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : dflt;
+}
+
 async function main(): Promise<void> {
   if (!API_KEY || !API_SECRET || !TOKEN || !TOKEN_SECRET) {
     console.error("x-last-post: no X credentials in the environment; read is inert (the workflow will skip the heartbeat).");
@@ -143,12 +209,36 @@ async function main(): Promise<void> {
       "x-last-post: no build note among the newest tweets read; the dev tier will use its bounded look-back.",
     );
   }
+  const science = newestScienceAt(rows);
+  if (!science) {
+    console.error(
+      "x-last-post: no science post among the newest tweets read; the science window falls back to the newest tweet of any kind.",
+    );
+  }
+  // Optional side output: the subjects already announced on the feed, one per line. The workflow feeds this back to
+  // science-digest (--already-reported-file) so the dev window can overlap its cursor without repeating a bullet.
+  // A write failure is NOT fatal -- de-duplication simply stays off, and the overlap is minutes wide.
+  const reportedOut = arg("reported-out", "");
+  if (reportedOut) {
+    const subjects = reportedSubjects(rows);
+    try {
+      const d = dirname(reportedOut);
+      if (d && d !== ".") mkdirSync(d, { recursive: true });
+      writeFileSync(reportedOut, subjects.length ? `${subjects.join("\n")}\n` : "", "utf8");
+      console.error(`x-last-post: wrote ${subjects.length} already-reported subject(s) to ${reportedOut}`);
+    } catch (e) {
+      console.error(
+        `x-last-post: could not write ${reportedOut} (${e instanceof Error ? e.message : String(e)}); de-duplication off this run.`,
+      );
+    }
+  }
   // Labelled, one per line. Two cursors must not share a bare-timestamp stream: the workflow used to pull the ISO
-  // with `grep -Eo ... | tail -1`, which would silently hand the DEV tier's time to the science window (or the
+  // with `grep -Eo <ISO> | tail -1`, which would silently hand the DEV tier's time to the science window (or the
   // reverse) once a second timestamp appeared. An empty value is still printed so the consumer can distinguish
   // "read succeeded, no build note yet" from "read failed".
   console.log(`last_post=${created}`);
   console.log(`last_build_note=${buildNote}`);
+  console.log(`last_science=${science}`);
 }
 
 // Side-effect guard (same contract as science-digest.ts): run only when invoked directly, never on import, so an

@@ -26,7 +26,8 @@
 //    experiments and are never linked (a proof link must match the exact number it is offered for).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { composeDigest } from "../scripts/science-digest.ts";
+import { readFileSync } from "node:fs";
+import { composeDigest, DEV_BULLETS_MAX } from "../scripts/science-digest.ts";
 import { overclaimViolations, BUILD_NOTE_HEADLINES } from "../scripts/science-digest.ts";
 import { isBuildNoteText } from "../scripts/x-last-post.ts";
 import type { DigestFinding, DigestInput, DigestLedgerEntry, DigestResearch } from "../scripts/science-digest.ts";
@@ -523,4 +524,112 @@ test("the over-claim net treats the composer's honest negations as safe (not fal
   assert.deepEqual(overclaimViolations("This is not a claimed discovery."), []);
   assert.deepEqual(overclaimViolations("These figures are independent cross-checks, not discoveries."), []);
   assert.deepEqual(overclaimViolations("The catalog records 3 UNCONFIRMED candidates, rather than a confirmed planet."), []);
+});
+
+// ---- the tier selector: ONE window may now yield SEVERAL posts -------------------------------
+// The one-post-per-window cap was a spam guard that ended up RATIONING the feed: a window that both sealed a
+// result and landed commits reported only the result, and the build-note tier was reachable only when the science
+// tiers were empty. composeDigest now takes `only`, so the workflow composes each tier separately and posts every
+// non-empty result. The default (absent) MUST keep the historical first-match-wins behavior -- that is what every
+// test above relies on.
+
+// A window that qualifies for EVERY tier at once, so isolation is observable.
+const RICH = () =>
+  input({
+    ledger: [anchored("f1")],
+    findings: [knownPlanet("f1", "HD 189733 b", 2.2), blind("b1", "TIC 123", IN, 3.3)],
+    research: RICH_RESEARCH,
+    researchUpdated: true,
+    devCommits: ["fix(digest): compose every tier in a window"],
+    silentMinutes: 500,
+    heartbeatAfterMinutes: 90,
+  });
+
+test("the default (no `only`) is unchanged: the first tier with something wins and exactly one post comes back", () => {
+  const dflt = composeDigest(RICH());
+  assert.ok(dflt.length > 0);
+  assert.match(dflt, /HD 189733 b/, "the on-chain known-planet re-validation still outranks every other tier");
+  assert.ok(!dflt.includes("fix(digest)"), "and the default still returns ONE post, not a concatenation");
+});
+
+test("`only` isolates a single tier, so a window that qualifies for several posts all of them", () => {
+  const led = composeDigest({ ...RICH(), only: "ledger" });
+  const bl = composeDigest({ ...RICH(), only: "blind" });
+  const ms = composeDigest({ ...RICH(), only: "milestone" });
+  const bn = composeDigest({ ...RICH(), only: "build-note" });
+  const hb = composeDigest({ ...RICH(), only: "heartbeat" });
+  assert.match(led, /HD 189733 b/, "ledger tier");
+  assert.match(bl, /UNCONFIRMED/, "blind tier");
+  assert.ok(!bl.includes("HD 189733 b"), "the blind tier must not also carry the ledger post");
+  // Not the headline -- pick() rotates it -- but the standing characterization, which ONLY this tier carries.
+  assert.match(ms, /characterized on/, "milestone tier");
+  assert.ok(isBuildNoteText(bn), "build-note tier");
+  assert.match(hb, /^Space Data Rig status\./, "heartbeat tier");
+  const all = [led, bl, ms, bn, hb];
+  for (const t of all) assertTweetSafe(t);
+  assert.equal(new Set(all).size, all.length, "five tiers must produce five DISTINCT posts, not the same one five times");
+});
+
+test("`only: science` covers the three science tiers and still picks the highest-priority one", () => {
+  assert.equal(composeDigest({ ...RICH(), only: "science" }), composeDigest({ ...RICH(), only: "ledger" }));
+  const noLedger = { ...RICH(), ledger: [], only: "science" };
+  assert.match(composeDigest(noLedger), /UNCONFIRMED/, "with no anchored result the blind candidate is the science post");
+});
+
+test("a tier with nothing to report composes an empty string rather than falling through to another tier", () => {
+  // Falling through would silently re-introduce the old suppression: asking for the build note must never return a
+  // science post, or the workflow would post the same item twice under two filenames.
+  assert.equal(composeDigest({ ...RICH(), ledger: [], findings: [], only: "ledger" }), "");
+  assert.equal(composeDigest({ ...RICH(), findings: [], only: "blind" }), "");
+  assert.equal(composeDigest({ ...RICH(), researchUpdated: false, only: "milestone" }), "");
+  assert.equal(composeDigest({ ...RICH(), devCommits: [], only: "build-note" }), "");
+  assert.equal(composeDigest({ ...RICH(), silentMinutes: 1, only: "heartbeat" }), "", "below the silence threshold");
+  const scienceOnly = composeDigest({ ...RICH(), ledger: [], findings: [], researchUpdated: false, only: "science" });
+  assert.equal(scienceOnly, "", "`science` must not leak the build note or the heartbeat");
+});
+
+// ---- the build note is no longer truncated to a fixed handful ---------------------------------
+
+test("a build note carries EVERY subject it is given, not just the first five", () => {
+  const subjects = Array.from({ length: 20 }, (_, i) => `fix(area${i}): change number ${i}`);
+  const note = composeDigest(input({ devCommits: subjects, only: "build-note" }));
+  assertTweetSafe(note);
+  for (const s of subjects) assert.ok(note.includes(s), `subject dropped from the note: ${s}`);
+  assert.equal(note.split("\n").filter((l) => /^- fix\(area\d+\)/.test(l)).length, subjects.length);
+});
+
+test("DEV_BULLETS_MAX is a safety net above the workflow's batch size, so the net never bites", () => {
+  // The workflow splits the backlog into chunks of DEV_BATCH and posts one note per chunk. If DEV_BATCH ever grew
+  // past DEV_BULLETS_MAX the slice would silently drop the tail of a chunk -- exactly the truncation this replaces.
+  const yml = readFileSync(new URL("../.github/workflows/x-post.yml", import.meta.url), "utf8");
+  const m = yml.match(/^\s*DEV_BATCH:\s*"(\d+)"\s*$/m);
+  assert.ok(m, "the workflow must declare a DEV_BATCH default");
+  const batch = Number(m?.[1]);
+  assert.ok(batch > 0 && batch <= DEV_BULLETS_MAX, `DEV_BATCH ${batch} must be in (0, DEV_BULLETS_MAX=${DEV_BULLETS_MAX}]`);
+  const over = Array.from({ length: DEV_BULLETS_MAX + 5 }, (_, i) => `fix(a${i}): c${i}`);
+  const note = composeDigest(input({ devCommits: over, only: "build-note" }));
+  assert.equal(
+    note.split("\n").filter((l) => /^- fix\(a\d+\)/.test(l)).length,
+    DEV_BULLETS_MAX,
+    "an unbatched list is capped by the net (the workflow batches below it, so this never fires in production)",
+  );
+  assert.ok(note.length <= 25000, "the net exists to keep the post inside X's long-form ceiling");
+});
+
+// ---- the workflow must not re-introduce a ration ---------------------------------------------
+// These are string assertions on CI-only shell, which no unit test executes. They are deliberately blunt: each one
+// is a limit that demonstrably dropped reportable work, and if it comes back the reason should be a decision, not
+// an unnoticed edit.
+
+test("the workflow posts every composed item: no one-post cap, no five-commit truncation, no docs filter", () => {
+  const yml = readFileSync(new URL("../.github/workflows/x-post.yml", import.meta.url), "utf8");
+  assert.ok(!/head -5/.test(yml), "`head -5` truncated the commit backlog to five and dropped the rest");
+  assert.ok(!/\^\(chore\|docs\?\)/.test(yml), "the old subject filter dropped every docs: commit");
+  assert.ok(!/if \[ ! -s out\/digest\.txt \]/.test(yml), "the old suppression made the build note reachable only when the science tier was empty");
+  assert.ok(/--only build-note/.test(yml), "the build note must be composed on its own, not as a fallthrough");
+  assert.ok(/for f in \$QUEUED/.test(yml), "there must be a loop that posts every composed item");
+  assert.ok(/MAX_POSTS_PER_RUN/.test(yml), "a runaway ceiling stays (it protects the feed; it is not a ration)");
+  const cap = Number(yml.match(/^\s*MAX_POSTS_PER_RUN:\s*"(\d+)"\s*$/m)?.[1]);
+  assert.ok(Number.isFinite(cap) && cap >= 10, `the runaway ceiling must stay generous, got ${cap}`);
+  assert.ok(/DEV_COMMIT_EXCLUDE/.test(yml), "subject filtering is configurable now, not hardcoded");
 });

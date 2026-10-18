@@ -1,39 +1,55 @@
 name: x-post (half-hourly English science digest)
 
-# audit-6: BATCHED posting. This channel used to fire on EVERY qualifying push, so a run of consecutive
-# commits produced a run of consecutive tweets (too noisy). It is now a DIGEST that runs every 30 minutes.
-# Science, not commits: the digest reports the single most important SCIENCE the rig produced since the
-# previous run -- a result sealed on-chain, a newly flagged UNCONFIRMED blind candidate, or a research
-# milestone -- composed by scripts/science-digest.ts (composeDigest, unit-tested in tests/science-digest.test.ts)
-# from the LIVE rig state (/api/state + /api/ledger) plus the committed web/research.json. It posts at most ONE
-# English, text-only long-form post (the author is a Premium/"blue" account, so a digest may run past 280 chars
-# up to X's 25,000-char long-post ceiling). No image (AI illustration is generated only inside an agent session,
-# never in CI).
-# No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
-# English-only is enforced twice). A window with NO new science is not automatically silent: it may post a BUILD
-# NOTE over the commits since the last BUILD NOTE -- the dev tier keeps its OWN cursor, see the loop guards below
-# (a development-progress tier); only when there is neither new science
-# nor a buildable commit does it fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 45m) -- to an honest
-# status heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweets), so a quiet stretch is not
-# mistaken for downtime. It NEVER posts an empty tweet and NEVER claims a discovered planet -- a blind candidate is
-# always "UNCONFIRMED ... for human follow-up" -- and honesty is carried by plain wording, not a per-post stamp.
+# audit-6: DIGEST posting, not per-push. This channel used to fire on EVERY qualifying push, so a run of
+# consecutive commits produced a run of consecutive tweets with no ordering at all. It is now a digest that runs
+# every 30 minutes and posts EVERY item the window actually holds: one post per science tier that has something,
+# plus one build note per batch of unreported commits.
 #
-# VERIFYING THIS CHANNEL (a lesson earned the hard way): the compose + watchdog path only runs when a window has
-# NO new science, so unit tests + a green `npm test` do NOT exercise it and CI stays green even when it is broken
-# (a pipefail abort and an illegal max_results both shipped undetected). Before editing this workflow, dispatch
-# dry_heartbeat=1 (composes + validates a heartbeat WITHOUT posting) and/or a run with a VALID but empty window
-# (past --since AND --until) to force the watchdog branch, then read the job log; that, not the test count, is the
-# real gate. (An inverted window -- a future --since with no --until -- makes composeDigest return "" at its guard
-# before the heartbeat tier, so it does NOT exercise the fallback.)
+# VOLUME IS DELIBERATELY NOT RATIONED. The earlier "at most ONE line per window" rule was written as a spam guard
+# and ended up dropping reportable work -- a five-commit push produced one build note covering one commit, and a
+# window that both sealed a result and landed commits reported only the result. What is left are feed PROTECTIONS,
+# not rations: per-item de-duplication (identical text is never posted twice in a run), a generous runaway cap
+# (MAX_POSTS_PER_RUN, default 25 -- far above what a real window yields), and a short delay between posts
+# (POST_DELAY_S) so a big backlog cannot trip X's own rate limit. Raise or lower those by env; do not reintroduce
+# a one-post cap.
+#
+# Science, not commits: the science tiers report what the rig produced -- a result sealed on-chain, a newly
+# flagged UNCONFIRMED blind candidate, or a research milestone -- composed by scripts/science-digest.ts
+# (composeDigest, unit-tested in tests/science-digest.test.ts) from the LIVE rig state (/api/state + /api/ledger)
+# plus the committed web/research.json. The build-note tier reports development progress over the commit backlog.
+# Each post is English and text-only long-form (the author is a Premium/"blue" account, so a post may run past 280
+# chars up to X's 25,000-char long-post ceiling). No image (AI illustration is generated only inside an agent
+# session, never in CI).
+# No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
+# English-only is enforced twice). A window with no new science is not automatically silent: the build-note tier
+# is composed on its own cursor regardless of what the science tiers did, and only when NOTHING was composed does
+# the run fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 45m) -- to an honest status heartbeat
+# (silence watchdog below; scripts/x-last-post.ts reads the newest tweets), so a quiet stretch is not mistaken for
+# downtime. It NEVER posts an empty tweet and NEVER claims a discovered planet -- a blind candidate is always
+# "UNCONFIRMED ... for human follow-up" -- and honesty is carried by plain wording, not a per-post stamp.
+#
+# VERIFYING THIS CHANNEL (a lesson earned the hard way): composeDigest's tiers are unit-tested, but the SHELL that
+# drives them -- cursor parsing, the batch loop, the posting loop -- is CI-only and no test loads it, so a green
+# `npm test` proves nothing about it (a pipefail abort and an illegal max_results both shipped undetected). Before
+# editing, run `bash scripts/verify-xpost-shell.sh`; dispatch dry_heartbeat=1 to exercise the watchdog WITHOUT
+# posting; and after deploying, read the NEXT scheduled run's job log -- every cursor is echoed on every run
+# precisely so it can be checked from a run where a tier never fires. (An inverted window -- a future --since with
+# no --until -- makes composeDigest return "" at its guard before the heartbeat tier, so it does NOT exercise the
+# fallback.)
 
-# Loop / spam guards:
-#  - No push trigger: a push never posts on its own. The half-hourly digest is the only automatic path, and one
-#    window yields AT MOST ONE line -- a science post, else a BATCHED build note over the window's commits, else a
-#    heartbeat. Commit coverage is batched (never per-commit). TWO cursors keep one commit from being re-reported:
-#    the science window is anchored to the newest tweet of any kind, and the dev window to the newest BUILD NOTE.
-#    They must stay separate -- sharing one cursor starved the dev tier, because it runs only when a window has no
-#    science, so every science post advanced past commits the dev tier had never reported and dropped them for
-#    good (a five-commit push produced a build note covering one commit).
+# Cursors and guards:
+#  - No push trigger: a push never posts on its own. The half-hourly digest is the only automatic path.
+#  - THREE cursors, because each tier fires under different conditions and a shared cursor silently drops work:
+#      science  = newest tweet that is neither a build note nor a heartbeat (x-last-post `last_science`);
+#      dev      = newest BUILD NOTE on the feed (`last_build_note`), minus DEV_OVERLAP_MIN;
+#      silence  = newest tweet of any kind (`last_post`), used only to measure the gap for the heartbeat.
+#    A build note posted seconds AFTER the science data was fetched must not push the science window forward, or
+#    anything created in between is never reported -- the same defect class as the starved dev tier, one level up.
+#    The dev overlap re-reads a few minutes of commits it may already have covered; composeDigest drops any subject
+#    the feed has already announced (x-last-post --reported-out), so the overlap recovers mid-run commits without
+#    repeating a bullet.
+#  - Posts are ordered oldest-commit-first and the loop BREAKS on the first posting failure, so the newest work is
+#    what remains for the next window: a partial run under-reports, it never over-reports or drops.
 #  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
@@ -71,7 +87,7 @@ concurrency:
 jobs:
   digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15 # a large backlog posts several items with a delay between them; 5 was sized for one
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,7 +101,7 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Compose the science digest since the last run and post ONE English line
+      - name: Compose every reportable item in the window and post each one
         env:
           GH_TOKEN: ${{ github.token }}
           CUR: ${{ github.run_id }}
@@ -98,10 +114,33 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-          # Silence watchdog: when a scheduled run finds NO new science AND the account has been quiet this many
-          # minutes, composeDigest falls back to an honest status heartbeat so a long gap is not read as downtime.
+          # Silence watchdog: when a run composes NOTHING and the account has been quiet this many minutes,
+          # composeDigest falls back to an honest status heartbeat so a long gap is not read as downtime.
           HEARTBEAT_AFTER_MIN: "45"
           DRY_HEARTBEAT: ${{ github.event.inputs.dry_heartbeat }}
+          # --- Volume controls. These are FEED PROTECTIONS, not rations: no one-post-per-window cap exists. ---
+          # How many commit subjects one run will even look at. A runaway guard for a pathological backlog
+          # (e.g. a history rewrite), not a ration: a normal window holds a handful.
+          DEV_COMMITS_MAX: "200"
+          # Bullets per build note. The backlog is split into chunks of this size and EVERY chunk is posted, so
+          # raising the backlog raises the post count rather than truncating the list. Must stay under
+          # DEV_BULLETS_MAX in scripts/science-digest.ts (a test reads this default and asserts it).
+          DEV_BATCH: "24"
+          # Ceiling on posts in one run, far above what a real window yields. Leftover items are not lost: the
+          # loop posts oldest-commit-first and breaks, so the cursors still point before the unsent work.
+          MAX_POSTS_PER_RUN: "25"
+          # Pause between posts so a large backlog cannot trip X's own rate limit mid-run.
+          POST_DELAY_S: "5"
+          # Minutes the dev window reaches back PAST its cursor. Commits landing while a run is in flight would
+          # otherwise fall behind the new cursor and never be reported; composeDigest de-duplicates against the
+          # subjects already on the feed, so the overlap cannot repeat a bullet.
+          DEV_OVERLAP_MIN: "10"
+          # Look-back used only when the feed holds no build note at all (fresh account, or a read failure).
+          BUILD_NOTE_LOOKBACK_H: "48"
+          # Subjects to leave out of the build note. Defaults to dependency-bot version churn only -- set to an
+          # empty string to report literally every commit. NOTE: `docs:` is no longer excluded; documentation is
+          # part of the work and was being silently dropped.
+          DEV_COMMIT_EXCLUDE: "^chore\\(deps"
         run: |
           set -uo pipefail
           if [ -n "$OVERRIDE_TEXT" ]; then
@@ -134,36 +173,43 @@ jobs:
             echo "---- end: ASCII-only, $(printf '%s' "$RAW" | wc -c | tr -d ' ') bytes ----"
             exit 0
           fi
-          # Read the account's recent tweets ONCE up front. That yields TWO cursors: the newest post of any kind
-          # (anchors the science window and measures the silence for the heartbeat) and the newest BUILD NOTE
-          # (anchors the dev window, so science posts cannot consume the commit backlog). It
-          # MUST NOT abort the run: the step is `set -eo pipefail`, so stdout/stderr/exit go to temp files with an
-          # explicit `|| echo`, and the values are pulled with `|| true`. x-last-post prints only fixed,
-          # credential-free diagnostics to stderr. With no creds / on failure both stay empty and every consumer
-          # below falls back gracefully.
+          # Read the account's recent tweets ONCE up front. That yields THREE cursors: the newest post of any kind
+          # (measures the silence for the heartbeat), the newest SCIENCE post (anchors the science window) and the
+          # newest BUILD NOTE (anchors the dev window). It also writes the subjects already announced on the feed,
+          # which is what makes the dev window's overlap safe. It MUST NOT abort the run: stdout/stderr/exit go to
+          # temp files with an explicit `|| echo`, and the values are pulled with `|| true`. x-last-post prints only
+          # fixed, credential-free diagnostics to stderr. With no creds / on failure every value stays empty and
+          # every consumer below falls back gracefully.
+          mkdir -p out/posts
+          rm -f out/posts/*.txt out/devchunk-* out/dev-*.txt out/reported-subjects.txt 2>/dev/null || true
           LP_OUT="$(mktemp)"; LP_ERR="$(mktemp)"
-          npm run --silent x:lastpost >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
+          npm run --silent x:lastpost -- --reported-out out/reported-subjects.txt >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
           echo "x:lastpost stderr: $(tr -cd '\11\12\15\40-\176' < "$LP_ERR" | tr '\n' ' ' | head -c 300)"
-          # Labelled parsing, not a bare-timestamp grep: with two cursors on one stream, `grep -Eo <ISO> | tail -1`
-          # would silently hand the DEV tier's time to the science window (or the reverse).
+          # Labelled parsing, not a bare-timestamp grep: with several cursors on one stream, `grep -Eo <ISO> | tail -1`
+          # would silently hand one tier's time to another's window.
           LAST_POST_ISO="$(sed -n 's/^last_post=//p' "$LP_OUT" | tail -1 || true)"
           LAST_BUILD_NOTE_ISO="$(sed -n 's/^last_build_note=//p' "$LP_OUT" | tail -1 || true)"
+          LAST_SCIENCE_ISO="$(sed -n 's/^last_science=//p' "$LP_OUT" | tail -1 || true)"
           # Tolerate the previous single-timestamp stdout shape, so an older ref dispatched against this workflow
-          # still yields a usable science cursor instead of degrading to the run-start fallback.
+          # still yields a usable cursor instead of degrading to the run-start fallback.
           if [ -z "$LAST_POST_ISO" ]; then
             LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | head -1 || true)"
           fi
+          # No science post on the page -> fall back to the newest tweet of any kind. A WIDER science window is the
+          # safe direction: the science tiers filter on record timestamps, so re-scanning reports nothing twice and
+          # drops nothing, whereas a cursor pushed too far forward loses results permanently.
+          if [ -z "$LAST_SCIENCE_ISO" ]; then LAST_SCIENCE_ISO="$LAST_POST_ISO"; fi
           rm -f "$LP_OUT" "$LP_ERR"
-          # Window start = when we LAST ACTUALLY POSTED (newest tweet), NOT when the last run happened. The old
-          # cursor used the previous run's start, so any run that posted nothing -- an empty-science tick, or a
-          # dry_heartbeat / verification dispatch -- marched the cursor forward and science that landed between the
-          # last tweet and that no-op run was skipped FOREVER (this is why real, already-sealed results went quiet
-          # even though the survey kept producing them). Anchoring to the last post makes the window self-healing
-          # across skipped / failed / throttled runs: nothing is dropped until it has actually been reported.
-          # Fallback order: an override --since, else the last post, else the previous run start (Actions API),
-          # else ~40m. Normalize to ISO 8601 so git and the digest agree on the exact same window.
+          # Window start = when we LAST ACTUALLY POSTED SCIENCE, NOT when the last run happened and NOT when the last
+          # build note went out. The old cursor used the previous run's start, so any run that posted nothing marched
+          # the cursor forward and science that landed in between was skipped FOREVER. Anchoring to the last post
+          # makes the window self-healing across skipped / failed / throttled runs. It must also skip build notes and
+          # heartbeats: a run now posts several items, so a build note sent seconds AFTER the science data was
+          # fetched would otherwise push the window past that fetch and drop anything created in between.
+          # Fallback order: an override --since, else the last science post, else the previous run start (Actions
+          # API), else ~40m. Normalize to ISO 8601 so git and the digest agree on the exact same window.
           SINCE_RAW="$OVERRIDE_SINCE"
-          if [ -z "$SINCE_RAW" ] && [ -n "$LAST_POST_ISO" ]; then SINCE_RAW="$LAST_POST_ISO"; fi
+          if [ -z "$SINCE_RAW" ] && [ -n "$LAST_SCIENCE_ISO" ]; then SINCE_RAW="$LAST_SCIENCE_ISO"; fi
           if [ -z "$SINCE_RAW" ]; then
             SINCE_RAW="$(curl -sfL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$REPO/actions/workflows/x-post.yml/runs?status=completed&per_page=10" \
@@ -172,42 +218,73 @@ jobs:
           SINCE=""
           if [ -n "$SINCE_RAW" ]; then SINCE="$(date -u -d "$SINCE_RAW" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
           if [ -z "$SINCE" ]; then SINCE="$(date -u -d '40 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"; fi
-          echo "digest window since: $SINCE (last actual post: ${LAST_POST_ISO:-unknown})"
-          # DEV-TIER cursor: the newest BUILD NOTE on the feed, else a bounded look-back so a backlog starved by
-          # science posts is still reported once (batched by `head -5` below, never per-commit). Deliberately NOT
-          # $SINCE -- that is what starved the tier before the cursors were split.
+          echo "digest window since: $SINCE (science cursor: ${LAST_SCIENCE_ISO:-unknown}; last post of any kind: ${LAST_POST_ISO:-unknown})"
+          # DEV-TIER cursor: the newest BUILD NOTE on the feed, minus an overlap, else a bounded look-back. Two-step
+          # arithmetic (epoch then re-format) rather than `date -d "<iso> N minutes ago"`, whose combined
+          # absolute+relative form GNU date does not parse reliably. Deliberately NOT $SINCE -- that is what starved
+          # this tier when the cursors were shared.
           DEV_SINCE=""
-          if [ -n "$LAST_BUILD_NOTE_ISO" ]; then DEV_SINCE="$(date -u -d "$LAST_BUILD_NOTE_ISO" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
+          if [ -n "$LAST_BUILD_NOTE_ISO" ]; then
+            NOTE_EPOCH="$(date -u -d "$LAST_BUILD_NOTE_ISO" +%s 2>/dev/null || true)"
+            if [ -n "$NOTE_EPOCH" ]; then
+              DEV_SINCE="$(date -u -d "@$(( NOTE_EPOCH - ${DEV_OVERLAP_MIN:-10} * 60 ))" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
+            fi
+          fi
           if [ -z "$DEV_SINCE" ]; then DEV_SINCE="$(date -u -d "${BUILD_NOTE_LOOKBACK_H:-48} hours ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
           if [ -z "$DEV_SINCE" ]; then DEV_SINCE="$SINCE"; fi
-          # Logged on EVERY run, not only inside the no-science branch, so the cursor is verifiable from any job log
-          # -- including a run where the science tier wins and the dev tier is never reached.
-          echo "build-note cursor: dev window since $DEV_SINCE (last build note: ${LAST_BUILD_NOTE_ISO:-none found})"
+          # Logged on EVERY run, not only inside a branch that may not fire, so each cursor is verifiable from any
+          # job log -- including a run where the tier that owns it composed nothing.
+          echo "build-note cursor: dev window since $DEV_SINCE (last build note: ${LAST_BUILD_NOTE_ISO:-none found}, overlap ${DEV_OVERLAP_MIN:-10}m)"
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.
           RESEARCH_COMMITS="$(git log HEAD --no-merges --since="$SINCE" --pretty=%H -- web/research.json | wc -l | tr -d ' ')"
           RESEARCH_UPDATED=0
           if [ "$RESEARCH_COMMITS" -gt 0 ]; then RESEARCH_UPDATED=1; fi
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
-          # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
-          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt || true
-          # Build-note tier (development progress): when a window has NO new science, offer a plain-English update
-          # over the commits since the LAST BUILD NOTE ($DEV_SINCE, its own cursor) -- excluding the generated
-          # research-data file and the reports/out trees, and skipping pure chore/docs noise. composeDigest sanitizes
-          # every line (drops any that would break a red line: spend/wallet/key/time-words), so an all-noise list
-          # yields nothing and we fall through.
-          if [ ! -s out/digest.txt ]; then
-            git log HEAD --no-merges --since="$DEV_SINCE" --pretty=%s -- ':!web/research.json' ':!reports/**' ':!out/**' \
-              | grep -Eiv '^(chore|docs?)(\([a-z0-9-]+\))?:' | head -5 > out/dev-commits.txt || true
-            if [ -s out/dev-commits.txt ]; then
-              echo "no new science; build note over $(wc -l < out/dev-commits.txt | tr -d ' ') commit(s) since the last build note"
-              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --dev-commits-file out/dev-commits.txt --out out/digest.txt || true
-            fi
+
+          # ---- Compose EVERY tier independently. No tier suppresses another, and the filename order IS the post
+          # order. Each invocation asks for ONE tier (--only) and writes its own file; an empty file means that tier
+          # had nothing honest to report and the posting loop skips it. --skip-fetch on the build note keeps it
+          # working even when the live rig is unreachable: it needs git history, not survey state.
+          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --only ledger --out out/posts/00-ledger.txt || true
+          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --only blind --out out/posts/02-blind.txt || true
+          npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --only milestone --out out/posts/04-milestone.txt || true
+
+          # ---- Build note: the WHOLE unreported backlog, batched. Nothing is truncated to a fixed handful, and
+          # `docs:` commits are no longer filtered out -- documentation is part of the work and was being dropped.
+          # The excluded PATHS are generated artifacts (the published research-data file, the report/out trees),
+          # which would otherwise bury the real changes; subject filtering is DEV_COMMIT_EXCLUDE.
+          git log HEAD --no-merges --since="$DEV_SINCE" --pretty=%s -- ':!web/research.json' ':!reports/**' ':!out/**' > out/dev-all.txt || true
+          head -n "${DEV_COMMITS_MAX:-200}" out/dev-all.txt > out/dev-capped.txt || true
+          if [ -n "${DEV_COMMIT_EXCLUDE:-}" ]; then
+            grep -Evi "$DEV_COMMIT_EXCLUDE" out/dev-capped.txt > out/dev-new.txt || true
+          else
+            cp out/dev-capped.txt out/dev-new.txt
           fi
-          # Silence watchdog (fallback only): if there was NO new science, use the last-post time already read to
-          # see how long the channel has been quiet (a human post counts too); past the threshold, compose an
-          # honest status heartbeat instead of staying silent -- a quiet stretch is not downtime.
-          if [ ! -s out/digest.txt ]; then
+          DEV_N="$(wc -l < out/dev-new.txt | tr -d ' ')"
+          echo "build-note backlog: $DEV_N unreported commit subject(s) since $DEV_SINCE (batch ${DEV_BATCH:-24}, look-back cap ${DEV_COMMITS_MAX:-200}, exclude '${DEV_COMMIT_EXCLUDE:-none}')"
+          if [ "$DEV_N" -gt 0 ]; then
+            # OLDEST FIRST. git log lists newest first; reverse it so the posting loop -- which BREAKS on the first
+            # failure -- leaves the NEWEST work unsent rather than the oldest. Unsent newest work is still ahead of
+            # the dev cursor and is re-composed next window; unsent oldest work would sit behind it and be lost.
+            tac out/dev-new.txt > out/dev-oldest.txt
+            rm -f out/devchunk-* 2>/dev/null || true
+            split -l "${DEV_BATCH:-24}" -d -a 3 out/dev-oldest.txt out/devchunk-
+            NOTE_I=10
+            for c in $(ls out/devchunk-* 2>/dev/null | sort); do
+              [ -s "$c" ] || continue
+              npm run science:digest -- --since "$DEV_SINCE" --research-updated "$RESEARCH_UPDATED" --only build-note \
+                --dev-commits-file "$c" --already-reported-file out/reported-subjects.txt --skip-fetch 1 \
+                --out "out/posts/${NOTE_I}-note.txt" || true
+              NOTE_I=$((NOTE_I + 1))
+            done
+            echo "build note: composed $((NOTE_I - 10)) batch file(s) from $DEV_N subject(s)"
+          fi
+
+          # ---- Silence watchdog (fallback ONLY): reached when nothing at all was composed. If any tier produced a
+          # post the channel is by definition not silent, so a heartbeat must not stack on top of real content.
+          COMPOSED="$(find out/posts -type f -name '*.txt' -size +0c 2>/dev/null | wc -l | tr -d ' ')"
+          if [ "$COMPOSED" = "0" ]; then
             HB_MIN="${HEARTBEAT_AFTER_MIN:-45}"
             SILENT_MIN=""
             if [ -n "$LAST_POST_ISO" ]; then
@@ -215,19 +292,53 @@ jobs:
               if [ -n "$EPOCH" ]; then SILENT_MIN="$(( ( $(date -u +%s) - EPOCH ) / 60 ))"; fi
             fi
             if [ -n "$SILENT_MIN" ]; then
-              echo "no new science; channel silent ${SILENT_MIN} min (heartbeat threshold ${HB_MIN})"
-              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --silent-min "$SILENT_MIN" --heartbeat-after-min "$HB_MIN" --out out/digest.txt || true
+              echo "nothing composed; channel silent ${SILENT_MIN} min (heartbeat threshold ${HB_MIN})"
+              npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --only heartbeat --silent-min "$SILENT_MIN" --heartbeat-after-min "$HB_MIN" --out out/posts/99-heartbeat.txt || true
             else
-              echo "no new science; could not read last-post time (X read unavailable) -> skipping, no heartbeat"
+              echo "nothing composed; could not read last-post time (X read unavailable) -> skipping, no heartbeat"
             fi
           fi
-          if [ -s out/digest.txt ]; then
+
+          # ---- Post every composed item. There is NO one-post-per-window cap: only a runaway ceiling,
+          # byte-identical de-duplication, and a delay so a large backlog cannot trip X's own rate limit. ----
+          CAP="${MAX_POSTS_PER_RUN:-25}"
+          DELAY="${POST_DELAY_S:-5}"
+          SENT=0
+          SEEN="$(mktemp)"
+          QUEUED="$(find out/posts -type f -name '*.txt' -size +0c 2>/dev/null | sort)"
+          NQUEUED="$(printf '%s\n' "$QUEUED" | grep -c . || true)"
+          echo "posting $NQUEUED composed item(s); runaway ceiling $CAP, delay ${DELAY}s between posts"
+          for f in $QUEUED; do
+            if [ "$SENT" -ge "$CAP" ]; then
+              echo "##[warning]runaway ceiling reached ($CAP posted this run); the remaining items stay ahead of the cursors for the next window"
+              break
+            fi
             # strip any non-ASCII once more; English-only is enforced in the posting script too
-            TEXT="$(printf '%s' "$(cat out/digest.txt)" | tr -cd '\11\12\15\40-\176')"
-            echo "posting: $TEXT"
-            # --max-len 25000: the author is a Premium ("blue") account and the digest is now a LONG-FORM summary
-            # (>280 chars); without this the posting script's default 280 ceiling would silently truncate it.
-            npm run x:post -- --text "$TEXT" --max-len 25000
+            TEXT="$(printf '%s' "$(cat "$f")" | tr -cd '\11\12\15\40-\176')"
+            if [ -z "$TEXT" ]; then continue; fi
+            KEY="$(printf '%s' "$TEXT" | sha256sum | cut -d' ' -f1)"
+            if grep -qxF "$KEY" "$SEEN" 2>/dev/null; then
+              echo "skip $f: byte-identical to an item already posted in this run"
+              continue
+            fi
+            printf '%s\n' "$KEY" >> "$SEEN"
+            if [ "$SENT" -gt 0 ]; then sleep "$DELAY" || true; fi
+            echo "posting item $((SENT + 1)) (of up to $CAP) from $f: $TEXT"
+            # --max-len 25000: the author is a Premium ("blue") account and these are LONG-FORM posts (well past 280
+            # chars); without this the posting script's default ceiling would silently truncate.
+            if npm run x:post -- --text "$TEXT" --max-len 25000; then
+              SENT=$((SENT + 1))
+            else
+              # BREAK, never continue: the cursors are read off the feed, so a LATER successful post would advance
+              # them past this unsent item and drop it for good. Stopping leaves everything unsent ahead of the
+              # cursor, so the next window re-composes it.
+              echo "##[error]x:post failed on $f; stopping the loop so the cursors do not advance past an unsent item"
+              break
+            fi
+          done
+          rm -f "$SEEN"
+          if [ "$SENT" = "0" ]; then
+            echo "nothing reportable in this window; posted nothing (never posts an empty tweet)"
           else
-            echo "no new science result in this window; skipping (never posts an empty tweet)"
+            echo "posted $SENT item(s) this run"
           fi

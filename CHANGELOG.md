@@ -5,6 +5,76 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The X posting path rationed itself to one tweet per window; that ration is removed (2026-10-18)
+Four separate limits capped how much the rig published. None of them came from X, from the API, or from any
+honesty red line -- they were all volume guesses I baked in while trying to avoid looking like a spam account.
+The effect was that reportable work was silently discarded: the operator's instruction was that budget is not the
+constraint and anything worth reporting should be posted.
+
+- **At most one post per window.** `composeDigest` walked its tier list and returned on the FIRST tier with
+  something to say, so a window holding both a surviving blind candidate and forty unannounced commits published
+  one of them.
+- **The science tier suppressed the build note.** The workflow only composed a build note
+  `if [ ! -s out/digest.txt ]`, i.e. development progress was reportable exactly when nothing scientific happened.
+- **`head -5`** truncated the commit backlog to five subjects and dropped the rest with no log line saying so.
+- **`grep -Eiv '^(chore|docs?)(\([a-z0-9-]+\))?:'`** discarded every `docs:` commit outright. Documentation is
+  work; filtering it made the feed understate what shipped.
+
+What replaced them: `composeDigest` gained an `only` tier selector (`ledger` / `blind` / `milestone` / `science` /
+`build-note` / `heartbeat`; absent keeps the historical first-match behaviour, so every existing test and caller
+is untouched). The workflow now asks tier by tier into `out/posts/*.txt`, batches the commit backlog oldest-first
+with `split -l $DEV_BATCH`, and a loop posts every composed item. Rehearsed against the real repository state: a
+42-subject backlog composed into 2 build notes (2718 and 1860 bytes) and posted both in one run, where the same
+backlog previously yielded at most one note of five subjects and only if the science tier was empty.
+
+**Multi-posting introduced a new defect of the same class, fixed here rather than shipped.** With one post per
+window, anchoring the science cursor to "the newest tweet of any kind" was safe. With several, a build note
+posted later in the SAME run became the newest tweet, so the next window's science cursor was pushed past the
+moment the science data had been fetched -- any finding produced in between would never be reported, which is
+precisely the starvation the previous entry fixed for the dev tier, mirrored onto science. There are now THREE
+cursors read off one page of the feed: `last_science` (newest tweet that is neither a build note nor a heartbeat,
+via `newestScienceAt`; `HEARTBEAT_HEADLINE` is exported from `science-digest.ts` so composing and matching cannot
+drift), `last_build_note`, and `last_post` (silence measurement for the heartbeat only).
+
+Two supporting changes keep "report everything" from turning into "report things twice":
+
+- The dev window starts `DEV_OVERLAP_MIN` (10) minutes BEFORE the last build note. Without overlap a commit
+  landing mid-run sat behind a cursor already set to the posting instant. Overlap re-reads commits already
+  covered, so `x-last-post.ts` also grew `reportedSubjects()`, which lifts the bullet lines back out of the
+  feed's own build notes and feeds them to `composeDigest`'s new `alreadyReported` exact-string de-duplication.
+  A test round-trips a REAL composed note through that path and asserts the backlog composes to nothing the
+  second time while a genuinely new subject still gets reported.
+- Batching is **oldest-first** (`tac`) because the posting loop BREAKS on the first failure. Newest-first would
+  leave unsent NEW commits behind an advanced cursor, losing them permanently; oldest-first leaves them ahead of
+  it, so the next window picks them up.
+
+Kept deliberately, because these protect the feed rather than ration it: sha256 dedupe of byte-identical items
+within a run, `MAX_POSTS_PER_RUN=25` as a runaway brake (the loop warns and leaves the remainder ahead of the
+cursors), and `POST_DELAY_S=5` between posts so a large backlog cannot trip X's rate limits. `timeout-minutes`
+5 -> 15, since 5 was sized for a single post. `DEV_BULLETS_MAX=40` stays in the composer as a safety net, and a
+test reads the workflow YAML to assert `DEV_BATCH <= DEV_BULLETS_MAX` so the net can never silently bite.
+`DEV_COMMIT_EXCLUDE` now defaults to `^chore\(deps` only (dependency-bot noise) and can be set empty to report
+everything.
+
+Volume numbers are all plain `env` values. There is no per-window post cap left to find, and a test fails if
+`head -5`, the `digest.txt` suppression, or the `docs:` filter ever returns.
+
+### A stage summary can now be pushed straight to the feed, and one was (2026-10-18)
+The `workflow_dispatch` override (`inputs.text` -> `OVERRIDE_TEXT` -> `npm run x:post --max-len=25000`,
+short-circuiting every tier) was already the right channel for publishing an operator-facing summary of what
+changed, rather than only describing it in conversation. Used for real: the pipeline-change summary was
+pre-flown locally for ASCII-only bytes, the spend/time/discovery red lines, and length, then dispatched
+(`204`) and posted as id `2111641428334149796`. One item was deliberately held back from that text -- the claim
+that the posting limits had been removed -- because the change had not been made yet; it is true as of this
+entry, not as of that tweet.
+
+No test covered the workflow's shell path, which is how the limits above survived in the first place.
+`scripts/verify-xpost-shell.sh` now EXTRACTS the real `run:` block from the YAML with awk and executes it with
+`npm run x:post` and `curl` stubbed (the stubs need `export -f`; the block runs in a child bash), asserting that
+nothing reaches X, that every recorded item is non-empty ASCII within the ceiling, that both cursors and the
+backlog count are echoed, and that the script reaches its summary line. A mirrored copy of the logic can no
+longer pass while the shipped file is broken. `SHELL_LOGIC_PASS`. 614 tests pass (was 602).
+
 ### The X digest's build-note tier was starved by its own science tier (2026-10-18)
 Both tiers shared ONE window start, anchored to the newest tweet of any kind. That is correct for science (a
 result must not be re-reported) and fatal for build notes: the dev tier is reached only when a window has no

@@ -326,11 +326,34 @@ the Actions web page when the anonymous API is rate-limited.
   related traps: a stream carrying more than one value must be LABELLED, not parsed with
   `grep -Eo <ISO> | tail -1`; and if you must recognise your own past output, keep the strings it
   can produce in ONE exported place and assert the matcher accepts every one of them.
+  Removing the one-post cap then MIRRORED the same defect onto science: once a single run can post
+  several items, a build note posted late in that run becomes the newest tweet and pushes the
+  science cursor past the instant the science data was fetched. A cursor must be anchored to the
+  newest post OF ITS OWN KIND, not the newest post -- hence a third cursor, `last_science`
+  (`newestScienceAt`, skipping build notes AND heartbeats). When a batch loop can fail partway,
+  also order it so the unsent remainder stays AHEAD of the cursor: the posting loop breaks on
+  failure and the batches are oldest-first, so an aborted run under-reports and self-heals next
+  window instead of permanently dropping the newest work. Widening a window is the safe direction
+  (re-scanning reports nothing twice), narrowing it is the dangerous one.
+- A self-imposed volume cap is silent data loss, not a safety measure. The X path carried four
+  independent rations -- one post per window, the build note composed only when the science tier
+  was empty, `head -5` on the commit backlog, and a filter discarding every `docs:` subject -- and
+  each one dropped reportable work without logging that it had. None was required by the platform
+  or by an honesty red line; they were guesses about not looking like spam. Distinguish FEED
+  PROTECTIONS (byte-identical dedupe, a generous runaway ceiling that leaves the remainder ahead of
+  the cursors, a delay between posts so a backlog cannot trip rate limits) from RATIONS (anything
+  that decides reportable content is not worth reporting), keep only the former, put every number
+  in `env`, and pin the absence of the latter with a test that greps the workflow -- otherwise a
+  future tidy-up reinstates `head -5` and nobody notices.
 - The x-post workflow's shell path is CI-only and no test covers it, so a green `npm test` proves
-  nothing about it. Before editing, exercise the parsing/fallback logic directly with
-  `bash scripts/verify-xpost-shell.sh`, and after deploying read the NEXT scheduled run's job log --
-  the cursor is logged on every run precisely so it can be verified from a run where the dev tier
-  never fires.
+  nothing about it -- that blind spot is how the four rations above shipped. A MIRROR of the logic
+  is not enough either: it passes while the real file is broken. `bash scripts/verify-xpost-shell.sh`
+  now extracts the actual `run:` block from `.github/workflows/x-post.yml` with awk and EXECUTES it
+  with `npm run x:post` and `curl` stubbed (the stubs must be `export -f`'d -- the block runs in a
+  child bash), then asserts nothing reached X, every recorded item is non-empty ASCII within the
+  ceiling, both cursors and the backlog count were echoed, and the script reached its summary line.
+  After deploying, still read the NEXT scheduled run's job log: the cursors are logged on every run
+  precisely so they can be verified from a run where some tier never fires.
 - The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
   Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
   runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions

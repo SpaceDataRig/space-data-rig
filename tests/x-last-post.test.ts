@@ -6,8 +6,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { pct, tweetsQuery, userIdFromMe, newestCreatedAt, isBuildNoteText, newestBuildNoteAt } from "../scripts/x-last-post.ts";
-import { BUILD_NOTE_HEADLINES } from "../scripts/science-digest.ts";
+import {
+  pct,
+  tweetsQuery,
+  userIdFromMe,
+  newestCreatedAt,
+  isBuildNoteText,
+  newestBuildNoteAt,
+  isHeartbeatText,
+  newestScienceAt,
+  reportedSubjects,
+} from "../scripts/x-last-post.ts";
+import { BUILD_NOTE_HEADLINES, HEARTBEAT_HEADLINE, composeDigest } from "../scripts/science-digest.ts";
 
 // ---- the shipped bug: an illegal page size ----
 
@@ -64,6 +74,108 @@ test("newestBuildNoteAt degrades to empty string so the workflow uses its bounde
     "",
     "a note with no created_at must not produce a bogus cursor",
   );
+});
+
+// ---- the SCIENCE cursor: it must skip build notes and heartbeats ----
+// A run now posts SEVERAL items. When the science window was anchored to the newest tweet of ANY kind, a build note
+// sent seconds after the science data was fetched pushed the cursor past that fetch, and anything created in between
+// was never reported -- the starved-dev-tier defect one level up.
+
+test("isHeartbeatText matches the composed heartbeat and nothing else", () => {
+  assert.ok(isHeartbeatText(HEARTBEAT_HEADLINE), "the exported headline is the single source of truth");
+  assert.ok(isHeartbeatText(`  ${HEARTBEAT_HEADLINE}\nThe survey is running on its own.`), "a real post body must not break the match");
+  assert.ok(!isHeartbeatText(""), "empty is not a heartbeat");
+  assert.ok(!isHeartbeatText(null));
+  assert.ok(!isHeartbeatText("Space Data Rig surfaced 3 new UNCONFIRMED transit candidates."), "a science post is not a heartbeat");
+  for (const h of BUILD_NOTE_HEADLINES) assert.ok(!isHeartbeatText(h), `a build note is not a heartbeat: ${h}`);
+});
+
+test("newestScienceAt skips build notes and heartbeats, so neither can advance the science window", () => {
+  const rows = [
+    { id: "1", created_at: "2026-10-18T02:00:31.000Z", text: "Changes to the machinery behind Space Data Rig:\n- fix(x-post): split the cursors" },
+    { id: "2", created_at: "2026-10-18T01:45:00.000Z", text: "Space Data Rig status." },
+    { id: "3", created_at: "2026-10-18T01:00:12.000Z", text: "Space Data Rig flagged 1 new UNCONFIRMED transit candidate in its blind survey of real TESS photometry (e.g. TOI-589.01, P=2.51d)." },
+  ];
+  assert.equal(newestCreatedAt(rows), "2026-10-18T02:00:31.000Z", "the newest tweet of any kind (the silence measure)");
+  assert.equal(newestScienceAt(rows), "2026-10-18T01:00:12.000Z", "the newest post that actually reported science");
+  assert.notEqual(
+    newestScienceAt(rows),
+    newestCreatedAt(rows),
+    "if these collapse, a build note posted after the science fetch pushes the window forward and drops results",
+  );
+});
+
+test("newestScienceAt degrades to empty so the workflow widens the window instead of narrowing it", () => {
+  assert.equal(newestScienceAt([]), "");
+  assert.equal(newestScienceAt(undefined), "");
+  assert.equal(newestScienceAt(null), "");
+  assert.equal(
+    newestScienceAt([{ id: "1", created_at: "2026-10-18T02:00:31.000Z", text: "Space Data Rig status." }]),
+    "",
+    "a page holding only a heartbeat has no science cursor; the caller falls back to the newest tweet (wider is safe)",
+  );
+  assert.equal(newestScienceAt([{ id: "2", text: "A science post with no created_at." }]), "", "no timestamp -> no cursor");
+});
+
+// ---- de-duplication: lifting our own bullets back off the feed ----
+// This is what lets the dev window OVERLAP its cursor (recovering a commit that lands mid-run) without repeating a
+// bullet that is already on the timeline.
+
+test("reportedSubjects round-trips a REAL composed build note back into composeDigest's de-duplication input", () => {
+  const subjects = ["fix(x-post): split the science and dev cursors", "docs: record the defect with its evidence"];
+  const note = composeDigest({
+    windowStart: "2026-10-18T01:00:00.000Z",
+    windowEnd: "2026-10-18T02:00:00.000Z",
+    ledger: [],
+    findings: [],
+    research: null,
+    researchUpdated: false,
+    devCommits: subjects,
+    only: "build-note",
+  });
+  assert.ok(note.length > 0, "expected a build note for this fixture");
+  const reported = reportedSubjects([{ id: "1", created_at: "2026-10-18T02:00:31.000Z", text: note }]);
+  for (const s of subjects) {
+    assert.ok(reported.includes(s), `the posted bullet must be recoverable verbatim: "${s}" (got ${JSON.stringify(reported)})`);
+  }
+  // Feeding them back must silence the note -- that is the whole point of the overlap.
+  const again = composeDigest({
+    windowStart: "2026-10-18T01:00:00.000Z",
+    windowEnd: "2026-10-18T02:00:00.000Z",
+    ledger: [],
+    findings: [],
+    research: null,
+    researchUpdated: false,
+    devCommits: subjects,
+    alreadyReported: reported,
+    only: "build-note",
+  });
+  assert.equal(again, "", "an already-announced backlog must compose nothing rather than repeat itself");
+  const partial = composeDigest({
+    windowStart: "2026-10-18T01:00:00.000Z",
+    windowEnd: "2026-10-18T02:00:00.000Z",
+    ledger: [],
+    findings: [],
+    research: null,
+    researchUpdated: false,
+    devCommits: [...subjects, "feat(digest): report every tier in a window"],
+    alreadyReported: reported,
+    only: "build-note",
+  });
+  assert.ok(partial.includes("feat(digest): report every tier in a window"), "a NEW subject must still be reported");
+  assert.ok(!partial.includes("split the science and dev cursors"), "and an already-announced one must not be repeated");
+});
+
+test("reportedSubjects ignores science posts and heartbeats, and degrades to empty", () => {
+  assert.deepEqual(reportedSubjects([]), []);
+  assert.deepEqual(reportedSubjects(undefined), []);
+  assert.deepEqual(reportedSubjects(null), []);
+  assert.deepEqual(
+    reportedSubjects([{ id: "1", created_at: "2026-10-18T01:00:12.000Z", text: "Space Data Rig flagged 1 new UNCONFIRMED transit candidate:\n- not a bullet we wrote" }]),
+    [],
+    "bullets are only lifted off BUILD NOTES; a science post's lines are prose, not commit subjects",
+  );
+  assert.deepEqual(reportedSubjects([{ id: "2", created_at: "2026-10-18T01:45:00.000Z", text: "Space Data Rig status." }]), []);
 });
 
 // ---- newest-timestamp selection, driven by realistic v2 fixtures ----

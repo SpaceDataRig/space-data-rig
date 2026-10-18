@@ -729,6 +729,17 @@ dominated": limb darkening is the largest term, but an imperfect ephemeris and s
 a few times larger than photon noise alone would suggest. Quoting the tight statistical sigma would have
 overstated our precision by a wide margin; we publish the measured multiplier instead of hiding the gap.
 
+**The same rule now governs the product surfaces, from a later measurement.** P90 (`reports/p90-depth-estimators.md`)
+graded the two depth estimators the PRODUCTION path actually runs -- the BLS box and the per-sector shape fit, both
+at the detector's own ephemeris -- against the archive on 16 period-matched planets, and reported not only the median
+absolute error (33.0% for what the adoption guard publishes) but the radii that cover 68% and 95% of those rows
+(48.0% and 104.4%). A "+/-" is read as one standard deviation, so the bar a card prints is the 68% radius carried up
+to one significant figure, combined in quadrature with each record's own statistical term 1/|snr| -- never the
+median, which covers only half the rows. Depth and period now go through one rule on every surface
+(`src/core/depthFormat.ts`, `src/core/periodFormat.ts`, mirrored for the board by `web/honest-precision.js`, held in
+step by `tests/depth-honesty.test.ts`, which also re-derives the cited numbers from P90's own stored rows). The tail
+is heavy enough (worst row 188.9%) that no surface doubles this bar into a 95% interval.
+
 ### Independent SIZE of blind-recovered, UNCONFIRMED candidates (`npm run p11:candidate-size`)
 
 p7 re-detected the ORBIT of real unconfirmed candidates straight from the pixels, blind; the depth fit above

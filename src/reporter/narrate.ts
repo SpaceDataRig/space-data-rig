@@ -13,6 +13,7 @@ import type { Finding, RigEvent, SeatName } from "../core/types.ts";
 import { wilsonInterval } from "../sim/completenessGrid.ts";
 import { isRealPhotometry } from "../data/dataTier.ts";
 import { renderPeriodDays } from "../core/periodFormat.ts";
+import { renderDepthPpm, DEPTH_CALIBRATION_R68_REL, DEPTH_CALIBRATION_N } from "../core/depthFormat.ts";
 
 /** Trader-facing label + color for a verdict (used by the findings board). */
 export function verdictBadge(verdict: Finding["verdict"]): { label: string; tone: "good" | "warn" | "bad" } {
@@ -88,6 +89,12 @@ export function narrateFinding(
   // precision two orders of magnitude better than the search had -- and at the grid edge claimed a measurement of
   // something that was only "at least as long as what we searched for".
   const pr = renderPeriodDays(planetYear, c.periodResolutionDays, false);
+  // The same rule applied to the depth (src/core/depthFormat.ts). P90 measured this pipeline's own depth estimators
+  // against the NASA Exoplanet Archive on 16 period-matched confirmed planets: median ABSOLUTE error 36.7% for the
+  // box, 44.2% for the per-sector shape fit, 33.0% for what the adoption guard publishes (the two arms not
+  // separable head to head, exact sign test p = 1.00). Until now every surface here printed the result as a bare
+  // integer ppm and a percent to three decimals -- a precision claim nothing in the repository has ever supported.
+  const dr = renderDepthPpm(c.depthFrac, c.snr);
   const periodCore = c.atSearchBoundary
     ? `signal of at least ${pr.value} days (the search limit)`
     : `${pr.value}-day signal`;
@@ -143,14 +150,28 @@ export function narrateFinding(
       ? `The repeat interval is known to about +/- ${pr.uncertainty} days, which is how finely the search stepped through possible periods. `
       : "";
 
+  // Where the quoted depth uncertainty actually comes from, said plainly. The statistical term (1/|snr|) is small;
+  // the dominant term is a MEASURED systematic -- the disagreement between this pipeline's own estimators and an
+  // outside catalogue -- so the sentence must not let a reader think a brighter star would earn a better depth.
+  const depthCaveat = dr
+    ? `That depth is quoted to +/- ${dr.uncertaintyPpm} ppm. The term that dominates it is not the noise in the ` +
+      `photometry, which would be far smaller, but how far the depths this pipeline measures sit from the value an ` +
+      `outside catalogue lists for the same planet: on ${DEPTH_CALIBRATION_N} planets with published transit depths ` +
+      `whose period our search reproduced, the radius that holds two thirds of them is ` +
+      `${Math.round(DEPTH_CALIBRATION_R68_REL * 100)}%, and the bar above is that radius carried up to one figure. `
+    : "";
+
   const explainer =
     (isDip
-      ? `The star's brightness dips by about ${depthPpm} parts per million once every ${pr.value} days -- ` +
+      ? `The star's brightness dips by ${
+          dr ? `${dr.ppm} parts per million, give or take about ${dr.uncertaintyPpm} ppm` : `about ${depthPpm} parts per million`
+        } once every ${pr.value} days -- ` +
         `that repeating dip is the fingerprint of a planet crossing (transiting) the star. `
       : `At a ${pr.value}-day repeat interval the strongest box the search found is a BRIGHTENING of about ${risePpm} ` +
         `parts per million, not a dimming. A transit blocks light, so this is the opposite of one: nothing here is a ` +
         `planet crossing the star, and the row is kept because the search produced it and the critic turned it down. `) +
     periodCaveat +
+    depthCaveat +
     `The signal is ${explainSnr(c.snr, isDip)}. ` +
     recoveryNote +
     `Mission Critic verdict: ${badge.label} -- ${f.verdictReason}`;
@@ -158,9 +179,13 @@ export function narrateFinding(
   const stats: Record<string, string> = {
     Target: f.targetId,
     "Planet year (period)": periodStat,
-    "Transit depth": isDip
-      ? `${depthPpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`
-      : `no dip measured -- the box is a rise of ${risePpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`,
+    // The percent used to be printed to three decimals alongside a bare integer ppm, which advertised a precision
+    // of order one part in a thousand on a quantity measured to order a third. Both terms now carry their error bar.
+    "Transit depth": isDip && dr
+      ? `${dr.text} (${dr.percentText})`
+      : isDip
+        ? `${depthPpm} ppm`
+        : `no dip measured -- the box is a rise of ${risePpm} ppm`,
     "Transit duration": `${c.durationHours.toFixed(2)} hours`,
     "Signal strength (SNR)": c.snr.toFixed(1),
     "Recovery confidence": recoveryStat,

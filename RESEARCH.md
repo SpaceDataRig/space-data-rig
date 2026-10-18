@@ -1062,8 +1062,14 @@ applied it to numbers our own pipeline measured on real TESS-SPOC photometry:
   load-bearing at this n rather than tuned to it. Two limits stated by the data: the archive value is itself a
   fitted parameter, so these numbers bound the AGREEMENT between three reductions of the same photometry, not the
   accuracy of any one of them against the sky; and a median absolute error of ~37% is incompatible with rendering
-  the same quantity as an integer number of ppm. `reports/p90-depth-estimators.*`. Measure-only; discoveryClaim
-  false; no production record was modified.
+  the same quantity as an integer number of ppm. **What that consequence became:** a "+/-" is read as one standard
+  deviation (~68% coverage) while a median covers half the rows, so the report also gives the empirical coverage
+  radii of the published depth -- median 33.0%, 68% radius **48.0%**, 95% radius 104.4%, worst row 188.9%. The
+  surfaces now print `depth +/- uncertainty` from that radius (carried up to one significant figure, combined in
+  quadrature with each record's own statistical term 1/|snr|), in `src/core/depthFormat.ts` with the browser mirror
+  `web/honest-precision.js`; the same call sites stopped printing a period to three decimals, which the grid never
+  resolved. The heavy tail is why no surface doubles this bar into a 95% interval. `reports/p90-depth-estimators.*`.
+  Measure-only; discoveryClaim false; no production record was modified.
 
 ---
 

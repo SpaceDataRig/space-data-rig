@@ -13,6 +13,12 @@
 import { MissionRoom, SEAT_META } from "/space.js";
 import { connectLive } from "/live.js";
 import { headlineRelabelNote } from "/relabel.js";
+// Depth and period are MEASUREMENTS with a known error, not exact numbers. This module carries the error bars the
+// records can support (browser mirror of src/core/depthFormat.ts and src/core/periodFormat.ts, kept in step by
+// tests/depth-honesty.test.ts). Before it, every cell below printed a bare integer ppm and a period to three
+// decimals -- P90 measured the depth estimators at a median 37% absolute error against the NASA Exoplanet Archive,
+// and the BLS period is a grid node whose spacing grows as P^2.
+import { depthCellText, periodCellText } from "/honest-precision.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -236,11 +242,11 @@ function metricsHtml(f) {
   const conf = f.recoveryConfidence != null ? `${Math.round(f.recoveryConfidence * 100)}%` : "n/a";
   const match = f.crossmatch?.matchedKnownPlanet ? esc(f.crossmatch.knownPlanetName || "yes") : "none";
   const cells = [
-    ["Period", `${(c.periodDays ?? 0).toFixed(3)} d`],
+    ["Period", periodCellText(c.periodDays ?? 0, c.periodResolutionDays)],
     // A non-positive depth is not a shallow transit: the BLS box statistic is squared, so a periodic brightening can
     // win the grid and the depth keeps the sign. Printed raw, a value like -105 ppm reads like a measurement error,
     // so the card says which feature was actually measured (mirrors src/reporter/narrate.ts).
-    ["Depth", depthPpm > 0 ? `${depthPpm} ppm` : `no dip -- box measured a rise of ${Math.abs(depthPpm)} ppm`],
+    ["Depth", depthCellText(depthPpm, c.snr)],
     ["SNR", (c.snr ?? 0).toFixed(1)],
     ["Duration", `${(c.durationHours ?? 0).toFixed(2)} h`],
     ["Confidence", conf],
@@ -545,8 +551,8 @@ function candCardHtml(c) {
   const next = c.nextTransitBjd != null ? `${c.nextTransitBjd.toFixed(3)} BJD${c.daysUntilNext != null ? ` (in ${c.daysUntilNext.toFixed(1)} d)` : ""}` : "unpredictable";
   const place = c.altitudeDeg != null ? `${c.altitudeDeg.toFixed(1)}&deg; at mid-transit &middot; ${c.observable ? "well placed" : "below 20&deg;"} from ${esc(c.siteName)}` : "position unavailable";
   const cells = [
-    ["Period", `${c.periodDays.toFixed(3)} d`],
-    ["Depth", `${Math.round(c.depthPpm)} ppm`],
+    ["Period", periodCellText(c.periodDays, c.periodResolutionDays)],
+    ["Depth", depthCellText(c.depthPpm, c.snr)],
     ["SNR", c.snr != null ? c.snr.toFixed(1) : "n/a"],
     ["Tmag", c.tmag != null ? c.tmag.toFixed(2) : "n/a"],
     ["Priority", `${esc(c.priorityBand)} (${c.priorityScore.toFixed(2)})`],
@@ -687,8 +693,8 @@ function renderObserveResult(o) {
       `<div class="observe-row"><span class="k">Result</span><span class="v">${verdictTxt}</span></div>` +
       `<div class="observe-grid">` +
         `<div><span class="k">SNR</span><span class="v">${s.snr.toFixed(1)}</span></div>` +
-        `<div><span class="k">Period</span><span class="v">${s.periodDays.toFixed(3)} d</span></div>` +
-        `<div><span class="k">Depth</span><span class="v">${Math.round(s.depthPpm)} ppm</span></div>` +
+        `<div><span class="k">Period</span><span class="v">${periodCellText(s.periodDays, s.periodResolutionDays)}</span></div>` +
+        `<div><span class="k">Depth</span><span class="v">${depthCellText(Math.round(s.depthPpm), s.snr)}</span></div>` +
         `<div><span class="k">Baseline</span><span class="v">${s.spanDays.toFixed(1)} d / ${s.points} pts</span></div>` +
       `</div>` +
       `<div class="observe-src">${esc(s.lightCurveSource)}</div>` +

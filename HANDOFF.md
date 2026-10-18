@@ -481,6 +481,23 @@ the Actions web page when the anonymous API is rate-limited.
   `tests/*.ts`" as "this module is untested" was wrong: the workspace root is ABOVE the repository, so the glob never
   looked in the right directory, and an existing 5-test file was overwritten before `git restore` undid it. Scope the
   claim ("found none under <absolute path>") or run the check a second way before concluding absence.
+- A "+/-" is a COVERAGE claim, not a median. The measured median absolute depth error is 33.0% and the radius that
+  covers 68% of the rows is 48.0%; publishing the median as the error bar under-states it by construction. Check
+  BEFORE inventing one too: p9 already answered this (README, "Can we make the error bar honest?", k = 3.2 inflation
+  to reach 68% coverage), and this pass built a third recipe before finding it. The tail here is far heavier than a
+  normal one (95% needs 104.4% where 68% needs 48.0%, a ratio of 2.17 against the 1.96 a Gaussian would give), so
+  never double the quoted bar and call the result a 95% interval.
+- Any surface that renders a MEASURED number must render its uncertainty from one rule with every other surface.
+  The period case proves the cost of splitting them: `src/core/periodFormat.ts` banned fixed decimals in the narration
+  while `web/app.js` kept printing `.toFixed(3)` on three cards, and the depth got the same treatment in reverse
+  (integer ppm plus three-decimal percent). Where a browser mirror is unavoidable (no `allowJs`), pin it: a parity
+  sweep over the real input ranges, equal constants asserted in both languages, structural assertions that the call
+  sites exist, and a test that re-derives the cited statistic from the committed data (tests/depth-honesty.test.ts).
+- A replay/regeneration mode must take its SAMPLE DESCRIPTION from the stored run metadata, never from the CLI
+  defaults. `--from-json` first rewrote the report header to `P in [0.8, 15] d` for rows gathered with `[0.8, 8] d`, then
+  persisted that into the next JSON -- one regeneration cycle silently corrupted the provenance of the sample. Read
+  every parameter you print from the stored meta, and label the output as a replay so a reader can tell a re-analysis
+  from a fresh observation.
 
 ## 13. Current state (as of 2026-10-13)
 

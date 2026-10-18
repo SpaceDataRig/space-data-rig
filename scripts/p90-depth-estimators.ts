@@ -29,7 +29,7 @@
 // falls back to the bundled sample the run REFUSES to emit calibration numbers.
 //
 // Run: npm run p90:depth-estimators [-- --targets 16 --maxsectors 3 --tmag 9.5 --scan 90]
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { scout } from "../src/seats/seats.ts";
 import { robustPerSectorDepth } from "../src/detect/perSectorRun.ts";
 import type { CombinedEstimate } from "../src/detect/perSector.ts";
@@ -55,6 +55,28 @@ function median(xs: number[]): number {
 /** Median absolute value -- the estimator-accuracy summary, unit-free relative to the catalogue. */
 function madPct(xs: number[]): number {
   return median(xs.map((v) => Math.abs(v)));
+}
+/**
+ * Empirical quantile of the ABSOLUTE relative error (linear interpolation, type 7).
+ * WHY THIS EXISTS AND NOT JUST THE MEDIAN: a median absolute error is the radius that covers HALF the rows.
+ * A "+/-" bar on a published number reads as one standard deviation, which is ~68% coverage, so quoting the
+ * median as if it were a sigma UNDER-STATES the error. This is the same correction p9 (README, "Can we make the
+ * error bar honest?") applied to its own depth fit -- there by an inflation factor k calibrated so that +/-k*bar
+ * contains 68% of the catalogue-matched rows; here the quantile is taken directly.
+ */
+function quantileAbsPct(xs: number[], p: number): number {
+  const s = [...xs.map((v) => Math.abs(v))].sort((a, b) => a - b);
+  if (!s.length) return NaN;
+  const h = (s.length - 1) * p;
+  const f = Math.floor(h);
+  const c = Math.ceil(h);
+  return s[f]! + (s[c]! - s[f]!) * (h - f);
+}
+/** Median, 68%-coverage radius and 95%-coverage radius of a set of signed relative errors. */
+function coverage(xs: number[]): { medianAbsPct: number; r68Pct: number; r95Pct: number; kTo68: number; worstPct: number } {
+  const medianAbsPct = madPct(xs);
+  const r68Pct = quantileAbsPct(xs, 0.68);
+  return { medianAbsPct, r68Pct, r95Pct: quantileAbsPct(xs, 0.95), kTo68: r68Pct / medianAbsPct, worstPct: Math.max(...xs.map((v) => Math.abs(v))) };
 }
 const pct1 = (v: number): string => (Number.isFinite(v) ? v.toFixed(1) : "n/a");
 const pct2 = (v: number): string => (Number.isFinite(v) ? v.toFixed(2) : "n/a");
@@ -141,8 +163,54 @@ async function main(): Promise<void> {
       `reference = archive pl_trandep (post-hoc).\n  want ${want} matched planets, Tmag <= ${tmag}, P in [${minP}, ${maxP}] d, ` +
       `<=${maxSectors} sectors per target, period-match tol ${periodTol}%, scan cap ${scanCap}.`,
   );
+  // REPLAY MODE (--from-json=<a previous reports/p90-depth-estimators.json>): recompute every statistic, including
+  // the error-bar calibration below, from the rows that run stored. No network and no new measurement: the light
+  // curves were fetched then, not now. A regenerated report says so, because a reader has to be able to tell a
+  // re-analysis from a fresh observation -- the same reason the stamp carries a git SHA.
+  const REPLAY = arg("from-json", "");
+  const replayed = REPLAY
+    ? (() => {
+        const j = JSON.parse(readFileSync(REPLAY, "utf8")) as {
+          rows: Row[];
+          meta: {
+            scanned?: number;
+            scanWindow?: number;
+            generatedAt?: string;
+            tmag?: number;
+            minPeriodDays?: number;
+            maxPeriodDays?: number;
+            periodTolPct?: number;
+          };
+        };
+        return {
+          rows: j.rows,
+          scanned: j.meta.scanned ?? j.rows.length,
+          scanWindow: j.meta.scanWindow ?? j.rows.length,
+          generatedAt: j.meta.generatedAt ?? "unknown",
+          // The SAMPLE has to be described the way the run that gathered it described it. Taking these from the CLI
+          // defaults instead would print a period range and magnitude cut the rows were never selected with -- a
+          // report that misstates its own sampling is worse than one that omits it.
+          tmag: j.meta.tmag ?? tmag,
+          minP: j.meta.minPeriodDays ?? minP,
+          maxP: j.meta.maxPeriodDays ?? maxP,
+          periodTol: j.meta.periodTolPct ?? periodTol,
+        };
+      })()
+    : null;
+  const shownTmag = replayed ? replayed.tmag : tmag;
+  const shownMinP = replayed ? replayed.minP : minP;
+  const shownMaxP = replayed ? replayed.maxP : maxP;
+  const shownPeriodTol = replayed ? replayed.periodTol : periodTol;
+  if (replayed) {
+    console.log(
+      `[p90] REPLAY from ${REPLAY}: ${replayed.rows.length} stored rows, original run ${replayed.generatedAt}. ` +
+        `No network, no new measurement.`,
+    );
+  }
 
-  const res = await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true, limit: 6000 });
+  const res = replayed
+    ? ({ source: "nasa-tap", planets: [], error: undefined } as unknown as Awaited<ReturnType<typeof fetchConfirmedPlanets>>)
+    : await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true, limit: 6000 });
   if (res.source !== "nasa-tap") {
     console.log(`[p90] catalogue pull source = ${res.source} (${res.error ?? "no error string"}).`);
     console.log(`[p90] REFUSING to calibrate against the bundled fallback sample: it is not a reference.`);
@@ -157,10 +225,11 @@ async function main(): Promise<void> {
     // brightest first: a depth comparison on a saturated or photon-starved curve measures the noise, not the estimator
     .sort((a, b) => (a.sy_tmag ?? 99) - (b.sy_tmag ?? 99))
     .slice(0, scanCap);
-  console.log(`[p90] ${pool.length} candidate rows in the scan window.`);
+  const poolLen = replayed ? replayed.scanWindow : pool.length;
+  console.log(`[p90] ${poolLen} candidate rows in the scan window.`);
 
-  const rows: Row[] = [];
-  let scanned = 0;
+  const rows: Row[] = replayed ? [...replayed.rows] : [];
+  let scanned = replayed ? replayed.scanned : 0;
   for (const p of pool) {
     if (rows.length >= want) break;
     scanned++;
@@ -282,8 +351,12 @@ async function main(): Promise<void> {
   L.push("");
   L.push(`## Sample`);
   L.push("");
-  L.push(`- catalogue pull: \`nasa-tap\`, Tmag <= ${tmag}, P in [${minP}, ${maxP}] d, scan window ${pool.length}, scanned ${scanned}.`);
-  L.push(`- records with both estimators and a period match within ${periodTol}%: **${withPer.length} of ${rows.length} recorded**.`);
+  L.push(`- catalogue pull: \`nasa-tap\`, Tmag <= ${shownTmag}, P in [${shownMinP}, ${shownMaxP}] d, scan window ${poolLen}, scanned ${scanned}.`);
+  if (replayed) {
+    L.push(`- **REPLAY**: these statistics were recomputed from the rows of the run dated ${replayed.generatedAt}; the ` +
+      `photometry was fetched then, not now. The light-curve work is unchanged, only the analysis of it.`);
+  }
+  L.push(`- records with both estimators and a period match within ${shownPeriodTol}%: **${withPer.length} of ${rows.length} recorded**.`);
   L.push(`- excluded from every statistic: ${rows.length - matchedRows.length} period-mismatched and ${matchedRows.length - withPer.length} without a usable per-sector fit.`);
   L.push("");
   L.push(`## Result`);
@@ -297,6 +370,39 @@ async function main(): Promise<void> {
   L.push(`Adoption at the ${DEPTH_ADOPTION_MAX_FACTOR}x bound: **${adopted.length} adopted**, ${refused.length} refused.`);
   L.push(`Adoptions that came out FURTHER from the catalogue than the box they replaced: **${adoptedWorse} of ${adopted.length}**.`);
   L.push(`Refusals where keeping the box was in fact the closer choice: ${refusedRight} of ${refused.length}.`);
+  L.push("");
+
+  // The calibration the presentation layer actually needs. A median absolute error covers HALF the rows; a "+/-"
+  // on a published number is read as one standard deviation (~68%), so using the median as the bar under-states
+  // the error by design. The radii below are taken empirically, exactly as p9 calibrated its own bar to reach 68%
+  // coverage, and the larger radius is the one carried into src/core/depthFormat.ts.
+  const covBox = coverage(boxErrs);
+  const covPer = coverage(perErrs);
+  const covPub = coverage(pubErrs);
+  L.push(`## What error bar a published depth actually earns (same rows, empirical coverage)`);
+  L.push("");
+  L.push(`| arm | median abs err | radius covering 68% | radius covering 95% | 68%/median | worst row |`);
+  L.push(`|---|---|---|---|---|---|`);
+  for (const [label, c] of [
+    ["BLS box", covBox] as const,
+    ["per-sector median", covPer] as const,
+    ["what the guard publishes", covPub] as const,
+  ]) {
+    L.push(`| ${label} | ${pct1(c.medianAbsPct)}% | ${pct1(c.r68Pct)}% | ${pct1(c.r95Pct)}% | ${c.kTo68.toFixed(2)}x | ${pct1(c.worstPct)}% |`);
+  }
+  L.push("");
+  L.push(`- A "+/-" is read as one standard deviation, which is about 68% coverage, so the honest bar on a published`);
+  L.push(`  depth is ${pct1(covPub.r68Pct)}%, not the ${pct1(covPub.medianAbsPct)}% median: the median is the radius that covers`);
+  L.push(`  half these rows, and calling it a sigma would under-state the error by a factor of ${covPub.kTo68.toFixed(2)}.`);
+  L.push(`- The distribution is heavier-tailed than a normal one. Reaching 95% needs ${pct1(covPub.r95Pct)}%, and the worst`);
+  L.push(`  row in the sample is off by ${pct1(covPub.worstPct)}% -- more than the depth itself. So the bar is defensible at`);
+  L.push(`  the one-sigma level and must NOT be doubled to advertise a 95% interval; nothing here is Gaussian enough for that.`);
+  L.push(`- At n=${withPer.length} a 68% quantile interpolates between two neighbouring rows, so this radius is stated to`);
+  L.push(`  one significant figure in the code that uses it and is re-estimated whenever the sample grows. It is a floor`);
+  L.push(`  measured on ${withPer.length} targets, not a property of the sky.`);
+  L.push(`- Carried into the presentation layer as \`DEPTH_SYSTEMATIC_REL = ${(Math.ceil(covPub.r68Pct / 10) / 10).toFixed(2)}\``);
+  L.push(`  (rounded UP from ${pct1(covPub.r68Pct)}%), combined there with each record's own statistical term 1/|snr| in`);
+  L.push(`  quadrature -- which can only make a bar wider, never narrower, than what was measured.`);
   L.push("");
   L.push(`## Per-target table`);
   L.push("");
@@ -326,7 +432,12 @@ async function main(): Promise<void> {
   const guardBetter = madPct(pubErrs) <= Math.min(madPct(boxErrs), madPct(perErrs));
   L.push(`- What the guard publishes${guardBetter ? " is better than either estimator alone on this sample" : " does NOT beat either estimator alone on this sample"}: median absolute error ${pct1(madPct(pubErrs))}% against ${pct1(madPct(boxErrs))}% (box) and ${pct1(madPct(perErrs))}% (per-sector), with ${withPer.filter((r) => Math.abs(r.publishedErrPct) <= Math.abs(r.boxErrPct)).length}/${withPer.length} rows no worse than the box. ${guardBetter ? `The gain comes from the refusals (${refusedRight}/${refused.length} were cases where the box was in fact the closer measurement), not from the adoptions: ${adoptedWorse} of ${adopted.length} adoptions moved AWAY from the reference.` : `Adoptions moved the published depth away from the reference in ${adoptedWorse} of ${adopted.length} cases, and ${refusedRight}/${refused.length} refusals kept the closer measurement.`}`);
   L.push(`- The archive value is itself a fitted parameter (a transit depth from a published discovery fit, with its own dilution, limb-darkening and stellar-density assumptions), so a median disagreement of ${pct1(madPct(pubErrs))}% here bounds the AGREEMENT between three different reductions of the same photometry, not the accuracy of any one of them against the sky.`);
-  L.push(`- Practical consequence for every surface that prints a depth: the median absolute error measured here is ${pct1(madPct(boxErrs))}% (box) / ${pct1(madPct(perErrs))}% (per-sector), while the board and the finding card render the same quantity as an integer number of ppm. That is a precision claim neither estimator supports.`);
+  L.push(`- Practical consequence, and what was done about it: the median absolute error measured here is ${pct1(madPct(boxErrs))}% (box)`);
+  L.push(`  / ${pct1(madPct(perErrs))}% (per-sector), while every surface used to render the same quantity as an integer number of ppm`);
+  L.push(`  and a percent to three decimals -- a precision claim neither estimator supports. Depth and period now go`);
+  L.push(`  through one rule on every surface (src/core/depthFormat.ts, mirrored for the board by web/honest-precision.js,`);
+  L.push(`  with the two kept in step by tests/depth-honesty.test.ts), and the bar they print is the 68%-coverage radius`);
+  L.push(`  above rather than the median, because a median covers half the rows and a "+/-" promises about two thirds.`);
   L.push("");
   const sweep = boundSweep(withPer, [1.2, 1.5, 2, 3, DEPTH_ADOPTION_MAX_FACTOR, 10, 1000]);
   const sweepSpread = Math.max(...sweep.map((b) => b.medAbsErrPct)) - Math.min(...sweep.map((b) => b.medAbsErrPct));
@@ -356,13 +467,14 @@ async function main(): Promise<void> {
         meta: {
           want,
           maxSectors,
-          tmag,
-          periodTolPct: periodTol,
-          minPeriodDays: minP,
-          maxPeriodDays: maxP,
-          scanWindow: pool.length,
+          tmag: shownTmag,
+          periodTolPct: shownPeriodTol,
+          minPeriodDays: shownMinP,
+          maxPeriodDays: shownMaxP,
+          scanWindow: poolLen,
           scanned,
           recorded: rows.length,
+          replayFrom: REPLAY || undefined,
           matched: matchedRows.length,
           usable: withPer.length,
           adoptionMaxFactor: DEPTH_ADOPTION_MAX_FACTOR,
@@ -375,6 +487,14 @@ async function main(): Promise<void> {
             publishedMedianAbsErrPct: madPct(pubErrs),
             boxWins,
             perSectorWins: perWins,
+            errorBar: {
+              note: "empirical coverage radii of the relative depth error against the archive, same period-matched rows; a median absolute error covers half the rows and is NOT a 1-sigma bar",
+              published: covPub,
+              box: covBox,
+              perSector: covPer,
+              adoptedRelativeToBar: Math.ceil(covPub.r68Pct / 10) / 10,
+              n: withPer.length,
+            },
             signTestP: signTestP(Math.max(boxWins, perWins), withPer.length),
             boundSweep: boundSweep(withPer, [1.2, 1.5, 2, 3, DEPTH_ADOPTION_MAX_FACTOR, 10, 1000]),
             guardBetter: madPct(pubErrs) <= Math.min(madPct(boxErrs), madPct(perErrs)),

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "want": 30,
+    "want": 16,
     "maxSectors": 3,
     "tmag": 9.5,
     "periodTolPct": 5,
@@ -9,6 +9,7 @@
     "scanWindow": 150,
     "scanned": 30,
     "recorded": 30,
+    "replayFrom": "reports/p90-depth-estimators.json",
     "matched": 16,
     "usable": 16,
     "adoptionMaxFactor": 5,
@@ -21,6 +22,32 @@
       "publishedMedianAbsErrPct": 33.01843258440082,
       "boxWins": 8,
       "perSectorWins": 8,
+      "errorBar": {
+        "note": "empirical coverage radii of the relative depth error against the archive, same period-matched rows; a median absolute error covers half the rows and is NOT a 1-sigma bar",
+        "published": {
+          "medianAbsPct": 33.01843258440082,
+          "r68Pct": 47.968938044751454,
+          "r95Pct": 104.44731292998998,
+          "kTo68": 1.4527927066838973,
+          "worstPct": 188.85930313767477
+        },
+        "box": {
+          "medianAbsPct": 36.67750339385802,
+          "r68Pct": 47.09758453197863,
+          "r95Pct": 116.39204761343964,
+          "kTo68": 1.2841000660875286,
+          "worstPct": 236.838041845745
+        },
+        "perSector": {
+          "medianAbsPct": 44.15598806883628,
+          "r68Pct": 72.86039517580691,
+          "r95Pct": 145.08515834197797,
+          "kTo68": 1.6500682775396704,
+          "worstPct": 188.85930313767477
+        },
+        "adoptedRelativeToBar": 0.5,
+        "n": 16
+      },
       "signTestP": 1,
       "boundSweep": [
         {
@@ -76,12 +103,12 @@
     "detector": "seats.scout -> detectTransit {minPeriodDays 0.8, maxPeriodDays 16, oversample 8, nDurations 12}",
     "perSector": "detect/perSectorRun.robustPerSectorDepth at the DETECTOR ephemeris",
     "generatedBy": "scripts/p90-depth-estimators.ts",
-    "generatedAt": "2026-10-18T08:39:31.787Z",
-    "gitSha": "46a191fdcbfd94656fe5c55d796bdf29c55e7515",
+    "generatedAt": "2026-10-18T09:41:09.459Z",
+    "gitSha": "f473c72bcfae482432a7e9f82ff625dfc5cf8efe",
     "inputs": [
       {
         "path": "scripts/p90-depth-estimators.ts",
-        "sha256": "89a6bbe5e93f8b77c375b109d4ed3635d1e5ca9b35da9260055b1cdbed0da002"
+        "sha256": "7d03cc789304614d966f53dd40ed2f783fee23dc4959ece828341a0dfb2434a5"
       },
       {
         "path": "src/seats/seats.ts",

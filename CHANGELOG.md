@@ -5,6 +5,57 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The depth on every card promised a precision nothing has ever measured (2026-10-18, fourth pass)
+P90 closed with a consequence: its own measured error is of order a third, while the board and the finding card
+rendered the same quantity as an integer number of ppm. This pass implemented that consequence -- and in doing so
+found that the first attempt at it was wrong, in a way the repository had already answered once before.
+
+**What was printed, and what it claimed.** `narrateFinding` wrote "the star's brightness dips by about 1200 parts
+per million" and the stats row `1200 ppm (0.120%)`, while `web/app.js` rendered `Math.round(c.depthPpm)` ppm
+and `c.periodDays.toFixed(3)` days on three separate surfaces. A percent to three decimals is a claim of about one
+part in a thousand. P90 measured the agreement these estimators actually have with an outside catalogue at a median
+33.0-44.2% depending on the arm, and `src/core/periodFormat.ts` had already ruled three-decimal periods illegitimate
+for a grid node whose spacing grows as P^2 -- the narration had been fixed by that rule and the board had not been
+reached. Both are now covered: depth and period each print with the uncertainty they earned, on the narration, the
+finding card, the candidate card and the observe panel.
+
+**Where the number comes from, and the mistake that got corrected.** The first version of this pass took P90's
+median absolute error (37%) as the error bar. That is wrong in the direction that matters: a "+/-" is read as one
+standard deviation, which covers about two thirds of a symmetric distribution, while a median absolute error covers
+exactly HALF the rows -- so using the median as a sigma under-states the error by design. The repository had already
+been through this: p9 (README, "Can we make the error bar honest?") found its statistical bar undercovering and
+inflated it by a measured factor k = 3.2 until 68% of catalogue-matched rows fell inside. Applying the same question
+to P90's own rows gives the empirical radii -- for the published depth, median 33.0%, 68% radius **48.0%**, 95%
+radius 104.4%, worst row 188.9% -- and the bar the surfaces print is that 48% carried UP to one significant figure,
+combined in quadrature with each record's own statistical term `1/|snr|` (which is exactly what the published
+`snr = depthFrac/noiseSigmaFrac*sqrt(nIn)` relation makes it). The tail is heavy enough that nothing doubles this
+bar into a 95% interval, and the value keeps its own digits rather than being re-rounded, so a card can never
+disagree with the bundle it describes.
+
+**One rule, two runtimes, enforced rather than trusted.** `src/core/depthFormat.ts` holds the reasoning for the
+worker and the narration; `web/honest-precision.js` is the browser mirror, because `web/app.js` is served as plain
+ES modules and `tsconfig.json` has no `allowJs`. Two implementations of one rule drift by default and the drift is
+invisible, so `tests/depth-honesty.test.ts` sweeps both over every depth, SNR, period and grid resolution the
+surfaces can receive and requires identical strings, pins each repeated constant to the same number, and asserts the
+call sites exist in `web/app.js` -- the failure mode this project has already been audited into twice (a predicate
+that matched nothing, a gate that gated nothing). It also recomputes the medians and coverage radii FROM the rows P90
+committed, with statistics written independently of the report generator, and requires the report's own table and the
+cited constant to agree: a hand-edited report or a re-run on a different sample now turns the suite red instead of
+leaving the prose citing a number the data no longer says.
+
+**Two defects found while building the check.** (1) The new narration said "measured on 16 confirmed planets" --
+the stem `confirm` is exactly what the posting guard refuses, so the sentence would have been rejected at send time
+and stopped the loop. The over-claim scan added to `tests/narrate.test.ts` last pass caught it in the generator
+rather than in production, and the wording is now "planets with published transit depths", which is also the more
+accurate description of the sample. (2) `scripts/p90-depth-estimators.ts` grew a `--from-json` replay mode so the
+statistics above could be recomputed from the stored rows without re-fetching photometry; its first version took the
+sample description (magnitude cut and period range) from the CLI defaults instead of the stored run metadata, and
+silently rewrote the report to claim `P in [0.8, 15] d` for rows gathered with `P in [0.8, 8] d` -- a report that
+misstates its own sampling is worse than one that omits it. Fixed to read every sample parameter from the stored
+meta, and the report now carries a REPLAY line saying the photometry was fetched by the earlier run, not by this
+analysis. No verdict, gate, FAP, bundle field or anchored hash moved: this is the layer that describes measurements,
+not the layer that makes them. `npm test` 715/715.
+
 ### Which depth the rig publishes is now measured, not argued (2026-10-18, P90)
 The depth-adoption guard shipped two rounds ago refuses a per-sector shape fit that disagrees with the detector's
 BLS box by more than 5x. The bound was set by argument ("a fit that far off is measuring something else"), and the

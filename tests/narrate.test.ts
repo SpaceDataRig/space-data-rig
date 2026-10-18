@@ -120,11 +120,41 @@ function found(c: TransitCandidate, over: Partial<Finding> = {}): Finding {
 
 const REAL = "TESS-SPOC real photometry from the public S3 bucket";
 
-test("a measured dip keeps the dip sentence and its digits, unchanged by the new branch", () => {
+test("a measured dip is narrated WITH the uncertainty the measurement has earned", () => {
   const r = narrateFinding(found(cand()), { lightCurveSource: REAL });
-  assert.match(r.explainer, /brightness dips by about 1200 parts per million once every 3\.14 days/, r.explainer);
-  assert.equal(r.stats["Transit depth"], "1200 ppm (0.120%)");
+  // P90 measured a median 36.7% absolute error for the box depth against the NASA Exoplanet Archive, and a 48.0%
+  // radius for 68% coverage, so the prose may not offer "1200 parts per million" as if it were exact.
+  // 1200 ppm at 0.5 systematic (the coverage radius carried to one figure) -> ceil 1 sf -> 700.
+  assert.match(
+    r.explainer,
+    /brightness dips by 1200 parts per million, give or take about 700 ppm once every 3\.14 days/,
+    r.explainer,
+  );
+  assert.equal(r.stats["Transit depth"], "1200 +/- 700 ppm (0.12 +/- 0.07 %)");
   assert.equal(r.stats["Signal strength (SNR)"], "14.2");
+  // And it says WHERE the error bar comes from, with its sample size and its coverage meaning, so the number is
+  // checkable rather than styled.
+  assert.match(r.explainer, /quoted to \+\/\- 700 ppm/, r.explainer);
+  assert.match(r.explainer, /on 16 planets with published transit depths/, r.explainer);
+  assert.match(r.explainer, /the radius that holds two thirds of them is 48%/, r.explainer);
+});
+
+test("the narration never claims more digits than the recorded SNR and the measured floor support", () => {
+  // The defect P90 exposed was a bare integer ppm plus a three-decimal percent. No combination of depth and SNR
+  // may put that shape back on a card: an unqualified depth, or a percent finer than its own error bar.
+  const cases = [
+    { depthFrac: 2.68e-4, snr: 29.4 },
+    { depthFrac: 1.309e-2, snr: 108.7 },
+    { depthFrac: 6.0e-5, snr: 7.4 },
+    { depthFrac: 1e-6, snr: 1.5 },
+  ];
+  for (const c of cases) {
+    const r = narrateFinding(found(cand(c)), { lightCurveSource: REAL });
+    const stat = r.stats["Transit depth"];
+    assert.match(stat, /^\d+ \+\/- \d+ ppm \(/, `${JSON.stringify(c)}: ${stat}`);
+    assert.doesNotMatch(stat, /\d+ ppm \(\d+\.\d{3}%\)/, `${JSON.stringify(c)}: ${stat}`);
+    assert.doesNotMatch(r.explainer, /dips by about \d+ parts per million once/, "an unqualified depth in prose");
+  }
 });
 
 test("a brightening is never narrated as a transit", () => {
@@ -137,7 +167,9 @@ test("a brightening is never narrated as a transit", () => {
   assert.match(r.explainer, /is a BRIGHTENING of about 105 parts per million, not a dimming/, r.explainer);
   assert.match(r.explainer, /not a dip at all \(SNR -9\)/, r.explainer);
   assert.match(r.headline, /No transit measured on a 3\.14-day interval/, r.headline);
-  assert.match(r.stats["Transit depth"], /^no dip measured -- the box is a rise of 105 ppm \(-0\.010%\)$/, JSON.stringify(r.stats));
+  assert.equal(r.stats["Transit depth"], "no dip measured -- the box is a rise of 105 ppm", JSON.stringify(r.stats));
+  // No error bar and no percent either: there is no dip here whose precision could be qualified.
+  assert.doesNotMatch(r.stats["Transit depth"], /\+\/-|%/, r.stats["Transit depth"]);
 });
 
 test("a zero depth is 'no dip measured' too, because a flat box is not a shallow transit", () => {

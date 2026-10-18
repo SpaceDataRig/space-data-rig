@@ -13,6 +13,7 @@ the rig is allowed to see. Rows are kept only for stars with >=2 fetched sectors
 ## Sample
 
 - catalogue pull: `nasa-tap`, Tmag <= 9.5, P in [0.8, 8] d, scan window 150, scanned 30.
+- **REPLAY**: these statistics were recomputed from the rows of the run dated 2026-10-18T08:39:31.787Z; the photometry was fetched then, not now. The light-curve work is unchanged, only the analysis of it.
 - records with both estimators and a period match within 5%: **16 of 30 recorded**.
 - excluded from every statistic: 14 period-mismatched and 0 without a usable per-sector fit.
 
@@ -27,6 +28,27 @@ the rig is allowed to see. Rows are kept only for stars with >=2 fetched sectors
 Adoption at the 5x bound: **13 adopted**, 3 refused.
 Adoptions that came out FURTHER from the catalogue than the box they replaced: **5 of 13**.
 Refusals where keeping the box was in fact the closer choice: 3 of 3.
+
+## What error bar a published depth actually earns (same rows, empirical coverage)
+
+| arm | median abs err | radius covering 68% | radius covering 95% | 68%/median | worst row |
+|---|---|---|---|---|---|
+| BLS box | 36.7% | 47.1% | 116.4% | 1.28x | 236.8% |
+| per-sector median | 44.2% | 72.9% | 145.1% | 1.65x | 188.9% |
+| what the guard publishes | 33.0% | 48.0% | 104.4% | 1.45x | 188.9% |
+
+- A "+/-" is read as one standard deviation, which is about 68% coverage, so the honest bar on a published
+  depth is 48.0%, not the 33.0% median: the median is the radius that covers
+  half these rows, and calling it a sigma would under-state the error by a factor of 1.45.
+- The distribution is heavier-tailed than a normal one. Reaching 95% needs 104.4%, and the worst
+  row in the sample is off by 188.9% -- more than the depth itself. So the bar is defensible at
+  the one-sigma level and must NOT be doubled to advertise a 95% interval; nothing here is Gaussian enough for that.
+- At n=16 a 68% quantile interpolates between two neighbouring rows, so this radius is stated to
+  one significant figure in the code that uses it and is re-estimated whenever the sample grows. It is a floor
+  measured on 16 targets, not a property of the sky.
+- Carried into the presentation layer as `DEPTH_SYSTEMATIC_REL = 0.50`
+  (rounded UP from 48.0%), combined there with each record's own statistical term 1/|snr| in
+  quadrature -- which can only make a bar wider, never narrower, than what was measured.
 
 ## Per-target table
 
@@ -69,7 +91,12 @@ Refusals where keeping the box was in fact the closer choice: 3 of 3.
 - Head to head the two estimators are NOT separable on this sample: 8 vs 8 of 16 (exact two-sided sign test p = 1.00). Median ABSOLUTE error is 36.7% (box) against 44.2% (per-sector).
 - What the guard publishes is better than either estimator alone on this sample: median absolute error 33.0% against 36.7% (box) and 44.2% (per-sector), with 11/16 rows no worse than the box. The gain comes from the refusals (3/3 were cases where the box was in fact the closer measurement), not from the adoptions: 5 of 13 adoptions moved AWAY from the reference.
 - The archive value is itself a fitted parameter (a transit depth from a published discovery fit, with its own dilution, limb-darkening and stellar-density assumptions), so a median disagreement of 33.0% here bounds the AGREEMENT between three different reductions of the same photometry, not the accuracy of any one of them against the sky.
-- Practical consequence for every surface that prints a depth: the median absolute error measured here is 36.7% (box) / 44.2% (per-sector), while the board and the finding card render the same quantity as an integer number of ppm. That is a precision claim neither estimator supports.
+- Practical consequence, and what was done about it: the median absolute error measured here is 36.7% (box)
+  / 44.2% (per-sector), while every surface used to render the same quantity as an integer number of ppm
+  and a percent to three decimals -- a precision claim neither estimator supports. Depth and period now go
+  through one rule on every surface (src/core/depthFormat.ts, mirrored for the board by web/honest-precision.js,
+  with the two kept in step by tests/depth-honesty.test.ts), and the bar they print is the 68%-coverage radius
+  above rather than the median, because a median covers half the rows and a "+/-" promises about two thirds.
 
 ## What a different adoption bound would have published (same rows, same reference)
 

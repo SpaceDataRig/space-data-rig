@@ -325,19 +325,53 @@ export const BUILD_NOTE_HEADLINES: readonly string[] = [
   "Changes to the machinery behind Space Data Rig:",
 ];
 
-/** One dev commit -> one safe bullet line, or "" to drop it. Collapses whitespace, strips non-ASCII, caps length,
- *  and DROPS anything that would break a red line (mentions spend/wallet/key, or a time word) so a build note can
- *  never leak a banned term. The raw text still hits post-x-text.ts's own non-ASCII refusal as a second guard. */
-function sanitizeSubject(raw: string): string {
+/** One dev commit subject -> `{ text, reason }`. `text` is the safe bullet line ("" when the subject must be
+ *  dropped); `reason` says WHY, so a dropped commit is never silent -- main() logs every rejection.
+ *
+ *  Collapses whitespace, strips non-ASCII, caps length, and DROPS anything that would break a red line (mentions
+ *  spend/wallet/key, or a time word) so a build note can never leak a banned term. The raw text still hits
+ *  post-x-text.ts's own non-ASCII refusal as a second guard.
+ *
+ *  The over-claim check exists because of a stall specific to the UN-RATIONED posting path. post-x-text.ts runs
+ *  overclaimViolations over the FINAL text of every post and refuses on a hit, exiting non-zero; the workflow's
+ *  posting loop then BREAKS so the build-note cursor does not advance past an unsent item. Those two correct
+ *  decisions combine badly: one subject reading `feat(p17): first-light FFI feasibility` would poison its whole
+ *  batch permanently -- every window re-composes the same note, is refused, and the backlog never clears. Dropping
+ *  the offending subject and SAYING so is the only option that keeps the feed moving; the commit itself is still in
+ *  the history. Note `\bfirst\b` also matches inside a hyphenated "oldest-first", so this is not exotic vocabulary.
+ */
+function classifySubject(raw: string): { text: string; reason: string } {
   const s = String(raw || "")
     .replace(/[\r\n\t]+/g, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/[^\x00-\x7F]/g, "")
     .trim();
-  if (!s) return "";
-  if (/wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i.test(s)) return "";
-  if (/\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i.test(s)) return "";
-  return s.length > 140 ? `${s.slice(0, 137).trimEnd()}...` : s;
+  if (!s) return { text: "", reason: "empty" };
+  if (/wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i.test(s)) return { text: "", reason: "spend/key wording" };
+  if (/\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i.test(s)) return { text: "", reason: "time-implying wording" };
+  const capped = s.length > 140 ? `${s.slice(0, 137).trimEnd()}...` : s;
+  const over = overclaimViolations(capped);
+  if (over.length > 0) return { text: "", reason: `over-claim wording (${over[0].split(" :: ")[0]})` };
+  return { text: capped, reason: "" };
+}
+
+/** The bullet text for one commit subject, or "" to drop it. Kept as the one place composeDigest maps subjects. */
+function sanitizeSubject(raw: string): string {
+  return classifySubject(raw).text;
+}
+
+/**
+ * The subjects from `raw` that would be DROPPED, each with its reason. main() logs these so the feed's silence
+ * about a commit is explainable from a job log rather than invisible -- the whole defect class the un-rationing
+ * change was about was reportable work disappearing without a trace.
+ */
+export function rejectedDevSubjects(raw: string[]): Array<{ subject: string; reason: string }> {
+  const out: Array<{ subject: string; reason: string }> = [];
+  for (const r of Array.isArray(raw) ? raw : []) {
+    const c = classifySubject(r);
+    if (!c.text && c.reason !== "empty") out.push({ subject: String(r ?? "").trim(), reason: c.reason });
+  }
+  return out;
 }
 
 /**
@@ -600,6 +634,12 @@ async function main(): Promise<void> {
         .filter(Boolean);
     } catch {
       devCommits = undefined;
+    }
+    // Say out loud which subjects will NOT reach the feed and why. composeDigest drops them (see classifySubject);
+    // without this line a dropped commit is invisible, which is the exact failure mode this whole path was rebuilt
+    // to stop. On stderr, like every other diagnostic here, so it never contaminates --out.
+    for (const r of rejectedDevSubjects(devCommits ?? [])) {
+      console.error(`science-digest: dropping commit subject (${r.reason}): ${r.subject}`);
     }
   }
   // Subjects the feed has already announced (written by x-last-post --reported-out). Lets the workflow OVERLAP the

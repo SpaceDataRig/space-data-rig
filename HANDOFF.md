@@ -345,6 +345,24 @@ the Actions web page when the anonymous API is rate-limited.
   that decides reportable content is not worth reporting), keep only the former, put every number
   in `env`, and pin the absence of the latter with a test that greps the workflow -- otherwise a
   future tidy-up reinstates `head -5` and nobody notices.
+- A content guard plus a break-on-failure batch loop is a permanent stall, not a skipped item.
+  `post-x-text.ts` refuses (exit non-zero) any final text tripping `overclaimViolations`, and the
+  x-post loop breaks on failure so the cursors -- read back off the feed -- cannot advance past an
+  unsent item. Both are right alone. Together, one commit subject containing a stem (`first`,
+  `novel`, `confirm`, `discover`, `unprecedented`, `landmark`, `historic`) makes its whole batch
+  unpostable FOREVER: every window re-composes it, is refused, and the backlog never clears. Note
+  `\bfirst\b` matches inside a hyphenated `oldest-first`, so ordinary phrasing is enough. Fix at the
+  COMPOSER, not by weakening the guard: `classifySubject` drops the offending bullet and
+  `rejectedDevSubjects` makes `main()` log each drop with its reason, so the feed's silence about a
+  commit stays explainable. Two general rules follow. (1) When you add a hard-fail guard, ask what
+  happens to a batch that can NEVER satisfy it -- the failure must be escapable. (2) Never relax a
+  guard to let your own text through: the guard refused an authored summary for saying
+  "oldest-first" and "the first failure", and the correct response was to rewrite the summary.
+  Run authored text through the real guard BEFORE dispatching it, not after a
+  `completed/failure` run: `npm run x:post -- --text-file <path> --max-len 25000`
+  in an environment with no `X_*` credentials performs the full ASCII + length +
+  over-claim validation and prints `DRY RUN` without sending anything. It is the
+  same code path the workflow uses, so it cannot disagree with production.
 - The x-post workflow's shell path is CI-only and no test covers it, so a green `npm test` proves
   nothing about it -- that blind spot is how the four rations above shipped. A MIRROR of the logic
   is not enough either: it passes while the real file is broken. `bash scripts/verify-xpost-shell.sh`

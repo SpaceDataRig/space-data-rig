@@ -28,7 +28,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { composeDigest, DEV_BULLETS_MAX } from "../scripts/science-digest.ts";
-import { overclaimViolations, BUILD_NOTE_HEADLINES } from "../scripts/science-digest.ts";
+import { overclaimViolations, BUILD_NOTE_HEADLINES, rejectedDevSubjects } from "../scripts/science-digest.ts";
 import { isBuildNoteText } from "../scripts/x-last-post.ts";
 import type { DigestFinding, DigestInput, DigestLedgerEntry, DigestResearch } from "../scripts/science-digest.ts";
 
@@ -632,4 +632,78 @@ test("the workflow posts every composed item: no one-post cap, no five-commit tr
   const cap = Number(yml.match(/^\s*MAX_POSTS_PER_RUN:\s*"(\d+)"\s*$/m)?.[1]);
   assert.ok(Number.isFinite(cap) && cap >= 10, `the runaway ceiling must stay generous, got ${cap}`);
   assert.ok(/DEV_COMMIT_EXCLUDE/.test(yml), "subject filtering is configurable now, not hardcoded");
+});
+
+// ---- a build note must always be POSTABLE, or the un-rationed loop stalls forever ------------------
+// post-x-text.ts runs overclaimViolations over the FINAL text and REFUSES on a hit, exiting non-zero; the workflow's
+// posting loop breaks on failure so the build-note cursor cannot advance past an unsent item. Each decision is
+// correct alone. Together they mean one unpostable subject would poison its whole batch permanently: every window
+// re-composes the same note, is refused, and the backlog never clears -- the starvation this change was meant to end,
+// reintroduced through the honesty guard. So the composer drops any subject that would make the note unpostable,
+// and `rejectedDevSubjects` exists so main() can SAY which ones and why instead of dropping them quietly.
+
+test("a subject carrying an affirmative over-claim is dropped, so the note post-x-text.ts sees is postable", () => {
+  const subjects = [
+    "feat(p17): first-light FFI feasibility",
+    "docs: a novel approach to vetoes",
+    "fix(p23): confirm the candidate list",
+    "ci: run the pipeline test",
+  ];
+  const text = composeDigest(input({ devCommits: subjects, only: "build-note" }));
+  assert.deepEqual(overclaimViolations(text), [], "the composed note must never be refused downstream");
+  assert.match(text, /- ci: run the pipeline test/, "a clean subject still survives alongside the dropped ones");
+  for (const banned of ["first-light", "novel", "confirm the candidate"]) {
+    assert.ok(!text.includes(banned), `"${banned}" must not reach the feed`);
+  }
+  assertTweetSafe(text);
+});
+
+test("a HEDGED subject is KEPT: the drop targets affirmative wording, not the vocabulary itself", () => {
+  const subject = "fix(p57): do not confirm a candidate from one sector";
+  const text = composeDigest(input({ devCommits: [subject], only: "build-note" }));
+  assert.match(text, /- fix\(p57\): do not confirm a candidate from one sector/, "a negated sentence is honest, not a claim");
+  assert.deepEqual(overclaimViolations(text), []);
+  assert.deepEqual(rejectedDevSubjects([subject]), [], "and so it is not reported as a rejection");
+});
+
+test("every rejection carries a reason, including the known hyphenated false positive, so nothing vanishes silently", () => {
+  const rejected = rejectedDevSubjects([
+    "ci: run the pipeline test",
+    "fix(x-post): batch the backlog oldest-first",
+    "chore: reduce the wallet cost",
+    "feat: shipped today",
+    "",
+  ]);
+  assert.equal(rejected.length, 3, "the clean subject and the blank line are not rejections");
+  assert.ok(
+    rejected.some((r) => r.subject.includes("oldest-first") && /over-claim/.test(r.reason)),
+    "\\bfirst\\b matches inside a hyphenated 'oldest-first'; it is dropped AND the log says so",
+  );
+  assert.ok(rejected.some((r) => /spend\/key/.test(r.reason)), "the spend/key drop names its reason");
+  assert.ok(rejected.some((r) => /time-implying/.test(r.reason)), "the time-word drop names its reason");
+  assert.ok(!rejected.some((r) => r.subject === "ci: run the pipeline test"), "a postable subject is never reported");
+});
+
+test("INVARIANT: no combination of commit subjects can compose a note the posting guard would refuse", () => {
+  // Every over-claim stem the guard knows, plus the red-line vocabulary, plus two realistic clean subjects so the
+  // note is non-empty and the assertion is about content rather than about silence.
+  const hostile = [
+    "feat: the first automated veto",
+    "docs: novel candidates",
+    "fix: confirm every orbit",
+    "chore: unprecedented depth",
+    "refactor: landmark rewrite",
+    "test: historic run",
+    "feat: discover new signals",
+    "ci: batch oldest-first",
+    "fix: wallet cost",
+    "docs: shipped today",
+    "chore(deps): bump undici from 6.19.2 to 6.20.0",
+    "feat(p89): multi-epoch PSF diff-imaging veto harness (real 2x2 over labelled KP / FP-EB)",
+  ];
+  const text = composeDigest(input({ devCommits: hostile, only: "build-note" }));
+  assert.ok(text.length > 0, "the two clean subjects must still produce a note");
+  assert.deepEqual(overclaimViolations(text), [], "a refused note would stall the cursor and starve every later batch");
+  assert.match(text, /- chore\(deps\): bump undici from 6\.19\.2 to 6\.20\.0/, "a long realistic subject survives intact (the workflow may exclude it by env; the composer does not)");
+  assertTweetSafe(text);
 });

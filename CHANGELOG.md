@@ -5,6 +5,32 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### An unpostable commit subject would have stalled the build-note cursor permanently (2026-10-18)
+Found by the honesty guard refusing a text I authored for the feed: `post-x-text.ts` runs `overclaimViolations`
+over the FINAL text of every post -- override included -- and exits non-zero on a hit. Combined with the posting
+loop's break-on-failure (correct: the cursors are read off the feed, so continuing would advance them past an
+unsent item), one subject carrying a stem like `first` / `novel` / `confirm` would poison its entire batch for
+good. Every window would re-compose the same note, be refused, and the backlog would never clear -- the exact
+starvation the un-rationing recorded below was meant to end, reintroduced through the guard that keeps the feed
+honest.
+
+`classifySubject` (the reason-reporting form of what was `sanitizeSubject`) now drops any subject whose bullet
+would trip the net, and `rejectedDevSubjects` lets `main()` log each drop with its reason to stderr, so a commit
+the feed is silent about is explainable from a job log rather than invisible. Hedged subjects survive: the drop
+targets affirmative wording, not the vocabulary, so `fix(p57): do not confirm a candidate from one sector` is
+still reported. Measured before fixing: 0 of the last 201 commit subjects carry a stem, so this was latent rather
+than active -- but `\bfirst\b` also matches inside a hyphenated `oldest-first`, which is ordinary phrasing, and
+the deadlock has no self-healing path. Pinned by an invariant test over every stem the guard knows plus the
+red-line vocabulary: no combination of subjects may compose a note that would be refused.
+
+Also corrected a now-stale comment in `src/cf/worker.ts`: the dispatch wake it performs feeds a workflow with
+three per-tier cursors, not one anchored to "the last ACTUAL post". Comment only; no behaviour change.
+
+The pre-flight for any authored text is now recorded in HANDOFF as a command that exists in the repository:
+`npm run x:post -- --text-file <path> --max-len 25000` with no `X_*` credentials in the environment runs the full
+ASCII + length + over-claim validation and prints `DRY RUN`, sending nothing. It is the same code path the
+workflow uses, so it cannot disagree with production -- unlike a local mirror of the red lines.
+
 ### The X posting path rationed itself to one tweet per window; that ration is removed (2026-10-18)
 Four separate limits capped how much the rig published. None of them came from X, from the API, or from any
 honesty red line -- they were all volume guesses I baked in while trying to avoid looking like a spam account.

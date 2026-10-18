@@ -503,10 +503,11 @@ export default {
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     // Reliable X-post trigger. GitHub throttles the x-post workflow's own `on.schedule` (observed 2-5h
     // gaps), so the digest could fall silent even though THIS cron fires on time. Twice an hour, if a
-    // dispatch token is configured, wake x-post.yml; its window is anchored to the last ACTUAL post and it
-    // self-heals, so an extra wake never double-posts. Runs before the AUTO_RESEARCH guard (posting must
-    // not depend on research being on), is inert without the secret, and swallows failures -- the workflow's
-    // own schedule remains a backup.
+    // dispatch token is configured, wake x-post.yml; it reads its own windows off the feed (one cursor per
+    // tier: science, build note, silence) and de-duplicates against what is already posted, so an extra
+    // wake never double-posts. Runs before the AUTO_RESEARCH guard (posting must not depend on research
+    // being on), is inert without the secret, and swallows failures -- the workflow's own schedule remains
+    // a backup.
     const wakeMinute = new Date(controller.scheduledTime).getUTCMinutes();
     if (env.GH_XPOST_DISPATCH_TOKEN && (wakeMinute === 0 || wakeMinute === 30)) {
       try {

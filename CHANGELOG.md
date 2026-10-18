@@ -5,6 +5,45 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### /health certified a commit that was not what production was running (2026-10-18, fifth pass)
+Found by looking at live records instead of trusting the deploy log: seven rows carried narration that the shipped
+code could not have written. The depth bars were computed from a constant that had been superseded, and the sentence
+explaining them was an earlier draft.
+
+`npm run cf:deploy:sha` exists to keep one claim true: that the bytes in production are the bytes in a reviewed
+commit. It sets the `GIT_SHA` secret from `git rev-parse HEAD`, then runs `wrangler deploy`. But wrangler uploads
+the files on disk, and the two agree only when the working tree is clean. The script knew that and printed a
+warning -- a warning that changes nothing is a notice to whoever reads the console. An automated deploy fired at
+09:19Z from a gap-catcher watcher while my tree held an in-progress, uncommitted renderer; it uploaded that tree
+and /health reported `f473c72`. For 75 minutes production ran code that existed in no commit, no CI run and no
+review, and every proof built on the deployed-revision self-report inherited the mismatch, including seven records
+whose published wording no merged revision could produce.
+
+The fix is a refusal, not a warning. `scripts/deploy-with-sha.ts` now calls `deployDecision()` from
+`src/deploy/deployGuard.ts` BEFORE writing the secret or uploading: an unresolvable HEAD is refused (unchanged), and
+any uncommitted path is refused with each one listed, exit 1, nothing uploaded. `--allow-dirty` remains for a
+deliberate emergency and logs, in the operator's face, that gitSha will not describe those paths.
+
+The test is `tests/deploy-guard.test.ts`, and it does not stop at the pure function -- a unit test on a predicate
+whose call site was deleted would stay green forever, the failure mode this repository has already been audited
+into twice. It asserts the script imports the shared rule rather than copying it, that the refusal exits non-zero,
+that the guard runs before both the secret write and the upload, that the old warning-only line is gone rather than
+merely superseded, and it drives the REAL CLI: it creates an untracked probe file, runs the deploy command in
+dry-run, and requires exit 1 with the probe listed and no upload attempted. The probe file is deliberately NOT
+gitignored, because an ignore rule would hide the exact dirt the gate must catch and the test would then watch the
+CLI take the clean path while still reporting green.
+
+Consequence for the record, stated rather than buried: the seven rows written inside that window were narrated by
+unreviewed code. Their numbers are correct (the depth, SNR and scatter they publish satisfy the invariant the
+shipped code enforces, verified row by row), but their error bars came from a constant that measurement later
+superseded, so those rows are re-derived on the next survey pass at that host like everything else, and the
+prose that quoted an unrounded figure is gone from the tree. Nothing anchored, gated or claimed depends on them.
+
+Also in this pass: the live verification of the depth/SNR repricing (7 of 7 rows rewritten after the deploy carry
+`detectionSnr` and satisfy `snr = depth/scatter*sqrt(nIn)` at ratio 1.000; 26 of 38 pre-deploy rows still show the
+old mismatch and heal as hosts are re-measured), and the honest-precision surfaces described in the entry below.
+`npm test` 726/726.
+
 ### The depth on every card promised a precision nothing has ever measured (2026-10-18, fourth pass)
 P90 closed with a consequence: its own measured error is of order a third, while the board and the finding card
 rendered the same quantity as an integer number of ppm. This pass implemented that consequence -- and in doing so

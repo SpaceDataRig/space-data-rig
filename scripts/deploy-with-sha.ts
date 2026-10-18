@@ -7,13 +7,23 @@
 //
 // It is the RECOMMENDED deploy path (`npm run cf:deploy:sha`); `cf:deploy` stays as the raw escape hatch.
 // Set GIT_SHA first, then deploy: the final uploaded version is therefore always the new code carrying the
-// matching sha. A dirty working tree only warns (it does not block) but tells you the sha will not fully
-// describe the deployed bytes.
+// matching sha. A DIRTY WORKING TREE IS REFUSED (audit pass 5, 2026-10-18).
+//
+// WHY IT BECAME A BLOCKER RATHER THAN A WARNING. wrangler uploads the files on disk; GIT_SHA is set from `git
+// rev-parse HEAD`. Those two are only the same thing when the tree is clean. An automated deploy that fired between
+// commits uploaded work in progress while /health certified the last committed revision -- and for 75 minutes
+// (09:19Z to 10:38Z) production ran code that existed in no commit, no CI run and no review, while /health.gitSha
+// named a commit that did not contain it. Every downstream proof inherited the lie: "the deployed bytes are the
+// reviewed bytes" stopped being true exactly where it mattered most, because the records written in that window
+// were produced by a renderer nobody had merged. A warning that does not stop that is a notice to whoever happens
+// to read the console. `--allow-dirty` is the escape hatch for a deliberate emergency, and it says so loudly.
 //
 // Usage:
-//   npm run cf:deploy:sha              # set GIT_SHA<-HEAD, then wrangler deploy
+//   npm run cf:deploy:sha              # set GIT_SHA<-HEAD, then wrangler deploy (clean tree required)
 //   npm run cf:deploy:sha -- --dry-run # same sha sync, but wrangler deploy --dry-run (no production change)
+//   npm run cf:deploy:sha -- --allow-dirty [--dry-run]  # deploy anyway; states the risk in the log
 import { spawnSync } from "node:child_process";
+import { deployDecision } from "../src/deploy/deployGuard.ts";
 
 const isWin = process.platform === "win32";
 
@@ -39,14 +49,21 @@ function capture(cmd: string, args: string[]): string {
 
 const dry = process.argv.includes("--dry-run");
 
+// The rule lives in src/deploy/deployGuard.ts so it can be tested without uploading anything; the wiring
+// assertion in tests/deploy-guard.test.ts is what keeps this call site honest.
 const sha = capture("git", ["rev-parse", "HEAD"]);
-if (!/^[0-9a-f]{40}$/.test(sha)) {
-  console.error(`[deploy] could not resolve a 40-hex git HEAD (got "${sha}"); refusing to deploy a wrong gitSha`);
+const decision = deployDecision(sha, capture("git", ["status", "--porcelain"]), {
+  allowDirty: process.argv.includes("--allow-dirty"),
+});
+if (!decision.ok) {
+  console.error(`[deploy] REFUSED: ${decision.reason}`);
+  for (const d of decision.dirty) console.error(`[deploy]   not in HEAD: ${d}`);
   process.exit(1);
 }
-
-if (capture("git", ["status", "--porcelain"])) {
-  console.warn("[deploy] WARNING: working tree has uncommitted changes; gitSha will NOT fully describe the deployed bytes");
+if (decision.dirty.length) {
+  console.warn(`[deploy] WARNING (--allow-dirty): ${decision.reason}`);
+  console.warn("[deploy] /health.gitSha will name a commit that does NOT contain:");
+  for (const d of decision.dirty) console.warn(`[deploy]   ${d}`);
 }
 
 console.log(`[deploy] GIT_SHA <- ${sha}${dry ? " (dry-run: secret NOT written, deploy NOT uploaded)" : ""}`);

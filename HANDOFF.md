@@ -504,6 +504,17 @@ the Actions web page when the anonymous API is rate-limited.
   tests/report-library.test.ts now fails if any `reports/*.md` lacks a page, or the index and the pages disagree. When
   you commit a report, run the generator in the same commit; expect a code change to cost an OLD report its
   `verified` mark (p41 lost it when bls.ts changed) and treat that as the gate working, not as a regression to undo.
+- `/health.gitSha` is only a proof if the deploy refused a dirty tree. wrangler uploads the FILES ON DISK while the
+  script sets GIT_SHA from `rev-parse HEAD`; between commits those name different things, and an automated
+  gap-catcher deploy uploaded uncommitted work while /health certified the last commit (2026-10-18, 09:19Z-10:38Z:
+  seven records were narrated by code no CI run had seen). The script printed a warning -- warnings that change
+  nothing are how this class survives. `src/deploy/deployGuard.ts::deployDecision()` now REFUSES any uncommitted
+  path before the secret write and before the upload; `--allow-dirty` exists for a deliberate emergency and logs the
+  lie explicitly. Never deploy from a watcher while you are mid-edit: commit first, or do not deploy.
+- Detect a stale deploy by testing what production WRITES, not what it reports. The mismatch above was found only
+  because a live record's sentence did not match any committed renderer. When you verify a deploy, compare a
+  rendered artifact against the code that should have produced it; the self-report is the thing being audited, not
+  the evidence.
 
 ## 13. Current state (as of 2026-10-13)
 

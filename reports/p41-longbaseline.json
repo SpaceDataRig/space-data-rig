@@ -19,8 +19,8 @@
     "multiSectorHosts": 25,
     "meanSectorsPerHost": 2.69,
     "generatedBy": "scripts/p41-longbaseline.ts",
-    "generatedAt": "2026-10-18T06:19:54.920Z",
-    "gitSha": "ba8ba67abf80aa2e1bdb94e185a98972c461f1f6",
+    "generatedAt": "2026-10-18T15:36:44.596Z",
+    "gitSha": "0788adb263d4cbcdc10d140683bb04f38c72ee83",
     "inputs": [
       {
         "path": "scripts/p41-longbaseline.ts",
@@ -28,7 +28,7 @@
       },
       {
         "path": "src/detect/bls.ts",
-        "sha256": "9af00bb5d25e6f96bca9b04c2e71b9bfe8c5ef7e809f5471d7f9ed48361d08c6"
+        "sha256": "bc9a24f4c984379c5fcfdd9a21078e14a057ae74ff20f69f24a9dd923534f8ec"
       },
       {
         "path": "src/detect/detrend.ts",
@@ -84,8 +84,8 @@
       "tic": 261136679,
       "name": "HD 39091",
       "sectors": 4,
-      "singlePoints": 937,
-      "stitchedPoints": 3418,
+      "singlePoints": 1182,
+      "stitchedPoints": 3663,
       "recovered": {
         "300": {
           "single": true,

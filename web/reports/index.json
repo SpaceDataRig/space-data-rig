@@ -1,19 +1,17 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-18T13:45:47.097Z",
-  "builtAtGitSha": "f78241fe3205a21722191938f60744cee24c13ad",
+  "generatedAt": "2026-10-18T16:08:41.337Z",
+  "builtAtGitSha": "0788adb263d4cbcdc10d140683bb04f38c72ee83",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 50,
   "freshness": {
     "stamped": 8,
-    "verified": 2,
-    "fullyVerified": 2,
+    "verified": 3,
+    "fullyVerified": 3,
     "total": 50,
-    "stale": [
-      "p41-longbaseline"
-    ]
+    "stale": []
   },
   "reports": [
     {
@@ -92,11 +90,11 @@
       "title": "P41 longer baseline (multi-sector) vs single sector -- completeness on real photometry",
       "reproduce": "npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7",
       "summary": "Sample: first 30 seeded hosts (T<=12, P in [1,13] d); 29 had a public SPOC curve, 25 had >=2 sectors stitched. Identical injection-recovery depth grid on (a) each host's longest single sector and (b) its stitched multi-sector baseline;...",
-      "fresh": false,
+      "fresh": true,
       "stamped": true,
-      "verified": false,
-      "rehashed": 6,
-      "reproducible": 6,
+      "verified": true,
+      "rehashed": 7,
+      "reproducible": 7,
       "unverifiableInputs": 0,
       "untrackedInputs": 0
     },

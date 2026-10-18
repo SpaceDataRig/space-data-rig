@@ -301,6 +301,14 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   claimed discovery. The `origin` label lives only on the Finding and in DO state, never in the bundle
   manifest, so it changes no `bundleHash`/`scienceHash` and touches no anchored row. A dashboard manual run
   keeps the historical deterministic brightest-top-N selection.
+- **What each public counter counts, stated where the code is read.** The rotation surfaces four numbers, and the
+  honest reading of each is now written in `src/core/stats-definitions.ts` and rendered on the board: `surveyPass` is
+  passes CLAIMED, not completed (the cursor advances when a run takes the slot, so a pass that hangs still counts once
+  and never twice); `distinctHosts` is distinct hosts among RECORDED results of any verdict, not targets analysed
+  (that is the separate `targets` tile); and the blind figure is a pair -- `blindHeld`/`blindCandidates` -- held for
+  human follow-up over rows assessed, because a critic-rejected dip is noise the pipeline cleared, not a lead. The X
+  digest and the dashboard now share `isHeldBlindCandidate`, so the phrase "blind candidate" cannot be counted two
+  ways on two surfaces (an earlier board showed 47 where the feed's honest figure was 26, 21 of them rejected).
 
 Try the chain without a token: `npm run p4:autonomous` (add `-- --targets 12 --tmag 9.5`, or a
 known SPOC star with `-- --tic 1024880 --sector 4`).

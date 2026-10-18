@@ -5,6 +5,37 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The board counted critic-rejected noise as blind candidates, and two other numbers were mis-labelled (2026-10-18, seventh pass)
+`blindCandidates` on `/api/state` counted every row tagged `origin="blind-toi"` -- including the ones the critic had
+just REJECTED as noise -- while the X digest deliberately counted only surviving candidates. One phrase, two
+populations, neither surface saying which: production showed 47 blind candidates on the board where the feed's honest
+figure was 26, 21 of them rejected dips. The population is now split into `blindHeld` (still held for human follow-up)
+over `blindCandidates` (assessed), and the rule lives once in `src/core/stats-definitions.ts` as `isHeldBlindCandidate`,
+which the Durable Object's SQL, the Node mirror and `science-digest.ts` all call -- the digest's hand-written copy of
+the filter is gone, so the board and the feed cannot disagree about what a "blind candidate" is. Two adjacent mislabels
+were fixed in the same sweep, in the same spirit as the anchor-count split: `surveyPass` is passes CLAIMED, not
+completed (the cursor advances when a run takes the slot, so a hung pass counts once and never twice), and
+`distinctHosts` is distinct hosts among RECORDED results of any verdict, not targets analysed (that is the separate
+`targets` tile). Each counter now carries its definition on hover in the served markup. `tests/stats-definitions.test.ts`
+(9 tests) runs the Durable Object's actual SQL against real `node:sqlite` rows and asserts it selects exactly the rows
+the JavaScript predicate does, so the two runtimes cannot report different totals for the same phrase.
+
+### "Can this rig verify a claim like this one?" -- a provenance review of a public astronomy claim (P91, 2026-10-18)
+The operator pasted a widely-shared post ("JUST IN: NASA's James Webb Space Telescope detects a mysterious infrared
+light signal ... from a seemingly empty void") and asked whether the system verifies phenomena like it. The honest
+answer is no: the rig is a broadband optical (0.6-1.0 micron) transit finder and the claim is a narrow ~1.6 micron
+emission line with no ephemeris to fold. So P91 does not pretend to re-measure the SKY; `src/claims/claimReview.ts`
+(pure, network-free) plus `scripts/p91-claim-provenance.ts` audit the CLAIM's own structure on five axes -- subject,
+recency, attribution, band, corroboration -- each printing its rule beside its result, resolving identifiers against
+Crossref and arXiv directly rather than a search summary, and keeping what the post cited separate from what the
+reviewer located so our diligence is never read as the poster's. Controls ship with the real row: a same-day citing
+post must come back clean (a verifier that only complains is caught), a wrong-observatory post must MISMATCH even
+though its link resolves, a dead DOI must report CITATION-DOES-NOT-RESOLVE and never "no such result exists", and a
+retrospective post with no freshness wording must stay silent on timing. The first fixture pass caught two of its own
+false alarms -- an invented "4.4 micron" (the abstracts say 1.60) and a Hubble control that matched because Hubble is
+in the paper's own abstract -- corrected against the real records. Offline and live verdicts are identical
+(`tests/claim-provenance.test.ts`); `safeToGate` is false on every row and no discovery wording is emitted.
+
 ### Two different anchor counts were being published as one, and chasing it found a ledger that could forget (2026-10-18, sixth pass)
 `/api/state` reported `bundlesAnchored: 7` while `/api/ledger` listed 18 anchored rows, and the dashboard rendered the 7
 under the label "on-chain" -- which every reader, including the operator writing a summary, reads as the total. Both

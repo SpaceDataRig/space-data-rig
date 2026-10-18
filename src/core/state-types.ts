@@ -51,12 +51,25 @@ export interface RigStats {
    * finding id), so it is a finding count, not a transaction count.
    */
   ledgerAnchored: number;
-  /** audit-5: how many rotating survey passes the autonomous cron has completed (from DO meta). */
+  /**
+   * Rotating survey passes CLAIMED, not completed. The cursor advances when a run TAKES the slot
+   * (src/cf/run-mutex.ts, the audit-6 fix for the 22-hour freeze), so a pass that hangs after claiming still
+   * counts and can never be counted twice. Reading this as "N finished surveys" overstates it.
+   */
   surveyPass: number;
-  /** distinct target hosts recorded so far -- the honest measure of catalog breadth/rotation. */
+  /**
+   * Distinct hosts among RECORDED RESULTS of any verdict -- accepted, watchlist and rejected alike. Not the
+   * number of targets analysed (that is `tasksDone`): it grows only when a look becomes a row.
+   * (audit-7: the board called this "distinct targets", which read as survey breadth.)
+   */
   distinctHosts: number;
-  /** rows tagged origin="blind-toi": UNCONFIRMED candidates recovered blind, never anchored. */
+  /** Blind TOI rows ASSESSED: every blind recovery, including ones the critic later rejected. Never anchored. */
   blindCandidates: number;
+  /**
+   * The subset still HELD for human follow-up -- assessed minus critic-rejected. This is the population the X
+   * digest quotes, so the board and the feed now count one phrase one way (src/core/stats-definitions.ts).
+   */
+  blindHeld: number;
 }
 
 /** Fully serializable rig state; this is what snapshot/restore persist. */

@@ -87,7 +87,9 @@ docker-compose, CULTURE.md).
 
 ## 5. Repository layout
 
-- src/core/       RigStore, types, auth (ADMIN_TOKEN bearer, constant-time), anchor-verify, ports.
+- src/core/       RigStore, types, auth (ADMIN_TOKEN bearer, constant-time), anchor-verify,
+                  stats-definitions.ts (what each public counter counts -- one predicate both
+                  runtimes and the X digest call), ports.
 - src/data/       catalog TAP, MAST tiers, FITS parsers, TGLC, TOI archive, Gaia dilution, synthetic.
 - src/detect/     detrend, BLS, alias resolver hooks, transit fit (exact limb-darkened), ephemeris,
                   per-sector robust depth, significance/calibrated FAP, vetting discriminators,
@@ -101,6 +103,10 @@ docker-compose, CULTURE.md).
                   emitted candidates; research-only).
 - src/review/     externalReview.ts -- reusable library to independently audit a THIRD-PARTY
                   candidate claim (research-only; never gates, accepts, or anchors).
+- src/claims/     claimReview.ts (p91) -- the pure decision layer that audits a public astronomy CLAIM's
+                  STRUCTURE (subject/recency/attribution/band/corroboration) against resolved Crossref/arXiv
+                  records. Distinct from externalReview: no ephemeris to re-fold, so it checks the claim, not
+                  the sky. safeToGate is false by construction; research-only, never gates/anchors/claims.
 - src/ai/         llm.ts, discussion.ts, threads.ts, deliberation.ts (side-channel LLM layer).
 - src/orchestrator/ pipeline.ts, run.ts (CLI), regressionBaseline.ts.
 - src/reporter/   narrate.ts (plain-English sentences, seat roles).
@@ -520,6 +526,18 @@ the Actions web page when the anonymous API is rate-limited.
   commitments exist (18, from `/api/ledger`). They differ because a bundle hash folds the run timestamp: re-derive a
   sealed record and it leaves the first count without leaving the chain. If two questions are visible to a reader, both
   need a field and a label -- and put the definition where the code is read (src/core/state-types.ts), not in a chat log.
+  The seventh pass found the same class in the rotation counters: `blindCandidates` counted every blind row INCLUDING
+  critic-rejected noise while the digest counted only survivors (board 47, feed 26), so the population is now split
+  into `blindHeld`/`blindCandidates` behind one predicate `isHeldBlindCandidate` (src/core/stats-definitions.ts) that
+  the DO SQL, the Node mirror and the digest all call -- a hand-written copy of the filter in any surface is the bug
+  waiting to reappear. `surveyPass` is passes CLAIMED (not completed) and `distinctHosts` is hosts with a RECORDED
+  RESULT (not targets analysed); the board renders both truths.
+- Touching a report's hashed INPUT obligates a RE-RUN of that report, not just a code fix. The freshness gate
+  (scripts/report-freshness.ts) re-hashes each report's recorded `inputs` before p86 publishes the site, so editing a
+  load-bearing source a report depends on makes that report STALE and blocks the publish with a non-zero exit -- by
+  design. When you change a file listed in a report's inputs (e.g. `src/detect/bls.ts` for p41, which had been sitting
+  stale since the depth-honesty fix), re-run that study so it records the new hash, THEN build the library; skipping
+  this leaves a stale report blocking every subsequent deploy.
 - An append-only ledger keyed by finding id is NOT append-only. Both ledger writers stored the newest attempt over the
   row (`INSERT OR REPLACE`, and `{...prior, ...next}` on the fs side), so a failed re-anchor erased the signature and
   explorer URL of a commitment still live on mainnet, and the total fell on an RPC hiccup. `mergeLedgerRow`

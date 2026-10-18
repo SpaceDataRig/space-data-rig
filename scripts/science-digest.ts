@@ -26,6 +26,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { renderPeriodDays } from "../src/core/periodFormat.ts";
+import { isHeldBlindCandidate } from "../src/core/stats-definitions.ts";
 
 const SITE = "spacedatarig.app";
 // Proof-link targets. Every one is a real, committed artifact served from the production site (Cloudflare
@@ -314,8 +315,10 @@ function heartbeat(input: DigestInput): string {
   ];
   if (stars != null) body.push(`The detector keeps operating against its characterization on ${stars} real public TESS-SPOC stars.`);
   // Surviving blind candidates only -- a rejected blind row is noise the critic cleared, not something held for
-  // follow-up, so it must not inflate the "records N candidates" count (mirrors the science tier above).
-  const blindTotal = findings.filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected").length;
+  // follow-up, so it must not inflate the "records N candidates" count (mirrors the science tier above). This is
+  // now the SAME predicate the dashboard's blindHeld counter uses (src/core/stats-definitions.ts), not a parallel
+  // copy: the board and this feed must not count one phrase "blind candidate" two different populations.
+  const blindTotal = findings.filter((f) => f && isHeldBlindCandidate(f)).length;
   body.push(
     blindTotal > 0
       ? `The catalog currently records ${blindTotal} UNCONFIRMED blind candidate${blindTotal === 1 ? "" : "s"}, held for human follow-up rather than any claim.`
@@ -528,7 +531,7 @@ export function composeDigest(input: DigestInput): string {
   //     blind row is noise, not a lead awaiting follow-up, so it must not inflate the count. LEAN: no
   //     characterization, no tx (this path anchors nothing), live rig only.
   const blind = (want("blind") ? findings : [])
-    .filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected" && within(f.createdAt, start, end))
+    .filter((f) => f && isHeldBlindCandidate(f) && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   if (blind.length) {
     const n = blind.length;

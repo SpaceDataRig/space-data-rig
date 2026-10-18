@@ -20,6 +20,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Finding, RigEvent, SeatName, Task } from "../core/types.ts";
 import { anchorStampIsValid, LEDGER_COMMITTED_SQL, mergeLedgerRow } from "../core/anchor-verify.ts";
+import { BLIND_CANDIDATE_SQL, BLIND_HELD_SQL } from "../core/stats-definitions.ts";
 import {
   SEAT_ORDER,
   defaultSeats,
@@ -249,12 +250,16 @@ export class RigStateDO extends DurableObject<Env> {
       // actually put on chain, whether or not their current bytes still match what was committed. Both are true
       // at once (production held 7 and 18), so both have to be published -- see src/core/anchor-verify.ts.
       ledgerAnchored: scalar(`SELECT COUNT(*) AS n FROM ledger WHERE ${LEDGER_COMMITTED_SQL}`),
-      // audit-5 rotation/breadth counters. surveyPass comes from DO meta (advanced once per completed
-      // autonomous run); distinctHosts is the honest breadth measure; blindCandidates counts UNCONFIRMED
-      // TOI rows so the UI can never imply they are discoveries.
+      // audit-5 rotation/breadth counters, each now labelled by what its query actually counts
+      // (src/core/stats-definitions.ts, checked against the Node mirror by tests/stats-definitions.test.ts):
+      // surveyPass is the CLAIMED-pass cursor (advanced in startRunIfIdle, at the claim, NOT here -- a pass that
+      // hangs after claiming still counts, which is what unfroze the survey); distinctHosts is hosts among recorded
+      // results of any verdict, not targets analysed; blindCandidates/blindHeld are blind rows assessed vs still
+      // held for follow-up, so a critic-rejected dip cannot inflate the number the feed quotes.
       surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0,
       distinctHosts: scalar(`SELECT COUNT(DISTINCT json_extract(data,'$.targetId')) AS n FROM findings`),
-      blindCandidates: scalar(`SELECT COUNT(*) AS n FROM findings WHERE json_extract(data,'$.origin') = 'blind-toi'`),
+      blindCandidates: scalar(`SELECT COUNT(*) AS n FROM findings WHERE ${BLIND_CANDIDATE_SQL}`),
+      blindHeld: scalar(`SELECT COUNT(*) AS n FROM findings WHERE ${BLIND_HELD_SQL}`),
     };
   }
 

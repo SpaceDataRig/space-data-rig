@@ -225,6 +225,16 @@ function chairSays(text) {
 }
 
 // ---- stats + findings ------------------------------------------------------
+// One sentence builder for the survey line, so the two places that render it cannot drift into saying different
+// things about the same three numbers. The wording is pinned against src/core/stats-definitions.ts by
+// tests/stats-definitions.test.ts -- each phrase names the population the query counts, not a looser reading of it:
+// surveyPass counts CLAIMED passes (a hung pass still counts), distinctHosts counts hosts with a RECORDED RESULT
+// (not targets analysed -- that is the targets tile), and the blind pair is held-for-follow-up over assessed.
+function surveyStatsSentence(stats) {
+  return `survey pass ${stats.surveyPass ?? 0} claimed - ${stats.distinctHosts ?? 0} hosts with recorded results - `
+    + `${stats.blindHeld ?? 0}/${stats.blindCandidates ?? 0} blind candidates held/assessed (unconfirmed)`;
+}
+
 function renderStats(stats) {
   if (!stats) return;
   $("#stat-confirmed").textContent = stats.findingsAccepted ?? 0;
@@ -237,7 +247,7 @@ function renderStats(stats) {
   $("#stat-anchored").textContent = stats.bundlesAnchored ?? 0;
   $("#stat-commitments").textContent = stats.ledgerAnchored ?? 0;
   $("#stat-done").textContent = stats.tasksDone ?? 0;
-  if (surveyStatsEl) surveyStatsEl.textContent = `survey pass ${stats.surveyPass ?? 0} - ${stats.distinctHosts ?? 0} distinct targets - ${stats.blindCandidates ?? 0} blind candidates (unconfirmed)`;
+  if (surveyStatsEl) surveyStatsEl.textContent = surveyStatsSentence(stats);
   renderFeedTicker(researchData, stats);
 }
 
@@ -1417,7 +1427,7 @@ async function renderSurveyTimeline() {
   const findings = state && Array.isArray(state.findings) ? state.findings : [...findingsById.values()];
   if (state && state.stats && surveyHeadStatsEl) {
     const st = state.stats;
-    surveyHeadStatsEl.textContent = `survey pass ${st.surveyPass ?? 0} - ${st.distinctHosts ?? 0} distinct targets - ${st.blindCandidates ?? 0} blind candidates (unconfirmed)`;
+    surveyHeadStatsEl.textContent = surveyStatsSentence(st);
   }
   const buckets = new Map();
   const ensure = (k) => { if (!buckets.has(k)) buckets.set(k, { findings: [], anchored: [] }); return buckets.get(k); };

@@ -209,7 +209,7 @@
           <span class="pulse-dot"></span><span id="survey-status-text">booting survey&hellip;</span>
         </span>
       </div>
-      <p class="survey-stats" id="survey-head-stats">survey pass 0 - 0 distinct targets - 0 blind candidates (unconfirmed)</p>
+      <p class="survey-stats" id="survey-head-stats" title="survey pass = rotating passes CLAIMED, not completed (the cursor advances when a run takes the slot, so a hung pass still counts once); hosts with recorded results = distinct hosts among recorded results of any verdict, not targets analysed; blind candidates held/assessed = blind rows still held for follow-up over blind rows assessed, and never anchored or claimed.">survey pass 0 claimed - 0 hosts with recorded results - 0/0 blind candidates held/assessed (unconfirmed)</p>
       <p class="survey-lede">Each block is one autonomous pass, bucketed to its 15-minute UTC window. Every row keeps its honest label: a <b>known-planet re-validation</b> or an <b>UNCONFIRMED blind candidate</b> for human follow-up &mdash; never a claimed discovery.</p>
       <div class="timeline" id="survey-timeline"><p class="empty">Loading survey passes&hellip;</p></div>
     </div>
@@ -264,7 +264,7 @@
       <span class="hint" id="findings-count">0 findings</span>
     </div>
     <p class="findings-note">A continuously rotating, self-testing survey of real TESS photometry. Each row is one target the pipeline pulled and examined on that run, and it is honestly labeled as one of two kinds: a <b>known-planet re-validation</b> (a signal seeded from live NASA catalog parameters, re-detected and cross-checked against the same catalog -- it validates the pipeline), or a <b>blind candidate</b> (an UNCONFIRMED TESS Object of Interest the detector recovered on real pixels with its ephemeris withheld -- a candidate for human follow-up, never a claimed discovery). Verdicts validate the method; they do not claim new planets.</p>
-    <p class="survey-stats" id="survey-stats">survey pass 0 - 0 distinct targets - 0 blind candidates (unconfirmed)</p>
+    <p class="survey-stats" id="survey-stats" title="survey pass = rotating passes CLAIMED, not completed (the cursor advances when a run takes the slot, so a hung pass still counts once); hosts with recorded results = distinct hosts among recorded results of any verdict, not targets analysed; blind candidates held/assessed = blind rows still held for follow-up over blind rows assessed, and never anchored or claimed.">survey pass 0 claimed - 0 hosts with recorded results - 0/0 blind candidates held/assessed (unconfirmed)</p>
     <div class="board-filter" id="board-filter">
       <button class="chip active" data-filter="all" type="button">All</button>
       <button class="chip" data-filter="revalidation" type="button">Known-planet re-validation</button>

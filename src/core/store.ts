@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Finding, RigEvent, SeatName, Task } from "./types.ts";
 import { anchorStampIsValid, indexLedgerByFinding, isCommittedLedgerRow, type LedgerRowLike } from "./anchor-verify.ts";
+import { isBlindCandidate, isHeldBlindCandidate } from "./stats-definitions.ts";
 import {
   SEAT_ORDER,
   type BundleRecord,
@@ -251,10 +252,13 @@ export class RigStore {
       bundlesAnchored: this.listBundles().filter((b) => b.solanaTx).length,
       ledgerAnchored: ledger.filter(isCommittedLedgerRow).length,
       // Rotation is an edge (autonomous-cron) concern; the Node orchestrator does not advance a survey
-      // cursor, so it reports pass 0 here. Breadth + blind counts are still meaningful local mirrors.
+      // cursor, so it reports pass 0 here. The other three are real local mirrors of the DO's SQL: hosts among
+      // recorded results, blind rows assessed, and the blind rows still held for follow-up -- see
+      // src/core/stats-definitions.ts for what each population excludes.
       surveyPass: 0,
       distinctHosts: new Set(findings.map((f) => f.targetId)).size,
-      blindCandidates: findings.filter((f) => f.origin === "blind-toi").length,
+      blindCandidates: findings.filter(isBlindCandidate).length,
+      blindHeld: findings.filter(isHeldBlindCandidate).length,
     };
   }
 

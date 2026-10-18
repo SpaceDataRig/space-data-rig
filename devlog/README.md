@@ -1,0 +1,25 @@
+# Devlog
+
+Long-form operator summaries of what changed in the rig, kept in the repository.
+
+Each entry here is the exact text that was pushed to the public feed through the
+`x-post.yml` `workflow_dispatch` override (`inputs.text`), which short-circuits every
+digest tier and posts the supplied text verbatim. They are archived here so the feed's
+long-form posts are auditable against the commits they describe, and so a successor can
+see that a stage summary is published rather than only described in conversation.
+
+Red lines these texts are held to before dispatch, checked locally first:
+
+- pure ASCII (`scripts/post-x-text.ts` refuses any other byte);
+- no wallet / private key / seed phrase / spend wording;
+- no time-implying wording ("today", "recently", "this week", ...) -- the feed has no
+  dated context, so a relative time reads as a claim about a window nobody can see;
+- no discovery over-claim: every candidate is UNCONFIRMED and posted for human follow-up;
+- numbers carry their basis and their denominator;
+- a Proof block links the full-SHA commit and the Actions run that verifies it, and both
+  links are fetched before publishing.
+
+| date | file | subject |
+| --- | --- | --- |
+| 2026-10-18 | [2026-10-18-report-freshness-and-starved-tier.md](2026-10-18-report-freshness-and-starved-tier.md) | the freshness gate counted a timestamp as verification; the build-note tier was starved by the science tier |
+| 2026-10-18 | [2026-10-18-posting-volume-unrationed.md](2026-10-18-posting-volume-unrationed.md) | four self-imposed posting rations removed, and the science-cursor defect that removing them exposed |

@@ -94,6 +94,16 @@ pre-flown locally for ASCII-only bytes, the spend/time/discovery red lines, and 
 that the posting limits had been removed -- because the change had not been made yet; it is true as of this
 entry, not as of that tweet.
 
+This is now a durable practice rather than a one-off: `devlog/` archives each long-form summary that was actually
+pushed, with its dispatch evidence (run id, posted tweet id, the job-log line proving it went out, and the
+pre-flight result), so a public post can be audited against the commits it describes. `scripts/devlog-archive.ts`
+composes each entry from the SAME BYTES that were handed to the dispatcher -- normalising CRLF to LF the way the
+dispatcher does -- instead of a re-typed copy, and refuses to write an archive holding a code fence (it would
+truncate silently) or a non-ASCII byte (post-x-text.ts would never have sent it, so the archive would be a
+fabricated record). `tests/devlog-archive.test.ts` runs the script for real over fixtures and then asserts the same
+red lines over every entry already committed, so devlog/ cannot drift into holding text that could never have been
+posted. Two entries are archived, covering both summaries pushed here.
+
 No test covered the workflow's shell path, which is how the limits above survived in the first place.
 `scripts/verify-xpost-shell.sh` now EXTRACTS the real `run:` block from the YAML with awk and executes it with
 `npm run x:post` and `curl` stubbed (the stubs need `export -f`; the block runs in a child bash), asserting that

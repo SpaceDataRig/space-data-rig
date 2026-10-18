@@ -120,9 +120,15 @@ docker-compose, CULTURE.md).
                   measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
                   KNOWN planets showing the blind per-sector path is under-powered for a real discovery)
                   + verify-observe.ts + p2-anchor.ts
-                  + wallet-import.ts + validate-curated.ts + bls_astropy_check.py (dev-only).
-- tests/          43 test files, run via `npm test` (node --import tsx --test, explicit list in
-                  package.json -- NEW TEST FILES MUST BE ADDED TO THAT LIST).
+                  + wallet-import.ts + validate-curated.ts + bls_astropy_check.py (dev-only)
+                  + devlog-archive.ts (writes a devlog/ entry from the exact bytes that were dispatched)
+                  + verify-xpost-shell.sh (see section 12; the only check on the x-post workflow's shell).
+- tests/          the suite, run via `npm test` -> `tsx scripts/run-tests.ts`, which DISCOVERS every
+                  `tests/*.test.ts`. There is no hand-maintained list to update; a new file in that directory
+                  with that suffix runs automatically.
+- devlog/         long-form operator summaries that were actually pushed to the public feed, archived with
+                  their dispatch evidence (run id, posted tweet id, job-log line, pre-flight result) so a
+                  long-form post can be audited against the commits it describes. See devlog/README.md.
 - web/            dashboard.
 - out/            local artifacts, state snapshot, fee keypair (gitignored), commit-message
                   drafts (cm-*.txt).
@@ -132,6 +138,8 @@ docker-compose, CULTURE.md).
 - CHANGELOG.md    v0.1.0 release notes.
 - GOVERNANCE.md, CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, LICENSE (MIT).
 - .github/workflows/ci.yml: on push/PR to main -> npm ci, typecheck:all, npm test.
+- .github/workflows/x-post.yml: CI-only (NO push trigger) -- `schedule` plus the `workflow_dispatch` wake the
+                  Worker's cron sends twice an hour. Posts every tier a window can report; see section 12.
 
 ## 6. Science program (scripts p0..p25) and key measured results
 

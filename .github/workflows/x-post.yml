@@ -299,6 +299,22 @@ jobs:
             fi
           fi
 
+          # ---- Per-tier manifest, echoed on EVERY run. Until now the log could say which tiers POSTED but not
+          # which tiers were ATTEMPTED, so "this tier had nothing honest to report" was indistinguishable from
+          # "this tier was never run" -- the exact blind spot that let a 22-hour survey freeze go unnoticed.
+          # An empty file means attempted-and-empty; `not-attempted` means the compose step never produced one.
+          tm_bytes() {
+            local hit=0 tot=0 x n
+            for x in $1; do
+              [ -e "$x" ] || continue
+              hit=$((hit + 1))
+              n="$(wc -c < "$x" | tr -d ' ')"
+              tot=$((tot + n))
+            done
+            if [ "$hit" = "0" ]; then printf 'not-attempted'; else printf '%s file(s) %s byte(s)' "$hit" "$tot"; fi
+          }
+          echo "tier manifest: ledger [$(tm_bytes 'out/posts/00-ledger.txt')] blind [$(tm_bytes 'out/posts/02-blind.txt')] milestone [$(tm_bytes 'out/posts/04-milestone.txt')] note [$(tm_bytes 'out/posts/1[0-9]-note.txt')] heartbeat [$(tm_bytes 'out/posts/99-heartbeat.txt')]"
+
           # ---- Post every composed item. There is NO one-post-per-window cap: only a runaway ceiling,
           # byte-identical de-duplication, and a delay so a large backlog cannot trip X's own rate limit. ----
           CAP="${MAX_POSTS_PER_RUN:-25}"

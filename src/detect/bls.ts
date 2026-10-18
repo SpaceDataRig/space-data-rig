@@ -27,6 +27,17 @@ export interface BLSResult {
   nInTransit: number;
   folded: { phase: number; flux: number }[];
   periodGrid: { period: number; power: number }[];
+  /** Baseline of the (preprocessed) series the grid was built from, in days. */
+  baselineDays: number;
+  /** The long-period wall of this search: 1/fMin, i.e. options.maxPeriodDays. */
+  searchMaxPeriodDays: number;
+  /** Grid-limited period uncertainty of the adopted node: P^2 * df. */
+  periodResolutionDays: number;
+  /**
+   * True when the adopted node is k=0, the longest period the grid tried. A peak that lands ON the wall is not a
+   * measurement of that period -- it is the search running out of range -- so it must be reported as a limit.
+   */
+  atSearchBoundary: boolean;
 }
 
 const DEFAULTS: Required<BLSOptions> = {
@@ -191,6 +202,7 @@ export function bls(lc: LightCurve, opts: BLSOptions = {}): BLSResult {
   const cWY = new Float64Array(2 * n + 1);
 
   let bestPeriod = 1 / fMin;
+  let bestAtBoundary = true; // the initial best is the k=0 node, before any box has been measured
   let bestBox: Box | null = null;
   const periodGrid: { period: number; power: number }[] = [];
 
@@ -202,6 +214,7 @@ export function bls(lc: LightCurve, opts: BLSOptions = {}): BLSResult {
     if (!bestBox || box.power > bestBox.power) {
       bestBox = box;
       bestPeriod = P;
+      bestAtBoundary = k === 0;
     }
   }
   if (!bestBox) throw new Error(`BLS: no valid box found for ${lc.targetId}`);
@@ -221,6 +234,8 @@ export function bls(lc: LightCurve, opts: BLSOptions = {}): BLSResult {
       if (boxM && boxM.power >= 0.8 * basePower) {
         bestBox = boxM;
         bestPeriod = Pm;
+        // bestAtBoundary is deliberately NOT recomputed: a period doubled off a k=0 node still came from a peak
+        // that ran into the wall, and that is the only thing the flag claims.
       }
     }
   }
@@ -254,6 +269,11 @@ export function bls(lc: LightCurve, opts: BLSOptions = {}): BLSResult {
     nInTransit: nIn,
     folded,
     periodGrid,
+    baselineDays: baseline,
+    searchMaxPeriodDays: o.maxPeriodDays,
+    // dP = |dP/df| * df = P^2 * df. This is the resolution the grid actually offered at the adopted period.
+    periodResolutionDays: P * P * df,
+    atSearchBoundary: bestAtBoundary,
   };
 }
 
@@ -266,6 +286,9 @@ export function toCandidate(lc: LightCurve, r: BLSResult): TransitCandidate {
     depthPpt: r.depth * 1000,
     depthFrac: r.depth,
     snr: r.snr,
+    periodResolutionDays: r.periodResolutionDays,
+    atSearchBoundary: r.atSearchBoundary,
+    searchMaxPeriodDays: r.searchMaxPeriodDays,
     power: r.power,
     nPointsInTransit: r.nInTransit,
     folded: r.folded,

@@ -12,6 +12,7 @@
 import type { Finding, RigEvent, SeatName } from "../core/types.ts";
 import { wilsonInterval } from "../sim/completenessGrid.ts";
 import { isRealPhotometry } from "../data/dataTier.ts";
+import { renderPeriodDays } from "../core/periodFormat.ts";
 
 /** Trader-facing label + color for a verdict (used by the findings board). */
 export function verdictBadge(verdict: Finding["verdict"]): { label: string; tone: "good" | "warn" | "bad" } {
@@ -71,6 +72,19 @@ export function narrateFinding(
   const badge = verdictBadge(f.verdict);
   const depthPpm = Math.round(c.depthFrac * 1e6);
   const planetYear = c.periodDays;
+  // The period is a discrete BLS grid node, so quote only the digits the grid resolved (src/core/periodFormat.ts).
+  // Before this, every surface here printed it with a fixed 2 or 4 decimals, which on a long period claimed a
+  // precision two orders of magnitude better than the search had -- and at the grid edge claimed a measurement of
+  // something that was only "at least as long as what we searched for".
+  const pr = renderPeriodDays(planetYear, c.periodResolutionDays, false);
+  const periodCore = c.atSearchBoundary
+    ? `signal of at least ${pr.value} days (the search limit)`
+    : `${pr.value}-day signal`;
+  const periodStat = c.atSearchBoundary
+    ? `>= ${pr.value} days (at the ${c.searchMaxPeriodDays ?? pr.value}-day search limit; the true period may be longer)`
+    : pr.uncertainty
+      ? `${pr.value} +/- ${pr.uncertainty} days (grid resolution)`
+      : `${pr.value} days`;
 
   // Data-source honesty (HANDOFF red line): every user-facing headline must say whether its
   // photons are real TESS photometry or a reproducible stand-in. Uses the single canonical
@@ -81,12 +95,12 @@ export function narrateFinding(
   let headline: string;
   if (f.verdict === "accepted") {
     headline = f.crossmatch.matchedKnownPlanet
-      ? `${prov}Recovered a ${planetYear.toFixed(2)}-day signal matching known ${f.crossmatch.knownPlanetName}.`
-      : `${prov}Recovered a planet-like ${planetYear.toFixed(2)}-day signal (candidate; needs independent follow-up).`;
+      ? `${prov}Recovered a ${periodCore} matching known ${f.crossmatch.knownPlanetName}.`
+      : `${prov}Recovered a planet-like ${periodCore} (candidate; needs independent follow-up).`;
   } else if (f.verdict === "needs-more-data") {
-    headline = `${prov}Possible ${planetYear.toFixed(2)}-day signal -- promising but unproven, needs more data.`;
+    headline = `${prov}Possible ${periodCore} -- promising but unproven, needs more data.`;
   } else {
-    headline = `${prov}The ${planetYear.toFixed(2)}-day signal did not pass scrutiny.`;
+    headline = `${prov}The ${periodCore} did not pass scrutiny.`;
   }
 
   const confPct = f.recoveryConfidence != null ? Math.round(f.recoveryConfidence * 100) : null;
@@ -110,16 +124,23 @@ export function narrateFinding(
     }
   }
 
+  const periodCaveat = c.atSearchBoundary
+    ? `The dip repeats no more often than every ${pr.value} days, which is the longest period this search tried -- so the real period is at least that and may be longer. `
+    : pr.uncertainty
+      ? `The repeat interval is known to about +/- ${pr.uncertainty} days, which is how finely the search stepped through possible periods. `
+      : "";
+
   const explainer =
-    `The star's brightness dips by about ${depthPpm} parts per million once every ${planetYear.toFixed(2)} days -- ` +
+    `The star's brightness dips by about ${depthPpm} parts per million once every ${pr.value} days -- ` +
     `that repeating dip is the fingerprint of a planet crossing (transiting) the star. ` +
+    periodCaveat +
     `The signal is ${explainSnr(c.snr)}. ` +
     recoveryNote +
     `Mission Critic verdict: ${badge.label} -- ${f.verdictReason}`;
 
   const stats: Record<string, string> = {
     Target: f.targetId,
-    "Planet year (period)": `${planetYear.toFixed(4)} days`,
+    "Planet year (period)": periodStat,
     "Transit depth": `${depthPpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`,
     "Transit duration": `${c.durationHours.toFixed(2)} hours`,
     "Signal strength (SNR)": c.snr.toFixed(1),

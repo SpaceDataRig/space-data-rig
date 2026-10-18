@@ -25,6 +25,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { renderPeriodDays } from "../src/core/periodFormat.ts";
 
 const SITE = "spacedatarig.app";
 // Proof-link targets. Every one is a real, committed artifact served from the production site (Cloudflare
@@ -58,8 +59,19 @@ export interface DigestFinding {
   verdict?: string;
   origin?: string;
   createdAt?: string;
-  candidate?: { periodDays?: number };
+  candidate?: {
+    periodDays?: number;
+    /** Grid-limited period uncertainty the detector recorded. Absent on records predating it. */
+    periodResolutionDays?: number;
+    /** The adopted peak is the long-period edge of the trial grid: a limit, not a measurement. */
+    atSearchBoundary?: boolean;
+    searchMaxPeriodDays?: number;
+  };
   crossmatch?: { matchedKnownPlanet?: boolean; knownPlanetName?: string };
+  /** Targeted re-injection trials: the rig's own conditional trust measure for this signal. */
+  recoveryTrials?: { nTrials?: number; nRecovered?: number };
+  /** Mission-critic composite ranking score, 0..100. A ranking aid, not a verdict. */
+  score?: number;
 }
 export interface DigestCompletenessPoint {
   depthPpm?: number;
@@ -133,6 +145,46 @@ function blocks(...parts: string[]): string {
 function periodDays(f: DigestFinding | undefined): number | null {
   const p = f?.candidate?.periodDays;
   return p != null && Number.isFinite(p) ? p : null;
+}
+
+/**
+ * A period phrase fit for the public feed. Two separate honesty problems are fixed here:
+ *
+ * 1. The recovered period is a discrete BLS grid node, and the node spacing grows as P^2 -- about 0.02 d at
+ *    P=2 d but about 1 d at P=16 d on a single-sector baseline. The old `P=${pd.toFixed(2)}d` therefore claimed
+ *    hundredths of a day on a long period that the search could not resolve, and it did so on X.
+ * 2. A peak sitting on the longest period the grid tried is not a measurement at all. Measured on the live rig:
+ *    3 of 90 findings had periodDays exactly 16.000000, the k=0 node of a 16-day maximum, and one of them was
+ *    announced as "P=16.00d". That is now stated as a limit.
+ *
+ * Returns "" when there is no usable period, so callers can omit the clause rather than print a placeholder.
+ */
+function periodPhrase(f: DigestFinding | undefined): string {
+  const p = periodDays(f);
+  if (p === null) return "";
+  if (f?.candidate?.atSearchBoundary) {
+    const lim = renderPeriodDays(p, undefined, false).value;
+    return `P at the ${lim}-day search limit (a longer period cannot be ruled out)`;
+  }
+  const r = renderPeriodDays(p, f?.candidate?.periodResolutionDays, true);
+  return r.uncertainty ? `P=${r.value} +/- ${r.uncertainty} d` : `P=${r.value} d`;
+}
+
+/** The rig's own conditional trust measure, quoted with its denominator so a small trial count cannot read as
+ *  a confident percentage. "" when the record carries no trials. */
+function recoveryPhrase(f: DigestFinding | undefined): string {
+  const t = f?.recoveryTrials;
+  if (!t || t.nTrials == null || t.nTrials <= 0 || t.nRecovered == null) return "";
+  return `re-injection recovered it in ${t.nRecovered}/${t.nTrials} trials`;
+}
+
+/** Rank for choosing which candidate to NAME on the feed: best-supported first. Recovery fraction dominates,
+ *  the critic score breaks ties. Ordering by createdAt instead (the old behaviour) made the exemplar an
+ *  arbitrary recent row rather than the strongest one in the batch. */
+function exemplarRank(f: DigestFinding): number {
+  const t = f.recoveryTrials;
+  const frac = t && t.nTrials && t.nTrials > 0 ? (t.nRecovered ?? 0) / t.nTrials : -1;
+  return frac * 1000 + (f.score ?? 0);
 }
 
 /** A ledger explorerUrl is only safe to print when it is a plain-ASCII https URL with no whitespace: a malformed
@@ -427,17 +479,17 @@ export function composeDigest(input: DigestInput): string {
       (f) => f.origin !== "blind-toi" && f.crossmatch?.matchedKnownPlanet && typeof f.crossmatch?.knownPlanetName === "string",
     );
     if (known && known.crossmatch?.knownPlanetName) {
-      const pd = periodDays(known);
-      const period = pd != null ? ` (P=${pd.toFixed(2)}d)` : "";
+      const period = periodPhrase(known);
+      const periodClause = period ? ` (${period})` : "";
       const name = known.crossmatch.knownPlanetName;
       const sealed = n > 1 ? `and sealed ${n} reproducible results on-chain in total` : "and sealed the analysis on-chain";
       const match = anchored.find((e) => String(e.findingId || "") === String(known.id || ""));
       const txUrl = safeTxUrl(match?.explorerUrl) ?? newestTxUrl(anchored);
       const head = pick(
         [
-          `Space Data Rig re-verified the known exoplanet ${name}${period} ${sealed}.`,
-          `A new pass by Space Data Rig reproduced the known exoplanet ${name}${period}; the analysis is sealed on-chain.`,
-          `Space Data Rig recovered the known exoplanet ${name}${period} once more ${sealed}.`,
+          `Space Data Rig re-verified the known exoplanet ${name}${periodClause} ${sealed}.`,
+          `A new pass by Space Data Rig reproduced the known exoplanet ${name}${periodClause}; the analysis is sealed on-chain.`,
+          `Space Data Rig recovered the known exoplanet ${name}${periodClause} once more ${sealed}.`,
         ],
         `known:${input.windowStart}:${name}`,
       );
@@ -470,20 +522,27 @@ export function composeDigest(input: DigestInput): string {
     return clip(blocks(head, note, proofBlock(EMPTY_CHAR, txUrl)));
   }
 
-  // (2) Newly flagged UNCONFIRMED blind candidates (newest first, for the example). These are contractually
-  //     recovered blind on real photometry, so "real TESS photometry" is accurate HERE (and only here). Only
-  //     SURVIVING candidates count: a critic-rejected blind row is noise, not a lead awaiting follow-up, so it must
-  //     not inflate the count. LEAN: no characterization, no tx (this path anchors nothing), live rig only.
+  // (2) Newly flagged UNCONFIRMED blind candidates. These are contractually recovered blind on real photometry,
+  //     so "real TESS photometry" is accurate HERE (and only here) -- src/cf/workflow.ts refuses to build a
+  //     blind-TOI finding on a synthetic stand-in at all. Only SURVIVING candidates count: a critic-rejected
+  //     blind row is noise, not a lead awaiting follow-up, so it must not inflate the count. LEAN: no
+  //     characterization, no tx (this path anchors nothing), live rig only.
   const blind = (want("blind") ? findings : [])
     .filter((f) => f && f.origin === "blind-toi" && f.verdict !== "rejected" && within(f.createdAt, start, end))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   if (blind.length) {
     const n = blind.length;
-    const eg = blind[0];
-    const pd = periodDays(eg);
+    // The exemplar is chosen by strength of evidence, not by recency. "e.g." reads as "one of these", and the
+    // reader may well go and look at the named one, so naming the best-supported candidate is the responsible
+    // choice; naming blind[0] just named whichever row happened to be newest.
+    const eg = blind.slice().sort((a, b) => exemplarRank(b) - exemplarRank(a))[0];
+    const pph = periodPhrase(eg);
+    const rec = recoveryPhrase(eg);
     // targetId already carries its own prefix ("TIC 261136679" / "KIC 10666592"), so use it verbatim -- prepending
     // "TIC" would print "TIC TIC 261136679".
-    const example = eg.targetId ? ` (e.g. ${eg.targetId}${pd != null ? `, P=${pd.toFixed(2)}d` : ""})` : "";
+    const example = eg.targetId
+      ? ` (e.g. ${eg.targetId}${pph ? `, ${pph}` : ""}${rec ? `; ${rec}` : ""})`
+      : "";
     const plural = n === 1 ? "" : "s";
     const head = pick(
       [

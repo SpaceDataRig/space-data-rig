@@ -29,6 +29,24 @@ export interface TransitCandidate {
   depthPpt: number; // transit depth in parts-per-thousand
   depthFrac: number; // transit depth as a fraction (e.g. 0.01 = 1%)
   snr: number; // signal-to-noise of the detection
+  /**
+   * Grid-limited 1-sigma period uncertainty in DAYS: P^2 * df, where df = 1/(oversample*baseline). The period is
+   * a discrete trial-grid node, not a fitted continuous value, so this is the resolution the search actually had.
+   * It grows as P^2 -- about 0.02 d at P=2 d but about 1.2 d at P=16 d on a 27-day baseline -- which is why every
+   * period must be rendered against it instead of with a fixed number of decimals (src/core/periodFormat.ts).
+   * Absent on records written before the detector started reporting it, in which case a conservative bound is used.
+   */
+  periodResolutionDays?: number;
+  /**
+   * True when the adopted peak is the LONG-PERIOD EDGE of the trial grid rather than an interior maximum: the
+   * signal wanted a longer period than the search allowed, or a trend/red-noise ramp piled up against the wall.
+   * Such a period is an UPPER BOUND on nothing and a measurement of nothing, so it must never be published as
+   * "P=16.00d"; it is published as "at the N-day search limit". Measured on the live rig: 3 of 90 findings sat
+   * exactly on the k=0 node of a 16-day maximum, one of which had already been announced on the public feed.
+   */
+  atSearchBoundary?: boolean;
+  /** The grid maximum the search ran to, kept so the boundary can be stated as a number in prose. */
+  searchMaxPeriodDays?: number;
   power: number; // BLS signal-residue power
   /** Estimated planet radius in Earth radii (needs stellar radius). */
   radiusEarth?: number;

@@ -68,6 +68,12 @@ export function detectTransit(lc: LightCurve, blsOpts: BLSOptions = {}): Detecti
   const candidate = toCandidate(clean, r);
   candidate.periodDays = al.period;
   candidate.epochBjd = al.epoch;
+  // The alias resolver moves the period by an integer multiple. The grid uncertainty scales with it
+  // (dP' = m * dP for P' = m * P), so rescale rather than keep the pre-alias number. atSearchBoundary is left
+  // alone on purpose: a period doubled off the edge node is still a peak that ran into the wall.
+  if (Number.isFinite(r.periodDays) && r.periodDays > 0 && Number.isFinite(al.period)) {
+    candidate.periodResolutionDays = r.periodResolutionDays * (al.period / r.periodDays);
+  }
   candidate.folded = recomputeFolded(times, flux, al.period, al.epoch);
 
   const model = modelFromCandidate(candidate, times);

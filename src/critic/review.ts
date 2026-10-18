@@ -392,5 +392,23 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
     }
   }
 
+  // --- search-range boundary: INFORMATIONAL ONLY, and deliberately so ---
+  // A BLS peak that lands on the longest period the grid tried is not a measurement of that period: the search
+  // ran out of range. Measured on the live rig, 3 of 90 findings sat exactly on the k=0 node of a 16-day maximum
+  // and one had already been announced publicly as "P=16.00d". Gating on this would change verdict semantics
+  // without a calibration run, so it is recorded, reported, and NOT allowed to move `verdict`, `failReasons` or
+  // `score`. The name carries "non-gating" so scienceProjection() excludes it and the content address is
+  // unchanged -- the bundle still commits to the fact, and no already-anchored science re-prices.
+  if (c.atSearchBoundary) {
+    const lim = Number.isFinite(c.searchMaxPeriodDays as number) ? (c.searchMaxPeriodDays as number) : NaN;
+    checks.push({
+      name: "period-at-search-boundary (informational, non-gating)",
+      pass: false,
+      detail: Number.isFinite(lim)
+        ? `the recovered period ${c.periodDays.toFixed(2)} d is the LONG-PERIOD EDGE of the trial grid (max ${lim} d), so it is a lower bound on a longer signal, not a measured period`
+        : `the recovered period ${c.periodDays.toFixed(2)} d is the long-period edge of the trial grid, not a measured period`,
+    });
+  }
+
   return { verdict, reason, score, crossmatch: cm, checks };
 }

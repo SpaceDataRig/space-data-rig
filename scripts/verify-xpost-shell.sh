@@ -240,6 +240,20 @@ WRAP
     chk "the science cursor is echoed" "$(grep -c 'digest window since:' /tmp/vx_out.txt | tr -d ' ')" "1"
     chk "the dev cursor is echoed"     "$(grep -c 'build-note cursor:' /tmp/vx_out.txt | tr -d ' ')" "1"
     chk "the backlog count is echoed"  "$(grep -c 'build-note backlog:' /tmp/vx_out.txt | tr -d ' ')" "1"
+    # The per-tier manifest is what separates "this tier had nothing honest to report" from "this tier was never
+    # run", so it must appear on EVERY run and must name every tier -- a manifest that quietly drops a tier would
+    # recreate the blind spot it exists to close.
+    chk "the tier manifest is echoed" "$(grep -c 'tier manifest:' /tmp/vx_out.txt | tr -d ' ')" "1"
+    tm_line="$(grep 'tier manifest:' /tmp/vx_out.txt | head -1)"
+    tm_ok=1
+    for t in ledger blind milestone note heartbeat; do
+      case "$tm_line" in *"$t ["*) ;; *) tm_ok=0; echo "  FAIL the tier manifest omits: $t" ;; esac
+    done
+    if [ "$tm_ok" = "1" ]; then
+      echo "OK   the tier manifest names all five tiers"
+    else
+      echo "FAIL the tier manifest must name ledger/blind/milestone/note/heartbeat on every run"; fail=$((fail+1))
+    fi
   fi
 fi
 

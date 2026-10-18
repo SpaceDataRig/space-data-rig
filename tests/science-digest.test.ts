@@ -105,7 +105,9 @@ test("priority 1: a known-planet re-validation sealed on-chain is named, with it
   const text = composeDigest(
     input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2185)] }),
   );
-  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22d\)/, "names the known planet + period (stable across variants)");
+  // The period now carries the grid-limited uncertainty rather than a bare "2.22d": a record with no recorded
+  // resolution is published under the conservative bound, which at 2.22 d still resolves to hundredths.
+  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22 \+\/- 0\.02 d\)/, "names the known planet + period with its real precision (stable across variants)");
   assert.match(text, /on-chain/);
   assert.match(text, /recovery check/, "frames a re-validation as a recovery check, not a discovery");
   assert.ok(!/discoveryClaim=false/.test(text), "the per-post discoveryClaim stamp is gone");
@@ -149,7 +151,9 @@ test("priority 2: a newly flagged blind candidate is UNCONFIRMED, for follow-up,
   assert.match(text, /UNCONFIRMED transit candidate|periodic-dip candidate/);
   assert.match(text, /real TESS photometry/); // blind-TOI is contractually recovered on real photometry
   assert.match(text, /for human follow-up/);
-  assert.match(text, /\(e\.g\. TIC 240720121, P=4\.50d\)/);
+  // "P=4.50d" implied hundredths; on the conservative grid bound a 4.5 d period resolves to about a tenth, so the
+  // published form now carries that (+/- 0.09) instead of inventing precision.
+  assert.match(text, /\(e\.g\. TIC 240720121, P=4\.50 \+\/- 0\.09 d\)/);
   assert.ok(!/discoveryClaim=false/.test(text), "no per-post stamp");
   assert.ok(!/discovered/i.test(text), "must never claim a discovery");
   assertTweetSafe(text);
@@ -247,7 +251,7 @@ test("lean footnotes: a routine known-planet post drops the standing characteriz
   const text = composeDigest(
     input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2185)], research: RICH_RESEARCH }),
   );
-  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22d\)/);
+  assert.match(text, /known exoplanet HD 189733 b \(P=2\.22 \+\/- 0\.02 d\)/);
   assert.match(text, /recovery check/);
   assert.ok(!/separately characterized|completeness rises|purity LOWER bound/.test(text), "the methodology block now lives ONLY on the research milestone, not every result post");
   assert.ok(!/research\.json|results-figure\.svg|p49-blind-test/.test(text), "no methodology links when no such number is cited");
@@ -352,7 +356,7 @@ test("variety: the composer picks a phrasing deterministically from a stable set
   assert.equal(mk("1"), mk("1"));
   // Whatever variant the rotation picks, the required facts always survive and the stamp never returns.
   for (const t of [mk("1"), mk("7"), mk("42")]) {
-    assert.match(t, /known exoplanet HD .* b \(P=2\.22d\)/);
+    assert.match(t, /known exoplanet HD .* b \(P=2\.22 \+\/- 0\.02 d\)/);
     assert.match(t, /recovery check/);
     assert.ok(!/discoveryClaim=false/.test(t));
   }

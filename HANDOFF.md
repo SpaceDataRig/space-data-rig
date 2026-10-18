@@ -316,6 +316,21 @@ the Actions web page when the anonymous API is rate-limited.
   (4 of 48). When adding any provenance/health flag, ask which of the two it is, and never let a
   reason string be computed and discarded: if the gate knows something the reader does not, publish
   it -- as a soft note when it is not a failure, so honesty does not become a false-positive machine.
+- A cursor shared by two tiers that fire under DIFFERENT conditions starves the rarer tier. The X
+  digest anchored both the science window and the build-note window to the newest tweet of any kind.
+  The dev tier is reached only when a window has NO science, so every science post silently advanced
+  the cursor past commits the dev tier had never reported -- a five-commit push yielded one build
+  note covering one commit, and two shipped fixes were never announced. Give each tier its own
+  cursor (the dev tier now reads the newest BUILD NOTE off the feed, via an exported
+  `BUILD_NOTE_HEADLINES` list it matches by membership, since `pick()` rotates the wording). Two
+  related traps: a stream carrying more than one value must be LABELLED, not parsed with
+  `grep -Eo <ISO> | tail -1`; and if you must recognise your own past output, keep the strings it
+  can produce in ONE exported place and assert the matcher accepts every one of them.
+- The x-post workflow's shell path is CI-only and no test covers it, so a green `npm test` proves
+  nothing about it. Before editing, exercise the parsing/fallback logic directly with
+  `bash scripts/verify-xpost-shell.sh`, and after deploying read the NEXT scheduled run's job log --
+  the cursor is logged on every run precisely so it can be verified from a run where the dev tier
+  never fires.
 - The run-mutex + rotation-cursor path (src/cf/run-mutex.ts) is STATEFUL and lives in a
   Durable Object that imports `cloudflare:workers`, so it CANNOT be loaded by the Node test
   runner -- that is exactly how a 22-hour survey freeze slipped through a green CI. The decisions

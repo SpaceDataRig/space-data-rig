@@ -5,6 +5,51 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The X digest's build-note tier was starved by its own science tier (2026-10-18)
+Both tiers shared ONE window start, anchored to the newest tweet of any kind. That is correct for science (a
+result must not be re-reported) and fatal for build notes: the dev tier is reached only when a window has no
+science, so every science post advanced the shared cursor past commits the dev tier had never reported, and they
+were dropped for good. Read out of the production job logs, a push of five commits produced exactly one build
+note covering one commit -- the 16:00:34Z run posted 3 new UNCONFIRMED candidates and thereby consumed
+`39177d1` and `bb1dfe6` without ever announcing them; the 16:37:02Z note covered `d17b032` alone; `33e8758`
+and `65193ca` are `docs:` and are filtered by design. Two shipped fixes went unannounced and nothing on the feed
+indicated they had been skipped.
+
+Fixed by splitting the cursor, from the same single X read:
+
+- `scripts/science-digest.ts` exports `BUILD_NOTE_HEADLINES` as the single source of truth. `pick()` rotates the
+  headline, so a note is identified by MEMBERSHIP in that list, not by one hardcoded string -- composing and
+  matching can no longer drift apart silently.
+- `scripts/x-last-post.ts` now reads `created_at` AND `text` over the largest legal page (100; a build note is
+  rare and a 5-tweet page covers well under an hour of this feed, so it would almost never contain one and the
+  dev cursor would silently degrade back to the shared one), adds `isBuildNoteText` / `newestBuildNoteAt`, and
+  prints two LABELLED lines. The labels are load-bearing: the workflow pulled the ISO with
+  `grep -Eo <ISO> | tail -1`, which would hand the dev tier's time to the science window, or the reverse, the
+  moment a second timestamp appeared on that stream.
+- `.github/workflows/x-post.yml` parses both labels (tolerating the previous bare-ISO shape so an older ref still
+  yields a usable science cursor), derives `DEV_SINCE` from the newest build note, else a bounded look-back
+  (`BUILD_NOTE_LOOKBACK_H`, default 48h) so a starved backlog is still reported once -- still batched by
+  `head -5`, never per-commit, still at most one post per window. The cursor is logged on EVERY run rather than
+  only inside the no-science branch, so it is verifiable from a job log where science wins and the dev tier is
+  never reached.
+
+No test covers the workflow's shell path (CI-only -- the same blind spot that previously shipped a pipefail abort
+and an illegal `max_results` undetected), so `scripts/verify-xpost-shell.sh` exercises the label parsing, the
+legacy branch, the read-failure degradation and the `DEV_SINCE` derivation directly: `SHELL_LOGIC_PASS`. Added
+tests pin
+every headline `composeDigest` can emit as recognised, a REAL composed note round-tripping through the matcher,
+science / heartbeat / blind-candidate posts NOT matching (or the dev window would jump forward and re-starve the
+tier), the two cursors differing on a realistic page, and the `tweet.fields` / page-size shape. 602 tests pass.
+
+Verified live rather than assumed: the first run on the new workflow (01:30:19Z, head `e1c3c44`) logged
+`build-note cursor: dev window since 2026-10-17T16:37:02Z`, i.e. it found the previous build note roughly nine
+hours back on the real feed -- matched by `isBuildNoteText` against actual tweet text, not a fixture -- then
+composed and posted a note for the fix itself (`OK posted (id 2111630997347602591)`).
+
+Residue deliberately NOT rewritten: `39177d1` and `bb1dfe6` remain unannounced. Backfilling them would require
+an explicit dispatch override and would re-report two commits that were already covered, which trades one
+honesty property (nothing skipped) for another (nothing reported twice); the fix is forward-looking.
+
 ### Audit-6 re-check: the freshness gate itself had two false-positive bugs, and report order was not reproducible (2026-10-17)
 Re-verifying the audit-6 remediation end to end (rather than trusting it) found five defects, two of them IN
 the gate that was added to stop stale numbers -- so they were fixed, not worked around with `--allow-stale`.

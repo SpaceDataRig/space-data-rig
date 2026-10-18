@@ -5,6 +5,48 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A stale report blocked the library, and reproducing it nearly broke the documents that cite it (2026-10-18, eighth pass)
+`npm run p86:report-library` exited non-zero: `p41-longbaseline` was flagged STALE because `61d7c68` changed
+`src/detect/bls.ts`, one of its recorded inputs. The gate worked -- it was saying the published completeness table had
+not been recomputed under the current detector. Re-running with the script's *current defaults* (40 hosts) changed the
+numbers, and that is the trap: `RESEARCH.md` section 9 and several CHANGELOG entries quote this table, so publishing a
+40-host version would have left two documents citing percentages the committed report no longer contains -- the same
+cross-document counter drift as the `blindCandidates` split above. Re-run instead at the parameters the report itself
+records (`--stars 30 --maxsectors 4 --period 3 --seed 7`): every cell reproduces exactly (51.7/37.9 at 300 ppm,
+65.5/65.5 at 500, 75.9/75.9 at 800, 82.8/75.9 at 1500, 89.7/79.3 at 3000, mean 2.69 sectors per host) and the rendered
+markdown is byte-unchanged. Only the stamp and the per-host sector point counts moved -- those counts track whatever
+SPOC served on the run day, which is a fetch difference, not a detector difference, and the 40-host run is kept as an
+gitignored sample-size sensitivity note (`out/p41-40hosts-sensitivity.{md,json}`) rather than quietly published.
+The library now reports **0 stale** with `fullyVerified` 3 (was 2).
+
+Also new: the M4 milestone figure (`src/figures/m4MilestoneFigure.ts` for the geometry and wording, `npm run
+figure:m4` for the capture). Its one hard rule is that no number is typed into the drawer -- the record is assembled
+from the committed `reports/p88..p91` JSON plus the live counters, and the builder throws on a missing field rather
+than rendering a zero, because "this measured zero" and "nobody looked" must never print the same way. The cadence
+quoted on the picture comes from `measurePassSpans` over the recorded timestamps, the same function `deploy:window`
+uses, so the figure and the deployment rule cannot describe different rhythms. `tests/m4-milestone-figure.test.ts`
+pins the rules offline and rebuilds the committed SVG from the committed record byte for byte; those three assertions
+stay skipped until the artifact pair is generated, which requires production to publish `blindHeld` -- the CLI refuses
+to draw counters the deployed revision does not have.
+
+Sweeping the same ground for "a rule with no call site" turned up three more, all fixed here:
+
+- `RigStateDO.advanceSurveyPass()` was dead: nothing in `src/`, `scripts/`, `tests/` or `web/` called it, and the
+  comment above it still described the pre-audit-6 control flow -- "advanced idempotently at the end" -- which is
+  precisely the tail-side advance that froze the survey at pass 1 for 22 hours. A stale comment next to a dead
+  method is an invitation to rebuild the bug, so the method is gone and `tests/run-mutex.test.ts` now asserts the
+  wiring the DO itself cannot be imported to check: no pass-advance RPC exists, `decideAdvance` has exactly one
+  production call site (inside `decideStart`), and every write of the `surveyPass` key lives in the atomic claim.
+- `PUBLIC_STAT_DEFINITIONS` had zero call sites while `web/index.html` carried a hand-typed copy of the same
+  sentences in its tooltips -- a module documented as the single source of truth for what each counter counts,
+  and readers were being told by a paragraph nobody checked against the query. The definitions are now published
+  on the state payload (`DashboardState.statDefinitions`, filled from the same constant by both the Durable Object
+  and the Node server) and the browser writes the tooltip from that payload; the markup quotes none of them, and
+  an older server that sends no definitions gets no tooltip rather than an unverified one.
+- `HANDOFF.md` section 5, the repository map, had no line for `src/figures/` or `src/survey/`, and nothing was
+  checking. `tests/repo-hygiene.test.ts` now requires the layout to name exactly the directories that exist -- in
+  both directions, so a deleted directory cannot keep pointing a reader at nothing.
+
 ### The deploy-window belief was wrong by an order of magnitude, and a governance rule with no gate lapsed (2026-10-18, seventh pass)
 The plan carried "a survey pass takes ~45 minutes and leaves only seconds of idle", which made every deploy feel like
 a gamble squeezed into a narrow hole. Measured against production it is simply not the regime. `npm run deploy:window`

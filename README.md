@@ -309,6 +309,9 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   human follow-up over rows assessed, because a critic-rejected dip is noise the pipeline cleared, not a lead. The X
   digest and the dashboard now share `isHeldBlindCandidate`, so the phrase "blind candidate" cannot be counted two
   ways on two surfaces (an earlier board showed 47 where the feed's honest figure was 26, 21 of them rejected).
+  Those definitions are served, not just documented: `GET /api/state` carries them as `statDefinitions` from the same
+  constant on both runtimes, and the board's hover text is built from that payload -- the markup keeps no copy of its
+  own, because a hand-maintained label is how a counter and its query part company.
 
 Try the chain without a token: `npm run p4:autonomous` (add `-- --targets 12 --tmag 9.5`, or a
 known SPOC star with `-- --tic 1024880 --sector 4`).

@@ -4,7 +4,7 @@
 // RigStateDO imports `cloudflare:workers`, so it cannot be loaded by the Node runner -- and indeed
 // `grep startRunIfIdle tests/` and `grep rig-state tests/` both returned zero hits while CI stayed green
 // through the freeze. The fix was to move the claim/advance/finish DECISIONS into src/cf/run-mutex.ts,
-// which the DO's startRunIfIdle / advanceSurveyPass / finishRun now call. THIS test drives those very
+// which the DO's startRunIfIdle / finishRun now call. THIS test drives those very
 // functions, so it asserts the production behaviour, not a copy -- the three ingredients of the incident:
 //   (1) a rotation claim ADVANCES the cursor at the claim (so a hung pass still consumed a pass);
 //   (2) the same runId is IDEMPOTENT (a DO eviction + tail replay cannot double-count), and a live claim
@@ -13,6 +13,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   decideStart,
   decideFinish,
@@ -108,4 +110,41 @@ test("resume reuses the persisted runId meta (not a fresh id)", () => {
   const state = idle({ runId: "run-persisted" });
   const d = decideStart(state, { runId: "run-offered", resume: true }, deps);
   assert.equal(d.runId, "run-persisted");
+});
+
+// ---- the wiring: the atomic claim is the ONLY writer of the rotation cursor -----------------
+//
+// The decisions above are testable because they are pure -- but the incident was a WIRING failure, not an
+// arithmetic one: the cursor was advanced in the Workflow tail, so a pass that hung after claiming never moved
+// it. Pure rules that nothing is required to call leave that class of bug exactly where it was. RigStateDO
+// cannot be imported here (it pulls in `cloudflare:workers`), so these assertions read the source text: cheap,
+// and they fail the moment a tail-side advance comes back.
+
+const DO_SRC = readFileSync(resolve(process.cwd(), "src/cf/rig-state.do.ts"), "utf8");
+const MUTEX_SRC = readFileSync(resolve(process.cwd(), "src/cf/run-mutex.ts"), "utf8");
+const WF_SRC = readFileSync(resolve(process.cwd(), "src/cf/workflow.ts"), "utf8");
+
+test("there is no cursor-advancing RPC on the DO, and the Workflow never writes the cursor", () => {
+  assert.doesNotMatch(DO_SRC, /advanceSurveyPass/, "a pass-advance RPC is the pre-audit-6 design: it reintroduces the tail-side advance that froze the survey");
+  assert.doesNotMatch(DO_SRC, /decideAdvance/, "the DO must not do cursor arithmetic outside the claim decision");
+  assert.doesNotMatch(WF_SRC, /advanceSurveyPass|setMeta\("surveyPass"/, "the Workflow reads the cursor for target selection and must not advance it");
+});
+
+test("decideAdvance's single call site is inside decideStart, and decideStart is the DO's only cursor writer", () => {
+  const calls = [...MUTEX_SRC.matchAll(/\bdecideAdvance\(/g)].length - 1; // minus the declaration itself
+  assert.equal(calls, 1, `cursor advance must have exactly one production call site, found ${calls}`);
+  const start = MUTEX_SRC.indexOf("export function decideStart");
+  const end = MUTEX_SRC.indexOf("\n}", start);
+  assert.ok(MUTEX_SRC.slice(start, end).includes("decideAdvance(state, runId)"), "the advance must happen inside the claim, keyed on the claimed runId");
+
+  // Every write of surveyPass meta in the DO lives in startRunIfIdle. Counting writers rather than reading one
+  // region matters: a second writer added elsewhere would otherwise slip through a slice-the-one-method test.
+  const writes = [...DO_SRC.matchAll(/setMeta\("surveyPass"/g)].length;
+  assert.ok(writes >= 1, "the claim must persist the cursor");
+  const claimStart = DO_SRC.indexOf("async startRunIfIdle");
+  const claimEnd = DO_SRC.indexOf("\n  }", claimStart);
+  assert.ok(claimStart > 0 && claimEnd > claimStart, "startRunIfIdle must be present to be the designated writer");
+  const writesInClaim = [...DO_SRC.slice(claimStart, claimEnd).matchAll(/setMeta\("surveyPass"/g)].length;
+  assert.equal(writesInClaim, writes, "every cursor write must be inside the atomic claim");
+  assert.ok(DO_SRC.slice(claimStart, claimEnd).includes("decideStart("), "and the value it persists comes from the tested decision");
 });

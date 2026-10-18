@@ -21,6 +21,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { RigStore } from "../core/store.ts";
+import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -170,6 +171,9 @@ app.get("/api/state", (c) =>
     snapshotLoaded,
     activeRun,
     stats: store.computeStats(ledgerRows()),
+    // Same constant the Durable Object publishes, so the local server and the edge cannot describe their counters
+    // differently -- and neither one describes them from prose typed into the markup.
+    statDefinitions: PUBLIC_STAT_DEFINITIONS,
     seats: store.listSeats().map((s) => ({ ...s, role: seatRole(s.name) })),
     findings: store.listFindings().map(findingView),
     bundles: store.listBundles(),

@@ -20,7 +20,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Finding, RigEvent, SeatName, Task } from "../core/types.ts";
 import { anchorStampIsValid, LEDGER_COMMITTED_SQL, mergeLedgerRow } from "../core/anchor-verify.ts";
-import { BLIND_CANDIDATE_SQL, BLIND_HELD_SQL } from "../core/stats-definitions.ts";
+import { BLIND_CANDIDATE_SQL, BLIND_HELD_SQL, PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import {
   SEAT_ORDER,
   defaultSeats,
@@ -36,7 +36,7 @@ import { R2ArtifactStore } from "./artifact-store.ts";
 import { hashScience, hashScienceLegacy } from "../bundle/bundle.ts";
 import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
-import { decideStart, decideFinish, decideAdvance, type MutexState } from "./run-mutex.ts";
+import { decideStart, decideFinish, type MutexState } from "./run-mutex.ts";
 import {
   anchorOnEndpoints,
   anchorMemoOnEndpoints,
@@ -280,6 +280,9 @@ export class RigStateDO extends DurableObject<Env> {
       bundles: this.listBundles(),
       events: this.listEvents(150),
       stats: this.computeStats(),
+      // The counters ship with the sentence saying what each counts, straight out of the module that defines the
+      // queries. The browser puts this in the tooltip; the markup quotes none of it, so there is no second copy.
+      statDefinitions: PUBLIC_STAT_DEFINITIONS,
     };
   }
 
@@ -349,28 +352,22 @@ export class RigStateDO extends DurableObject<Env> {
     return { ok: true, key: SNAPSHOT_KEY };
   }
 
-  // ---- rotation cursor (audit-5 audience-legibility) -----------------------
+  // ---- rotation cursor (audit-5 audience-legibility, audit-6 root cause) -----------------
   // The autonomous survey rotates through a broad real target pool so the catalog grows over time
-  // instead of re-running the same brightest handful in place. Both methods are async and return a
+  // instead of re-running the same brightest handful in place. This method is async and returns a
   // NON-NULLABLE number (a DO RPC whose return is a union-with-undefined collapses to `never` at the
-  // stub call site). The cursor is read at run start (inside the select-targets step, so step-replay
-  // determinism comes from the Workflow's stored step result) and advanced idempotently at the end:
-  // advanceSurveyPass(runId) is a no-op for a runId it has already advanced, so a DO eviction + tail
-  // replay cannot double-count a pass.
+  // stub call site).
+  //
+  // THERE IS DELIBERATELY NO "advance the pass" RPC. The cursor moves only inside the atomic CLAIM
+  // (startRunIfIdle -> decideStart, which advances it idempotently on the claimed runId). The pre-audit-6
+  // design read the cursor at run start and advanced it in the Workflow tail; a pass that hung after claiming
+  // never reached the tail, so the cursor froze at 1 for 22 hours and the survey stopped producing anything.
+  // Re-adding a tail-side advance would reintroduce that failure, so tests/run-mutex.test.ts asserts this
+  // file contains no such method and that the claim is the only writer of the cursor.
 
-  /** Current completed survey-pass count (0 when none yet). Always a finite number. */
+  /** Survey passes CLAIMED so far (0 when none). Counted at the claim, so a hung pass still counts. */
   async getSurveyPass(): Promise<number> {
     return Number(this.getMeta("surveyPass") ?? "0") || 0;
-  }
-
-  /** Advance the pass by one, once per runId. Returns the (possibly unchanged) pass count. */
-  async advanceSurveyPass(runId: string): Promise<number> {
-    const adv = decideAdvance({ surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0, lastPassRun: this.getMeta("lastPassRun") ?? null }, runId);
-    if (adv.changed) {
-      await this.setMeta("surveyPass", String(adv.surveyPass));
-      await this.setMeta("lastPassRun", adv.lastPassRun);
-    }
-    return adv.surveyPass;
   }
 
   /** The run-mutex slice of DO meta the claim/finish decisions read (see src/cf/run-mutex.ts). */

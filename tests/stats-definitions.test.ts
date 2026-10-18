@@ -19,6 +19,7 @@ import { resolve } from "node:path";
 import {
   BLIND_CANDIDATE_SQL,
   BLIND_HELD_SQL,
+  PUBLIC_STAT_DEFINITIONS,
   isBlindCandidate,
   isHeldBlindCandidate,
   surveyStatsSentence,
@@ -133,13 +134,38 @@ test("both browser surfaces render the shared sentence, and the pre-JS markup ma
   const occurrences = html.split(zeros).length - 1;
   assert.equal(occurrences, 2, "both survey lines ship honest");
   for (const id of ["survey-head-stats", "survey-stats"]) {
-    const el = new RegExp(`id="${id}"[^>]*`);
-    assert.match(html, el, `${id} must exist`);
-    const title = html.match(new RegExp(`id="${id}" title="([^"]{80,})"`));
-    assert.ok(title, `${id} must carry its definition where a reader can hover it`);
-    assert.match(title[1], /CLAIMED, not completed/);
-    assert.match(title[1], /held for follow-up over blind rows assessed/);
+    assert.match(html, new RegExp(`id="${id}"[^>]*`), `${id} must exist`);
   }
+});
+
+test("the definitions reach the reader from the payload, not from prose copied into the markup", () => {
+  // WHY THIS DIRECTION MATTERS. The tooltips first shipped this round were typed into index.html, which left
+  // PUBLIC_STAT_DEFINITIONS with no call site at all -- a module claiming to be the single source of truth while
+  // the text readers actually saw was a hand-maintained copy of it. That is the same failure as a counter label
+  // that nobody checks against its query, one edit away from drifting. So: the rig publishes the definitions,
+  // the browser renders them, and the HTML holds none of them.
+  assert.ok(Object.keys(PUBLIC_STAT_DEFINITIONS).length >= 4, "each published rotation counter has a definition");
+  const html = read("web", "index.html");
+  for (const [k, v] of Object.entries(PUBLIC_STAT_DEFINITIONS) as Array<[string, string]>) {
+    assert.ok(v.length > 80, `${k}: a two-word label cannot carry a population definition`);
+    assert.ok(!html.includes(v.slice(0, 60)), `index.html must not keep its own copy of the ${k} definition`);
+  }
+
+  const app = read("web", "app.js");
+  assert.match(app, /function applyStatDefinitions\(state\)/, "one writer for the tooltip text");
+  assert.match(app, /state\.statDefinitions/, "and it reads the payload the server sent");
+  assert.equal((app.match(/applyStatDefinitions\(/g) ?? []).length, 3, "declaration plus both state-load call sites");
+  assert.match(app, /"survey-stats", "survey-head-stats"/, "covering both survey lines");
+
+  // Both runtimes publish the same constant, so the local server and the edge cannot describe their counters apart.
+  const doSrc = read("src", "cf", "rig-state.do.ts");
+  const nodeSrc = read("src", "api", "server.ts");
+  for (const [name, src] of [["Durable Object", doSrc], ["Node server", nodeSrc]] as const) {
+    assert.match(src, /import \{[^}]*PUBLIC_STAT_DEFINITIONS[^}]*\} from "\.\.\/core\/stats-definitions\.ts"/, `${name} must import it`);
+    assert.match(src, /statDefinitions: PUBLIC_STAT_DEFINITIONS/, `${name} must publish it`);
+  }
+  const types = read("src", "core", "state-types.ts");
+  assert.match(types, /statDefinitions: PublicStatDefinitions;/, "the payload type carries it, so a surface cannot omit it and still compile");
 });
 
 // ---- call sites: the shared rule must actually be the one in production ----------------------

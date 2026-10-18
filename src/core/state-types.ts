@@ -7,6 +7,7 @@
 // which is what keeps the SSE/WebSocket message shapes identical across runtimes.
 
 import type { Finding, RigEvent, SeatName, Task } from "./types.ts";
+import type { PublicStatDefinitions } from "./stats-definitions.ts";
 
 /** Live status of one seat, surfaced in the frontend topology view. */
 export interface SeatState {
@@ -143,6 +144,14 @@ export interface DashboardState {
   bundles: BundleRecord[];
   events: RigEvent[];
   stats: RigStats;
+  /**
+   * What each published counter counts, sent beside the numbers it describes (src/core/stats-definitions.ts).
+   * Part of the GET /api/state shape in BOTH runtimes: a label that reads like a total -- "on-chain",
+   * "blind candidates", "distinct targets" -- is a claim about a population, and the population is defined in one
+   * place. The browser renders the tooltip from this field rather than from prose copied into the markup, so the
+   * served page cannot disagree with the query that produced the number.
+   */
+  statDefinitions: PublicStatDefinitions;
 }
 
 export const SEAT_ORDER: SeatName[] = [

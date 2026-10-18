@@ -45,6 +45,11 @@ export const BLIND_HELD_SQL = `${BLIND_CANDIDATE_SQL} AND (json_extract(data,'$.
 /**
  * The definition sentence for each counter, in the words a reader sees. Long on purpose: each one names the
  * population AND the case that is excluded, which is the part a label of two words cannot carry.
+ *
+ * THIS OBJECT IS PUBLISHED, NOT DOCUMENTATION. It rides the state payload (`DashboardState.statDefinitions`) out of
+ * both runtimes, and the browser writes the tooltip text from that payload. Copying these sentences into
+ * web/index.html would create a second source that can disagree with the query it describes -- the exact failure
+ * this module exists to prevent -- so the markup carries none of them and tests/stats-definitions.test.ts pins that.
  */
 export const PUBLIC_STAT_DEFINITIONS = {
   surveyPass:
@@ -61,6 +66,9 @@ export const PUBLIC_STAT_DEFINITIONS = {
     "Blind rows still HELD for human follow-up -- blind candidates assessed minus those the critic rejected. This is " +
     "the number the X digest quotes for 'records N candidates', and the two are the same rule, not two rules.",
 } as const;
+
+/** The shape both runtimes publish, so a surface cannot add a counter without defining what it counts. */
+export type PublicStatDefinitions = typeof PUBLIC_STAT_DEFINITIONS;
 
 /** The rendered survey line, shared by both surfaces so the wording itself cannot fork. */
 export function surveyStatsSentence(s: {

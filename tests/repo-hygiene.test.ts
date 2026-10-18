@@ -105,3 +105,27 @@ test("the scan catches the leak it was written for, instead of passing by accide
   assert.ok(PRIVATE_KEY_PEM.test(head("PRIVATE KEY")), "the PEM shape must match");
   assert.ok(!PRIVATE_KEY_PEM.test(head("PUBLIC KEY")), "public keys are not secrets");
 });
+
+// ---- the handoff map matches the territory -----------------------------------------------
+//
+// HANDOFF.md section 5 is the file a new reader (or a new agent) uses to find anything. It drifted twice in
+// one pass: `src/figures/` and `src/survey/` were added and the layout never gained a line, so the document a
+// handover depends on silently became a map with missing rooms. Same class as the counter labels -- true
+// statements about a state of affairs that no longer holds -- and just as cheap to pin.
+test("HANDOFF's repository layout names exactly the src/ directories that exist", () => {
+  const handoff = readFileSync(join(root, "HANDOFF.md"), "utf8");
+  const start = handoff.indexOf("## 5. Repository layout");
+  assert.ok(start > 0, "section 5 must exist for the layout to be checkable at all");
+  const next = handoff.indexOf("\n## ", start);
+  const layout = handoff.slice(start, next > 0 ? next : handoff.length);
+
+  const dirs = readdirSync(join(root, "src"), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  const missing = dirs.filter((d) => !layout.includes(`src/${d}/`));
+  assert.deepEqual(missing, [], `src/ directories absent from the layout map: ${missing.join(", ")}`);
+
+  // And the reverse: a directory the map names but the tree does not have is a pointer to nothing.
+  const named = [...layout.matchAll(/src\/([a-z0-9]+)\//g)].map((m) => m[1]);
+  const phantom = [...new Set(named)].filter((d) => !dirs.includes(d));
+  assert.deepEqual(phantom, [], `the layout names directories that no longer exist: ${phantom.join(", ")}`);
+  assert.ok(dirs.length > 10, `${dirs.length} src/ directories scanned -- the walker is broken, not the doc`);
+});

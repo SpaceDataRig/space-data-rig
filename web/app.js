@@ -235,6 +235,27 @@ function surveyStatsSentence(stats) {
     + `${stats.blindHeld ?? 0}/${stats.blindCandidates ?? 0} blind candidates held/assessed (unconfirmed)`;
 }
 
+// The WORDS that define each counter are published by the rig itself (src/core/stats-definitions.ts, carried on the
+// /api/state payload as statDefinitions) and written into the markup from that payload. index.html deliberately
+// quotes none of them: a definition typed into the page is a second source of truth, and this project has already
+// shipped a counter whose hand-maintained label disagreed with the query behind it (blind candidates counting
+// critic-rejected noise on the board while the feed counted only survivors). No definitions in the payload, no
+// tooltip -- rather than a tooltip nobody asked the server about.
+const STAT_DEF_KEYS = ["surveyPass", "distinctHosts", "blindCandidates", "blindHeld"];
+const STAT_DEF_TARGET_IDS = ["survey-stats", "survey-head-stats"];
+function applyStatDefinitions(state) {
+  const defs = state && state.statDefinitions;
+  if (!defs) return;
+  const text = STAT_DEF_KEYS.map((k) => defs[k]).filter(Boolean).join(" ");
+  if (!text) return;
+  // Looked up by id rather than through the module-level element consts: this runs from the initial state load,
+  // and those consts are declared further down the file (a `const` in the temporal dead zone would throw there).
+  for (const id of STAT_DEF_TARGET_IDS) {
+    const el = document.getElementById(id);
+    if (el) el.title = text;
+  }
+}
+
 function renderStats(stats) {
   if (!stats) return;
   $("#stat-confirmed").textContent = stats.findingsAccepted ?? 0;
@@ -513,6 +534,7 @@ async function adminFetch(path, opts) {
 
 function applyState(s) {
   renderStats(s.stats);
+  applyStatDefinitions(s);
   (s.findings || []).forEach((f) => findingsById.set(f.id, f));
   renderBoard();
   if (s.findings && s.findings[0]) setTarget(s.findings[0].targetId);
@@ -1428,6 +1450,7 @@ async function renderSurveyTimeline() {
   if (state && state.stats && surveyHeadStatsEl) {
     const st = state.stats;
     surveyHeadStatsEl.textContent = surveyStatsSentence(st);
+    applyStatDefinitions(state);
   }
   const buckets = new Map();
   const ensure = (k) => { if (!buckets.has(k)) buckets.set(k, { findings: [], anchored: [] }); return buckets.get(k); };

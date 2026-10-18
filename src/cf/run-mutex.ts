@@ -7,7 +7,7 @@
 // runner at all: the only path that was ever broken was the only path with zero coverage, and `npm test`
 // stayed green while production was frozen. Extracting the decision logic here (exactly the precedent of
 // src/survey/rotation.ts, which workflow.ts imports and tests/rotation.test.ts drives) means the DO's
-// startRunIfIdle / advanceSurveyPass / finishRun are thin adapters over THESE functions, and the offline
+// startRunIfIdle / finishRun are thin adapters over THESE functions, and the offline
 // test asserts the REAL production behaviour -- the claim advances the cursor exactly-once, a live claim
 // returns 409, a stale claim is taken over, and a zombie finish cannot release a successor's slot.
 //
@@ -67,7 +67,12 @@ export function isStaleClaim(startedAt: string, now: number): boolean {
   return !Number.isFinite(started) || now - started > STALE_RUN_MS;
 }
 
-/** Idempotent cursor advance keyed on runId: a runId already advanced never counts twice (DO-replay safe). */
+/**
+ * Idempotent cursor advance keyed on runId. Its only call site is inside decideStart: the advance happens at
+ * the CLAIM, so `changed: false` means a retried claim for a runId that already consumed a pass (a resume
+ * reuses the stored runId) and must not double-count. There is deliberately no tail-side advance -- that was
+ * the freeze.
+ */
 export function decideAdvance(
   state: { surveyPass: number; lastPassRun: string | null },
   runId: string,

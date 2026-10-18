@@ -121,10 +121,20 @@ docker-compose, CULTURE.md).
                   observeApi.ts (computeObservation/commissionObservation), evidence.ts,
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
+- src/survey/     rotation.ts -- which targets a rotating survey pass takes (selectRotationWindow over one
+                  pool, selectMixedWindow when a pass is split between known hosts and blind TOI candidates).
+                  The `surveyPass` counter on /api/state counts passes CLAIMED by this scheduler, not
+                  completed ones; see src/core/stats-definitions.ts.
 - src/deploy/     deployGuard.ts (refuses to upload a tree HEAD does not describe) and
                   deployWindow.ts (GO/WAIT/UNKNOWN for uploading onto a cron-driven survey,
                   from the live claimed-run state plus measured cadence; the stale threshold is
                   the DO's own isStaleClaim). Both pure, both pinned by tests/.
+- src/figures/    the geometry and wording of published summary figures as pure functions over a
+                  measurement record: anchorCountsFigure.ts, m4MilestoneFigure.ts (M4 panel over
+                  p88/p89/p90/p91 plus the live counters and the measured cadence). No number is a
+                  literal in these files -- the CLI captures the record, the tests rebuild the
+                  committed SVG from it and require byte equality, and a missing field throws rather
+                  than drawing a zero.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
 - scripts/        p0..p30 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
                   measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
@@ -238,7 +248,9 @@ Changing any money-path switch or deploying requires EXPLICIT operator go-ahead.
 Local: `npm run orchestrator` (CLI pipeline), `npm start` or `npm run api` (dashboard +
 API + SSE on :8787), `npx wrangler dev` (edge simulation).
 Verify gate before any commit: `npm run typecheck:all` (Node + Worker tsconfigs) AND
-`npm test` (233 tests currently). For observe changes also `npm run verify:observe`.
+`npm test` (103 files / 793 tests as of 2026-10-18, 3 of them skipped until `npm run figure:m4` can capture
+its record -- the count only grows, so trust the run over any number quoted in a document, this one included).
+For observe changes also `npm run verify:observe`.
 Deploy: `npm run cf:deploy:sha` (refuses a dirty tree; re-sets GIT_SHA from HEAD first).
 BEFORE deploying, ask the rig: `npm run deploy:window` (rule in `src/deploy/deployWindow.ts`,
 tested by `tests/deploy-window.test.ts`) prints GO/WAIT/UNKNOWN from the live claimed-run
@@ -569,6 +581,23 @@ the Actions web page when the anonymous API is rate-limited.
   (src/core/anchor-verify.ts, used by BOTH runtimes) refuses to demote a landed row; the failed attempt lands in
   `lastAttempt*`. When you add a counter over a keyed-mutable table, check what the write path can destroy, not only
   what the read path filters.
+- A "single source of truth" with no call site is just a second source, and the reader never sees it. The seventh pass
+  wrote the counter definitions into `PUBLIC_STAT_DEFINITIONS` and then typed the same sentences by hand into
+  `web/index.html` tooltips, so the module documented as authoritative had zero callers while the prose on the page was
+  the copy that could drift. Fix pattern: publish the definition on the payload (`DashboardState.statDefinitions`,
+  filled from the constant by both runtimes) and have the browser render from it, so the markup carries no copy -- and
+  let a server that sends none produce no tooltip rather than an unverified one.
+- Dead code plus a stale comment is how a fixed bug comes back. `RigStateDO.advanceSurveyPass()` had no callers, and the
+  comment above it described the tail-side cursor advance -- the exact control flow whose absence caused the 22-hour
+  survey freeze (audit-6). Anyone "restoring" it would reintroduce the incident with plausible documentation beside it.
+  The DO cannot be imported into the Node test runner, so the guard is textual: `tests/run-mutex.test.ts` asserts no
+  pass-advance RPC exists, that `decideAdvance` has one production call site inside `decideStart`, and that every
+  `surveyPass` write is inside the atomic claim. Where a runtime boundary blocks the import, assert on the source text
+  rather than leaving the wiring untested -- that is what made the freeze survivable in the first place.
+- The repository map drifts silently, because nothing reads it while working. HANDOFF section 5 was missing
+  `src/figures/` and `src/survey/` for weeks. `tests/repo-hygiene.test.ts` now compares the layout against the actual
+  `src/` directories in both directions: a room that exists and is unmapped fails, and a mapped room that no longer
+  exists fails too.
 
 ## 13. Current state (as of 2026-10-13)
 

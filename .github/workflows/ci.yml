@@ -9,7 +9,14 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
+      # Full history on purpose. tests/handoff-freshness.test.ts proves that every commit sha the handoff's
+      # "Current state" section names is reachable from HEAD -- the check that catches a handover document citing a
+      # rewritten or invented commit. actions/checkout defaults to fetch-depth: 1, which makes every ancestor
+      # "unreachable" and turned that gate red for the wrong reason (CI run 39146663797). A shallow clone must not
+      # be able to pass the gate by not knowing the answer.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v7
         with:

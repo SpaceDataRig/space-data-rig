@@ -248,7 +248,7 @@ Changing any money-path switch or deploying requires EXPLICIT operator go-ahead.
 Local: `npm run orchestrator` (CLI pipeline), `npm start` or `npm run api` (dashboard +
 API + SSE on :8787), `npx wrangler dev` (edge simulation).
 Verify gate before any commit: `npm run typecheck:all` (Node + Worker tsconfigs) AND
-`npm test` (104 files / 797 tests as of 2026-10-18 after the M4 capture, none skipped -- the count only grows, so
+`npm test` (104 files / 798 tests as of 2026-10-18 after the M4 capture, none skipped -- the count only grows, so
 trust the run over any number quoted in a document, this one included).
 For observe changes also `npm run verify:observe`.
 Deploy: `npm run cf:deploy:sha` (refuses a dirty tree; re-sets GIT_SHA from HEAD first).
@@ -598,6 +598,14 @@ the Actions web page when the anonymous API is rate-limited.
   `src/figures/` and `src/survey/` for weeks. `tests/repo-hygiene.test.ts` now compares the layout against the actual
   `src/` directories in both directions: a room that exists and is unmapped fails, and a mapped room that no longer
   exists fails too.
+- A gate can also fail because the environment cannot answer. `tests/handoff-freshness.test.ts` checks that every
+  commit sha section 13 names is reachable from HEAD; it passed locally and went red in CI, because `actions/checkout`
+  defaults to `fetch-depth: 1` and in a shallow clone every real ancestor reads as unreachable. Two changes, neither of
+  them a relaxed assertion: `.github/workflows/ci.yml` fetches full history (`fetch-depth: 0`), and the test now fails
+  with "this checkout is shallow, so commit reachability is unknowable here" rather than accusing a real commit of
+  being invented. When a check depends on the environment (history depth, an external file, a network path), make it
+  name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
+  `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
 ## 13. Current state (as of 2026-10-18)
 
@@ -629,7 +637,8 @@ authority; they are deliberately not restated here.
   hosts with a recorded result, blindHeld 29 over blindCandidates 50 assessed, bundlesAnchored 11 published-bytes,
   ledgerAnchored 20 chain commitments, tasksDone 74, 94 findings rows. The report library serves 50 reports with
   `stale: []`, `verified: 3`, `fullyVerified: 3`.
-- Tests: 104 files / 797 tests as this snapshot was taken, and `npm run typecheck:all` clean. The count is itself a
+- Tests: 104 files / 798 tests as this snapshot was taken (via `npm run test:coverage`, which is the CI command, so the
+  coverage floors are part of the same green), and `npm run typecheck:all` clean. The count is itself a
   snapshot -- trust the run over any number written in a document, including this one.
 
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows

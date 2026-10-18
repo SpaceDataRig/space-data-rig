@@ -52,6 +52,17 @@ function reachable(sha: string): boolean {
   return !r.error && r.status === 0;
 }
 
+/**
+ * A shallow clone cannot answer the ancestor question at all -- every real ancestor looks unreachable. CI therefore
+ * checks out with fetch-depth: 0 (see .github/workflows/ci.yml); this makes the reason legible if that is ever
+ * reverted, instead of reporting a hand-written commit as invented.
+ */
+test("the checkout carries enough history to ask about ancestors", () => {
+  const r = spawnSync("git", ["rev-parse", "--is-shallow-repository"], { encoding: "utf8" });
+  const shallow = (r.stdout || "").trim() === "true";
+  assert.ok(!shallow, "this checkout is shallow, so commit reachability is unknowable here -- run with full history (fetch-depth: 0)");
+});
+
 test("section 13 exists and carries an explicit as-of date", () => {
   const s = section(handoff, "## 13. Current state");
   const header = s.split("\n")[0];

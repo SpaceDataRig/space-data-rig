@@ -34,7 +34,8 @@ and veto power 0.00 (drawn in the warn colour, not the colour of a positive resu
 2 false vetoes, p90 published estimator at -26.2% median signed error against the box statistic's -35.4% on 16
 injections, p91 5/5 controls met on 5 rows over 5 axes, and the definition layer at 29/50 blind held/assessed with
 cadence measured from the recorded timestamps. The three byte-equality assertions that were skipped pending this
-capture now run: 104 test files / 797 tests / 0 failures / 0 skipped.
+capture now run: 104 test files / 798 tests / 0 failures / 0 skipped via `npm run test:coverage` (the CI command, so
+the coverage floors are included).
 
 Sweeping the same ground for "a rule with no call site" turned up three more, all fixed here:
 
@@ -60,6 +61,13 @@ Sweeping the same ground for "a rule with no call site" turned up three more, al
   entry, every commit sha it names must be reachable from HEAD, and the production bullet must name the revision it was
   built from. The gate's first run on the old text failed three ways, including calling the wrangler version id -- a
   hex UUID -- an unreachable commit, which is why it strips versions before asking about shas.
+- That new gate then failed in CI (run 39146663797) while passing locally, and the reason was worth keeping: the job
+  log said `not ok - every commit sha section 13 names is reachable from HEAD` because `actions/checkout` defaults to
+  `fetch-depth: 1`. In a shallow clone every real ancestor looks unreachable, so the gate was asking a question the
+  checkout could not answer. Fixed on both sides, not by relaxing the assertion:
+  `.github/workflows/ci.yml` now checks out with `fetch-depth: 0`, and the test fails with "this checkout is shallow,
+  so commit reachability is unknowable here" instead of reporting a real commit as invented. A gate that goes green
+  because the environment cannot compute the answer is the failure mode this whole pass is about.
 
 Deployed on the measured window rather than a hunch: `npm run deploy:window` returned WAIT through two live passes,
 then GO at 16:32:59Z (previous pass finished 16:32:31Z, 720 s of idle against a 120 s budget), and version

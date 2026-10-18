@@ -466,6 +466,22 @@ the Actions web page when the anonymous API is rate-limited.
   fire in EITHER direction -- printing both "no stall" and "not a stall" while measuring nothing. Write log parsers
   against a line copied out of a real job log, never against a remembered one.
 
+- Test the layer that WRITES the sentence, not only the layer that posts it. The posting guard rejects discovery-grade
+  stems by regex, and `src/reporter/narrate.ts` still produced "N confirmed" in an unwired function plus "the star's
+  brightness dips by about -105 parts per million ... the fingerprint of a planet crossing the star" for a candidate
+  whose box landed on a brightening. Numbers get audited; prose gets assumed. tests/narrate.test.ts now scans every
+  narrated string across verdicts and both depth branches -- keep that scan green when adding wording.
+- Commit what an auditor needs, do NOT content-address it. Adding the scatter / box depth / search statistic to the
+  bundle manifest made the published depth+SNR pair checkable from the committed file; letting those fields into
+  `scienceProjection` would have given identical published science different scienceHashes and broken the anchor dedup
+  (the audit-3 P0-B double-fee bug). New diagnostic fields therefore go in `PROVENANCE_ONLY_CANDIDATE_KEYS`.
+  Rule for future fields: if it describes HOW a number was produced, commit it and exclude it; if it IS a published
+  number, put it in the address and expect re-anchoring.
+- A negative result from a search is only valid inside the scope you actually searched. Reading "no tests matched
+  `tests/*.ts`" as "this module is untested" was wrong: the workspace root is ABOVE the repository, so the glob never
+  looked in the right directory, and an existing 5-test file was overwritten before `git restore` undid it. Scope the
+  claim ("found none under <absolute path>") or run the check a second way before concluding absence.
+
 ## 13. Current state (as of 2026-10-13)
 
 - Git: at time of writing HEAD == origin/main == 148ff2c (Track C: p35 PDM independent cross-check);

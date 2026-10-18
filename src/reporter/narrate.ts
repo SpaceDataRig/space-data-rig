@@ -52,7 +52,11 @@ export function narrateEvent(ev: RigEvent): string {
 }
 
 /** Plain-English explainer for what "SNR" means, tuned to the value. */
-function explainSnr(snr: number): string {
+function explainSnr(snr: number, isDip: boolean): string {
+  // A negative SNR is not "a weak dip". `snr = depth/sigma*sqrt(nIn)` inherits the sign of the measured box, so a
+  // negative value means the box the search chose is a BRIGHTENING. Calling that "barely distinguishable from noise"
+  // would describe a transit that was never measured.
+  if (!isDip) return `not a dip at all (SNR ${snr.toFixed(0)}) -- the box the search landed on is a brightening, so the significance is negative by construction`;
   if (snr >= 20) return `very strong (SNR ${snr.toFixed(0)}) -- the dip towers over the noise`;
   if (snr >= 10) return `strong (SNR ${snr.toFixed(0)}) -- clearly above the noise`;
   if (snr >= 7) return `solid (SNR ${snr.toFixed(0)}) -- above our detection threshold`;
@@ -71,6 +75,13 @@ export function narrateFinding(
   const c = f.candidate;
   const badge = verdictBadge(f.verdict);
   const depthPpm = Math.round(c.depthFrac * 1e6);
+  // Is what was measured a dip at all? The BLS box statistic is squared (`Swy^2/(Sw(1-Sw))`, src/detect/bls.ts), so a
+  // periodic BRIGHTENING can win the period grid, while the depth and SNR it reports keep the sign. Such a record is
+  // published on purpose -- the critic rejects it and the row stays auditable -- but the sentence written over it
+  // used to read "the star's brightness dips by about -105 parts per million ... the fingerprint of a planet crossing
+  // the star", which is false about the sky and about our own detector. Every branch below keys off this flag.
+  const isDip = c.depthFrac > 0;
+  const risePpm = Math.abs(depthPpm);
   const planetYear = c.periodDays;
   // The period is a discrete BLS grid node, so quote only the digits the grid resolved (src/core/periodFormat.ts).
   // Before this, every surface here printed it with a fixed 2 or 4 decimals, which on a long period claimed a
@@ -100,7 +111,9 @@ export function narrateFinding(
   } else if (f.verdict === "needs-more-data") {
     headline = `${prov}Possible ${periodCore} -- promising but unproven, needs more data.`;
   } else {
-    headline = `${prov}The ${periodCore} did not pass scrutiny.`;
+    headline = isDip
+      ? `${prov}The ${periodCore} did not pass scrutiny.`
+      : `${prov}No transit measured on a ${pr.value}-day interval: the strongest box the search found is a brightening.`;
   }
 
   const confPct = f.recoveryConfidence != null ? Math.round(f.recoveryConfidence * 100) : null;
@@ -131,17 +144,23 @@ export function narrateFinding(
       : "";
 
   const explainer =
-    `The star's brightness dips by about ${depthPpm} parts per million once every ${pr.value} days -- ` +
-    `that repeating dip is the fingerprint of a planet crossing (transiting) the star. ` +
+    (isDip
+      ? `The star's brightness dips by about ${depthPpm} parts per million once every ${pr.value} days -- ` +
+        `that repeating dip is the fingerprint of a planet crossing (transiting) the star. `
+      : `At a ${pr.value}-day repeat interval the strongest box the search found is a BRIGHTENING of about ${risePpm} ` +
+        `parts per million, not a dimming. A transit blocks light, so this is the opposite of one: nothing here is a ` +
+        `planet crossing the star, and the row is kept because the search produced it and the critic turned it down. `) +
     periodCaveat +
-    `The signal is ${explainSnr(c.snr)}. ` +
+    `The signal is ${explainSnr(c.snr, isDip)}. ` +
     recoveryNote +
     `Mission Critic verdict: ${badge.label} -- ${f.verdictReason}`;
 
   const stats: Record<string, string> = {
     Target: f.targetId,
     "Planet year (period)": periodStat,
-    "Transit depth": `${depthPpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`,
+    "Transit depth": isDip
+      ? `${depthPpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`
+      : `no dip measured -- the box is a rise of ${risePpm} ppm (${(c.depthFrac * 100).toFixed(3)}%)`,
     "Transit duration": `${c.durationHours.toFixed(2)} hours`,
     "Signal strength (SNR)": c.snr.toFixed(1),
     "Recovery confidence": recoveryStat,
@@ -154,7 +173,16 @@ export function narrateFinding(
   return { headline, explainer, stats };
 }
 
-/** One-line summary of the whole run, for the header / console. */
+/**
+ * One-line summary of a whole run, for a header / console.
+ *
+ * NOBODY CALLS THIS TODAY, AND THAT IS THE POINT OF THE WORDING. Audit #3/#4 replaced "CONFIRMED" with "RECOVERED"
+ * on the badge and the headline because "confirmed" is a discovery-grade claim the pipeline is not entitled to make
+ * (the archive value it re-measures was never shown to the fit, and a blind candidate is capped at needs-more-data).
+ * This line still said "N confirmed", so the moment anything wires it up -- a header, a digest, a notification -- it
+ * would start publishing the exact word the posting guard refuses. It is fixed here and pinned by
+ * tests/narrate.test.ts, which scans every narrated surface for the affirmative stems.
+ */
 export function narrateRunSummary(counts: {
   tasks: number;
   accepted: number;
@@ -164,7 +192,7 @@ export function narrateRunSummary(counts: {
 }): string {
   return (
     `Run complete: ${counts.tasks} targets processed -> ` +
-    `${counts.accepted} confirmed, ${counts.review} on watchlist, ${counts.rejected} rejected. ` +
+    `${counts.accepted} recovered, ${counts.review} needing more data, ${counts.rejected} rejected. ` +
     `${counts.anchored} finding bundle(s) anchored on Solana mainnet.`
   );
 }

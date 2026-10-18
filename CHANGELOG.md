@@ -5,6 +5,47 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A record's own sentence described a transit that was never measured (2026-10-18, third pass)
+The guard and the repricing shipped in the last two entries fixed the NUMBERS. This pass went one layer closer to
+the reader and found the prose, which had the same defect and no test covering it.
+
+`src/reporter/narrate.ts` writes every human-facing sentence in the project -- the finding card, the board, the
+digest's source text. For a candidate whose BLS box landed on a BRIGHTENING (the box statistic is
+`Swy^2/(Sw(1-Sw))`, sign-blind, so an anti-transit can win the period grid while `depth` and `snr` keep the sign),
+it rendered: "The star's brightness dips by about **-105** parts per million once every 3.14 days -- that repeating
+dip is the fingerprint of a planet crossing (transiting) the star." The critic rejected the row, which is correct;
+the sentence written over it asserted a transit the detector measured the opposite of, in the one place a human
+actually reads. `narrateFinding` now branches on whether a dip was measured at all: the brightening case says the
+box is a brightening of N ppm and that nothing here is a planet crossing the star, the SNR sentence says "not a dip
+at all (SNR -9)" instead of "weak -- barely distinguishable from noise", the headline says "No transit measured",
+and the depth stat reads "no dip measured -- the box is a rise of 105 ppm". A zero depth takes the same branch: a
+flat box is not a shallow transit. `web/app.js` mirrors the label so the card cannot say what the narration forbids.
+
+Also caught in the same file, by reading rather than by a failure: `narrateRunSummary` printed "N **confirmed**" --
+the exact discovery-grade word audit #3/#4 removed from the badge and the headline, and the word the posting guard
+refuses. Nothing calls that function today, so the defect was latent, which is why it survived: a wrong sentence in
+unwired code has no way to complain. It now says "N recovered, M needing more data", and a test scans every
+narrated string (headline, explainer, stats, run summary) across all three verdicts and both depth branches for the
+affirmative stems, so the guard is enforced where the words are generated rather than only where they are posted.
+
+**The anchored bundle could not be checked from the anchored bundle.** A published record carries `snr`, `depthFrac`
+and `nPointsInTransit` in its manifest, and the relation that makes them checkable --
+`snr = depthFrac / noiseSigmaFrac * sqrt(nPointsInTransit)` -- needs the scatter, which was not committed; neither
+were the detector's own box depth, the refused estimate, the estimator label or the search statistic. A reader of the
+committed file therefore could not verify the very invariant the last two rounds established, nor see how far apart
+the two measurements were. `src/bundle/bundle.ts` now writes those five fields into the manifest candidate when the
+candidate has them, and EXCLUDES them from `scienceProjection` via `PROVENANCE_ONLY_CANDIDATE_KEYS`: the commitment
+carries what an auditor needs, while the content address stays the address of the published science. That separation
+is not cosmetic -- folding the new fields into the address would give two runs of identical published numbers
+different `scienceHash`es and re-open the dead-dedup bug that once cost three mainnet fees for one detection
+(audit-3 P0-B, and the live HR-858 b/c/d trio). `tests/core.test.ts` pins both halves: identical science under
+different provenance keeps one content address (and one legacy fallback address), the manifest hash does differ, and
+a candidate without the diagnostics produces the old manifest shape, so nothing already anchored is re-priced.
+`tests/live-data-regression.test.ts`, which drives the real captured manifests, stays green -- the projection is
+byte-identical for existing records.
+
+No verdict, no gate, no FAP, no anchor and no already-committed address moved. `npm test` 701/701.
+
 ### The depth guard's own fix was audited, and it had left the defect class in place (2026-10-18, second pass)
 The entry below was committed at 06:21Z and went live at 06:31Z. Re-running the same third-party question against
 the rig an hour later returned a worse answer than the one that motivated it.

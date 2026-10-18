@@ -48,7 +48,24 @@ export interface BundleManifest {
   candidate: Pick<
     TransitCandidate,
     "periodDays" | "epochBjd" | "durationHours" | "depthPpt" | "depthFrac" | "snr" | "power" | "nPointsInTransit"
-  >;
+  > & {
+    /**
+     * AUDITABILITY FIELDS (audit pass 4, 2026-10-18), all OPTIONAL and all EXCLUDED from the content address (see
+     * scienceProjection). A record now publishes a depth and an SNR that are supposed to describe each other, and the
+     * relation `snr = depthFrac / noiseSigmaFrac * sqrt(nPointsInTransit)` is the only way to prove it. Two of the
+     * three quantities were absent from the anchored manifest, so a reader holding the committed file could neither
+     * check the pair nor see what the detector measured before a refinement replaced it -- which is precisely the
+     * defect the guard fixes. They are added here so the commitment is checkable, and kept out of the science hash
+     * because they are metadata about HOW the number was produced, not a different number: adding them to the
+     * content address would break the cross-run anchor dedup for re-runs of identical science (audit-3 P0-B), the
+     * exact failure that once made three fees for one detection.
+     */
+    depthSource?: TransitCandidate["depthSource"];
+    blsBoxDepthFrac?: number;
+    perSectorDepthFrac?: number;
+    noiseSigmaFrac?: number;
+    detectionSnr?: number;
+  };
   verdict: Finding["verdict"];
   verdictReason: string;
   recoveryConfidence?: number;
@@ -115,6 +132,20 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
 }
 
 /**
+ * Manifest candidate fields that describe HOW a published number was produced rather than which number was
+ * published: committed in the bundle so it can be audited, excluded from the content address so a re-run of
+ * identical science still collapses to one scienceHash. Absent on every manifest written before this existed,
+ * so excluding them changes no already-anchored address (verified by tests/bundle.test.ts).
+ */
+export const PROVENANCE_ONLY_CANDIDATE_KEYS = [
+  "depthSource",
+  "blsBoxDepthFrac",
+  "perSectorDepthFrac",
+  "noiseSigmaFrac",
+  "detectionSnr",
+] as const;
+
+/**
  * The BLIND-SCIENCE projection: exactly the evidence-driven result, and nothing that depends on WHICH
  * finding/target label it got, WHEN it ran, or HOW it was rendered. The photometry ITSELF is bound
  * (dataProvenance, audit-6): the same numbers computed from different bytes are different science.
@@ -148,11 +179,18 @@ export async function hashManifest(manifest: BundleManifest): Promise<string> {
  *     the science content address. The GATING checks (snr/depth/duration/coverage/odd-even/recovery/
  *     centroid/fap) ARE kept: each is a pure function of the candidate + light curve, so they differ only
  *     when the evidence differs -- never because of a label or a timestamp.
+ *   - the candidate's provenance-only fields (PROVENANCE_ONLY_CANDIDATE_KEYS) -- which estimator produced the
+ *     published depth, what the other one measured, and the scatter the SNR was divided by. They are committed in
+ *     the manifest so a reader can check `snr = depthFrac/noiseSigmaFrac*sqrt(nIn)`, but binding them into the
+ *     content address would give two runs of the SAME published numbers different scienceHashes and re-open the
+ *     dead-dedup fee bug (audit-3 P0-B).
  */
 export function scienceProjection(manifest: BundleManifest): Record<string, unknown> {
   const gatingChecks = (manifest.checks ?? []).filter((c) => !/non-gating|post-hoc/i.test(c.name));
+  const candidate: Record<string, unknown> = { ...manifest.candidate };
+  for (const k of PROVENANCE_ONLY_CANDIDATE_KEYS) delete candidate[k];
   return {
-    candidate: manifest.candidate,
+    candidate,
     verdict: manifest.verdict,
     verdictReason: manifest.verdictReason,
     recoveryConfidence: manifest.recoveryConfidence,
@@ -236,6 +274,13 @@ export async function buildManifest(input: BuildBundleInput): Promise<BundleMani
       snr: c.snr,
       power: c.power,
       nPointsInTransit: c.nPointsInTransit,
+      // Committed, not content-addressed (see PROVENANCE_ONLY_CANDIDATE_KEYS): the reader of the anchored file must
+      // be able to re-derive the published SNR from the published depth and see both estimator readings.
+      ...(c.depthSource != null ? { depthSource: c.depthSource } : {}),
+      ...(Number.isFinite(c.blsBoxDepthFrac) ? { blsBoxDepthFrac: c.blsBoxDepthFrac } : {}),
+      ...(Number.isFinite(c.perSectorDepthFrac) ? { perSectorDepthFrac: c.perSectorDepthFrac } : {}),
+      ...(Number.isFinite(c.noiseSigmaFrac) ? { noiseSigmaFrac: c.noiseSigmaFrac } : {}),
+      ...(Number.isFinite(c.detectionSnr) ? { detectionSnr: c.detectionSnr } : {}),
     },
     verdict: input.finding.verdict,
     verdictReason: input.finding.verdictReason,

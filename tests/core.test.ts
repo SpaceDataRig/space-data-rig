@@ -4,7 +4,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { canonicalJson, sha256Hex, hashManifest, hashScience, type BundleManifest } from "../src/bundle/bundle.ts";
+import {
+  canonicalJson,
+  sha256Hex,
+  hashManifest,
+  hashScience,
+  hashScienceLegacy,
+  scienceProjection,
+  buildManifest,
+  PROVENANCE_ONLY_CANDIDATE_KEYS,
+  type BundleManifest,
+} from "../src/bundle/bundle.ts";
 import {
   DEFAULT_RPC,
   MEMO_PREFIX,
@@ -100,6 +110,78 @@ test("hashScience is content-addressed (stable across createdAt/runId) while bun
   const later = { ...base, createdAt: "2026-05-05T00:00:00Z", runId: "run-B" };
   assert.equal(await hashScience(base), await hashScience(later)); // identical science -> identical content address
   assert.notEqual(await hashManifest(base), await hashManifest(later)); // but the timestamped bundle hashes differ
+});
+
+test("the bundle commits the numbers that make its own SNR checkable, and lets none of them move the science address", async () => {
+  // WHY THIS HAS TO BE PINNED. A record publishes a depth and a significance that are supposed to describe each
+  // other, and the only way a reader can prove that is `snr = depthFrac / noiseSigmaFrac * sqrt(nIn)`. Before audit
+  // pass 4 the anchored manifest carried the depth and the SNR but not the scatter, so the commitment could not be
+  // checked from the committed file -- and the two estimator readings were invisible too. Adding those fields to
+  // the manifest is the fix; adding them to the CONTENT ADDRESS would have been the bug: two runs of the same
+  // published numbers then hash differently, and the anchor dedup that already cost three mainnet fees once
+  // (audit-3 P0-B, and again in the live HR-858 trio) stops firing.
+  const plain = {
+    schema: "space-data-rig/bundle@1", findingId: "F-1", targetId: "T", createdAt: "2020-01-01T00:00:00Z", runId: "run-A",
+    codeVersion: "v1", candidate: { periodDays: 3, epochBjd: 2459000, durationHours: 2, depthPpt: 1, depthFrac: 0.001, snr: 12, power: 1, nPointsInTransit: 5 },
+    verdict: "needs-more-data", verdictReason: "r", crossmatch: {}, artifacts: [],
+  } as unknown as BundleManifest;
+  const auditable = {
+    ...plain,
+    candidate: {
+      ...plain.candidate,
+      depthSource: "per-sector-median",
+      blsBoxDepthFrac: 0.0037,
+      perSectorDepthFrac: 0.001,
+      noiseSigmaFrac: 1.528e-4,
+      detectionSnr: 44.4,
+    },
+  } as unknown as BundleManifest;
+
+  assert.equal(await hashScience(plain), await hashScience(auditable), "identical published science keeps ONE content address");
+  assert.equal(await hashScienceLegacy(plain), await hashScienceLegacy(auditable), "the legacy dedup fallback must not re-diverge either");
+  assert.notEqual(await hashManifest(plain), await hashManifest(auditable), "while the commitment does carry the provenance");
+
+  const projected = scienceProjection(auditable) as { candidate: Record<string, unknown> };
+  for (const k of PROVENANCE_ONLY_CANDIDATE_KEYS) {
+    assert.ok(!(k in projected.candidate), `the content address must not fold in ${k}`);
+  }
+  assert.equal(projected.candidate.snr, 12);
+  assert.equal(projected.candidate.depthFrac, 0.001);
+
+  // And the manifest build is where those fields arrive: a candidate that carries them must publish them.
+  const built = await buildManifest({
+    finding: {
+      id: "F-1",
+      targetId: "T",
+      createdAt: "2026-10-18T00:00:00Z",
+      verdict: "needs-more-data",
+      verdictReason: "r",
+      crossmatch: {},
+      candidate: {
+        targetId: "T", periodDays: 3, epochBjd: 2459000, durationHours: 2, depthPpt: 1, depthFrac: 0.001,
+        snr: 3.24, power: 1, nPointsInTransit: 5, depthSource: "per-sector-median", blsBoxDepthFrac: 0.0037,
+        perSectorDepthFrac: 0.001, noiseSigmaFrac: 1.528e-4, detectionSnr: 12,
+      },
+    } as never,
+    runId: "run-A",
+    codeVersion: "v1",
+  });
+  assert.equal(built.candidate.noiseSigmaFrac, 1.528e-4);
+  assert.equal(built.candidate.detectionSnr, 12);
+  assert.equal(built.candidate.depthSource, "per-sector-median");
+  assert.equal(built.candidate.snr, 3.24, "the published significance is the one that describes the published depth");
+
+  // A candidate without the diagnostics -- every record written before this -- must produce the old manifest shape,
+  // so re-running that science cannot change its address or its dedup.
+  const legacyBuilt = await buildManifest({
+    finding: {
+      id: "F-1", targetId: "T", createdAt: "2026-10-18T00:00:00Z", verdict: "needs-more-data", verdictReason: "r", crossmatch: {},
+      candidate: { targetId: "T", periodDays: 3, epochBjd: 2459000, durationHours: 2, depthPpt: 1, depthFrac: 0.001, snr: 12, power: 1, nPointsInTransit: 5 },
+    } as never,
+    runId: "run-A",
+    codeVersion: "v1",
+  });
+  for (const k of PROVENANCE_ONLY_CANDIDATE_KEYS) assert.ok(!(k in legacyBuilt.candidate), `${k} must stay absent, got ${JSON.stringify(legacyBuilt.candidate)}`);
 });
 
 test("buildDeliberationMemo uses a distinct prefix so it never collides with the science bundle memo", () => {

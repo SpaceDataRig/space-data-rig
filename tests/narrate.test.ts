@@ -68,3 +68,123 @@ test("recovery falls back gracefully when trial counts are absent", () => {
   assert.equal(n.stats["Recovery confidence"], "100%");
   assert.match(n.explainer, /about 100% of the time/);
 });
+
+// ---- audit pass 4 (2026-10-18): the sentence that was false about the sky ----
+//
+// HOW THIS GOT WRITTEN WRONG ONCE, RECORDED SO THE NEXT READER KNOWS. I first searched for tests of this module
+// with the glob `tests/*.ts` from the WORKSPACE root. The repository lives a level below the root, so the glob
+// matched nothing and I concluded the prose layer was untested -- then overwrote this file. `git restore` undid it,
+// and the five tests above are the original ones. The lesson is not "be careful", it is that a search which cannot
+// find a file is not evidence that the file is absent: state the scope of a negative result or do not draw it.
+//
+// What the audit found is a live defect the existing tests could not have caught, because they fixed the labels and
+// the provenance but not the dip/brightening branch. The BLS box statistic is squared (`Swy^2/(Sw(1-Sw))`,
+// src/detect/bls.ts), so a periodic BRIGHTENING can win the period grid while `depth` and `snr` keep the sign. Such
+// a record is rejected by the critic and stays published, which is right; what was wrong is that the prose written
+// over it read "the star's brightness dips by about -105 parts per million ... the fingerprint of a planet crossing
+// (transiting) the star" -- a transit that was never measured, asserted in the sentence a human actually reads.
+import type { TransitCandidate } from "../src/core/types.ts";
+import { narrateRunSummary } from "../src/reporter/narrate.ts";
+
+function cand(over: Partial<TransitCandidate> = {}): TransitCandidate {
+  return {
+    targetId: "TOI-0001.01",
+    periodDays: 3.1415,
+    epochBjd: 2459000.5,
+    durationHours: 2.5,
+    depthPpt: 1.2,
+    depthFrac: 1.2e-3,
+    snr: 14.2,
+    power: 1e-6,
+    noiseSigmaFrac: 1.3e-3,
+    nPointsInTransit: 24,
+    folded: [],
+    ...over,
+  };
+}
+
+function found(c: TransitCandidate, over: Partial<Finding> = {}): Finding {
+  return {
+    id: "F-TOI-0001-01",
+    targetId: c.targetId,
+    candidate: c,
+    verdict: "needs-more-data",
+    verdictReason: "Significant, physically-consistent transit with no catalog match.",
+    crossmatch: { matchedKnownPlanet: false },
+    recoveryConfidence: 1,
+    recoveryTrials: { nTrials: 8, nRecovered: 8 },
+    createdAt: "2026-10-18T07:00:00.000Z",
+    ...over,
+  } as Finding;
+}
+
+const REAL = "TESS-SPOC real photometry from the public S3 bucket";
+
+test("a measured dip keeps the dip sentence and its digits, unchanged by the new branch", () => {
+  const r = narrateFinding(found(cand()), { lightCurveSource: REAL });
+  assert.match(r.explainer, /brightness dips by about 1200 parts per million once every 3\.14 days/, r.explainer);
+  assert.equal(r.stats["Transit depth"], "1200 ppm (0.120%)");
+  assert.equal(r.stats["Signal strength (SNR)"], "14.2");
+});
+
+test("a brightening is never narrated as a transit", () => {
+  // TOI-1487.01 as the live rig held it: box on a bump, depth -104.92 ppm, SNR -8.5, verdict rejected.
+  const bump = cand({ depthFrac: -1.0492e-4, depthPpt: -0.10492, snr: -8.5 });
+  const r = narrateFinding(found(bump, { verdict: "rejected" }), { lightCurveSource: REAL });
+
+  assert.doesNotMatch(r.explainer, /dips by/, r.explainer);
+  assert.doesNotMatch(r.explainer, /fingerprint of a planet crossing/, "a bump must not be described as a planet crossing the star");
+  assert.match(r.explainer, /is a BRIGHTENING of about 105 parts per million, not a dimming/, r.explainer);
+  assert.match(r.explainer, /not a dip at all \(SNR -9\)/, r.explainer);
+  assert.match(r.headline, /No transit measured on a 3\.14-day interval/, r.headline);
+  assert.match(r.stats["Transit depth"], /^no dip measured -- the box is a rise of 105 ppm \(-0\.010%\)$/, JSON.stringify(r.stats));
+});
+
+test("a zero depth is 'no dip measured' too, because a flat box is not a shallow transit", () => {
+  const r = narrateFinding(found(cand({ depthFrac: 0, depthPpt: 0, snr: 0 }), { verdict: "rejected" }), { lightCurveSource: REAL });
+  assert.doesNotMatch(r.explainer, /dips by/, r.explainer);
+  assert.match(r.stats["Transit depth"], /no dip measured/, JSON.stringify(r.stats));
+});
+
+test("the period is written with only the digits the grid resolved, on every narrated surface", () => {
+  // 16 d on a 27-day baseline at oversample 8 resolves about 1.2 d, so "16.00" claims precision two orders of
+  // magnitude better than the search had. The same rule must hold at the fine end, where 0.02 d is real.
+  const coarse = narrateFinding(found(cand({ periodDays: 16.0043, periodResolutionDays: 1.2 })), { lightCurveSource: REAL });
+  assert.doesNotMatch(coarse.explainer, /16\.00/, coarse.explainer);
+  assert.match(coarse.explainer, /once every 16 days/, coarse.explainer);
+
+  const fine = narrateFinding(found(cand({ periodDays: 1.96234, periodResolutionDays: 0.018 })), { lightCurveSource: REAL });
+  assert.match(fine.explainer, /once every 1\.96 days/, fine.explainer);
+});
+
+test("a period at the search limit is stated as a limit", () => {
+  const c = cand({ periodDays: 16, periodResolutionDays: 1.2, atSearchBoundary: true, searchMaxPeriodDays: 16 });
+  const r = narrateFinding(found(c), { lightCurveSource: REAL });
+  assert.match(r.stats["Planet year (period)"], /at the 16-day search limit; the true period may be longer/, JSON.stringify(r.stats));
+  assert.match(r.explainer, /repeats no more often than every 16 days/, r.explainer);
+});
+
+test("an accepted row that cross-matches names the planet it reproduced", () => {
+  const r = narrateFinding(
+    found(cand(), { verdict: "accepted", crossmatch: { matchedKnownPlanet: true, knownPlanetName: "KELT-24 b", periodDeltaPct: 0.42 } }),
+    { lightCurveSource: REAL },
+  );
+  assert.match(r.headline, /Recovered a 3\.14-day signal matching known KELT-24 b/, r.headline);
+  assert.match(r.stats["Known-planet match"], /KELT-24 b \(0\.42% off\)/, JSON.stringify(r.stats));
+});
+
+test("nothing the reporter writes may carry an affirmative discovery stem, in any verdict or on either branch", () => {
+  // The posting path refuses these stems with a regex. That guard sits one layer out from the prose, so the prose
+  // is pinned here instead of trusted: if a future branch writes "confirmed", this test fails before a feed can.
+  const stems = /\b(discover\w*|confirm\w*|first|novel|unprecedented|landmark|historic)\b/gi;
+  for (const c of [cand(), cand({ depthFrac: -1e-4, depthPpt: -0.1, snr: -8 }), cand({ depthFrac: 0, depthPpt: 0, snr: 0 })]) {
+    for (const v of ["accepted", "needs-more-data", "rejected"] as const) {
+      const r = narrateFinding(found(c, { verdict: v }), { lightCurveSource: REAL });
+      const text = `${r.headline} ${r.explainer} ${Object.values(r.stats).join(" ")}`;
+      assert.deepEqual(text.match(stems) ?? [], [], `${v}: ${text}`);
+    }
+  }
+  const summary = narrateRunSummary({ tasks: 8, accepted: 2, review: 3, rejected: 3, anchored: 1 });
+  assert.deepEqual(summary.match(stems) ?? [], [], summary);
+  assert.match(summary, /2 recovered, 3 needing more data, 3 rejected/, summary);
+});

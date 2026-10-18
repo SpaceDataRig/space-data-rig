@@ -237,7 +237,10 @@ function metricsHtml(f) {
   const match = f.crossmatch?.matchedKnownPlanet ? esc(f.crossmatch.knownPlanetName || "yes") : "none";
   const cells = [
     ["Period", `${(c.periodDays ?? 0).toFixed(3)} d`],
-    ["Depth", `${depthPpm} ppm`],
+    // A non-positive depth is not a shallow transit: the BLS box statistic is squared, so a periodic brightening can
+    // win the grid and the depth keeps the sign. Printed raw, a value like -105 ppm reads like a measurement error,
+    // so the card says which feature was actually measured (mirrors src/reporter/narrate.ts).
+    ["Depth", depthPpm > 0 ? `${depthPpm} ppm` : `no dip -- box measured a rise of ${Math.abs(depthPpm)} ppm`],
     ["SNR", (c.snr ?? 0).toFixed(1)],
     ["Duration", `${(c.durationHours ?? 0).toFixed(2)} h`],
     ["Confidence", conf],

@@ -11,9 +11,10 @@ name: x-post (half-hourly English science digest)
 # never in CI).
 # No Chinese (the workflow strips non-ASCII and scripts/post-x-text.ts refuses any non-ASCII byte, so
 # English-only is enforced twice). A window with NO new science is not automatically silent: it may post a BUILD
-# NOTE over the commits since the last post (a development-progress tier); only when there is neither new science
+# NOTE over the commits since the last BUILD NOTE -- the dev tier keeps its OWN cursor, see the loop guards below
+# (a development-progress tier); only when there is neither new science
 # nor a buildable commit does it fall back -- if also silent past HEARTBEAT_AFTER_MIN (default 45m) -- to an honest
-# status heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweet), so a quiet stretch is not
+# status heartbeat (silence watchdog below; scripts/x-last-post.ts reads the newest tweets), so a quiet stretch is not
 # mistaken for downtime. It NEVER posts an empty tweet and NEVER claims a discovered planet -- a blind candidate is
 # always "UNCONFIRMED ... for human follow-up" -- and honesty is carried by plain wording, not a per-post stamp.
 #
@@ -28,8 +29,11 @@ name: x-post (half-hourly English science digest)
 # Loop / spam guards:
 #  - No push trigger: a push never posts on its own. The half-hourly digest is the only automatic path, and one
 #    window yields AT MOST ONE line -- a science post, else a BATCHED build note over the window's commits, else a
-#    heartbeat. Commit coverage is batched (never per-commit), and the last-post cursor means one commit is never
-#    re-reported across windows.
+#    heartbeat. Commit coverage is batched (never per-commit). TWO cursors keep one commit from being re-reported:
+#    the science window is anchored to the newest tweet of any kind, and the dev window to the newest BUILD NOTE.
+#    They must stay separate -- sharing one cursor starved the dev tier, because it runs only when a window has no
+#    science, so every science post advanced past commits the dev tier had never reported and dropped them for
+#    good (a five-commit push produced a build note covering one commit).
 #  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
@@ -130,16 +134,25 @@ jobs:
             echo "---- end: ASCII-only, $(printf '%s' "$RAW" | wc -c | tr -d ' ') bytes ----"
             exit 0
           fi
-          # Read the account's newest tweet ONCE up front. That timestamp does two jobs: it anchors the digest
-          # window to the last ACTUAL post (not the last run), and it measures the silence for the heartbeat. It
+          # Read the account's recent tweets ONCE up front. That yields TWO cursors: the newest post of any kind
+          # (anchors the science window and measures the silence for the heartbeat) and the newest BUILD NOTE
+          # (anchors the dev window, so science posts cannot consume the commit backlog). It
           # MUST NOT abort the run: the step is `set -eo pipefail`, so stdout/stderr/exit go to temp files with an
-          # explicit `|| echo`, and the ISO is pulled with `|| true`. x-last-post prints only fixed, credential-free
-          # diagnostics to stderr. With no creds / on failure LAST_POST_ISO stays empty and every consumer below
-          # falls back gracefully.
+          # explicit `|| echo`, and the values are pulled with `|| true`. x-last-post prints only fixed,
+          # credential-free diagnostics to stderr. With no creds / on failure both stay empty and every consumer
+          # below falls back gracefully.
           LP_OUT="$(mktemp)"; LP_ERR="$(mktemp)"
           npm run --silent x:lastpost >"$LP_OUT" 2>"$LP_ERR" || echo "x:lastpost exited non-zero (read failed; see stderr)"
           echo "x:lastpost stderr: $(tr -cd '\11\12\15\40-\176' < "$LP_ERR" | tr '\n' ' ' | head -c 300)"
-          LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | tail -1 || true)"
+          # Labelled parsing, not a bare-timestamp grep: with two cursors on one stream, `grep -Eo <ISO> | tail -1`
+          # would silently hand the DEV tier's time to the science window (or the reverse).
+          LAST_POST_ISO="$(sed -n 's/^last_post=//p' "$LP_OUT" | tail -1 || true)"
+          LAST_BUILD_NOTE_ISO="$(sed -n 's/^last_build_note=//p' "$LP_OUT" | tail -1 || true)"
+          # Tolerate the previous single-timestamp stdout shape, so an older ref dispatched against this workflow
+          # still yields a usable science cursor instead of degrading to the run-start fallback.
+          if [ -z "$LAST_POST_ISO" ]; then
+            LAST_POST_ISO="$(grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[^ "]*Z' "$LP_OUT" | head -1 || true)"
+          fi
           rm -f "$LP_OUT" "$LP_ERR"
           # Window start = when we LAST ACTUALLY POSTED (newest tweet), NOT when the last run happened. The old
           # cursor used the previous run's start, so any run that posted nothing -- an empty-science tick, or a
@@ -160,6 +173,16 @@ jobs:
           if [ -n "$SINCE_RAW" ]; then SINCE="$(date -u -d "$SINCE_RAW" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
           if [ -z "$SINCE" ]; then SINCE="$(date -u -d '40 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"; fi
           echo "digest window since: $SINCE (last actual post: ${LAST_POST_ISO:-unknown})"
+          # DEV-TIER cursor: the newest BUILD NOTE on the feed, else a bounded look-back so a backlog starved by
+          # science posts is still reported once (batched by `head -5` below, never per-commit). Deliberately NOT
+          # $SINCE -- that is what starved the tier before the cursors were split.
+          DEV_SINCE=""
+          if [ -n "$LAST_BUILD_NOTE_ISO" ]; then DEV_SINCE="$(date -u -d "$LAST_BUILD_NOTE_ISO" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
+          if [ -z "$DEV_SINCE" ]; then DEV_SINCE="$(date -u -d "${BUILD_NOTE_LOOKBACK_H:-48} hours ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"; fi
+          if [ -z "$DEV_SINCE" ]; then DEV_SINCE="$SINCE"; fi
+          # Logged on EVERY run, not only inside the no-science branch, so the cursor is verifiable from any job log
+          # -- including a run where the science tier wins and the dev tier is never reached.
+          echo "build-note cursor: dev window since $DEV_SINCE (last build note: ${LAST_BUILD_NOTE_ISO:-none found})"
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.
           RESEARCH_COMMITS="$(git log HEAD --no-merges --since="$SINCE" --pretty=%H -- web/research.json | wc -l | tr -d ' ')"
@@ -169,14 +192,15 @@ jobs:
           # Compose ONE honest English long-form science post, or an EMPTY file when there is nothing new to report.
           npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --out out/digest.txt || true
           # Build-note tier (development progress): when a window has NO new science, offer a plain-English update
-          # over the commits since the LAST POST -- excluding the generated research-data file and the reports/out
-          # trees, and skipping pure chore/docs noise. composeDigest sanitizes every line (drops any that would break
-          # a red line: spend/wallet/key/time-words), so an all-noise list yields nothing and we fall through.
+          # over the commits since the LAST BUILD NOTE ($DEV_SINCE, its own cursor) -- excluding the generated
+          # research-data file and the reports/out trees, and skipping pure chore/docs noise. composeDigest sanitizes
+          # every line (drops any that would break a red line: spend/wallet/key/time-words), so an all-noise list
+          # yields nothing and we fall through.
           if [ ! -s out/digest.txt ]; then
-            git log HEAD --no-merges --since="$SINCE" --pretty=%s -- ':!web/research.json' ':!reports/**' ':!out/**' \
+            git log HEAD --no-merges --since="$DEV_SINCE" --pretty=%s -- ':!web/research.json' ':!reports/**' ':!out/**' \
               | grep -Eiv '^(chore|docs?)(\([a-z0-9-]+\))?:' | head -5 > out/dev-commits.txt || true
             if [ -s out/dev-commits.txt ]; then
-              echo "no new science; build note over $(wc -l < out/dev-commits.txt | tr -d ' ') commit(s) since the last post"
+              echo "no new science; build note over $(wc -l < out/dev-commits.txt | tr -d ' ') commit(s) since the last build note"
               npm run science:digest -- --since "$SINCE" --research-updated "$RESEARCH_UPDATED" --dev-commits-file out/dev-commits.txt --out out/digest.txt || true
             fi
           fi

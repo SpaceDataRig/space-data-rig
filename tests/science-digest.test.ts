@@ -27,7 +27,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { composeDigest } from "../scripts/science-digest.ts";
-import { overclaimViolations } from "../scripts/science-digest.ts";
+import { overclaimViolations, BUILD_NOTE_HEADLINES } from "../scripts/science-digest.ts";
+import { isBuildNoteText } from "../scripts/x-last-post.ts";
 import type { DigestFinding, DigestInput, DigestLedgerEntry, DigestResearch } from "../scripts/science-digest.ts";
 
 const START = "2026-10-16T10:00:00.000Z";
@@ -398,6 +399,47 @@ test("priority ordering: science beats a build note, and a build note beats the 
   assert.match(devWins, /Under the hood|build note|machinery/);
   assert.ok(!/Space Data Rig status\./.test(devWins), "a buildable commit wins over the status heartbeat");
   assertTweetSafe(devWins);
+});
+
+// The dev tier's cursor is read back OFF THE FEED: x-last-post.ts has to recognise a build note among the
+// account's recent tweets, or the dev window silently resets to the shared science cursor and the tier starves
+// again (the production bug this pins: a five-commit push yielded a build note covering one commit, because every
+// science post advanced the single shared cursor past unreported commits). This asserts the two sides still agree.
+test("the dev-tier cursor recognises a REAL composed build note, and never a science or heartbeat post", () => {
+  // Whatever headline the rotation picks, the composed note must be identifiable as such. The seed is
+  // `dev:${windowStart}:${firstSubject}`, so the rotation is driven by varying the SUBJECT -- overriding
+  // windowStart instead would trip composeDigest's `end < start` guard and compose nothing at all.
+  // (Exhaustive coverage of every headline is asserted in tests/x-last-post.test.ts; here the point is that a
+  // REAL composed note, whichever variant it is, round-trips through the matcher.)
+  const subjects = [
+    "fix(x-post): give the build note its own cursor",
+    "feat(worker): a reliable trigger",
+    "test: cover the dev cursor offline",
+    "ci: batch the commit coverage",
+    "refactor(digest): split the two cursors",
+  ];
+  const seen = new Set<string>();
+  for (const subj of subjects) {
+    const note = composeDigest(input({ devCommits: [subj] }));
+    assert.ok(note.length > 0, `subject "${subj}": expected a build note for this fixture`);
+    assert.ok(isBuildNoteText(note), `subject "${subj}": composed build note must be recognisable on the feed, else the dev cursor resets`);
+    const head = BUILD_NOTE_HEADLINES.find((h) => note.startsWith(h));
+    assert.ok(head, `subject "${subj}": the note must open with a headline from the single-source list`);
+    seen.add(head as string);
+  }
+  assert.ok(seen.size >= 2, `the rotation should vary across these seeds, saw only ${seen.size} distinct headline(s)`);
+
+  const science = composeDigest(input({ ledger: [anchored("f1")], findings: [knownPlanet("f1", "HD 189733 b", 2.2)] }));
+  assert.ok(science.length > 0);
+  assert.ok(!isBuildNoteText(science), "a science post must not be mistaken for a build note or the dev window jumps forward");
+
+  const hb = composeDigest(input({ heartbeatAfterMinutes: 45, silentMinutes: 60, research: RICH_RESEARCH }));
+  assert.ok(hb.length > 0);
+  assert.ok(!isBuildNoteText(hb), "a heartbeat must not be mistaken for a build note either");
+
+  const blindPost = composeDigest(input({ findings: [blind("b1", "TIC 123", IN, 3.3)] }));
+  assert.ok(blindPost.length > 0);
+  assert.ok(!isBuildNoteText(blindPost), "a blind-candidate post must not be mistaken for a build note either");
 });
 
 // ---- silence heartbeat (the documented FALLBACK when nothing new is reportable but the channel has gone quiet) ---

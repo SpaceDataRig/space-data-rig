@@ -1,13 +1,25 @@
-// X LAST-POST (read): print the authenticated account's MOST RECENT tweet timestamp (ISO 8601) to stdout, so the
-// half-hourly x-post workflow can tell how long the channel has actually been silent -- counting human posts too,
-// since those are visible on the feed and mean the channel is not really quiet. This is the read counterpart of
-// scripts/post-x-text.ts and shares its rules: credentials come ONLY from the four X_API_* env vars (never
-// hardcoded, never logged); with none present it makes NO network call and exits non-zero, so the workflow simply
-// skips the heartbeat. Uses X API v2 user context (OAuth 1.0a): GET /2/users/me -> id, then
-// GET /2/users/:id/tweets?max_results=5&tweet.fields=created_at -> the newest created_at among the page returned.
+// X LAST-POST (read): print TWO cursors from the authenticated account's recent tweets so the half-hourly x-post
+// workflow can (a) tell how long the channel has actually been silent -- counting human posts too, since those are
+// visible on the feed and mean the channel is not really quiet -- and (b) give the BUILD NOTE tier its own commit
+// window. This is the read counterpart of scripts/post-x-text.ts and shares its rules: credentials come ONLY from
+// the four X_API_* env vars (never hardcoded, never logged); with none present it makes NO network call and exits
+// non-zero, so the workflow simply skips the heartbeat. Uses X API v2 user context (OAuth 1.0a): GET /2/users/me ->
+// id, then GET /2/users/:id/tweets?max_results=100&tweet.fields=created_at,text.
 // (v2 requires max_results in [5,100]; 1 is rejected with HTTP 400, so we ask for the smallest legal page and keep
-// the latest timestamp rather than assuming a single-row request.) Errors go to stderr; stdout carries only the ISO.
+// the latest timestamp rather than assuming a single-row request.) Errors go to stderr; stdout carries only the two
+// labelled timestamps.
+//
+// WHY TWO CURSORS, NOT ONE (audit-6 follow-up). Both tiers used to share a single window start anchored to the
+// newest tweet of ANY kind. That is correct for the science tier (a result must not be re-reported) but fatal for
+// the dev tier: the build note is composed ONLY when a window has no science, so every science post moved the
+// cursor past commits the dev tier had never reported, and they were dropped permanently. Observed in production:
+// a run that posted 3 new UNCONFIRMED candidates consumed two fix commits; the build note that did go out covered
+// 1 of the 5 commits in that push. Splitting the cursors makes the dev window self-healing the way the science
+// window already was. Recognising a build note requires the tweet TEXT, hence `text` in tweet.fields and the
+// larger page (a note is rare, so 5 tweets rarely reach back far enough).
 import { createHmac, randomBytes } from "node:crypto";
+
+import { BUILD_NOTE_HEADLINES } from "./science-digest.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -28,10 +40,14 @@ export function pct(s: string): string {
 }
 
 // The query for the user-tweets read, kept pure so a test can pin its shape. v2 rejects max_results outside
-// [5,100] with HTTP 400, so we request the smallest legal page (5) rather than 1 -- and then take the newest
-// timestamp from the page (see newestCreatedAt). This exact parameter was the bug that broke the read in prod.
+// [5,100] with HTTP 400, so we request a legal page rather than 1 -- and then take the newest timestamp from the
+// page (see newestCreatedAt). This exact parameter was the bug that broke the read in prod.
+//
+// max_results is the legal MAXIMUM and tweet.fields includes `text` because the dev-tier cursor has to find the
+// newest BUILD NOTE, and build notes are rare: a 5-tweet page covers well under an hour of this feed and would
+// almost never contain one, silently degrading the dev window back to the shared cursor.
 export function tweetsQuery(): Record<string, string> {
-  return { max_results: "5", "tweet.fields": "created_at" };
+  return { max_results: "100", "tweet.fields": "created_at,text" };
 }
 
 // Pull the authenticated user id out of a GET /2/users/me payload ({} -> ""), so the caller's shape assumption is
@@ -45,6 +61,29 @@ export function userIdFromMe(me: { data?: { id?: string } } | null | undefined):
 // matter the page order. Empty / absent input -> "" (the caller then treats the read as unavailable).
 export function newestCreatedAt(rows: Array<{ created_at?: string; [k: string]: unknown }> | null | undefined): string {
   return (rows ?? []).map((r) => r?.created_at).filter((x): x is string => !!x).sort().reverse()[0] ?? "";
+}
+
+// Is this tweet one of ours from the BUILD NOTE tier? Membership is tested against BUILD_NOTE_HEADLINES -- the
+// list composeDigest rotates through with pick() -- rather than a single hardcoded string, so rewording the
+// headline in one place cannot quietly stop the dev cursor from finding its own posts. Whitespace is normalised
+// first because a long-form post's first line may be preceded or followed by stray spacing.
+export function isBuildNoteText(text: string | null | undefined): boolean {
+  const t = String(text ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  return BUILD_NOTE_HEADLINES.some((h) => t.startsWith(h.replace(/\s+/g, " ").trim()));
+}
+
+// Newest created_at among the returned rows that ARE build notes; "" when the page holds none (the workflow then
+// falls back to a bounded look-back rather than to the science cursor, so the dev backlog is still recoverable).
+export function newestBuildNoteAt(
+  rows: Array<{ created_at?: string; text?: string; [k: string]: unknown }> | null | undefined,
+): string {
+  return (rows ?? [])
+    .filter((r) => isBuildNoteText(r?.text))
+    .map((r) => r?.created_at)
+    .filter((x): x is string => !!x)
+    .sort()
+    .reverse()[0] ?? "";
 }
 
 async function signedGet(path: string, query: Record<string, string>): Promise<JsonObject> {
@@ -91,14 +130,25 @@ async function main(): Promise<void> {
     return;
   }
   const tw = await signedGet(`/2/users/${uid}/tweets`, tweetsQuery());
-  const rows = tw.data as Array<{ created_at?: string }> | undefined;
+  const rows = tw.data as Array<{ created_at?: string; text?: string }> | undefined;
   const created = newestCreatedAt(rows);
   if (!created) {
     console.error("x-last-post: no tweets found (the account has posted nothing yet).");
     process.exitCode = 1;
     return;
   }
-  console.log(created); // stdout: the single ISO timestamp only
+  const buildNote = newestBuildNoteAt(rows);
+  if (!buildNote) {
+    console.error(
+      "x-last-post: no build note among the newest tweets read; the dev tier will use its bounded look-back.",
+    );
+  }
+  // Labelled, one per line. Two cursors must not share a bare-timestamp stream: the workflow used to pull the ISO
+  // with `grep -Eo ... | tail -1`, which would silently hand the DEV tier's time to the science window (or the
+  // reverse) once a second timestamp appeared. An empty value is still printed so the consumer can distinguish
+  // "read succeeded, no build note yet" from "read failed".
+  console.log(`last_post=${created}`);
+  console.log(`last_build_note=${buildNote}`);
 }
 
 // Side-effect guard (same contract as science-digest.ts): run only when invoked directly, never on import, so an

@@ -6,7 +6,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { pct, tweetsQuery, userIdFromMe, newestCreatedAt } from "../scripts/x-last-post.ts";
+import { pct, tweetsQuery, userIdFromMe, newestCreatedAt, isBuildNoteText, newestBuildNoteAt } from "../scripts/x-last-post.ts";
+import { BUILD_NOTE_HEADLINES } from "../scripts/science-digest.ts";
 
 // ---- the shipped bug: an illegal page size ----
 
@@ -15,7 +16,54 @@ test("tweetsQuery uses a max_results v2 actually accepts (guards the HTTP-400 re
   const n = Number(q.max_results);
   assert.ok(Number.isInteger(n) && n >= 5 && n <= 100, `max_results ${q.max_results} must be an integer in [5,100]`);
   assert.notEqual(q.max_results, "1", "max_results=1 was the bug: v2 rejects it with HTTP 400");
-  assert.equal(q["tweet.fields"], "created_at", "created_at is the only field the silence gap is derived from");
+  const fields = String(q["tweet.fields"]).split(",");
+  assert.ok(fields.includes("created_at"), "created_at is what both the silence gap and the dev cursor are derived from");
+  assert.ok(fields.includes("text"), "recognising a BUILD NOTE among recent tweets needs the tweet text, not just its time");
+  assert.ok(n >= 50, "a build note is rare on this feed; a small page would never contain one and the dev cursor would silently reset to the shared science cursor, re-starving the tier");
+});
+
+// ---- the dev-tier cursor: finding our own BUILD NOTE among recent tweets ----
+
+test("isBuildNoteText matches by headline MEMBERSHIP, not one hardcoded string", () => {
+  // composeDigest rotates the headline with pick(), so equality against a single string would break on rotation.
+  assert.ok(BUILD_NOTE_HEADLINES.length >= 2, "the rotation is why membership (not equality) is the right test");
+  for (const h of BUILD_NOTE_HEADLINES) {
+    assert.ok(isBuildNoteText(h), `a headline composeDigest can emit must be recognised: ${h}`);
+    assert.ok(isBuildNoteText(`  ${h}\n- fix(x): a bullet`), "leading whitespace and a following body must not break the match");
+  }
+  assert.ok(!isBuildNoteText(""), "empty is not a build note");
+  assert.ok(!isBuildNoteText(null), "absent text is not a build note");
+  assert.ok(!isBuildNoteText("Space Data Rig surfaced 3 new UNCONFIRMED transit candidates."), "a science post is not a build note");
+  assert.ok(!isBuildNoteText("Space Data Rig status."), "a heartbeat is not a build note");
+});
+
+test("newestBuildNoteAt picks the newest note and differs from newestCreatedAt (the two cursors must not collapse)", () => {
+  // A realistic page: science posts and a heartbeat interleaved with two build notes, out of order.
+  const rows = [
+    { id: "1", created_at: "2026-10-17T19:00:33.000Z", text: "A new pass by Space Data Rig reproduced the known exoplanet KELT-9 b (P=1.48d); the analysis is sealed on-chain." },
+    { id: "2", created_at: "2026-10-17T16:37:02.000Z", text: "Changes to the machinery behind Space Data Rig:\n- fix(freshness): stop counting a timestamp as verification" },
+    { id: "3", created_at: "2026-10-17T17:30:40.000Z", text: "Space Data Rig status." },
+    { id: "4", created_at: "2026-10-15T02:00:00.000Z", text: "Under the hood, what changed in how Space Data Rig runs:\n- feat(worker): a reliable trigger" },
+  ];
+  assert.equal(newestBuildNoteAt(rows), "2026-10-17T16:37:02.000Z", "the newest NOTE, not the newest tweet of any kind");
+  assert.equal(newestCreatedAt(rows), "2026-10-17T19:00:33.000Z");
+  assert.notEqual(
+    newestBuildNoteAt(rows),
+    newestCreatedAt(rows),
+    "if these collapse, the dev tier is back on the shared cursor that starved it",
+  );
+});
+
+test("newestBuildNoteAt degrades to empty string so the workflow uses its bounded look-back", () => {
+  assert.equal(newestBuildNoteAt([]), "");
+  assert.equal(newestBuildNoteAt(undefined), "");
+  assert.equal(newestBuildNoteAt(null), "");
+  assert.equal(newestBuildNoteAt([{ id: "5", created_at: "2026-10-17T10:00:00.000Z" }]), "", "a row with no text is not a build note");
+  assert.equal(
+    newestBuildNoteAt([{ id: "6", text: "Changes to the machinery behind Space Data Rig:" }]),
+    "",
+    "a note with no created_at must not produce a bogus cursor",
+  );
 });
 
 // ---- newest-timestamp selection, driven by realistic v2 fixtures ----

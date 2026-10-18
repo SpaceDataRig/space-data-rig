@@ -280,6 +280,25 @@ function pick(list: string[], seed: string): string {
   return list[Math.abs(h) % list.length];
 }
 
+/**
+ * The exact headlines the BUILD NOTE tier can open with. `pick()` rotates between them deterministically so
+ * consecutive notes do not read identically, which means a note is identified by MEMBERSHIP in this list, not by
+ * one fixed string.
+ *
+ * WHY THIS IS EXPORTED (audit-6 follow-up): scripts/x-last-post.ts has to recognise a build note among the
+ * account's recent tweets in order to give the dev tier its OWN cursor. Before that, both tiers shared one cursor
+ * anchored to the newest tweet of any kind, so every science post silently consumed the commit backlog: the run
+ * that reported 3 new UNCONFIRMED candidates advanced the cursor past two fix commits, and the build-note tier --
+ * reached only when a window has NO science -- never saw them. They were dropped permanently. Keeping the
+ * headlines here (the single place that composes them) and importing them there means a future wording change
+ * cannot quietly break the matcher; tests/x-last-post.test.ts asserts every entry is still recognised.
+ */
+export const BUILD_NOTE_HEADLINES: readonly string[] = [
+  "Under the hood, what changed in how Space Data Rig runs:",
+  "Not a science result -- a build note on the pipeline itself:",
+  "Changes to the machinery behind Space Data Rig:",
+];
+
 /** One dev commit -> one safe bullet line, or "" to drop it. Collapses whitespace, strips non-ASCII, caps length,
  *  and DROPS anything that would break a red line (mentions spend/wallet/key, or a time word) so a build note can
  *  never leak a banned term. The raw text still hits post-x-text.ts's own non-ASCII refusal as a second guard. */
@@ -427,22 +446,17 @@ export function composeDigest(input: DigestInput): string {
   }
 
   // (4) BUILD NOTE (development-progress tier): no new science this window, but the workflow passed notable commit
-  //     subjects since the last post. Plain-English bullets of the work keeping the rig running -- honest, no
-  //     discovery framing, no spend/wallet (sanitizeSubject enforces), linked to the repository + live rig. The
-  //     last-post cursor advances once it posts, so the same commits are never re-reported.
+  //     subjects. Plain-English bullets of the work keeping the rig running -- honest, no discovery framing, no
+  //     spend/wallet (sanitizeSubject enforces), linked to the repository + live rig. The workflow collects those
+  //     subjects against a DEV-TIER cursor (the newest build note on the feed, see BUILD_NOTE_HEADLINES), NOT the
+  //     shared last-post cursor -- otherwise every science post advances past unreported commits and starves this
+  //     tier permanently, which is exactly what it did before the cursors were split.
   const devLines = (Array.isArray(input.devCommits) ? input.devCommits : [])
     .map(sanitizeSubject)
     .filter((x) => x.length > 0)
     .slice(0, 5);
   if (devLines.length) {
-    const head = pick(
-      [
-        "Under the hood, what changed in how Space Data Rig runs:",
-        "Not a science result -- a build note on the pipeline itself:",
-        "Changes to the machinery behind Space Data Rig:",
-      ],
-      `dev:${input.windowStart}:${devLines[0]}`,
-    );
+    const head = pick([...BUILD_NOTE_HEADLINES], `dev:${input.windowStart}:${devLines[0]}`);
     const bullets = devLines.map((x) => `- ${x}`).join("\n");
     const note = "The science feed still posts only real results; this is a note on the work keeping it running.";
     const proof = `- Repository (code + history): ${URL_REPO}\n- Live rig + full methods: ${URL_LIVE}`;

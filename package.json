@@ -149,6 +149,7 @@
     "cf:dev": "wrangler dev",
     "cf:deploy": "wrangler deploy",
     "cf:deploy:sha": "tsx scripts/deploy-with-sha.ts",
+    "deploy:window": "tsx scripts/deploy-window.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "typecheck:all": "npm run typecheck && npm run typecheck:worker",

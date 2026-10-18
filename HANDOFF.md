@@ -121,6 +121,10 @@ docker-compose, CULTURE.md).
                   observeApi.ts (computeObservation/commissionObservation), evidence.ts,
                   rpcProxy.ts (browser read-only RPC proxy), browserBurn.ts (in-page Phantom burn).
 - src/seats/      seat definitions.
+- src/deploy/     deployGuard.ts (refuses to upload a tree HEAD does not describe) and
+                  deployWindow.ts (GO/WAIT/UNKNOWN for uploading onto a cron-driven survey,
+                  from the live claimed-run state plus measured cadence; the stale threshold is
+                  the DO's own isStaleClaim). Both pure, both pinned by tests/.
 - src/api/        Node server. src/cf/: Workers side. src/node/: Node adapters.
 - scripts/        p0..p30 experiment scripts (see section 6; p26 corroboration-ROC + p27 shape-coherence
                   measure the Stage-4 FP lever on real FFI; p28 corroboration-proof is a positive control on
@@ -235,8 +239,15 @@ Local: `npm run orchestrator` (CLI pipeline), `npm start` or `npm run api` (dash
 API + SSE on :8787), `npx wrangler dev` (edge simulation).
 Verify gate before any commit: `npm run typecheck:all` (Node + Worker tsconfigs) AND
 `npm test` (233 tests currently). For observe changes also `npm run verify:observe`.
-Deploy: `npx wrangler deploy`. BEFORE deploying, poll until no active run
-(activeRun.running == false) -- never redeploy mid-run. After deploy, probe production:
+Deploy: `npm run cf:deploy:sha` (refuses a dirty tree; re-sets GIT_SHA from HEAD first).
+BEFORE deploying, ask the rig: `npm run deploy:window` (rule in `src/deploy/deployWindow.ts`,
+tested by `tests/deploy-window.test.ts`) prints GO/WAIT/UNKNOWN from the live claimed-run
+state plus the MEASURED cadence, and exits 0 only on GO. Measured on 2026-10-18 over 24
+recorded passes: the cron fires every 15 minutes, a full 8-target pass writes over a median
+of 260 s (164-307 s) and the median idle gap between passes is ~2400 s -- so the survey holds
+roughly a fifth of each slot, NOT the "45 minutes with seconds of gap" figure that circulated
+in earlier plans. Never upload while a claim is live: a pass straddling two versions leaves
+/health.gitSha able to name only one of them. After deploy, probe production:
 GET /health (200), POST /api/observe/commission without payment (402, zero spend),
 POST /api/rpc getHealth (200). Custom-domain 404 right after deploy = edge propagation
 lag; check the workers.dev hostname first, retest in ~40 s.
@@ -517,6 +528,20 @@ the Actions web page when the anonymous API is rate-limited.
   nothing are how this class survives. `src/deploy/deployGuard.ts::deployDecision()` now REFUSES any uncommitted
   path before the secret write and before the upload; `--allow-dirty` exists for a deliberate emergency and logs the
   lie explicitly. Never deploy from a watcher while you are mid-edit: commit first, or do not deploy.
+- An unmeasured cadence belief turns every deploy into a gamble. The plan asserted passes
+  take ~45 minutes with only seconds of idle; the measurement (`npm run deploy:window`) says
+  ~260 s per full pass inside a 15-minute cron with ~2400 s of idle between passes. Both
+  failure modes come from believing the number instead of taking it: shipping inside a live
+  pass, or waiting for a narrow hole that does not exist and leaving production stale. Take
+  the verdict from the tool, and treat UNKNOWN (site unreachable) as "do not deploy", never
+  as "probably fine".
+- A convention written only in prose is a convention that lapses. GOVERNANCE.md says commits
+  are co-signed and this file documented the trailer to use -- and two commits were pushed
+  without it, with every gate green, because nothing looked. `tests/commit-co-sign.test.ts`
+  now checks the HEAD commit for the co-sign trailer and the labelled author identity, so the
+  next omission fails `npm test` before it can be pushed. The two commits were NOT rewritten
+  (published history is what the ledger and devlog cite); the deviation is recorded here and
+  in CHANGELOG instead.
 - Detect a stale deploy by testing what production WRITES, not what it reports. The mismatch above was found only
   because a live record's sentence did not match any committed renderer. When you verify a deploy, compare a
   rendered artifact against the code that should have produced it; the self-report is the thing being audited, not

@@ -5,6 +5,27 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The deploy-window belief was wrong by an order of magnitude, and a governance rule with no gate lapsed (2026-10-18, seventh pass)
+The plan carried "a survey pass takes ~45 minutes and leaves only seconds of idle", which made every deploy feel like
+a gamble squeezed into a narrow hole. Measured against production it is simply not the regime. `npm run deploy:window`
+(new; rule in `src/deploy/deployWindow.ts`, pinned by `tests/deploy-window.test.ts`) now reads the live claimed-run
+state and the recorded finding timestamps and prints a verdict -- GO / WAIT / UNKNOWN -- alongside the cadence it
+measured: across 24 recorded passes the cron fires every 15 minutes, a full 8-target pass writes over a median of
+**260 s** (164-307 s), and the median idle gap between passes is **~2400 s**. The survey holds about a fifth of each
+slot. Both historical failure modes came from trusting a number instead of taking it: uploading inside a live pass (a
+pass straddling two versions leaves `/health.gitSha` able to name only one) or waiting for a hole that was never there
+and leaving production stale. GO requires no live claim AND enough idle before the next boundary to cover the upload
+budget; the stale-claim threshold is imported from `src/cf/run-mutex.ts::isStaleClaim` rather than restated, so the
+window and the Durable Object can never disagree about what a dead claim is, and an unreachable rig reports UNKNOWN
+(exit 2), never a reassuring GO.
+
+Also fixed, against myself rather than the auditor: GOVERNANCE.md says commits are co-signed and this file documented
+the exact trailer -- and two commits this pass were pushed without it while every other gate stayed green, because a
+convention that lives only in prose depends on being remembered in a different context each time. `tests/commit-co-sign.test.ts`
+now checks the HEAD commit for the co-sign trailer and the labelled author identity, so the next omission fails
+`npm test` before it can be pushed. The two commits were NOT rewritten: published history is what the ledger and the
+devlog cite, so the deviation is recorded here plainly instead of being quietly amended away.
+
 ### The board counted critic-rejected noise as blind candidates, and two other numbers were mis-labelled (2026-10-18, seventh pass)
 `blindCandidates` on `/api/state` counted every row tagged `origin="blind-toi"` -- including the ones the critic had
 just REJECTED as noise -- while the X digest deliberately counted only surviving candidates. One phrase, two

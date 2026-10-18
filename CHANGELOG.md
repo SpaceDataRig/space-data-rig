@@ -56,6 +56,17 @@ meta, and the report now carries a REPLAY line saying the photometry was fetched
 analysis. No verdict, gate, FAP, bundle field or anchored hash moved: this is the layer that describes measurements,
 not the layer that makes them. `npm test` 715/715.
 
+**And one gap this round's own post caught.** While assembling the public summary, the link to P90's report page
+returned 404. `reports/*.md` is the measurement record; `web/reports/*.html` is what a reader can open, and the two
+are generated apart -- `npm run p86:report-library` had not been re-run, so a report committed, announced in
+RESEARCH.md and cited in a post had no page anyone could read. Regenerated (P90's page publishes and indexes as
+`verified`, i.e. reproducible from a clean checkout: 10 cited inputs, 10 re-hashed) and pinned by
+`tests/report-library.test.ts`: every report in the record must have a page, the index must name every page and no
+index entry may point at nothing. The same run did honest damage in the other direction: p41-longbaseline is now
+flagged un-fresh because the depth/SNR fix changed `src/detect/bls.ts`, one of the inputs its stamp names. Its page
+stays served and loses its verified mark -- a code change under a report must cost that report its reproducibility
+claim, which is exactly what the stamp is for.
+
 ### Which depth the rig publishes is now measured, not argued (2026-10-18, P90)
 The depth-adoption guard shipped two rounds ago refuses a per-sector shape fit that disagrees with the detector's
 BLS box by more than 5x. The bound was set by argument ("a fit that far off is measuring something else"), and the

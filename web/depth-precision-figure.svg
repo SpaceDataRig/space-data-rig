@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="660" viewBox="0 0 980 660" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">
+<rect width="980" height="660" fill="#0b1020"/>
+<text x="70" y="34" fill="#7dd3fc" font-size="21">How well do we know a transit depth? Measured, then printed.</text>
+<text x="70" y="58" fill="#94a3b8" font-size="13">P90: 16 confirmed planets whose period this rig's own search reproduced within 5%.</text>
+<text x="70" y="76" fill="#94a3b8" font-size="13">Reference: NASA Exoplanet Archive pl_trandep, consulted AFTER both fits and never shown to either.</text>
+<text x="70" y="110" fill="#e6edf7" font-size="15">|published depth - archive depth| for each planet (percent of the archive value)</text>
+<line x1="70" y1="300" x2="940" y2="300" stroke="#243049" stroke-width="1"/>
+<line x1="70" y1="296" x2="70" y2="304" stroke="#94a3b8"/>
+<text x="70" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">0%</text>
+<line x1="179.6810449373807" y1="296" x2="179.6810449373807" y2="304" stroke="#94a3b8"/>
+<text x="179.6810449373807" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">25%</text>
+<line x1="289.3620898747614" y1="296" x2="289.3620898747614" y2="304" stroke="#94a3b8"/>
+<text x="289.3620898747614" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">50%</text>
+<line x1="399.0431348121421" y1="296" x2="399.0431348121421" y2="304" stroke="#94a3b8"/>
+<text x="399.0431348121421" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">75%</text>
+<line x1="508.7241797495229" y1="296" x2="508.7241797495229" y2="304" stroke="#94a3b8"/>
+<text x="508.7241797495229" y="320" fill="#94a3b8" font-size="11" text-anchor="middle">100%</text>
+<line x1="72" y1="130" x2="71.384436970175" y2="130" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="133" fill="#94a3b8" font-size="9" text-anchor="end">HD 213885 b</text>
+<line x1="72" y1="139.5" x2="84.18949188202403" y2="139.5" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="142.5" fill="#94a3b8" font-size="9" text-anchor="end">KELT-9 b</text>
+<line x1="72" y1="149" x2="96.64324233398311" y2="149" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="152" fill="#94a3b8" font-size="9" text-anchor="end">TOI-1431 b</text>
+<line x1="72" y1="158.5" x2="124.09869321519864" y2="158.5" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="161.5" fill="#94a3b8" font-size="9" text-anchor="end">pi Men c</text>
+<line x1="72" y1="168" x2="143.3345156473556" y2="168" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="171" fill="#94a3b8" font-size="9" text-anchor="end">HR 858 b</text>
+<line x1="72" y1="177.5" x2="161.45423527771058" y2="177.5" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="180.5" fill="#94a3b8" font-size="9" text-anchor="end">KELT-20 b</text>
+<line x1="72" y1="187" x2="166.9078762315269" y2="187" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="190" fill="#94a3b8" font-size="9" text-anchor="end">TOI-6054.01</text>
+<line x1="72" y1="196.5" x2="202.6545475999666" y2="196.5" stroke="#4ade80" stroke-width="3" opacity="0.85"/>
+<text x="64" y="199.5" fill="#94a3b8" font-size="9" text-anchor="end">HD 260655 b</text>
+<line x1="72" y1="206" x2="227.0651474441567" y2="206" stroke="#fbbf24" stroke-width="3" opacity="0.85"/>
+<text x="64" y="209" fill="#94a3b8" font-size="9" text-anchor="end">HD 202772 A b</text>
+<line x1="72" y1="215.5" x2="257.88626570554766" y2="215.5" stroke="#fbbf24" stroke-width="3" opacity="0.85"/>
+<text x="64" y="218.5" fill="#94a3b8" font-size="9" text-anchor="end">WASP-33 b</text>
+<line x1="72" y1="225" x2="269.55972722505066" y2="225" stroke="#fbbf24" stroke-width="3" opacity="0.85"/>
+<text x="64" y="228" fill="#94a3b8" font-size="9" text-anchor="end">HD 25463 b</text>
+<line x1="72" y1="234.5" x2="324.0177409567601" y2="234.5" stroke="#f87171" stroke-width="3" opacity="0.85"/>
+<text x="64" y="237.5" fill="#94a3b8" font-size="9" text-anchor="end">KELT-11 b</text>
+<line x1="72" y1="244" x2="362.2689168610411" y2="244" stroke="#f87171" stroke-width="3" opacity="0.85"/>
+<text x="64" y="247" fill="#94a3b8" font-size="9" text-anchor="end">TOI-5082.01</text>
+<line x1="72" y1="253.5" x2="385.8726272784301" y2="253.5" stroke="#f87171" stroke-width="3" opacity="0.85"/>
+<text x="64" y="256.5" fill="#94a3b8" font-size="9" text-anchor="end">TOI-480 b</text>
+<line x1="72" y1="263" x2="404.79034637287833" y2="263" stroke="#f87171" stroke-width="3" opacity="0.85"/>
+<text x="64" y="266" fill="#94a3b8" font-size="9" text-anchor="end">HD 86226 c</text>
+<line x1="72" y1="272.5" x2="898.5714285714286" y2="272.5" stroke="#f87171" stroke-width="3" opacity="0.85"/>
+<text x="64" y="275.5" fill="#94a3b8" font-size="9" text-anchor="end">TOI-4602.01</text>
+<line x1="214.85984752206167" y1="120" x2="214.85984752206167" y2="300" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="218.85984752206167" y="294" fill="#94a3b8" font-size="11">median 33.0%</text>
+<line x1="280.4513299713926" y1="120" x2="280.4513299713926" y2="300" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="284.4513299713926" y="294" fill="#7dd3fc" font-size="11">covers 68%: 48.0%</text>
+<line x1="528.2356169225159" y1="120" x2="528.2356169225159" y2="300" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="532.2356169225159" y="294" fill="#f87171" font-size="11">covers 95%: 104.4%</text>
+<rect x="70" y="340" width="870" height="150" rx="10" fill="#131a2e" stroke="#243049"/>
+<text x="88" y="366" fill="#e6edf7" font-size="14">A "+/-" is read as ONE standard deviation, which covers about two thirds.</text>
+<text x="88" y="386" fill="#94a3b8" font-size="12">A median covers exactly half the rows, so printing it as the bar under-states the error by design.</text>
+<text x="88" y="416" fill="#f87171" font-size="13">printed before:   660 ppm (0.0660%)   -- a claim of about one part in a thousand</text>
+<text x="88" y="438" fill="#4ade80" font-size="13">printed now:      660 +/- 400 ppm (0.07 +/- 0.04 %)   -- rendered by src/core/depthFormat.ts itself</text>
+<text x="88" y="464" fill="#94a3b8" font-size="12">the bar is 50% of the depth, in quadrature with each record's own statistical term 1/|snr|;</text>
+<text x="88" y="480" fill="#94a3b8" font-size="12">the value keeps its own digits, because the anchored bundle commits depthFrac exactly.</text>
+<text x="70" y="526" fill="#fbbf24" font-size="13">Worst row: 188.9% -- further off than the depth is deep. 95/68 = 2.18 against 1.96 for a Gaussian,</text>
+<text x="70" y="544" fill="#fbbf24" font-size="13">so the one-sigma bar is what is defensible here and no surface doubles it into a 95% interval.</text>
+<text x="70" y="572" fill="#94a3b8" font-size="12">Same rule applied to the period: a BLS grid node is quoted with the digits the grid resolved, not three decimals.</text>
+<text x="70" y="644" fill="#94a3b8" font-size="12">Source: reports/p90-depth-estimators.json | generator: scripts/depth-precision-figure.ts | nothing gated, anchored or claimed.</text>
+</svg>

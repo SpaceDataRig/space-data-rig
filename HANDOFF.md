@@ -498,6 +498,12 @@ the Actions web page when the anonymous API is rate-limited.
   persisted that into the next JSON -- one regeneration cycle silently corrupted the provenance of the sample. Read
   every parameter you print from the stored meta, and label the output as a replay so a reader can tell a re-analysis
   from a fresh observation.
+- A committed report is not a published report. `reports/<slug>.md` is the record; `web/reports/<slug>.html` (built
+  by `npm run p86:report-library`, committed, served by the site) is what a reader opens. They are generated apart,
+  so a new study can be announced and linked while its URL 404s -- which is how this round's own post found it.
+  tests/report-library.test.ts now fails if any `reports/*.md` lacks a page, or the index and the pages disagree. When
+  you commit a report, run the generator in the same commit; expect a code change to cost an OLD report its
+  `verified` mark (p41 lost it when bls.ts changed) and treat that as the gate working, not as a regression to undo.
 
 ## 13. Current state (as of 2026-10-13)
 

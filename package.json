@@ -98,6 +98,7 @@
     "p85:contaminant-fit": "tsx scripts/p85-contaminant-fit.ts",
         "p88:independent-corroboration": "tsx scripts/p88-independent-corroboration.ts",
         "p89:multiepoch-di": "tsx scripts/p89-multiepoch-di.ts",
+        "p90:depth-estimators": "tsx scripts/p90-depth-estimators.ts",
     "p9:anchor-verify": "tsx scripts/p9-anchor-live-verify.ts",
     "p9:decode-memo": "tsx scripts/anchor-memo-decode.ts",
     "p8:live-probe": "tsx scripts/p8-live-probe.ts",

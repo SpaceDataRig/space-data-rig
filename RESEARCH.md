@@ -1041,6 +1041,29 @@ applied it to numbers our own pipeline measured on real TESS-SPOC photometry:
   0.278; false-veto 0). This run post-dates the RA fix, so the 0 is a real coverage result, not a coordinate
   artifact. Honest read "safe but under-powered"; independent channel stays out of the verdict/money path.
   `reports/p88-independent-corroboration.*`. Measure-only; discoveryClaim false.
+- **Multi-epoch PSF diff-imaging (P89) is a real veto 2x2 with a labelled negative class, and it disqualifies
+  itself as a gate.** The double-difference localizer was run epoch by epoch on 2 confirmed planets (must keep)
+  and 3 community FP/EB blends (should be caught), up to 2 covering sectors each. It localized off-target for
+  0/3 blends (veto power 0.00, 95% CI [0, 0.56]) and for **2/2 planets** -- a 100% false-veto rate: shown only
+  real planets, it would have killed all of them. AUC 0.000. Strictly stronger in principle than the
+  single-epoch P58 veto (does the dip move OFF the host across independent epochs?), but it only fires where a
+  SPOC target-pixel cube exists and is measurable, and at this n it fails measure-before-gate. It is not wired
+  into any verdict. `reports/p89-multiepoch-di.*`. Measure-only; discoveryClaim false.
+- **Depth-estimator calibration (P90) is the first measurement of what the two depths the rig holds are worth
+  against an outside reference.** Production-parity order (`scout()` -> `robustPerSectorDepth()` at the DETECTOR's
+  ephemeris -> `decideDepthAdoption()`) run on 30 bright confirmed planets, of which **16** matched the catalogue
+  period within 5% and carry both estimators; the archive `pl_trandep` is consulted after both fits and never
+  fed to either. Box depth UNDER-reads the reference by a median 35.4%, per-sector by 26.2%; median ABSOLUTE error
+  36.7% vs 44.2%; head to head they are NOT separable (8/16 each, exact two-sided sign test p = 1.00). What the
+  shipped 5x guard publishes is better than either estimator alone (33.0% median absolute error, 11/16 rows no
+  worse than the box), and the gain comes from the REFUSALS (3/3 were cases where the box was in fact closer),
+  not from the adoptions: 5 of 13 adoptions moved AWAY from the reference. Sweeping the bound from 1.2x to 1000x
+  moves the published median absolute error by 11.8 percentage points on 16 rows, so 5x is reported as NOT
+  load-bearing at this n rather than tuned to it. Two limits stated by the data: the archive value is itself a
+  fitted parameter, so these numbers bound the AGREEMENT between three reductions of the same photometry, not the
+  accuracy of any one of them against the sky; and a median absolute error of ~37% is incompatible with rendering
+  the same quantity as an integer number of ppm. `reports/p90-depth-estimators.*`. Measure-only; discoveryClaim
+  false; no production record was modified.
 
 ---
 

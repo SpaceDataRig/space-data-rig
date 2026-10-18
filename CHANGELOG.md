@@ -5,6 +5,47 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Which depth the rig publishes is now measured, not argued (2026-10-18, P90)
+The depth-adoption guard shipped two rounds ago refuses a per-sector shape fit that disagrees with the detector's
+BLS box by more than 5x. The bound was set by argument ("a fit that far off is measuring something else"), and the
+argument is sound -- but the same module re-prices the record's SNR when it adopts, so which estimator survives
+changes BOTH headline numbers of a finding, and nothing in the repository had ever compared the two against an
+outside reference. The audit that motivated the guard found 10 live adoptions and could not say whether any of them
+was an improvement. That is the gap `scripts/p90-depth-estimators.ts` closes.
+
+Method, and the parts that decide whether the numbers mean anything: the production path is replayed in order on
+real light curves (`seats.scout()` at the shipped BLS settings -> `detect/perSectorRun.robustPerSectorDepth()` fed
+the DETECTOR's ephemeris, never the catalogue's, since production cannot see it -> `decideDepthAdoption()` at the
+shipped bound). The NASA Exoplanet Archive `pl_trandep` is consulted AFTER both fits and is a measuring stick, not
+a truth either fit is allowed to see. A row only counts toward the headline comparison when the detection is
+demonstrably the same transit the catalogue lists (period within 5%); the other 14 of 30 scanned rows are counted,
+listed and EXCLUDED from the medians rather than quietly dropped. Of 30 bright confirmed planets, 16 qualify.
+
+What came back (medians against the archive value): the BLS box UNDER-reads by 35.4%, the per-sector median by
+26.2%; median absolute error 36.7% (box) against 44.2% (per-sector); head to head 8/16 versus 8/16, exact two-sided
+sign test p = 1.00 -- the two estimators are NOT separable on this sample. What the guard actually publishes beats
+both alone: 33.0% median absolute error, 11/16 rows no worse than the box. The gain is carried by the refusals
+(3/3 were cases where the box really was the closer measurement), not by the adoptions -- 5 of 13 adoptions moved
+AWAY from the reference. Re-running the same rows under bounds of 1.2x, 1.5x, 2x, 3x, 5x, 10x and 1000x moves the
+published median absolute error by 11.8 percentage points on 16 rows against a 36.7% estimator spread, so the report
+states that the shipped 5x bound is not load-bearing at this n instead of claiming it was tuned to; changing a gate
+to follow a difference that small would be fitting a decision to sampling noise, which is the failure mode the
+measure-before-gate rule exists to stop. The run also refuses to emit calibration numbers if the catalogue pull falls
+back to the bundled sample, and self-refused once already at n = 6 before the period range was tightened.
+
+Two limits the data imposes on the write-up, both stated in the report rather than in a caveat footnote. The archive
+value is itself a fitted parameter, with its own dilution, limb-darkening and stellar-density assumptions, so these
+figures bound the AGREEMENT between three reductions of the same photometry -- not the accuracy of any one of them
+against the sky. And a ~37% median absolute error is not compatible with the way every surface in the project
+renders the same quantity, as an integer number of ppm: that is an unearned precision claim, and it is now the next
+open item rather than a finished one.
+
+The same audit found a documentation gap beside the measurement: `RESEARCH.md`, the outward statement of what has
+been measured, had never recorded P89 (multi-epoch PSF diff-imaging, committed and reporting a 2/2 false-veto rate
+that disqualifies the gate) and did not record P90 either. Both are now in it, with their numbers and their
+negative results. Nothing here gated, anchored, claimed or deployed; no production record was modified.
+`npm test` 701/701.
+
 ### A record's own sentence described a transit that was never measured (2026-10-18, third pass)
 The guard and the repricing shipped in the last two entries fixed the NUMBERS. This pass went one layer closer to
 the reader and found the prose, which had the same defect and no test covering it.

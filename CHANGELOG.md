@@ -5,6 +5,28 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### devlog/ archives what was pushed to the feed, and the un-rationing proved itself live (2026-10-18)
+Three long-form operator summaries are now archived in `devlog/`, each composed by `scripts/devlog-archive.ts`
+from the SAME BYTES handed to the dispatcher rather than re-typed, each carrying its dispatch evidence: the HTTP
+204, the Actions run, the posted tweet id, the job-log line proving the send, and the pre-flight result. A
+re-typed copy drifts -- a softened number, a dropped hedge -- and a drifted archive is worse than no archive
+because it looks authoritative. `tests/devlog-archive.test.ts` runs that CLI over fixtures (exact output bytes,
+CRLF normalisation, both refusals, missing-argument and empty-text handling) and then asserts the send path's own
+red lines over every entry already committed, so `devlog/` cannot grow into a record of things never said.
+
+The un-rationing recorded below then proved itself on the live feed, not only in the rehearsal harness. Run
+39095577800 at head `d3314084` posted TWO items in one run: the science tier (id 2111668756908790082) and the
+build-note tier (id 2111668780724027403), five seconds apart, oldest item first, under a runaway ceiling of 25.
+Before commit `c9684ff` that run could have published at most one of them, and the build note only if the science
+tier had nothing to say. The build note's bullet was the `docs(devlog):` commit itself, which the old filter
+discarded outright.
+
+Also corrected two stale claims in HANDOFF section 5 that would have cost a successor time: `npm test` runs
+`tsx scripts/run-tests.ts`, which discovers every `tests/*.test.ts`, so there is no hand-maintained list in
+`package.json` to update; and `x-post.yml` is now named in the layout section, because a workflow with no push
+trigger that publishes publicly is exactly what that section should list. A count of test files was deleted
+outright rather than refreshed -- a number that goes stale on every commit is worse than the fact that matters.
+
 ### An unpostable commit subject would have stalled the build-note cursor permanently (2026-10-18)
 Found by the honesty guard refusing a text I authored for the feed: `post-x-text.ts` runs `overclaimViolations`
 over the FINAL text of every post -- override included -- and exits non-zero on a hit. Combined with the posting

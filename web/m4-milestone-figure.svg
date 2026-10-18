@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="568" viewBox="0 0 1100 568" font-family="DejaVu Sans, Arial, sans-serif">
+  <rect width="1100" height="568" fill="#eceff1"/>
+  <text x="24" y="26" font-size="20" font-weight="bold" fill="#102027">M4 - what this survey phase actually measured</text>
+  <text x="24" y="38" font-size="12" fill="#546e7a">measured 2026-10-18T16:34:34.102Z | drawn from reports/p88, p89, p90, p91 and the live counters in reports/m4-milestone.json</text>
+  <g>
+    <rect x="24" y="64" width="1052" height="84" fill="#ffffff" stroke="#cfd8dc"/>
+    <rect x="24" y="64" width="6" height="84" fill="#b26a00"/>
+    <text x="40" y="88" font-size="15" font-weight="bold" fill="#263238">Independent coverage (Gaia DR3)</text>
+    <text x="1060" y="88" font-size="15" font-weight="bold" text-anchor="end" fill="#b26a00">6/17 covered</text>
+    <text x="28" y="126" font-size="13" fill="#37474f">period matched: 0 -- so this is instrument COVERAGE, not a Gaia-vs-TESS crossmatch; veto power 0.00 on 17 labelled</text>
+    <text x="28" y="142" font-size="13" fill="#37474f">rows</text>
+  </g>
+  <g>
+    <rect x="24" y="160" width="1052" height="84" fill="#ffffff" stroke="#cfd8dc"/>
+    <rect x="24" y="160" width="6" height="84" fill="#b26a00"/>
+    <text x="40" y="184" font-size="15" font-weight="bold" fill="#263238">Multi-epoch PSF double-difference</text>
+    <text x="1060" y="184" font-size="15" font-weight="bold" text-anchor="end" fill="#b26a00">5 curves</text>
+    <text x="28" y="222" font-size="13" fill="#37474f">veto power 0.00, false vetoes 2 -- localization did not separate blends from planets at this depth</text>
+  </g>
+  <g>
+    <rect x="24" y="256" width="1052" height="84" fill="#ffffff" stroke="#cfd8dc"/>
+    <rect x="24" y="256" width="6" height="84" fill="#2e7d32"/>
+    <text x="40" y="280" font-size="15" font-weight="bold" fill="#263238">Which depth we publish</text>
+    <text x="1060" y="280" font-size="15" font-weight="bold" text-anchor="end" fill="#2e7d32">-26.2% published</text>
+    <text x="28" y="318" font-size="13" fill="#37474f">vs the box statistic at -35.4% on 16 injections against a reference neither estimator saw -- the rig publishes the</text>
+    <text x="28" y="334" font-size="13" fill="#37474f">estimator that is honest about its own significance</text>
+  </g>
+  <g>
+    <rect x="24" y="352" width="1052" height="84" fill="#ffffff" stroke="#cfd8dc"/>
+    <rect x="24" y="352" width="6" height="84" fill="#2e7d32"/>
+    <text x="40" y="376" font-size="15" font-weight="bold" fill="#263238">Claim provenance review</text>
+    <text x="1060" y="376" font-size="15" font-weight="bold" text-anchor="end" fill="#2e7d32">5/5 controls met</text>
+    <text x="28" y="414" font-size="13" fill="#37474f">5 rows graded on 5 axes (subject, recency, attribution, band, corroboration); verdict: subject MATCH | attribution</text>
+    <text x="28" y="430" font-size="13" fill="#37474f">NO-CITATION | timing INFLATED (lag 26 d) | band DISJOINT | our reach NOT-IN-OUR-BAND</text>
+  </g>
+  <g>
+    <rect x="24" y="448" width="1052" height="84" fill="#ffffff" stroke="#cfd8dc"/>
+    <rect x="24" y="448" width="6" height="84" fill="#2e7d32"/>
+    <text x="40" y="472" font-size="15" font-weight="bold" fill="#263238">The definition layer</text>
+    <text x="1060" y="472" font-size="15" font-weight="bold" text-anchor="end" fill="#2e7d32">29/50 blind held/assessed</text>
+    <text x="28" y="510" font-size="13" fill="#37474f">one phrase, one rule across board and feed; anchors are two counts (11 published-bytes, 20 commitments); 76 passes</text>
+    <text x="28" y="526" font-size="13" fill="#37474f">CLAIMED over 97 hosts with results; cadence measured: 230s per full pass inside a 15min cron, 1828s idle</text>
+  </g>
+  <text x="24" y="560" font-size="12" fill="#546e7a">Null results are printed as null results. Every panel states the population it counted.</text>
+</svg>

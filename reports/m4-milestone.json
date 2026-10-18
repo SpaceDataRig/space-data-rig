@@ -1,0 +1,54 @@
+{
+  "schema": "sdr-m4-milestone/1",
+  "measuredAt": "2026-10-18T16:34:34.102Z",
+  "source": {
+    "state": "https://spacedatarig.app/api/state",
+    "p88": "reports/p88-independent-corroboration.json",
+    "p89": "reports/p89-multiepoch-di.json",
+    "p90": "reports/p90-depth-estimators.json",
+    "p91": "reports/p91-claim-provenance.json"
+  },
+  "p88": {
+    "n": 17,
+    "withGaiaData": 6,
+    "periodMatched": 0,
+    "vetoPower": 0
+  },
+  "p89": {
+    "n": 5,
+    "falseVeto": 2,
+    "vetoPower": 0
+  },
+  "p90": {
+    "matched": 16,
+    "publishedMedianSignedErrPct": -26.16249963274827,
+    "boxMedianSignedErrPct": -35.4446867139151
+  },
+  "p91": {
+    "rows": 5,
+    "controls": 5,
+    "controlsMet": 5,
+    "axes": [
+      "subject",
+      "recency",
+      "attribution",
+      "band",
+      "corroboration"
+    ],
+    "verdict": "subject MATCH | attribution NO-CITATION | timing INFLATED (lag 26 d) | band DISJOINT | our reach NOT-IN-OUR-BAND"
+  },
+  "publicCounters": {
+    "bundlesAnchored": 11,
+    "ledgerAnchored": 20,
+    "blindHeld": 29,
+    "blindCandidates": 50,
+    "surveyPassClaimed": 76,
+    "distinctHosts": 97
+  },
+  "cadence": {
+    "passes": 24,
+    "fullPassSpanMedianSec": 230,
+    "idleMedianSec": 1828,
+    "cronEveryMin": 15
+  }
+}

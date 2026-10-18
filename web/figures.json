@@ -1,9 +1,9 @@
 {
   "schema": "sdr-figures/1",
-  "generatedAt": "2026-10-18T12:18:45.221Z",
+  "generatedAt": "2026-10-18T16:34:45.236Z",
   "generatedBy": "scripts/p87-figures-manifest.ts (from committed web/*.svg)",
   "note": "Every figure the rig has published, inventoried from the committed web/ directory. Titles are derived mechanically from each filename; each card links to the SVG exactly as deployed.",
-  "count": 26,
+  "count": 27,
   "figures": [
     {
       "src": "results-figure.svg",
@@ -92,6 +92,10 @@
     {
       "src": "inverted-fp-figure.svg",
       "title": "Inverted FP"
+    },
+    {
+      "src": "m4-milestone-figure.svg",
+      "title": "M4 Milestone"
     },
     {
       "src": "p81-round-figure.svg",

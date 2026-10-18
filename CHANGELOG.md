@@ -25,9 +25,16 @@ from the committed `reports/p88..p91` JSON plus the live counters, and the build
 than rendering a zero, because "this measured zero" and "nobody looked" must never print the same way. The cadence
 quoted on the picture comes from `measurePassSpans` over the recorded timestamps, the same function `deploy:window`
 uses, so the figure and the deployment rule cannot describe different rhythms. `tests/m4-milestone-figure.test.ts`
-pins the rules offline and rebuilds the committed SVG from the committed record byte for byte; those three assertions
-stay skipped until the artifact pair is generated, which requires production to publish `blindHeld` -- the CLI refuses
-to draw counters the deployed revision does not have.
+pins the rules offline and rebuilds the committed SVG from the committed record byte for byte.
+
+The record and the panel are now committed, captured from production after the deploy: `reports/m4-milestone.json`
+(measured 2026-10-18T16:34:34Z) and `web/m4-milestone-figure.svg`, inventoried by `npm run p87:figures-manifest` as
+the 27th figure in the gallery. It prints what the measurements said -- p88 6/17 Gaia coverage with `period matched: 0`
+and veto power 0.00 (drawn in the warn colour, not the colour of a positive result), p89 5 curves / veto power 0.00 /
+2 false vetoes, p90 published estimator at -26.2% median signed error against the box statistic's -35.4% on 16
+injections, p91 5/5 controls met on 5 rows over 5 axes, and the definition layer at 29/50 blind held/assessed with
+cadence measured from the recorded timestamps. The three byte-equality assertions that were skipped pending this
+capture now run: 104 test files / 797 tests / 0 failures / 0 skipped.
 
 Sweeping the same ground for "a rule with no call site" turned up three more, all fixed here:
 
@@ -46,6 +53,20 @@ Sweeping the same ground for "a rule with no call site" turned up three more, al
 - `HANDOFF.md` section 5, the repository map, had no line for `src/figures/` or `src/survey/`, and nothing was
   checking. `tests/repo-hygiene.test.ts` now requires the layout to name exactly the directories that exist -- in
   both directions, so a deleted directory cannot keep pointing a reader at nothing.
+- `HANDOFF.md` section 13, "Current state", was dated 2026-10-13 with HEAD 148ff2c roughly sixty commits and six audit
+  passes ago -- a snapshot presenting itself as the present. It is rewritten from the live rig (deployed version and
+  gitSha read back from `GET /health`, switches off the deploy's binding list, counters off `GET /api/state`) and
+  `tests/handoff-freshness.test.ts` now holds it to its date: the as-of date may not trail the newest dated CHANGELOG
+  entry, every commit sha it names must be reachable from HEAD, and the production bullet must name the revision it was
+  built from. The gate's first run on the old text failed three ways, including calling the wrangler version id -- a
+  hex UUID -- an unreachable commit, which is why it strips versions before asking about shas.
+
+Deployed on the measured window rather than a hunch: `npm run deploy:window` returned WAIT through two live passes,
+then GO at 16:32:59Z (previous pass finished 16:32:31Z, 720 s of idle against a 120 s budget), and version
+`045d730c-7a99-45c7-93ad-eea12e6293d6` went out from a clean tree. Live evidence after the deploy: `/health.gitSha` =
+`56e4574` = HEAD, `/api/state` publishes `blindHeld` 29 over `blindCandidates` 50 plus the four `statDefinitions`
+sentences, the report library serves `stale: []` with `fullyVerified: 3`, and the p91 page returns 200 with no STALE
+banner on p41.
 
 ### The deploy-window belief was wrong by an order of magnitude, and a governance rule with no gate lapsed (2026-10-18, seventh pass)
 The plan carried "a survey pass takes ~45 minutes and leaves only seconds of idle", which made every deploy feel like

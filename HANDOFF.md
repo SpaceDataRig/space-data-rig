@@ -248,8 +248,8 @@ Changing any money-path switch or deploying requires EXPLICIT operator go-ahead.
 Local: `npm run orchestrator` (CLI pipeline), `npm start` or `npm run api` (dashboard +
 API + SSE on :8787), `npx wrangler dev` (edge simulation).
 Verify gate before any commit: `npm run typecheck:all` (Node + Worker tsconfigs) AND
-`npm test` (103 files / 793 tests as of 2026-10-18, 3 of them skipped until `npm run figure:m4` can capture
-its record -- the count only grows, so trust the run over any number quoted in a document, this one included).
+`npm test` (104 files / 797 tests as of 2026-10-18 after the M4 capture, none skipped -- the count only grows, so
+trust the run over any number quoted in a document, this one included).
 For observe changes also `npm run verify:observe`.
 Deploy: `npm run cf:deploy:sha` (refuses a dirty tree; re-sets GIT_SHA from HEAD first).
 BEFORE deploying, ask the rig: `npm run deploy:window` (rule in `src/deploy/deployWindow.ts`,
@@ -599,14 +599,39 @@ the Actions web page when the anonymous API is rate-limited.
   `src/` directories in both directions: a room that exists and is unmapped fails, and a mapped room that no longer
   exists fails too.
 
-## 13. Current state (as of 2026-10-13)
+## 13. Current state (as of 2026-10-18)
 
-- Git: at time of writing HEAD == origin/main == 148ff2c (Track C: p35 PDM independent cross-check);
-  the p36 cross-pipeline harness commit that carries this handoff update lands immediately after it (see git log).
-- Production: wrangler version 9ff60199-c77c-44a0-b26b-4c6551953b34, spacedatarig.app (L3 collapse live on the board).
-- Switches live: OBSERVE_ANCHOR=live, OBSERVE_ANCHOR_DAILY_CAP=unlimited, AUTO_RESEARCH=1,
-  AUTO_ANCHOR=live (cap 100/day), MAST_S3=1, VET=1, PERSECTOR=1.
-- Tests: 260/260 green (corroboration +6 then +3 period-only, shapeCoherence +3 then +3 foldedBoxDepth, aliasResolver +3, L3 partition +1, snapshot L3-fields +1, commonMode +6, iterative +5, pdm +5 vs the old 224).
+SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
+and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
+CHANGELOG entry, every commit sha named here must be reachable from HEAD, and the production bullet must name the
+revision it was built from -- because the next reader treats this block as live fact, as it should. The research
+bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
+authority; they are deliberately not restated here.
+
+- Git: the revision this snapshot describes is 56e4574 ("fix(stats,core): serve the counter definitions, and delete
+  the dead cursor RPC"), on top of 777461e (the P41 re-run) and 0788adb (the measured deploy window). Commits land
+  faster than a document can be refreshed, so this line is deliberately about the revision measured below, not a
+  claim about the tip -- `git log` is the authority there, and the commit carrying this text follows 56e4574.
+  CI run 39143833493 for 56e4574: completed, success.
+- Production: wrangler version 045d730c-7a99-45c7-93ad-eea12e6293d6, gitSha 56e457402ba4b61584922bf8fadd62a10257e5d7
+  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed immediately after the 16:32:59Z
+  `GO` verdict from `npm run deploy:window` (the previous pass finished at 16:32:31Z, leaving 720 s of idle over a
+  120 s upload budget). Triggers: schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app.
+  Any later deploy supersedes this version/sha pair, so `GET /health` is the authority on what runs now -- this
+  bullet is the record that the audited revision actually reached production, which is what the redeploy of a
+  document-only commit cannot re-prove.
+- Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
+  AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
+  OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
+  CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
+- Public counters at that same moment (`GET /api/state`, whose payload now carries `statDefinitions` -- the sentence
+  saying what each of these counts, from `src/core/stats-definitions.ts`): surveyPass 76 CLAIMED, distinctHosts 97
+  hosts with a recorded result, blindHeld 29 over blindCandidates 50 assessed, bundlesAnchored 11 published-bytes,
+  ledgerAnchored 20 chain commitments, tasksDone 74, 94 findings rows. The report library serves 50 reports with
+  `stale: []`, `verified: 3`, `fullyVerified: 3`.
+- Tests: 104 files / 797 tests as this snapshot was taken, and `npm run typecheck:all` clean. The count is itself a
+  snapshot -- trust the run over any number written in a document, including this one.
+
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),
   summary carries systematicCollapsed/emittedCandidates/l3Applied. Research-only code (worker not imported), but the

@@ -28,6 +28,7 @@
 import type { ArchivePlanet, TransitCandidate } from "../core/types.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import { crossmatchPeriod } from "../data/exoplanetArchive.ts";
+import { detectionSnrOf } from "../detect/depthAdoption.ts";
 
 export interface ReviewInput {
   candidate: TransitCandidate;
@@ -177,8 +178,19 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   const cm = crossmatch(c, input.catalog, input.hostName);
 
   // --- SNR check ---
-  const snrPass = c.snr >= minSnr;
-  checks.push({ name: "snr", pass: snrPass, detail: `SNR ${c.snr.toFixed(1)} (need >= ${minSnr})` });
+  // The floor is applied to the statistic the SEARCH produced, not to the significance of a refined depth: the
+  // >= 7 threshold and the calibrated FAP ensemble are both distributions of the box statistic (the null runs
+  // BLS and records its SNR), so comparing a shape fit's re-priced SNR against them would be a unit mismatch.
+  // The published depth keeps its own SNR in `c.snr`, which is what the score, the reason and the record show.
+  const gateSnr = detectionSnrOf(c);
+  const snrPass = gateSnr >= minSnr;
+  checks.push({
+    name: "snr",
+    pass: snrPass,
+    detail: Math.abs(gateSnr - c.snr) < 1e-9
+      ? `SNR ${c.snr.toFixed(1)} (need >= ${minSnr})`
+      : `detection SNR ${gateSnr.toFixed(1)} on the box depth (need >= ${minSnr}); the published ${(1e6 * c.depthFrac).toFixed(0)} ppm depth carries SNR ${c.snr.toFixed(1)} at the same scatter`,
+  });
 
   // --- depth sanity ---
   const depthPpm = c.depthFrac * 1e6;
@@ -411,14 +423,15 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   }
 
   // THE DEPTH AND THE SIGNIFICANCE MUST DESCRIBE THE SAME NUMBER. `snr` is not an independent measurement: it is
-  // depth/sigma*sqrt(nIn), computed by the detector from the BOX depth and the out-of-box scatter. If the record
-  // publishes a different depth -- one refined by a per-sector shape fit -- then the quoted significance belongs to
-  // a depth the record no longer shows, and the two cannot be read together. Inverting the same formula recovers the
-  // depth the SNR was actually measured on, which is what makes this checkable rather than a matter of opinion:
-  // on KELT-24 b it returned 6100 ppm against a published 38 ppm, and 38 ppm on that scatter would require a
-  // per-point noise below the instrument's photon floor. Recorded, never gated: whether a refined depth SHOULD
-  // override the depth a detection was gated on is a calibration question with a real answer, and this round's
-  // evidence (the adoption guard in src/detect/depthAdoption.ts) says "only when the two agree".
+  // depth/sigma*sqrt(nIn), computed by the detector from the BOX depth and the out-of-box scatter. If a record
+  // publishes a depth refined by a per-sector shape fit while still quoting that original significance, the two
+  // numbers describe different transits and cannot be read together. Inverting the same formula recovers the depth
+  // the SNR was measured on, which is what makes this checkable rather than a matter of opinion: on KELT-24 b it
+  // returned 6100 ppm against a published 38 ppm, and 38 ppm on that scatter would require a per-point noise below
+  // the instrument's photon floor. src/detect/depthAdoption.ts now re-prices the SNR whenever it publishes a
+  // refined depth, so a NEW record cannot fail this; a failure means some path replaced a depth without going
+  // through that helper -- which is exactly what this check exists to catch. Recorded, never gated: the 80 legacy
+  // rows carrying the contradiction are anchored history and gating here would retroactively move their verdicts.
   if (Number.isFinite(c.noiseSigmaFrac as number) && (c.noiseSigmaFrac as number) > 0 && Number.isFinite(c.snr)) {
     const nIn = Math.max(1, c.nPointsInTransit || 1);
     const snrDepth = (c.snr * (c.noiseSigmaFrac as number)) / Math.sqrt(nIn);

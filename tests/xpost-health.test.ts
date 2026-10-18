@@ -55,6 +55,70 @@ test("a healthy window produces NO findings, so a clean verdict means something"
   assert.deepEqual(problems, [], `expected a clean verdict, got: ${JSON.stringify(problems)}`);
 });
 
+// The fixture above was written from what I believed the log said. Production decorates the line with the
+// stream npm captured -- read from the raw job log of run 39100772239 (2026-10-18T05:30Z), not imagined:
+//   x:lastpost stderr: x-last-post: wrote 14 already-reported subject(s) to out/reported-subjects.txt
+// An anchor that requires the tool's name at column 0 never matches that, so `alreadyReported` stayed null for
+// every real run, and the backlog rule that reads it could not fire in EITHER direction. An auditor that cannot
+// find a stall and cannot clear one still prints a clean verdict -- which is how this stayed hidden until the
+// raw log was opened.
+const PRODUCTION_LOG = log(
+  "x:lastpost stderr: x-last-post: wrote 14 already-reported subject(s) to out/reported-subjects.txt ",
+  "digest window since: 2026-10-18T04:20:42Z (science cursor: 2026-10-18T04:30:36.000Z; last post of any kind: 2026-10-18T05:00:44.000Z)",
+  "build-note cursor: dev window since 2026-10-18T04:50:44Z (last build note: none found, overlap 10m)",
+  "build-note backlog: 1 unreported commit subject(s) since 2026-10-18T04:50:44Z (batch 24, look-back cap 200, exclude '^chore\\(deps')",
+  "build note: composed 1 batch file(s) from 1 subject(s)",
+  "tier manifest: ledger [1 file(s) 0 byte(s)] blind [1 file(s) 0 byte(s)] milestone [1 file(s) 0 byte(s)] note [1 file(s) 423 byte(s)] heartbeat [not-attempted]",
+  "posting 1 composed item(s); runaway ceiling 25, delay 5s between posts",
+  "posting item 1 (of up to 25) from out/posts/10-note.txt: Not a science result -- a build note on the pipeline itself:",
+  "x:post: OK posted (id 2111691404216815807).",
+  "posted 1 item(s) this run",
+);
+
+test("real production log lines are parsed, not just the tidy ones the fixture invented", () => {
+  const f = analyseXpostLog(PRODUCTION_LOG);
+  assert.deepEqual(f.postedIds, ["2111691404216815807"]);
+  assert.equal(f.alreadyReported, 14, "npm's `x:lastpost stderr: ` decoration must not hide the dedup counter");
+  assert.equal(f.backlog, 1);
+  assert.equal(f.queued, 1);
+  assert.equal(f.selfReported, 1);
+  assert.deepEqual(f.tiers, { note: 1 });
+  assert.deepEqual(f.tiersAttempted, { ledger: true, blind: true, milestone: true, note: true, heartbeat: false });
+  assert.equal(f.override, false);
+
+  const problems = judgeFleet([row("7", "2026-10-18T05:30:00Z", "success", f)], NOW);
+  assert.deepEqual(problems, [], `a normal build-note run must be clean, got: ${JSON.stringify(problems)}`);
+});
+
+test("with the counter parsed, a backlog that is not covered by announced subjects is finally detectable", () => {
+  // Three subjects in the window, one already announced, no build note posted: two are unreported and the tier
+  // stayed silent. This is the finding the inert rule was missing.
+  const stuck = analyseXpostLog(log(
+    "x:lastpost stderr: x-last-post: wrote 1 already-reported subject(s) to out/reported-subjects.txt ",
+    "build-note backlog: 3 unreported commit subject(s) since 2026-10-18T04:50:44Z (batch 24, look-back cap 200, exclude '^chore\\(deps')",
+    "tier manifest: ledger [1 file(s) 0 byte(s)] blind [1 file(s) 0 byte(s)] milestone [1 file(s) 0 byte(s)] note [1 file(s) 0 byte(s)] heartbeat [1 file(s) 0 byte(s)]",
+    "posting 0 composed item(s); runaway ceiling 25, delay 5s between posts",
+    "posted 0 item(s) this run",
+  ));
+  const problems = judgeFleet([row("8", "2026-10-18T05:30:00Z", "success", stuck)], NOW);
+  const hit = problems.filter((p) => p.includes("build-note backlog"));
+  assert.equal(hit.length, 1, `expected the residual rule to fire, got: ${JSON.stringify(problems)}`);
+  assert.match(hit[0], /at least 2 are unreported/);
+});
+
+test("the fallback is only excused when something else actually went out", () => {
+  // The other half of the heartbeat rule: a window in which NO tier posted anything is precisely when the
+  // silence watchdog should have fired, so its absence there is a finding and must not be excused.
+  const quiet = analyseXpostLog(log(
+    "posting 0 composed item(s); runaway ceiling 25, delay 5s between posts",
+    "posted 0 item(s) this run",
+    "nothing composed; could not read last-post time (X read unavailable) -> skipping, no heartbeat",
+    "tier manifest: ledger [1 file(s) 0 byte(s)] blind [1 file(s) 0 byte(s)] milestone [1 file(s) 0 byte(s)] note [1 file(s) 0 byte(s)] heartbeat [not-attempted]",
+  ));
+  const problems = judgeFleet([row("9", "2026-10-18T05:30:00Z", "success", quiet)], NOW);
+  assert.ok(problems.some((p) => p.includes("heartbeat")), `heartbeat must still be accountable here, got: ${JSON.stringify(problems)}`);
+});
+
 test("a post body that mentions DRY RUN is content, not a credential failure", () => {
   // Exactly the case that produced the false alarm: the pushed summary discussed the guard and used the phrase.
   const forged = log(

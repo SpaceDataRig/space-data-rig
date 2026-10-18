@@ -446,6 +446,26 @@ the Actions web page when the anonymous API is rate-limited.
 - wrangler deploy can fail on "Trigger configuration only partially updated" (fetch
   failed) while the code itself deployed fine -- retry once and confirm.
 
+- CAPPING a bad substitution is not fixing it. The depth guard limited the per-sector fit to 5x of the detector's
+  box depth and then, measured on the live rig, 10 findings had adopted a refinement and 7 still quoted the SNR the
+  box had produced -- a record whose published depth and quoted significance describe two different transits, just
+  closer together than before. `snr` is `depth/sigma*sqrt(nIn)`; sigma and nIn are properties of the fold, so
+  REPLACING a depth silently re-prices the significance and must re-price it in the same step (one helper, no
+  call-site assignments). Never declare a defect class closed without re-measuring it against production output.
+- Keep the gate in the units it was calibrated in. `detectionSnr` (the box statistic) is what the >= 7 floor and the
+  empirical FAP ensemble must read, because both are distributions produced by running BLS on null light curves; the
+  published `snr` describes the published depth. Feeding a shape fit's re-priced SNR to a box-statistic threshold is
+  a unit mismatch, and on the live set it would have pushed 3 records under the floor -- a verdict-semantics change
+  that needs its own calibration study, not a side effect of a formatting fix.
+- A "no comparison possible" branch must adopt NOTHING. With a non-positive box depth (BLS power is
+  `Swy^2/(Sw(1-Sw))`, sign-blind, so a bump can win the period grid while `depth` keeps the sign) the first version
+  of the guard published the fitted positive depth and left `depthSource` saying `bls-box`: an anti-transit was
+  described to the public as a 46 ppm dip. Absence of a comparator is not evidence that substitution is safe.
+- An auditor whose rules anchor on a tool's own status line must strip the npm runner wrapper (`<script-id> stderr:`)
+  first. The un-stripped anchor never matched, the field it fed stayed null, and the backlog rule could therefore not
+  fire in EITHER direction -- printing both "no stall" and "not a stall" while measuring nothing. Write log parsers
+  against a line copied out of a real job log, never against a remembered one.
+
 ## 13. Current state (as of 2026-10-13)
 
 - Git: at time of writing HEAD == origin/main == 148ff2c (Track C: p35 PDM independent cross-check);

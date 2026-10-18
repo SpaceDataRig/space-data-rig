@@ -5,6 +5,54 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### The depth guard's own fix was audited, and it had left the defect class in place (2026-10-18, second pass)
+The entry below was committed at 06:21Z and went live at 06:31Z. Re-running the same third-party question against
+the rig an hour later returned a worse answer than the one that motivated it.
+
+`applyDepthDecision` kept `depthPpt` and `depthFrac` in step and capped the swap at 5x -- and every record that
+used it still published a depth its quoted SNR did not describe. Sampled `/api/findings` at 06:52Z: **10 findings
+had adopted a per-sector refinement, and 7 of them quoted a significance belonging to the box rather than to the
+depth they published** (TOI-1978.01:
+published 2784 ppm beside SNR 108.7, which on the record's own 974.7 ppm scatter over 106 in-transit points is the
+significance of a 10287 ppm depth; the published depth's own SNR is 29.4). Capping the swap had made the
+contradiction smaller without removing it, because swapping a depth silently re-prices the record: `snr` is not an
+independent measurement, it is `depth/sigma*sqrt(nIn)`, and sigma and nIn are properties of the fold.
+
+Two more live cases closed the remaining holes. TOI-1487.01 and TOI-1689.01 are records where the BLS box landed on
+a BUMP (depth -104.92 ppm and -207 ppm; the box power statistic `Swy^2/(Sw(1-Sw))` is sign-blind, so an inverted
+feature can win the period grid, while `depth` and therefore `snr` keep the sign). Both were rejected by the
+physical-sanity and SNR floors -- the correct outcome -- but the first version of the guard handed them the shape
+fit's positive depth anyway, publishing "a 46 ppm dip" for an anti-transit while still labelling the record's
+`depthSource` as `bls-box` -- a label that contradicted the number beside it. A non-positive box now forfeits
+adoption outright: with nothing to refine, nothing may be substituted.
+
+The decision is therefore applied as a SET. `depthFrac`, `depthPpt`, the estimator label, the refused estimate and
+the SNR recomputed for the depth actually published all move together, and the search's own statistic is preserved
+as the new `detectionSnr`. The `>= 7` floor and the calibrated false-alarm ensemble read `detectionSnr`, because
+both are distributions of the box statistic -- feeding them a shape fit's re-priced SNR would be a unit mismatch.
+So no verdict and no FAP moved: measured on the live set, gating on the published depth instead would have pushed
+3 records (GJ 341 b at 7.4 -> 1.7 among them) under the floor, which is a calibration question this round refused
+to answer on 10 records. The critic's `snr` check now states both numbers when they differ, and its informational
+depth-vs-significance check can no longer fire on a new record by construction -- it exists to catch a future path
+that replaces a depth without going through the helper.
+
+`scripts/xpost-health.ts`, the posting auditor, was also found wrong by its own production log: the npm runner
+prefixes a child tool's stderr with `<script-id> stderr: `, so the anchored match for `x-last-post: wrote N
+already-reported subject(s)` never fired, `alreadyReported` stayed null, and the backlog rule could not fire in
+either direction -- it was reporting both "no stall" and "not a stall" while measuring nothing. Heartbeat was
+likewise flagged as missing although it is a fallback that must not run when another tier had content. Both fixed,
+with a test that parses a line copied out of the real job log, and the tool gained an npm entry point (`x:health`).
+Forward evidence, sampled from production logs of the 8h window ending 06:48Z: 19 confirmed posts across 23 runs,
+tiers note=6 and blind=4, no frozen backlog and no unreported residual; 2 findings remain, both the same historical
+REFUSED override run.
+
+Live effect of the pair fix, measured at three samples of the same endpoint: findings carrying a disagreeing
+`depthPpt`/`depthFrac` pair went 84 of 90 (05:53Z) -> 80 of 94 (06:35Z) -> 72 of 94 (06:52Z) as targets are
+re-measured by the deployed code. All 72 remaining are rows written before the guard; none of the 16 re-derived
+rows claims an anchor stamp whose ledger entry does not match its current bundle hash (checked against
+`/api/ledger`), so a re-measured record cannot borrow an old commitment. The bundles already committed on-chain
+keep the bytes they were committed with, contradiction included -- the counts above are the disclosure.
+
 ### A record published a transit depth its own signal-to-noise ratio refuted (2026-10-18)
 The third pass of the audit loop asked the live rig a question its tests could not answer: inside a single
 published finding, do all the numbers describe the same transit? They did not.

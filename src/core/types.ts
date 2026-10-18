@@ -55,7 +55,19 @@ export interface TransitCandidate {
    * below the instrument's photon floor is a depth that was not what the SNR measured.
    */
   noiseSigmaFrac?: number;
-  snr: number; // signal-to-noise of the detection
+  /**
+   * The statistic the SEARCH produced: `snr` as measured against the box depth, before any refinement of the
+   * published depth. Two different questions are answered by two different numbers, and conflating them is what
+   * let a record claim "SNR 109" beside a depth whose own significance was 29:
+   *  - "did the search find something above the noise floor?" -> `detectionSnr`, in box-statistic units, which is
+   *    also the unit the calibrated false-alarm ensemble is measured in (src/detect/significance.ts), so the gate
+   *    and the FAP must stay in it;
+   *  - "how significant is the depth this record publishes?" -> `snr`, which by construction equals
+   *    `depthFrac/noiseSigmaFrac*sqrt(nPointsInTransit)` and therefore can be checked by a reader.
+   * Equal whenever no refinement was adopted, so records without a second estimator are unaffected.
+   */
+  detectionSnr?: number;
+  snr: number; // signal-to-noise OF THE PUBLISHED DEPTH; see detectionSnr for the search statistic
   /**
    * Grid-limited 1-sigma period uncertainty in DAYS: P^2 * df, where df = 1/(oversample*baseline). The period is
    * a discrete trial-grid node, not a fitted continuous value, so this is the resolution the search actually had.

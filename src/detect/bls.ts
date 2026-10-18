@@ -298,6 +298,9 @@ export function toCandidate(lc: LightCurve, r: BLSResult): TransitCandidate {
     depthSource: "bls-box",
     blsBoxDepthFrac: r.depth,
     snr: r.snr,
+    // At birth the published depth IS the box depth, so the two SNRs are one number. It gets split apart by
+    // src/detect/depthAdoption.ts if a per-sector refinement is ever adopted, and the gate keeps reading this one.
+    detectionSnr: r.snr,
     periodResolutionDays: r.periodResolutionDays,
     atSearchBoundary: r.atSearchBoundary,
     noiseSigmaFrac: r.noiseSigmaFrac,

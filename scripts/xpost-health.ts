@@ -47,12 +47,23 @@ export type RunFindings = {
 
 const TS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\+?\d*\s+/;
 
-/** Strip ANSI, then the runner's per-line timestamp, returning the message the step actually printed. */
+/**
+ * npm's wrapper prints a child tool's stderr as `<script-id> stderr: <line>`, so the tool's own status line is
+ * NOT at the start of the log line. Verified against the raw job log of run 39102486326:
+ * `...Z x:lastpost stderr: x-last-post: wrote 15 already-reported subject(s) to out/reported-subjects.txt`.
+ * Anchored literally (`/^x-last-post: wrote/`), that line never matched, `alreadyReported` stayed null, and the
+ * backlog rule that needs it could therefore never fire in EITHER direction -- an auditor reporting "no stall" and
+ * "not a stall" for the same reason: it was measuring nothing. The fixture did not catch it because the fixture
+ * was written from what I believed the log said instead of from a log.
+ */
+const RUNNER_PREFIX = /^[A-Za-z0-9_.:-]+ (?:stderr|stdout): /;
+
+/** Strip ANSI, then the runner's per-line timestamp and stream decoration, leaving what the tool itself printed. */
 function messagesOf(log: string): string[] {
   return log
     .replace(/\x1b\[[0-9;]*m/g, "")
     .split(/\r?\n/)
-    .map((l) => l.replace(TS, "").trimEnd());
+    .map((l) => l.replace(TS, "").replace(RUNNER_PREFIX, "").trimEnd());
 }
 
 function intAfter(msg: string, prefix: string): number | null {
@@ -224,11 +235,18 @@ export function judgeFleet(rows: RunRow[], nowMs: number, opts: { staleAfterMin?
     }
   }
   const expected = ["ledger", "blind", "milestone", "note", "heartbeat"];
-  const neverPosted = expected.filter((t) => !tierSeen.has(t));
-  if (normal.length > 0 && neverPosted.length > 0 && !anyManifest) {
-    out.push(`tier(s) with no post across ${normal.length} regular run(s): ${neverPosted.join(", ")} -- and no per-tier manifest line exists, so this audit cannot tell "nothing to report" from "never attempted"`);
-  } else if (normal.length > 0 && neverPosted.length > 0) {
-    const unattempted = neverPosted.filter((t) => !attemptedSeen.has(t));
+  // HEARTBEAT IS A FALLBACK, NOT A SCHEDULE. The workflow reaches the silence watchdog only when no other tier
+  // composed anything, so in a window where a build note or a candidate did go out, `heartbeat [not-attempted]`
+  // is the designed outcome and the previous release of this rule reported it as a defect -- found by running the
+  // auditor against a real production run instead of only against fixtures. It stays a finding when nothing at all
+  // was composed anywhere in the window, which is the case where the watchdog genuinely should have fired.
+  const otherActivity = normal.some((r) => Object.entries(r.f.tiers).some(([t, n]) => t !== "heartbeat" && n > 0));
+  const accountable = otherActivity ? expected.filter((t) => t !== "heartbeat") : expected;
+  const neverPostedReal = accountable.filter((t) => !tierSeen.has(t));
+  if (normal.length > 0 && neverPostedReal.length > 0 && !anyManifest) {
+    out.push(`tier(s) with no post across ${normal.length} regular run(s): ${neverPostedReal.join(", ")} -- and no per-tier manifest line exists, so this audit cannot tell "nothing to report" from "never attempted"`);
+  } else if (normal.length > 0 && neverPostedReal.length > 0) {
+    const unattempted = neverPostedReal.filter((t) => !attemptedSeen.has(t));
     if (unattempted.length > 0) {
       out.push(`tier(s) never attempted in any regular run of the window: ${unattempted.join(", ")} -- the manifest says they were not even composed`);
     }

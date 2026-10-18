@@ -121,6 +121,7 @@
     "figure:audit5": "tsx scripts/audit5-rotating-survey-figure.ts",
     "figure:anchor-proof": "tsx scripts/anchor-decode-proof-figure.ts",
     "x:post": "tsx scripts/post-x-text.ts",
+    "x:health": "tsx scripts/xpost-health.ts",
     "x:lastpost": "tsx scripts/x-last-post.ts",
     "p34:cost-model": "tsx scripts/p34-cost-model.ts",
     "p35:pdm-crosscheck": "tsx scripts/p35-pdm-crosscheck.ts",

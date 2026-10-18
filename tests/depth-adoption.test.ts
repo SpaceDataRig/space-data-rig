@@ -17,6 +17,7 @@ import {
   decideDepthAdoption,
   applyDepthDecision,
   depthEstimatorRatio,
+  detectionSnrOf,
   DEPTH_ADOPTION_MAX_FACTOR,
 } from "../src/detect/depthAdoption.ts";
 import { reviewCandidate } from "../src/critic/review.ts";
@@ -90,8 +91,85 @@ test("applying a decision keeps the two depth representations in step -- the def
   assert.equal(c2.blsBoxDepthFrac, BOX, "an adopted refinement must not erase the depth that was gated on");
 });
 
+test("a non-positive BOX depth forfeits adoption entirely, even when the fit offers a positive number", () => {
+  // Seen on the live rig minutes after the guard shipped (TOI-1487.01, 06:33Z): the BLS box landed on a BUMP, so
+  // the measured depth was -104.92 ppm while the per-sector shape fit offered +46.16 ppm. The first version of
+  // this module treated "no comparable box" as the safe branch and published the fitted value -- asserting a
+  // transit the detector's own measurement denies. Absence of a comparison is not proof that adoption is safe.
+  const BOX_BUMP = -1.0492e-4;
+  const FIT = 4.616e-5;
+  for (const box of [BOX_BUMP, 0, NaN, -Infinity]) {
+    const d = decideDepthAdoption(box as number, FIT);
+    assert.equal(d.adopted, false, `${String(box)} gives nothing to refine`);
+    assert.equal(d.depthFrac, box, "the measured depth is kept verbatim, positive or not");
+    assert.equal(d.depthSource, "bls-box");
+    assert.match(d.reason, /did not measure a positive depth/, d.reason);
+  }
+  // And the pair the record publishes still has to agree with itself.
+  const c = cand({ depthFrac: BOX_BUMP, depthPpt: BOX_BUMP * 1000 });
+  applyDepthDecision(c, decideDepthAdoption(c.depthFrac, FIT), FIT);
+  assert.equal(c.depthPpt, c.depthFrac * 1000);
+  assert.equal(c.depthFrac, BOX_BUMP, "the fit is recorded, never substituted, when there is no positive box");
+  assert.equal(c.perSectorDepthFrac, FIT, "what the estimator offered stays visible as the refused estimate");
+});
+
 test("depthEstimatorRatio stays silent when only one estimator exists", () => {
   assert.equal(depthEstimatorRatio(cand()), null, "a legacy or single-fit record must not read as a disagreement");
+});
+
+test("an adopted refinement re-prices the significance instead of inheriting the box's", () => {
+  // The residue the 5x cap left behind, measured on the live rig at 06:34Z: TOI-1978.01 adopted a 2784 ppm depth
+  // and kept quoting SNR 109, which on its own scatter is the significance of a 10287 ppm depth. All five
+  // adoptions in the first hour after the guard shipped had the same mismatch -- 5 of 5, not a tail.
+  const c = cand();
+  const refined = 0.0025;
+  applyDepthDecision(c, decideDepthAdoption(c.depthFrac, refined), refined);
+  assert.equal(c.detectionSnr, 252.5, "the statistic the search gated on stays in the record");
+  assert.ok(Math.abs(c.snr - 252.5 * (refined / BOX)) < 1e-9, `expected ${252.5 * (refined / BOX)}, got ${c.snr}`);
+  // The published pair must be invertible by a reader holding only the published fields. The fixture's SNR and
+  // scatter are rounded off the live record (252.5 / 152.8 ppm), so the round trip is checked relatively -- a
+  // mismatch of the kind this guards against is a factor of 2.4, not a part in a thousand.
+  const implied = (c.snr * (c.noiseSigmaFrac as number)) / Math.sqrt(c.nPointsInTransit);
+  assert.ok(Math.abs(implied / c.depthFrac - 1) < 1e-3, `snr ${c.snr} implies ${implied}, published depth ${c.depthFrac}`);
+
+  // A refusal changes neither number: nothing was republished, so nothing needs re-pricing.
+  const kept = cand();
+  applyDepthDecision(kept, decideDepthAdoption(kept.depthFrac, BAD_FIT), BAD_FIT);
+  assert.equal(kept.snr, 252.5);
+  assert.equal(kept.detectionSnr, 252.5, "no refinement means the two SNRs are one number");
+});
+
+test("the SNR floor stays in box units, so an adopted refinement moves no verdict", () => {
+  // GJ 341 b as it stood at 06:4xZ: box 476 ppm at detection SNR 7.4, refined to 112 ppm (4.24x, inside the
+  // bound, so adopted) -- whose own significance is 1.7. The >= 7 floor and the calibrated FAP ensemble are
+  // distributions of the box statistic; re-pricing the published depth must not silently re-gate the detection.
+  const sigma = (476e-6 / 7.4) * Math.sqrt(40);
+  const c = cand({
+    targetId: "GJ 341 b", periodDays: 8.0149803, depthFrac: 476e-6, depthPpt: 476e-3,
+    snr: 7.4, noiseSigmaFrac: sigma, blsBoxDepthFrac: 476e-6, detectionSnr: 7.4, nPointsInTransit: 40,
+  });
+  const before = reviewOf(cand({ targetId: "GJ 341 b", periodDays: 8.0149803, depthFrac: 476e-6, depthPpt: 476e-3, snr: 7.4, noiseSigmaFrac: sigma, nPointsInTransit: 40 }));
+  applyDepthDecision(c, decideDepthAdoption(476e-6, 112e-6), 112e-6);
+  assert.equal(c.depthSource, "per-sector-median");
+  assert.ok(Math.abs(c.snr - 7.4 * (112 / 476)) < 1e-9, `published SNR should be 1.74, got ${c.snr}`);
+  const after = reviewOf(c);
+  assert.equal(after.verdict, before.verdict, "the gate reads the detection statistic, so the verdict does not move");
+  const snrCheck = after.checks?.find((k) => k.name === "snr");
+  assert.ok(snrCheck?.pass, "7.4 on the box is still above the floor");
+  assert.match(snrCheck!.detail, /detection SNR 7\.4 on the box depth \(need >= 7\)/, snrCheck!.detail);
+  assert.match(snrCheck!.detail, /112 ppm depth carries SNR 1\.7/, snrCheck!.detail);
+  assert.ok(
+    !after.checks?.some((k) => k.name.startsWith("depth-vs-significance")),
+    "a re-priced record must no longer accuse itself -- this is the regression this test exists for",
+  );
+});
+
+test("a record that predates the split is read exactly as before", () => {
+  // detectionSnr is absent on every record written before this landed; the gate must fall back to `snr`, which on
+  // such a record IS the box statistic. No legacy candidate gains or loses a verdict from the new field.
+  const legacy = cand();
+  assert.equal(legacy.detectionSnr, undefined);
+  assert.equal(detectionSnrOf(legacy), 252.5);
 });
 
 // ---- the critic records the relation and is not allowed to act on it ----

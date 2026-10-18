@@ -25,6 +25,16 @@
 // per-sector module documents for itself ("it degrades to null ... so it can never turn a real detection into a
 // bogus number") -- which only held while the estimate stayed sane, because the caller did not check.
 //
+// THE CAP ON ITS OWN DID NOT FIX THE CLASS, AND WAS MEASURED FAILING WITHIN MINUTES. After this bound shipped,
+// five records adopted a per-sector depth and all five still quoted the SNR the box had produced: TOI-1978.01
+// published 2784 ppm beside SNR 109, whose own significance on the same scatter is 29.4. Capping the swap at 5x
+// had made the contradiction smaller without removing it, because swapping a depth silently re-prices the
+// significance of the record. So the decision is applied as a SET (applyDepthDecision): both depth
+// representations, the surviving estimator's label, the refused estimate, and an SNR recomputed for the depth
+// actually published. The search's own statistic is preserved as `detectionSnr`, because the >= 7 floor and the
+// calibrated false-alarm ensemble are distributions of the BOX statistic and must stay in those units -- the
+// gate sees exactly the number it always saw, and no verdict moves.
+//
 // PURE: no I/O, no clock, no network. Both verdicts are pinned by tests/depth-adoption.test.ts.
 import type { TransitCandidate } from "../core/types.ts";
 
@@ -59,9 +69,12 @@ export function decideDepthAdoption(
   maxFactor: number = DEPTH_ADOPTION_MAX_FACTOR,
 ): DepthAdoptionDecision {
   if (!positiveFinite(boxDepthFrac)) {
-    // Nothing to compare against. The caller's existing depth stands; this branch is about not fabricating a
-    // comparison, so it says plainly that no adoption decision was possible.
-    return { depthFrac: estimateDepthFrac ?? boxDepthFrac, depthSource: "bls-box", boxDepthFrac, adopted: false, reason: "the scout depth is not a positive finite number, so no per-sector estimate can be checked against it" };
+    // Nothing to compare against, so NOTHING may be adopted. Observed on the live rig minutes after this guard
+    // shipped (TOI-1487.01, 06:33Z): the box landed on a BUMP, depth <= 0, while the shape fit offered a
+    // positive 46 ppm. "No comparison possible" is not the same as "adoption is safe" -- publishing the fitted
+    // number there would assert a transit the detector's own measurement denies, which is the exact failure this
+    // module exists to prevent. Keep what was measured, record what was offered, say why.
+    return { depthFrac: boxDepthFrac, depthSource: "bls-box", boxDepthFrac, adopted: false, reason: "the scout did not measure a positive depth, so a per-sector fit has nothing to refine and was not adopted" };
   }
   if (!positiveFinite(estimateDepthFrac)) {
     return { depthFrac: boxDepthFrac, depthSource: "bls-box", boxDepthFrac, adopted: false, reason: "no usable per-sector depth was produced; kept the depth the detection was measured on" };
@@ -88,21 +101,40 @@ export function decideDepthAdoption(
 }
 
 /**
- * Apply a decision to a candidate and keep its two depth REPRESENTATIONS in step.
+ * Apply a decision to a candidate and keep every published number describing the SAME transit.
  *
- * WHY THIS IS A FUNCTION AND NOT TWO ASSIGNMENTS AT THE CALL SITE. `depthFrac` and `depthPpt` are the same
- * quantity in different units (src/core/types.ts documents depthPpt as parts-per-thousand of depthFrac), and
- * the workflow used to update only one of them -- which is how 84 of 90 records ended up carrying a pair that
- * contradicted each other, and how the anchored bundle inherited the contradiction. Any future depth update
- * that goes through anything other than this helper is a bug; tests/depth-adoption.test.ts pins the pair.
+ * WHY THIS IS A FUNCTION AND NOT A FEW ASSIGNMENTS AT THE CALL SITE. Three relations hold by definition and the
+ * workflow used to break all of them: `depthPpt = depthFrac * 1000` (the same quantity in different units),
+ * `blsBoxDepthFrac` surviving whatever was published, and `snr = depthFrac / noiseSigmaFrac * sqrt(nIn)`.
+ * The last one is the reason an adopted refinement cannot simply be dropped into `depthFrac`: the scatter and the
+ * in-transit count are properties of the fold, so replacing the depth silently re-prices the significance. On the
+ * live rig, five records adopted a per-sector depth and ALL FIVE then quoted an SNR computed on the box -- 3.7x
+ * apart on TOI-1978.01 (SNR 109 next to a 2784 ppm depth whose own significance is 29). The cap alone did not fix
+ * the class of defect; it only made the contradiction smaller.
+ *
+ * So the SNR is rescaled to the depth being published (sigma and nIn unchanged, which is exactly
+ * `snr' = snr * depth'/depth`), and the search's own statistic is preserved in `detectionSnr` -- the number the
+ * >= 7 floor and the calibrated FAP ensemble are measured in, since both are distributions of the BOX statistic.
+ * Rescaling is only done when the box depth is positive, i.e. when the algebra is meaningful; a bump record keeps
+ * its negative depth and negative SNR together. Any future depth update that goes through anything other than
+ * this helper is a bug; tests/depth-adoption.test.ts pins all three relations.
  */
 export function applyDepthDecision(c: TransitCandidate, decision: DepthAdoptionDecision, estimateDepthFrac: number | null | undefined): TransitCandidate {
+  if (Number.isFinite(c.snr) && !Number.isFinite(c.detectionSnr)) c.detectionSnr = c.snr;
+  const box = decision.boxDepthFrac;
+  const searchSnr = Number.isFinite(c.detectionSnr) ? (c.detectionSnr as number) : c.snr;
   c.depthFrac = decision.depthFrac;
   c.depthPpt = decision.depthFrac * 1000;
   c.depthSource = decision.depthSource;
-  c.blsBoxDepthFrac = decision.boxDepthFrac;
+  c.blsBoxDepthFrac = box;
+  if (positiveFinite(box) && Number.isFinite(searchSnr)) c.snr = searchSnr * (decision.depthFrac / box);
   if (positiveFinite(estimateDepthFrac)) c.perSectorDepthFrac = estimateDepthFrac;
   return c;
+}
+
+/** The statistic the search gated on, falling back to the published SNR on records that predate the split. */
+export function detectionSnrOf(c: TransitCandidate): number {
+  return Number.isFinite(c.detectionSnr) ? (c.detectionSnr as number) : c.snr;
 }
 
 /**

@@ -35,7 +35,7 @@ import type { RunParams } from "./run-types.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
 import { computeDataHash, scout, simPlan, critique, report } from "../seats/seats.ts";
 import { recoveryTrial, combineTrials, predictEphemeris } from "../sim/confidence.ts";
-import { decideDepthAdoption, applyDepthDecision, type DepthAdoptionDecision } from "../detect/depthAdoption.ts";
+import { decideDepthAdoption, applyDepthDecision, detectionSnrOf, type DepthAdoptionDecision } from "../detect/depthAdoption.ts";
 import type { ConfidenceResult } from "../sim/confidence.ts";
 import type { DetectionResult } from "../detect/pipeline.ts";
 import type { ReviewResult } from "../critic/review.ts";
@@ -491,13 +491,17 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         // byte-for-byte unchanged. Node/edge parity: identical params on both runtimes, so one
         // bundle hash is reproducible whether produced locally or on the edge.
         const vetting: ReviewVetting = {};
+        // The significance is calibrated in box-statistic units, so it is fed the search SNR, never the re-priced
+        // SNR of a refined depth -- comparing a shape fit's significance against a null distribution of BLS box
+        // SNRs would be a unit mismatch that silently changes the FAP that gates the verdict.
+        const gateSnr = detectionSnrOf(cand);
         try {
-          const sig = calibratedFap(fr.lc, cand.snr, cand.periodDays, isReal ? undefined : { maxPoints: 2500, nNull: 60 });
+          const sig = calibratedFap(fr.lc, gateSnr, cand.periodDays, isReal ? undefined : { maxPoints: 2500, nNull: 60 });
           vetting.fap = sig.fap;
           await stub.emitEvent(
             "mission-critic",
             "info",
-            `Calibrated significance for ${meta.name}: SNR ${cand.snr.toFixed(1)} at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it${sig.downsampled ? `, binned to ${sig.workingPoints} pts` : ""}).`,
+            `Calibrated significance for ${meta.name}: detection SNR ${gateSnr.toFixed(1)} (the box statistic the null ensemble is measured in${Math.abs(gateSnr - cand.snr) < 1e-9 ? "" : `; the published depth carries SNR ${cand.snr.toFixed(1)}`}) at noise color rho=${sig.rho.toFixed(2)} -> empirical FAP ${sig.fap.toPrecision(2)} (${sig.exceedances}/${sig.nNull} matched nulls reached it${sig.downsampled ? `, binned to ${sig.workingPoints} pts` : ""}).`,
           );
         } catch {
           /* best-effort: if significance can't be computed, leave FAP unset (no gating) */

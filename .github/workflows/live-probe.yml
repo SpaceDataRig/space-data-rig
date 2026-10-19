@@ -38,7 +38,7 @@ jobs:
         # A unique key (so this run always saves) with a rolling restore-prefix (so it restores the most
         # recent prior sample regardless of run id). The probe reads --prev-file and rewrites the same path
         # with the current numbers; the cache post-step then persists them for next Monday's run.
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: live-progress
           key: live-progress-${{ github.run_id }}

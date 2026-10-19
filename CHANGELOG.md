@@ -76,6 +76,24 @@ then GO at 16:32:59Z (previous pass finished 16:32:31Z, 720 s of idle against a 
 sentences, the report library serves `stale: []` with `fullyVerified: 3`, and the p91 page returns 200 with no STALE
 banner on p41.
 
+The static-asset redeploy that followed (version `a3d0ea01-df36-47d0-88fb-0c0f46f5ff37`, gitSha `75e13a4`, serving the
+M4 panel and the 27-entry manifest) went out on a WAIT verdict, stated rather than smuggled: the tool had returned WAIT
+on fourteen consecutive checks and one UNKNOWN over roughly two hours. The justification is measurable, not a mood --
+`git diff 56e4574..75e13a4 -- src` is 0 bytes, so no survey pass could straddle two code versions, which is the only
+thing the window protects against. What those two hours of WAIT actually revealed is a defect, recorded in HANDOFF
+section 13 as the next pass' starting point: two consecutive autonomous passes wrote their last row within about four
+minutes and then held the run mutex until the 30-minute stale takeover released them
+(`run-20261019-001518` claimed 00:15:18Z / last event 00:19:24Z / released 00:45:18Z; `run-20261019-004518` claimed
+00:45:18Z / last event 00:47:44Z / still live at 01:15Z), while `run-20261018-161518` released cleanly after 17 minutes
+-- so the finish path is intermittently not running. Consequence: the survey does roughly one pass per 30-45 minutes
+against a `*/15` cron, half the scheduled claims are refused by a slot that is doing nothing, and deploys inherit that
+waiting. It is the audit-6 family on the FINISH half of the mutex, and shortening `STALE_RUN_MS` would be the wrong
+fix -- that re-opens the slot to a genuinely slow pass and lets two passes write concurrently.
+
+Measured in the same read: `bundlesAnchored` moved from 11 to 5 while `ledgerAnchored` held at 20. That is the
+anchor-count semantics from the sixth pass working as documented -- re-derived records leave the published-bytes count
+without leaving the chain -- and it is now stated in the snapshot so the movement is not read as lost evidence.
+
 ### The deploy-window belief was wrong by an order of magnitude, and a governance rule with no gate lapsed (2026-10-18, seventh pass)
 The plan carried "a survey pass takes ~45 minutes and leaves only seconds of idle", which made every deploy feel like
 a gamble squeezed into a narrow hole. Measured against production it is simply not the regime. `npm run deploy:window`

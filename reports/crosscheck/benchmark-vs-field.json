@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "generatedBy": "scripts/benchmark_vs_field.py (CI workflow crosscheck-python.yml)",
+    "externalTool": "LEO-Vetter (Kunimoto et al. 2025, AJ 170, 280)",
+    "leoImport": {
+      "ok": false,
+      "version": null,
+      "error": "ModuleNotFoundError: No module named 'pandas'"
+    },
+    "fixtureSeed": 7,
+    "injectPeriodDays": 3.0,
+    "injectDepthsPpm": [
+      1000,
+      2000,
+      4000,
+      8000
+    ],
+    "ebPrimaryPpm": 6000,
+    "ebSecondaryRatio": 0.9,
+    "stellarSource": "NASA Exoplanet Archive pscomppars TAP (https://exoplanetarchive.ipac.caltech.edu/TAP/sync)",
+    "fluxErrAssumption": "per-curve constant = 1.4826*MAD of the wotan-detrended flux (fixtures keep only time+flux); this only scales MES, not the shape tests",
+    "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing.",
+    "wallClockSec": 0.6
+  },
+  "summary": {
+    "status": "LEO-VETTER-MISSING",
+    "note": "the pip package did not import; no external numbers are claimed."
+  },
+  "rows": []
+}

@@ -54,7 +54,7 @@
       "wotan": "imported",
       "transitleastsquares": "2.0.1"
     },
-    "wallClockSec": 3798.6,
+    "wallClockSec": 3802.3,
     "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing."
   },
   "summary": {
@@ -214,7 +214,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 24.93
+      "perCurveSec": 24.4
     },
     {
       "host": "HR 858",
@@ -285,7 +285,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 3.81
+      "perCurveSec": 3.78
     },
     {
       "host": "HD 63433",
@@ -355,7 +355,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 0.97
+      "perCurveSec": 1.0
     },
     {
       "host": "HD 25463",
@@ -425,7 +425,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 909.62
+      "perCurveSec": 908.08
     },
     {
       "host": "AU Mic",
@@ -494,7 +494,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 858.33
+      "perCurveSec": 860.8
     },
     {
       "host": "TOI-480",
@@ -563,7 +563,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 894.16
+      "perCurveSec": 896.05
     },
     {
       "host": "GJ 143",
@@ -632,7 +632,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 4.91
+      "perCurveSec": 5.16
     },
     {
       "host": "HD 1397",
@@ -701,7 +701,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 4.64
+      "perCurveSec": 4.82
     },
     {
       "host": "TOI-5739",
@@ -770,7 +770,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 0.81
+      "perCurveSec": 0.85
     },
     {
       "host": "KELT-11",
@@ -839,7 +839,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 0.75
+      "perCurveSec": 0.78
     },
     {
       "host": "HD 86226",
@@ -908,7 +908,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 827.85
+      "perCurveSec": 830.03
     },
     {
       "host": "HD 207496",
@@ -977,7 +977,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 265.79
+      "perCurveSec": 264.7
     }
   ]
 }

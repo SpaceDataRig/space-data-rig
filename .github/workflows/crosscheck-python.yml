@@ -53,8 +53,15 @@ jobs:
       # (e.g. it pulling a different numpy) cannot disturb the already-completed detection arm. A resolve/install
       # failure is tolerated: benchmark_vs_field.py imports it guarded and, if absent, still writes an honest
       # LEO-VETTER-MISSING report and exits 0 -- this step can never redden the job.
+      # AUDIT FINDING (this run published VERDICT LEO-VETTER-MISSING with ModuleNotFoundError: No module named
+      # 'pandas'): the leo-vetter wheel imports pandas + scipy in leo_vetter.stellar (it reads the Claret limb-
+      # darkening tables with pandas and interpolates with scipy.ndimage NearestNDInterpolator), but neither is in
+      # the pinned detection stack and the wheel's metadata does not force them. Install them explicitly so the
+      # reference vetter actually loads; the harness still degrades honestly if anything here fails.
       - name: Install LEO-Vetter (external reference vetter)
-        run: pip install leo-vetter || echo "leo-vetter unavailable; benchmark arm will report LEO-VETTER-MISSING"
+        run: |
+          pip install pandas scipy || echo "pandas/scipy unavailable; benchmark arm will report LEO-VETTER-MISSING"
+          pip install leo-vetter || echo "leo-vetter unavailable; benchmark arm will report LEO-VETTER-MISSING"
 
       - name: Run benchmark-vs-field (LEO-Vetter) harness
         run: python scripts/benchmark_vs_field.py

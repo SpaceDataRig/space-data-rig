@@ -139,6 +139,7 @@
     "p92:scrambled-fa": "tsx scripts/p92-scrambled-fa.ts",
     "p93:fp-taxonomy": "tsx scripts/p93-fp-taxonomy.ts",
     "p94:stellar-params": "tsx scripts/p94-stellar-params.ts",
+    "p95:unified-catalog": "tsx scripts/p95-unified-catalog.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

@@ -5,6 +5,21 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A bounded, citable unified catalogue with a measured known-planet recovery and a joint C/R operating point (2026-10-19, twelfth pass)
+`scripts/p95-unified-catalog.ts` assembles ONE reproducible, quotable object from committed bytes -- the byte-exact
+real SPOC fixtures, the NASA-archive stellar parameters from p94, and the P3 candidate-level null -- no network, so
+every run re-reads identical data. It measures three things: a real KNOWN-PLANET RECOVERY rate (the pipeline's blind
+BLS argmax landing, alias-tolerantly, on each host's own confirmed planets -- the pipeline analog of the field's
+known-TOI recovery), the joint `sqrt((1-C)^2+(1-R_FA)^2)` OPERATING POINT (completeness on injected transits vs
+reliability on a time-scrambled population, threshold chosen by the objective), and the catalogue table (TIC, sectors,
+Teff/R/M/rho, known periods, blind best SNR/period, recovered?). On 12 real hosts: blind known-planet recovery 8/12
+(66.7%); the C/R objective has a clean interior minimum at BLS SNR>=15 (C=98.3%, R_FA=89.4%, objective 0.107) with
+7/35 scrambled false alarms clearing that gate and 5/12 recoveries standing at the operating threshold. The 66.7% is
+reported honestly, not smoothed: a single blind peak on multi-planet-rich bright hosts lands on one companion, whereas
+LEO-Vetter's ~90% is a mature multi-year multi-ephemeris statistic -- different numbers, both as measured. Bounded n=12
+is a demonstration catalogue; the SNR is read off THIS sample, not asserted survey-wide; discoveryClaim / safeToGate
+false; RESEARCH section 34 documents it. `reports/p95-unified-catalog.{md,json}`.
+
 ### Running the field's actual reference vetter (LEO-Vetter) on our fixtures -- closing the benchmark gap (2026-10-19, eleventh pass)
 RESEARCH section 4c: the rig's vetting had only ever been scored against our own re-implementations. Priority 1 runs
 the field's published 2025 vetter, LEO-Vetter (Kunimoto+ 2025, AJ 170, 280), on the SAME committed real-curve

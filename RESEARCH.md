@@ -1162,5 +1162,30 @@ safeToGate stay false.
 
 ---
 
+## 34. A bounded, citable unified catalogue and the joint C/R operating point it reads off real data (P95)
+
+A reference instrument is quoted through ONE stable object, not a scatter of one-off numbers. `scripts/p95-unified-catalog.ts`
+builds that object entirely from committed bytes -- the byte-exact real SPOC fixtures, the real NASA-archive stellar
+parameters from section 33, and the P3 candidate-level null (`falseAlarmNull.ts`) -- so every run reproduces without
+network and the table is quotable. Three measured things: a real KNOWN-PLANET RECOVERY rate (the pipeline's blind BLS
+argmax landing, alias-tolerantly, on each host's own confirmed planets -- the pipeline analog of the ~90% known-TOI
+recovery the field reports for its mature multi-year vetters); the joint `sqrt((1-C)^2+(1-R_FA)^2)` OPERATING POINT
+(completeness on injected transits against reliability on a time-scrambled population, threshold chosen by the
+objective, not a round number); and the catalogue table itself.
+
+- **Measured (12 real hosts).** Blind known-planet recovery **8/12 = 66.7%**; the joint C/R objective has a clean
+  interior minimum at **BLS SNR>=15 (C=98.3%, R_FA=89.4%, objective=0.107)**, with 7/35 scrambled false alarms still
+  clearing that gate, and 5/12 known-planet recoveries standing at the operating threshold. The 66.7% is an honest,
+  informative number, not a defect to hide: a single blind argmax peak on multi-planet-rich bright hosts frequently
+  lands on one companion rather than every known period, and LEO-Vetter's ~90% comes from a mature multi-year,
+  multi-ephemeris system -- the two are not the same statistic, and we report ours as measured.
+- **Bounded on purpose.** n=12 is a demonstration catalogue, not an all-sky product; the operating SNR is read off
+  THIS sample and is not asserted survey-wide; recovery is a detection statistic on KNOWN planets. `discoveryClaim`
+  and `safeToGate` are structurally false; `reports/p95-unified-catalog.{md,json}`.
+
+Reproduce: `npm run p95:unified-catalog -- --perCurve 3 --seed 7 --depths 300,500,1000,2000,4000`.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

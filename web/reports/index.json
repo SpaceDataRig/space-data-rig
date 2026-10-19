@@ -1,16 +1,16 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-19T06:00:46.303Z",
-  "builtAtGitSha": "801472fb5f95629701c46a5b1c52e4d3152c52b5",
+  "generatedAt": "2026-10-19T06:28:30.094Z",
+  "builtAtGitSha": "b1de5a52cd69cf775a1998ed026cf910ee299951",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
-  "count": 52,
+  "count": 53,
   "freshness": {
     "stamped": 8,
     "verified": 3,
     "fullyVerified": 3,
-    "total": 52,
+    "total": 53,
     "stale": []
   },
   "reports": [
@@ -734,6 +734,20 @@
       "title": "P93 flux-level false-positive taxonomy validation ROC",
       "reproduce": "npm run p93:fp-taxonomy -- --perClassTrials 4 --prior 0.5 --minSnr 7",
       "summary": "RAVEN / TRICERATOPS / LEO-Vetter validate by collapsing discriminants into a single planet posterior cut at",
+      "fresh": true,
+      "stamped": false,
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
+    },
+    {
+      "id": "p95-unified-catalog",
+      "slug": "p95-unified-catalog",
+      "title": "P95 bounded unified catalogue and its joint completeness/reliability operating point",
+      "reproduce": "npm run p95:unified-catalog -- --perCurve 3 --seed 7 --depths 300,500,1000,2000,4000",
+      "summary": "A reproducible, bounded catalogue of 12 committed byte-exact real TESS-SPOC hosts, each with its NASA-archive stellar parameters, its known planet periods, the pipeline's blind best BLS SNR/period, and whether a known planet is...",
       "fresh": true,
       "stamped": false,
       "verified": false,

@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p95-unified-catalog.ts",
+    "nHosts": 12,
+    "seed": 7,
+    "injectPeriodDays": 3,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000
+    ],
+    "thresholds": [
+      5,
+      8,
+      10,
+      12,
+      15,
+      18,
+      22,
+      26,
+      30,
+      35,
+      40
+    ],
+    "blsGrid": {
+      "minPeriodDays": 1.5,
+      "maxPeriodDays": 13,
+      "oversample": 8
+    },
+    "perCurve": 3,
+    "stellarParamsSource": "tests/fixtures/spoc-curves/stellar-params.json (NASA Exoplanet Archive, via scripts/p94-stellar-params.ts)",
+    "note": "Bounded, citable catalogue of the committed real SPOC hosts with a data-driven joint completeness/reliability operating point and a real known-planet recovery rate. LEO-Vetter-style sqrt((1-C)^2+(1-R_FA)^2) threshold selection. Measures only; the operating SNR is specific to THIS bounded sample; discoveryClaim false."
+  },
+  "operatingPoint": {
+    "thresholdSnr": 15,
+    "completenessC": 0.9833333333333333,
+    "reliabilityRFA": 0.8939393939393939,
+    "jointObjective": 0.10736214386701139
+  },
+  "recovery": {
+    "blindRecoveredKnown": 8,
+    "recoveredAtOperatingThreshold": 5,
+    "nHosts": 12
+  },
+  "falseAlarmNull": {
+    "scrambledTces": 35,
+    "survivorsAtOpt": 7
+  },
+  "sweep": [
+    {
+      "threshold": 5,
+      "c": 1,
+      "rFa": 0.631578947368421,
+      "objective": 0.368421052631579
+    },
+    {
+      "threshold": 8,
+      "c": 1,
+      "rFa": 0.75,
+      "objective": 0.25
+    },
+    {
+      "threshold": 10,
+      "c": 1,
+      "rFa": 0.8,
+      "objective": 0.19999999999999996
+    },
+    {
+      "threshold": 12,
+      "c": 1,
+      "rFa": 0.8695652173913043,
+      "objective": 0.13043478260869568
+    },
+    {
+      "threshold": 15,
+      "c": 0.9833333333333333,
+      "rFa": 0.8939393939393939,
+      "objective": 0.10736214386701139
+    },
+    {
+      "threshold": 18,
+      "c": 0.95,
+      "rFa": 0.9047619047619048,
+      "objective": 0.1075653047435859
+    },
+    {
+      "threshold": 22,
+      "c": 0.85,
+      "rFa": 0.9107142857142857,
+      "objective": 0.17456213442642768
+    },
+    {
+      "threshold": 26,
+      "c": 0.8166666666666667,
+      "rFa": 0.9245283018867925,
+      "objective": 0.19826015315035506
+    },
+    {
+      "threshold": 30,
+      "c": 0.7833333333333333,
+      "rFa": 0.94,
+      "objective": 0.2248209163855633
+    },
+    {
+      "threshold": 35,
+      "c": 0.75,
+      "rFa": 0.9375,
+      "objective": 0.2576941016011038
+    },
+    {
+      "threshold": 40,
+      "c": 0.7166666666666667,
+      "rFa": 0.9347826086956522,
+      "objective": 0.2907423015426585
+    }
+  ],
+  "catalog": [
+    {
+      "host": "HD 39091",
+      "tic": 261136679,
+      "sectors": [
+        1,
+        4
+      ],
+      "teff": 5998,
+      "radius": 1.17,
+      "mass": 1.07,
+      "density": 0.9406517054993936,
+      "knownPlanetPeriodsDays": [
+        6.2678399
+      ],
+      "nPoints": 2082,
+      "blindBestSnr": 26.992212469579158,
+      "blindBestPeriodDays": 3.1352449119906134,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": true
+    },
+    {
+      "host": "HR 858",
+      "tic": 178155732,
+      "sectors": [
+        3,
+        4
+      ],
+      "teff": 6354,
+      "radius": 1.258,
+      "mass": 1.204,
+      "density": 0.8515050312449232,
+      "knownPlanetPeriodsDays": [
+        3.585287,
+        5.973865,
+        11.230511
+      ],
+      "nPoints": 1735,
+      "blindBestSnr": 17.672805870892926,
+      "blindBestPeriodDays": 1.7936660887389895,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": true
+    },
+    {
+      "host": "HD 63433",
+      "tic": 130181866,
+      "sectors": [
+        20
+      ],
+      "teff": 5688,
+      "radius": 0.912,
+      "mass": 0.99,
+      "density": 1.8376099528599887,
+      "knownPlanetPeriodsDays": [
+        4.209075,
+        7.1079475
+      ],
+      "nPoints": 941,
+      "blindBestSnr": 2124.6284741770905,
+      "blindBestPeriodDays": 13,
+      "recoversKnown": false,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "HD 25463",
+      "tic": 407966340,
+      "sectors": [
+        5,
+        32
+      ],
+      "teff": 6353,
+      "radius": 1.4182,
+      "mass": 1.251,
+      "density": 0.6175150141005907,
+      "knownPlanetPeriodsDays": [
+        3.04405,
+        7.0491423
+      ],
+      "nPoints": 2299,
+      "blindBestSnr": 14.65325940402427,
+      "blindBestPeriodDays": 7.048110301725175,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "AU Mic",
+      "tic": 441420236,
+      "sectors": [
+        1,
+        27
+      ],
+      "teff": 3540,
+      "radius": 0.862,
+      "mass": 0.635,
+      "density": 1.3959008850918397,
+      "knownPlanetPeriodsDays": [
+        8.463446
+      ],
+      "nPoints": 2070,
+      "blindBestSnr": 42.11964750842294,
+      "blindBestPeriodDays": 9.040597467671384,
+      "recoversKnown": false,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "TOI-480",
+      "tic": 317548889,
+      "sectors": [
+        6,
+        33
+      ],
+      "teff": 6174,
+      "radius": 1.4877,
+      "mass": 1.2793,
+      "density": 0.5470524478314998,
+      "knownPlanetPeriodsDays": [
+        6.866196
+      ],
+      "nPoints": 2228,
+      "blindBestSnr": 10.978028414181972,
+      "blindBestPeriodDays": 6.877080993272268,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "GJ 143",
+      "tic": 279741379,
+      "sectors": [
+        1,
+        2
+      ],
+      "teff": 4640,
+      "radius": 0.695,
+      "mass": 0.73,
+      "density": 3.0617596911550002,
+      "knownPlanetPeriodsDays": [
+        7.78993
+      ],
+      "nPoints": 2365,
+      "blindBestSnr": 18.351848659802247,
+      "blindBestPeriodDays": 10.809952923786035,
+      "recoversKnown": false,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "HD 1397",
+      "tic": 394137592,
+      "sectors": [
+        1,
+        2
+      ],
+      "teff": 5521,
+      "radius": 2.336,
+      "mass": 1.324,
+      "density": 0.14624200227753548,
+      "knownPlanetPeriodsDays": [
+        11.53533
+      ],
+      "nPoints": 2369,
+      "blindBestSnr": 14.802028191021588,
+      "blindBestPeriodDays": 3.852780224262957,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "TOI-5739",
+      "tic": 328934980,
+      "sectors": [
+        23
+      ],
+      "teff": 6104.12,
+      "radius": 1.49138,
+      "mass": 1.15,
+      "density": 0.4881300575098448,
+      "knownPlanetPeriodsDays": [
+        8.430524
+      ],
+      "nPoints": 838,
+      "blindBestSnr": 6.831269917681697,
+      "blindBestPeriodDays": 6.773699979311025,
+      "recoversKnown": false,
+      "recoversAtOperatingThreshold": false
+    },
+    {
+      "host": "KELT-11",
+      "tic": 55092869,
+      "sectors": [
+        9
+      ],
+      "teff": 5375,
+      "radius": 2.69,
+      "mass": 1.44,
+      "density": 0.10416175938187656,
+      "knownPlanetPeriodsDays": [
+        4.73620865
+      ],
+      "nPoints": 1028,
+      "blindBestSnr": 28.949124405611496,
+      "blindBestPeriodDays": 4.6989666638734935,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": true
+    },
+    {
+      "host": "HD 86226",
+      "tic": 22221375,
+      "sectors": [
+        9,
+        35
+      ],
+      "teff": 5863,
+      "radius": 1.053,
+      "mass": 1.019,
+      "density": 1.2288297730906272,
+      "knownPlanetPeriodsDays": [
+        3.98442
+      ],
+      "nPoints": 1879,
+      "blindBestSnr": 16.974221917162392,
+      "blindBestPeriodDays": 3.984578628361502,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": true
+    },
+    {
+      "host": "HD 207496",
+      "tic": 290348383,
+      "sectors": [
+        13,
+        27
+      ],
+      "teff": 4819,
+      "radius": 0.769,
+      "mass": 0.8,
+      "density": 2.4769293677269015,
+      "knownPlanetPeriodsDays": [
+        6.441008
+      ],
+      "nPoints": 2241,
+      "blindBestSnr": 21.261692277374337,
+      "blindBestPeriodDays": 6.439997045746394,
+      "recoversKnown": true,
+      "recoversAtOperatingThreshold": true
+    }
+  ],
+  "verdict": "CATALOGUE-BOUNDED",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

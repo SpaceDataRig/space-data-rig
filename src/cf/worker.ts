@@ -41,6 +41,17 @@ function rigStub(env: Env) {
   return env.RIG_STATE.get(env.RIG_STATE.idFromName("rig-state"));
 }
 
+// Best-effort event-log write. emitEvent's stub type is `never` (RigEvent.data is Record<string, unknown>, not
+// Rpc.Serializable), so `.catch()` cannot be chained on the call -- wrap the await instead. A logging failure
+// must never mask the real outcome the caller is reporting, so this swallows its own errors.
+async function warnBestEffort(env: Env, message: string): Promise<void> {
+  try {
+    await rigStub(env).emitEvent("reporter", "warn", message);
+  } catch {
+    // observability only -- never let a logging failure mask the caller's real signal
+  }
+}
+
 // Bundle artifacts live in R2 under keys identical to the Node fs layout, so the
 // read/verify code paths (persistBundle / verifyBundle) work unchanged at the edge.
 function artifacts(env: Env): R2ArtifactStore {
@@ -510,8 +521,13 @@ export default {
     // a backup.
     const wakeMinute = new Date(controller.scheduledTime).getUTCMinutes();
     if (env.GH_XPOST_DISPATCH_TOKEN && (wakeMinute === 0 || wakeMinute === 30)) {
+      // Best-effort wake, but NOT best-effort SILENT. An expired/revoked PAT (401) or a renamed/moved workflow
+      // (404) would otherwise stop the reliable half-hourly trigger with no signal at all, and the feed would
+      // quietly fall back to GitHub's own throttled schedule (observed 2-5h gaps) -- a degradation nobody could
+      // see. Surface the failure on the rig event log so /api/state and the dashboard show the dispatch is
+      // degraded. The token is NEVER logged -- only the HTTP status or the error message.
       try {
-        await fetch("https://api.github.com/repos/SpaceDataRig/space-data-rig/actions/workflows/x-post.yml/dispatches", {
+        const r = await fetch("https://api.github.com/repos/SpaceDataRig/space-data-rig/actions/workflows/x-post.yml/dispatches", {
           method: "POST",
           headers: {
             authorization: `Bearer ${env.GH_XPOST_DISPATCH_TOKEN}`,
@@ -522,8 +538,17 @@ export default {
           },
           body: JSON.stringify({ ref: "main", inputs: {} }),
         });
-      } catch {
-        /* best-effort wake; the workflow's own `on.schedule` remains a backup */
+        if (!r.ok) {
+          await warnBestEffort(
+            env,
+            `x-post dispatch wake got HTTP ${r.status} from the GitHub Actions API; the reliable half-hourly feed trigger is degraded (check the dispatch token's repo + Actions permissions). The workflow's own schedule remains a backup.`,
+          );
+        }
+      } catch (e) {
+        await warnBestEffort(
+          env,
+          `x-post dispatch wake failed (${e instanceof Error ? e.message : String(e)}); the reliable half-hourly feed trigger is degraded. The workflow's own schedule remains a backup.`,
+        );
       }
     }
     if (env.AUTO_RESEARCH !== "1") return;

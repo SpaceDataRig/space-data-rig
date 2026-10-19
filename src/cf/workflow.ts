@@ -33,6 +33,7 @@ import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloud
 import type { Env } from "./env.ts";
 import type { RunParams } from "./run-types.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
+import { runSafe } from "./safe-step.ts";
 import { computeDataHash, scout, simPlan, critique, report } from "../seats/seats.ts";
 import { recoveryTrial, combineTrials, predictEphemeris } from "../sim/confidence.ts";
 import { decideDepthAdoption, applyDepthDecision, detectionSnrOf, type DepthAdoptionDecision } from "../detect/depthAdoption.ts";
@@ -101,9 +102,6 @@ interface CatalogRecord {
   source: "nasa-tap" | "fallback";
 }
 
-/** A step outcome wrapper that never throws across the step boundary. */
-type Safe<T> = { ok: true; value: T } | { ok: false; error: string };
-
 // ---- DO + R2 accessors (WorkflowEntrypoint exposes `this.env`) --------------
 
 function rigStub(env: Env) {
@@ -139,21 +137,6 @@ async function putJson(store: R2ArtifactStore, key: string, value: unknown): Pro
 async function getJson<T>(store: R2ArtifactStore, key: string): Promise<T | null> {
   const text = await store.getText(key);
   return text == null ? null : (JSON.parse(text) as T);
-}
-
-/** Run a durable step whose callback never lets an error escape the boundary. */
-async function runSafe<T extends Rpc.Serializable<T>>(
-  step: WorkflowStep,
-  name: string,
-  fn: () => Promise<T>,
-): Promise<Safe<T>> {
-  return step.do(name, async (): Promise<Safe<T>> => {
-    try {
-      return { ok: true, value: await fn() };
-    } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : String(e) };
-    }
-  });
 }
 
 export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
@@ -653,32 +636,52 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
     }
 
     // ---- tail: release the run slot with a summary derived from DO state ------
-    const summary = await step.do("finish", async (): Promise<ActiveRunSummary> => {
-      const st: DashboardState = await stub.getState();
-      const accepted = st.findings.filter((f) => f.verdict === "accepted").length;
-      const review = st.findings.filter((f) => f.verdict === "needs-more-data").length;
-      const rejected = st.findings.filter((f) => f.verdict === "rejected").length;
-      const out: ActiveRunSummary = {
-        targets: targets.length,
-        accepted,
-        review,
-        rejected,
-        bundles: st.bundles.length,
-        catalogSource,
-        toiCount: targets.filter((t) => t.origin === "blind-toi").length,
-      };
-      // audit-6: the rotation cursor advances when the run CLAIMS the slot (RigStateDO.startRunIfIdle), NOT
-      // here -- a pass that hangs before this tail never reached it, which deadlocked the survey on one
-      // window. finishRun is now runId-scoped so a stale run finishing late cannot release a live successor.
-      await stub.finishRun(runId, { summary: out });
-      await stub.emitEvent(
-        "reporter",
-        "result",
-        `Run ${runId} finished: ${accepted} confirmed, ${review} watchlist, ${rejected} rejected, ${st.bundles.length} bundles.`,
-        { runId, ...out },
-      );
-      return out;
-    });
+    // The finish step is the NORMAL release. If the runtime terminates even this light step (or its getState
+    // RPC fails), the slot would otherwise stay claimed until the 30-minute stale takeover -- the same wedge a
+    // heavy seat step caused by rejecting out of run() before it ever reached here. So release DIRECTLY on
+    // failure: finishRun is runId-scoped (a superseded run's late finish is ignored by decideFinish), so this
+    // can never clobber a successor's slot.
+    let summary: ActiveRunSummary;
+    try {
+      summary = await step.do("finish", async (): Promise<ActiveRunSummary> => {
+        const st: DashboardState = await stub.getState();
+        const accepted = st.findings.filter((f) => f.verdict === "accepted").length;
+        const review = st.findings.filter((f) => f.verdict === "needs-more-data").length;
+        const rejected = st.findings.filter((f) => f.verdict === "rejected").length;
+        const out: ActiveRunSummary = {
+          targets: targets.length,
+          accepted,
+          review,
+          rejected,
+          bundles: st.bundles.length,
+          catalogSource,
+          toiCount: targets.filter((t) => t.origin === "blind-toi").length,
+        };
+        // audit-6: the rotation cursor advances when the run CLAIMS the slot (RigStateDO.startRunIfIdle), NOT
+        // here -- a pass that hangs before this tail never reached it, which deadlocked the survey on one
+        // window. finishRun is now runId-scoped so a stale run finishing late cannot release a live successor.
+        await stub.finishRun(runId, { summary: out });
+        await stub.emitEvent(
+          "reporter",
+          "result",
+          `Run ${runId} finished: ${accepted} confirmed, ${review} watchlist, ${rejected} rejected, ${st.bundles.length} bundles.`,
+          { runId, ...out },
+        );
+        return out;
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await stub.finishRun(runId, { error: `finish step failed: ${msg}` }).catch(() => {});
+      // emitEvent's stub type is `never` (RigEvent.data is Record<string, unknown>, not Rpc.Serializable), so
+      // `.catch()` cannot be chained on the call -- wrap the await instead. The release above is what matters;
+      // a logging failure must never mask the original error we re-throw.
+      try {
+        await stub.emitEvent("reporter", "error", `Run ${runId} could not run its finish step (${msg}); releasing the run slot directly.`);
+      } catch {
+        // best-effort observability only
+      }
+      throw e;
+    }
     return summary;
   }
 

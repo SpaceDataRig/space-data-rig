@@ -3,10 +3,10 @@
 ## The post
 - Composed: authority-roadmap milestone covering P92-P96 (statistical-validation build).
 - Guard: local `npm run x:post -- --text-file out/_tw_en.txt --max-len 25000` printed DRY RUN, exit 0 (ASCII + length + over-claim all pass; same code the workflow uses). length=1861/25000.
-- Dispatch: `POST .../workflows/x-post.yml/dispatches` ref=main, inputs.text=<these bytes>, inputs.maxlen=25000 -> HTTP 204 (accepted).
-- Workflow run: 39215259577 (event=workflow_dispatch) -> completed/success; job 117937509927 (digest).
+- Dispatch: `POST .../workflows/x-post.yml/dispatches` ref=main, inputs.text=<these bytes>, inputs.maxlen=25000 -> dispatch accepted: HTTP `204`.
+- Actions run: https://github.com/SpaceDataRig/space-data-rig/actions/runs/39215259577 (event=workflow_dispatch) -> `completed / success`, job `digest` (117937509927) success.
 - Job log send line: `x:post: OK posted (id 2112081282067018229).`
-- Posted tweet id: 2112081282067018229.
+- posted id: `2112081282067018229`.
 - Feed link: https://x.com/i/web/status/2112081282067018229
 
 ## The shipped work this post reports (all committed, CI-green, deployed)

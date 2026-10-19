@@ -53,7 +53,7 @@ let bot = card(28, 412, 1144, 268) + T(50, 446, "Unchanged, by design", 18, "#f5
 bot += T(50, 482, "The autonomous hourly loop runs cron -> Durable Object -> Workflow directly; it never passes through the gated HTTP", 14, "#9fb0d6");
 bot += T(50, 504, "routes, so it kept anchoring accepted findings throughout. Read-only views, the public dashboard and the ledger are open.", 14, "#9fb0d6");
 bot += T(50, 546, "No production threshold moved, no verdict flipped, no historical bundleHash altered. The FPP and detection ceilings", 14, "#e8ecf7", "600");
-bot += T(50, 568, "stand exactly as reported in P82: accepted-call precision 42.2% and centroid 0/56 blends on real TESS data.", 14, "#e8ecf7", "600");
+bot += T(50, 568, "stand exactly as reported in P82: accepted-call precision 42.2% and centroid 0/59 blends on real TESS data.", 14, "#e8ecf7", "600");
 bot += T(50, 612, "safeToGate false   discoveryClaim false", 15, "#9fb0d6", "700");
 bot += T(50, 646, "To use the dashboard's manual run / anchor buttons, an operator stores the same bearer token in the browser once.", 13, "#9fb0d6");
 

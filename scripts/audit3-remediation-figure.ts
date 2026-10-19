@@ -42,7 +42,7 @@ for (const [n, st, txt] of rows) {
 // Right-top: capability ceiling
 let rt = card(704, 96, 472, 232) + T(726, 126, "Capability boundary (stated, not sold)", 17, "#5aa9ff", "800");
 rt += T(726, 156, "Blended / multi-source-per-pixel scenes are unsupported.", 13, "#e8ecf7", "700");
-rt += T(726, 180, "Centroid false-positive test caught 0/56 labelled blends;", 12.5, "#9fb0d6");
+rt += T(726, 180, "Centroid false-positive test caught 0/59 labelled blends;", 12.5, "#9fb0d6");
 rt += T(726, 198, "~71% of those targets never localise a cross-sector offset.", 12.5, "#9fb0d6");
 rt += T(726, 222, "Pixel-baseline-bound -- a method rebuild, not a threshold.", 12.5, "#e8ecf7", "600");
 rt += T(726, 254, "Accepted-precision 42.2% at 425 curves is the wall;", 12.5, "#9fb0d6");

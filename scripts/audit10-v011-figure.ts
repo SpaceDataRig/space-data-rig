@@ -1,5 +1,9 @@
 // Audit-10 CLOSED + v0.1.1 figure -- the final "every item resolved, released, and live" poster. All-text,
 // ASCII only, deterministic; states only committed + deployed facts. Usage: npm run figure:audit10-v011
+// The P85 centroid numbers are read from the committed report (not hardcoded) so this poster cannot drift when
+// the checkpoint is re-run -- exactly the staleness an external audit caught in a hand-baked figure.
+import { readFileSync } from "node:fs";
+const p85 = JSON.parse(readFileSync("reports/p85-contaminant-fit.json", "utf8")).headline as { planetFalseReject: string; blendCaught: string; blendContaminantFitRateAmongViable: string };
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 let texts = 0;
 const T = (x: number, y: number, s: string, size = 15, fill = "#e8ecf7", weight = "400") => {
@@ -42,8 +46,8 @@ let rt = card(664, 96, 512, 220) + T(686, 126, "This pass", 18, "#5aa9ff", "800"
 rt += T(686, 156, "#7 residual: abuse-brake counters moved to a DO", 13.5, "#e8ecf7", "600");
 rt += T(702, 176, "global across isolates, fail-open fallback (34e93b8).", 12.5, "#9fb0d6");
 rt += T(686, 206, "P85: faithful per-contaminant centroid F-test", 13.5, "#e8ecf7", "600");
-rt += T(702, 226, "planet false-reject 1/53, blend catch 0/56, a", 12.5, "#9fb0d6");
-rt += T(702, 244, "neighbour fits 54/56 -- power is coverage-bound.", 12.5, "#9fb0d6");
+rt += T(702, 226, `planet false-reject ${p85.planetFalseReject}, blend catch ${p85.blendCaught},`, 12.5, "#9fb0d6");
+rt += T(702, 244, `neighbour fits ${p85.blendContaminantFitRateAmongViable} -- power is coverage-bound.`, 12.5, "#9fb0d6");
 rt += T(686, 276, "Released v0.1.1; deployed version c9af4564", 13.5, "#e8ecf7", "600");
 rt += T(686, 298, "CODE_VERSION now space-data-rig@0.1.1", 12.5, "#9fb0d6");
 

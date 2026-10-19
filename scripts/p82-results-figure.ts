@@ -68,7 +68,7 @@ const foot = `<rect x="28" y="358" width="1144" height="278" rx="16" fill="#0e14
   + T(50, 426, "Sample size scales: ~20 hand-picked targets (P77/P78/P80) -> hundreds per probe here, from one", 14)
   + T(50, 448, "resumable, concurrent, byte-cached engine on real public data. Error bars shrink accordingly.", 14)
   + T(50, 486, "The hard walls do not scale away: accepted precision stays ~42% (coherent systematics recur across", 14)
-  + T(50, 508, "sectors), the strict external grade stays tiny, and the centroid blend-catch is 0/56 -- so the next", 14)
+  + T(50, 508, "sectors), the strict external grade stays tiny, and the centroid blend-catch is 0/59 -- so the next", 14)
   + T(50, 530, "real gains are in the pixel baseline (WCS / centroid precision / sector alignment), not a bigger N.", 14)
   + T(50, 574, "Measure-only: safeToGate false, discoveryClaim false. Full numbers: reports/p82-scaled.{md,json} and reports/p84-centroid-diagnosis.{md,json}.", 12, "#9fb0d6")
   + T(50, 600, "Reproduce: npm run p82:scaled -- --probe report ; npm run p84:centroid-diagnosis", 12, "#9fb0d6");

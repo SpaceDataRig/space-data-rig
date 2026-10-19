@@ -42,14 +42,24 @@ for (const [a, b] of shipped) {
   yy += 32;
 }
 
+// P82/P85 numbers are read from the committed reports, not hardcoded, so this poster cannot carry a stale value
+// (an external audit caught a hand-baked figure still printing the pre-coordinate-fix 182/234 and 0/56).
+import { readFileSync } from "node:fs";
+const _p82 = JSON.parse(readFileSync("reports/p82-scaled.json", "utf8")) as {
+  blind: { recall: number; acceptedPrecision: number };
+  external: { kp: { tested: number; validated: number; grade: number }; cp: { tested: number; validated: number; grade: number } };
+};
+const _p85 = JSON.parse(readFileSync("reports/p85-contaminant-fit.json", "utf8")) as { headline: { planetFalseReject: string; blendCaught: string } };
+const pc = (x: number) => (100 * x).toFixed(1) + "%";
+
 // Right-top: P82 results
 let rt = card(664, 96, 512, 200) + T(686, 128, "P82 scaled validation (real data)", 18, "#5aa9ff", "800");
 rt += T(686, 158, "Blind 425 curves (181 injected):", 14, "#9fb0d6", "600");
-rt += T(686, 180, "recall 86.2%   accepted precision 42.2%", 15);
+rt += T(686, 180, `recall ${pc(_p82.blind.recall)}   accepted precision ${pc(_p82.blind.acceptedPrecision)}`, 15);
 rt += T(686, 210, "External blind validation (ephemeris never fed):", 14, "#9fb0d6", "600");
-rt += T(686, 232, "KP 182/234   CP 104/179   strict grade 1/234 & 5/179", 15);
+rt += T(686, 232, `KP ${_p82.external.kp.validated}/${_p82.external.kp.tested}   CP ${_p82.external.cp.validated}/${_p82.external.cp.tested}   strict grade ${_p82.external.kp.grade}/${_p82.external.kp.tested} & ${_p82.external.cp.grade}/${_p82.external.cp.tested}`, 15);
 rt += T(686, 262, "Centroid F-test on 500 targets (P85):", 14, "#9fb0d6", "600");
-rt += T(686, 284, "planet false-reject 1/53   blend catch 0/56", 15);
+rt += T(686, 284, `planet false-reject ${_p85.headline.planetFalseReject}   blend catch ${_p85.headline.blendCaught}`, 15);
 
 // Right-bottom: honestly open / blocked
 let rb = card(664, 312, 512, 254) + T(686, 344, "Honestly open", 18, "#f5b544", "800");

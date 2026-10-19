@@ -55,7 +55,7 @@ rb += T(706, 520, "No production threshold moved, no verdict", 13, "#9fb0d6");
 rb += T(706, 538, "flipped, no historical bundleHash altered,", 13, "#9fb0d6");
 rb += T(706, 556, "no money path touched.", 13, "#9fb0d6");
 rb += T(690, 596, "The ceilings stand as reported:", 14, "#9fb0d6", "600");
-rb += T(690, 620, "42% accepted precision  |  centroid 0/56 blends", 15, "#e8ecf7", "700");
+rb += T(690, 620, "42% accepted precision  |  centroid 0/59 blends", 15, "#e8ecf7", "700");
 rb += T(690, 648, "safeToGate false   discoveryClaim false", 14, "#9fb0d6", "700");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`

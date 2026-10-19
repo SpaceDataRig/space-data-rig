@@ -5,6 +5,27 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A candidate-level scrambled false-alarm null, and the completeness/reliability gate it reads off real data (2026-10-19, ninth pass)
+`src/detect/falseAlarmNull.ts` (8 offline behavioural tests) gives the rig, for the first time, a CANDIDATE-level
+false-alarm POPULATION and the LEO-Vetter joint objective `sqrt((1-C)^2 + (1-R_FA)^2)` scored against it --
+completeness on injected planets, reliability against time-scrambled TCEs. It reuses the repo's two existing nulls
+where they belong (`fap.ts` per-candidate phase-scrambling FAP, `invertedNull.ts` inversion) and adds what neither
+is: a shuffled curve (permute the flux among fixed cadences) keeps the exact amplitude distribution but destroys
+any phase-coherent transit, so every surviving BLS peak is a false alarm by construction. `scrambleFlux` ships a
+`shuffle` mode (LEO-Vetter's) and a `block` mode that preserves short-range correlation; the tests pin that both
+really break a transit's stacking -- the documented trap where a circular time-shift would NOT.
+
+`scripts/p92-scrambled-fa.ts` measures it on 10 real TESS-SPOC curves (50 injected transits, 57 scrambled TCEs). The
+joint objective has a genuine interior minimum at BLS **SNR >= 22 (C = 88.0%, R_FA = 78.6%)**; a pure-noise-amplitude
+scrambled null still pushes 21.1% of spurious peaks past that gate (median BLS SNR 10.8). That is the same lesson
+P23 / P39 taught -- a fixed noise-SNR gate is nowhere near enough against a real-noise false-alarm population -- now
+quantified at the candidate level. Honest limits recorded in `reports/p92-scrambled-fa.md`: n = 10 is a method
+demonstration not a production threshold; shuffle whitens the noise colour so this is the look-elsewhere / outlier
+false-alarm FLOOR, complementary to the AR(1) and coherent-systematic nulls; the inverted arm yielded 0 transit-like
+false alarms, itself consistent with LEO-Vetter finding inversion the weaker surrogate. Completeness is scored at the
+injected ephemeris (narrow BLS grid at the truth period) to stay immune to host-planet contamination. Nothing wired
+into the critic or the money path; discoveryClaim / safeToGate false; RESEARCH section 31 documents it.
+
 ### A stale report blocked the library, and reproducing it nearly broke the documents that cite it (2026-10-18, eighth pass)
 `npm run p86:report-library` exited non-zero: `p41-longbaseline` was flagged STALE because `61d7c68` changed
 `src/detect/bls.ts`, one of its recorded inputs. The gate worked -- it was saying the published completeness table had

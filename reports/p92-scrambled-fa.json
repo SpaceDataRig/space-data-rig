@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p92-scrambled-fa.ts",
+    "nCurves": 10,
+    "perCurve": 3,
+    "maxSectors": 1,
+    "seed": 7,
+    "injectPeriodDays": 3,
+    "depthsPpm": [
+      300,
+      500,
+      1000,
+      2000,
+      4000
+    ],
+    "thresholds": [
+      5,
+      8,
+      10,
+      12,
+      15,
+      18,
+      22,
+      26,
+      30,
+      35,
+      40
+    ],
+    "blsGrid": {
+      "minPeriodDays": 1.5,
+      "maxPeriodDays": 13,
+      "oversample": 8
+    },
+    "data": "real TESS-SPOC PDCSAP light curves (token-free public S3); injected transits for completeness, time-scrambled and inverted curves for the false-alarm nulls",
+    "note": "LEO-Vetter-style candidate-level null: completeness C on injected planets, reliability against false alarms R_FA on the scrambled population, joint objective sqrt((1-C)^2+(1-R_FA)^2) minimised over the BLS-SNR gate; scrambled vs inverted false-alarm survivors reported side by side (LEO-Vetter found inversion the weaker null: scattered-light ramps are asymmetric under reflection). Measures only; wires nothing; discoveryClaim false."
+  },
+  "summary": {
+    "optimumThresholdSnr": 22,
+    "completenessC": 0.88,
+    "reliabilityRFA": 0.7857142857142857,
+    "jointObjective": 0.24559797911818976,
+    "nInjections": 50,
+    "nScrambled": 57,
+    "nInverted": 0,
+    "scrambledSurvivorsAtOpt": 12,
+    "invertedSurvivorsAtOpt": 0,
+    "scrambledSurvivalRate": 0.21052631578947367,
+    "invertedSurvivalRate": null,
+    "scrambledMedianSnr": 10.847927474582729,
+    "invertedMedianSnr": null,
+    "meanScrambledSnr": 175.95791278137543,
+    "meanInvertedSnr": null
+  },
+  "sweep": [
+    {
+      "threshold": 5,
+      "c": 1,
+      "rFa": 0.47619047619047616,
+      "objective": 0.5238095238095238
+    },
+    {
+      "threshold": 8,
+      "c": 1,
+      "rFa": 0.5376344086021505,
+      "objective": 0.4623655913978495
+    },
+    {
+      "threshold": 10,
+      "c": 1,
+      "rFa": 0.6024096385542169,
+      "objective": 0.3975903614457831
+    },
+    {
+      "threshold": 12,
+      "c": 1,
+      "rFa": 0.6666666666666666,
+      "objective": 0.33333333333333337
+    },
+    {
+      "threshold": 15,
+      "c": 0.96,
+      "rFa": 0.7384615384615385,
+      "objective": 0.2645796040209927
+    },
+    {
+      "threshold": 18,
+      "c": 0.94,
+      "rFa": 0.7580645161290323,
+      "objective": 0.24926447471687435
+    },
+    {
+      "threshold": 22,
+      "c": 0.88,
+      "rFa": 0.7857142857142857,
+      "objective": 0.24559797911818976
+    },
+    {
+      "threshold": 26,
+      "c": 0.86,
+      "rFa": 0.7818181818181819,
+      "objective": 0.25923600402938624
+    },
+    {
+      "threshold": 30,
+      "c": 0.8,
+      "rFa": 0.7692307692307693,
+      "objective": 0.30537589601968007
+    },
+    {
+      "threshold": 35,
+      "c": 0.76,
+      "rFa": 0.76,
+      "objective": 0.33941125496954283
+    },
+    {
+      "threshold": 40,
+      "c": 0.72,
+      "rFa": 0.75,
+      "objective": 0.3753664875824692
+    }
+  ],
+  "verdict": "C/R-OPTIMISED",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

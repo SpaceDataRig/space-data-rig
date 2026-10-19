@@ -1073,5 +1073,35 @@ applied it to numbers our own pipeline measured on real TESS-SPOC photometry:
 
 ---
 
+## 31. A candidate-level scrambled false-alarm null and the completeness/reliability gate it implies (P92)
+
+The field's 2025 reference vetter, LEO-Vetter (Kunimoto et al. 2025, ApJ), tunes its flux-level thresholds by
+minimising sqrt((1-C)^2 + (1-R_FA)^2) -- completeness on injected planets against reliability on a time-SCRAMBLED
+false-alarm population -- and shows scrambling is the honest surrogate where INVERSION is not (orbit-start
+scattered-light ramps are asymmetric under reflection; flares invert into dips). We had a per-candidate
+phase-scrambling FAP (`src/detect/fap.ts`) and an inversion null (`src/detect/invertedNull.ts`) but no
+CANDIDATE-level false-alarm population scored jointly with completeness. `src/detect/falseAlarmNull.ts` (8 offline
+tests) adds exactly that; `scripts/p92-scrambled-fa.ts` measures it on real TESS-SPOC photometry.
+
+- **Measured (10 real curves, 50 injected transits, 57 scrambled TCEs).** The joint objective has a genuine interior
+  minimum at a BLS SNR of **22 (C = 88.0%, R_FA = 78.6%, objective = 0.246)**; completeness runs 100% -> 72% as the
+  gate climbs 5 -> 40 while reliability rises 48% -> ~76%. The amplitude-preserving scrambled null -- a pure noise
+  population by construction -- still pushes **21.1% of its spurious peaks past SNR 22** (median BLS SNR 10.8). This
+  is the same lesson P23 / P39 taught at the significance level: a fixed noise-SNR gate (production minSnr = 7) is
+  nowhere near enough once a blind search's look-elsewhere across the period grid is charged against a real-noise
+  false-alarm population.
+- **Honest boundaries.** n = 10 curves demonstrates the METHOD, not a production threshold. Shuffle-scrambling
+  whitens the noise colour, so this measures the look-elsewhere / outlier false-alarm FLOOR, complementary to the
+  AR(1)-model null (`significance.ts`) and the coherent-systematic null (`instrumentalNull.ts`) -- it is not a
+  substitute for either. The inverted arm yielded **0** transit-like false alarms on this sample, which is itself
+  consistent with LEO-Vetter's finding that inversion is the weaker surrogate. Completeness is scored at the
+  injected ephemeris (a narrow BLS grid at the truth period) to stay immune to the host-planet contamination that
+  biases an argmax-only recovery. Measure-only; wires nothing into the critic or the money path; discoveryClaim and
+  safeToGate stay structurally false. `reports/p92-scrambled-fa.{md,json}`.
+
+Reproduce: `npm run p92:scrambled-fa -- --targets 10 --perCurve 3 --maxsectors 1 --seed 7`.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

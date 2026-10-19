@@ -136,6 +136,7 @@
     "p38:research-bundle": "tsx scripts/p38-research-bundle.ts",
     "p86:report-library": "tsx scripts/p86-report-library.ts",
     "p87:figures-manifest": "tsx scripts/p87-figures-manifest.ts",
+    "p92:scrambled-fa": "tsx scripts/p92-scrambled-fa.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

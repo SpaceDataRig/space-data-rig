@@ -1,6 +1,6 @@
 # P85 -- faithful per-contaminant centroid F-test (eumemic method), on the real P82 run
 
-Statistic: `src/detect/centroidFtest.ts` -- F = n(n-1)|m-s|^2 / RSS, 1"/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (`neighbourCanCauseDip`). Source: out/scaled/centroid.jsonl (500 targets).
+Statistic: `src/detect/centroidFtest.ts` -- F = n(n-1)|m-s|^2 / RSS, 1"/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (`neighbourCanCauseDip`). Source: tests/fixtures/scaled/centroid.jsonl (500 targets).
 
 ## Coverage (the honest ceiling)
 

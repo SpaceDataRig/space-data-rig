@@ -19,7 +19,7 @@ interface Row {
   pTarget: number; viableNeighbours: number; bestNeighbourP: number; falseReject: boolean; caught: boolean;
 }
 
-const CHECKPOINT = "out/scaled/centroid.jsonl";
+const CHECKPOINT = "tests/fixtures/scaled/centroid.jsonl";
 const BASE_ALPHA = 0.001; // the threshold the P82 probe ran at (matches its --alpha default)
 
 function loadRows(): Row[] {

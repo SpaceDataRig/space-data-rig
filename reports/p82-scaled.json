@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generatedAt": "2026-10-17T14:31:19.685Z",
-    "gitSha": "b185f45bb492da9be9d201edb01e051112b449e7",
+    "generatedAt": "2026-10-19T08:25:42.281Z",
+    "gitSha": "419b4219620420aa5c2410b33641148c6fe73c62",
     "inputs": [
       {
-        "path": "out/scaled/blind.jsonl",
+        "path": "tests/fixtures/scaled/blind.jsonl",
         "sha256": "5b78bce29aa6088e8fb0c230836ab784c3c09d06869c77bee6c3727a6b4f9cd5"
       },
       {
-        "path": "out/scaled/external.jsonl",
+        "path": "tests/fixtures/scaled/external.jsonl",
         "sha256": "7c0ad817ad9d0efba40d00fc71fc709e802497187cdddb2ba3b4ecb120c7d8be"
       },
       {
-        "path": "out/scaled/centroid.jsonl",
+        "path": "tests/fixtures/scaled/centroid.jsonl",
         "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
       }
     ],

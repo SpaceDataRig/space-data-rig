@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-15T11:18:32.343Z",
+  "generatedAt": "2026-10-19T08:17:48.141Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -315,15 +315,15 @@
       "auc": 0.565625
     },
     "addressable": {
-      "negatives": 8,
-      "excludedOnTargetOnly": 8,
+      "negatives": 13,
+      "excludedOnTargetOnly": 3,
       "caught": 2,
-      "vetoPower": 0.25,
+      "vetoPower": 0.15384615384615385,
       "vetoPowerCI": [
-        0.07147768885802763,
-        0.5907301208974108
+        0.04325726318273798,
+        0.4223517050863101
       ],
-      "auc": 0.7875000000000001
+      "auc": 0.7423076923076923
     },
     "caveat": "FP/EB labels mix off-target blends (catchable by localization) with on-target eclipsing binaries (not catchable), so the all-negatives power is a lower bound until the resolved-companion subset; a single known-planet false kill disqualifies the gate.",
     "safeToGate": false,
@@ -606,12 +606,295 @@
       "validated": 14,
       "kpValidated": 9,
       "cpValidated": 5,
-      "kpTricGrade": 5,
-      "cpTricGrade": 0,
+      "kpTricGrade": 6,
+      "cpTricGrade": 2,
       "cpLowOrModerate": 2,
       "falseCoincidenceBase": 0.5294117647058824
     },
     "caveat": "All re-derived from the committed P78-P81 reports; no new analysis, no hardcoded numbers. Our detector's completeness tracks the standard BLS/TCE limit (P79: TCE-accept grid cells average 74% measured completeness vs 0% for reject cells). A real per-sector blind test (P78) shows 2-sector corroboration is necessary but not sufficient (accepted precision ~47%). P80 independently validated external ExoFOP claims via a blind, ephemeris-never-fed corroboration match (0/2 -> KP 9/11 controls, CP 5/9 uncertain candidates). P81 grades those closer to TRICERATOPS (Gaia blend FPP + harmonic alias + multi-sector centroid F-test): the strict bar separates known planets (5/9 KP) from unconfirmed candidates (0/5 CP). First-order checks, not discoveries; discoveryClaim false, safeToGate false.",
+    "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "scaledValidationP82P91": {
+    "label": "the audit-10 scaled program, re-derived from the committed P82-P91 reports (this is the surface that had been frozen at P81)",
+    "scaledBlindP82": {
+      "curves": 425,
+      "injected": 181,
+      "nullCurves": 244,
+      "recall": 0.861878453038674,
+      "recallCI": [
+        0.8040515930276444,
+        0.9046633282887693
+      ],
+      "precision": 0.1440443213296399,
+      "precisionCI": [
+        0.12438864873102003,
+        0.16621634835411175
+      ],
+      "acceptedPrecision": 0.42249240121580545,
+      "acceptedUnderBar": 329,
+      "falseAccepts": 190,
+      "externalKp": "186/234",
+      "externalCp": "103/179",
+      "centroid": {
+        "planetsTestable": 55,
+        "planetFalseReject": 2,
+        "planetFalseRejectCI": [
+          1,
+          12.3
+        ],
+        "blendsTestable": 59,
+        "blendCaught": 0,
+        "blendCaughtCI": [
+          0,
+          6.1
+        ],
+        "eumemicReference": {
+          "planetFalseReject": "0/565 at p<0.001",
+          "blendCatch": "127/175 (73%); 38% within 15 arcsec"
+        }
+      },
+      "caveat": "blind test on 425 real multi-sector SPOC curves: recall 86.2% but accepted-branch precision only ~42%; 2-sector corroboration is necessary, not sufficient. The centroid 0/59 blend-catch is the PIXEL-BASELINE ceiling."
+    },
+    "centroidDiagnosisP84": {
+      "label": "why the centroid veto catches zero blends: coverage vs power decomposition (P84)",
+      "planetCoverageLossFrac": 0.26851851851851855,
+      "blendCoverageLossFrac": 0.7040816326530612,
+      "blendTestable": 59,
+      "blendCaught": 0,
+      "blendMedianBestNeighbourP": 0.0611,
+      "verdict": "PIXEL-BASELINE-BOUND: real blends fail two ways at once -- (A) 70% of blend targets never yield >=2 localisable sector offsets (target-pixel-cube coverage collapse), and (B) among the 59 measurable blends the F-test catches 0 because the offset cloud matches NEITHER the target (median pTarget 0.505) NOR any viable contaminant (median bestNeighbourP 0.0611), both far above alpha 0.001. Meanwhile known planets false-reject only 2/55. The F-test statistic is fine; OUR per-sector centroid localisation (WCS / centroid precision / sector alignment) is too noisy/biased to move a real blend off-target -- the audit's suspected branch. Fixing the pixel baseline has chain-wide payoff (P44/P53/P57/P59), not just this gate. Measures only.",
+      "discoveryClaim": false,
+      "safeToGate": false
+    },
+    "contaminantFitP85": {
+      "label": "contaminant-fit coverage wall: 77% of targets never localise (P85)",
+      "total": 500,
+      "testable": 114,
+      "notLocalised": 386,
+      "testablePct": 22.8,
+      "planetFalseReject": "2/55",
+      "blendCaught": "0/59",
+      "blendContaminantFitAmongViable": "49/52",
+      "discoveryClaim": false,
+      "safeToGate": false
+    },
+    "independentCorroborationP88": {
+      "label": "independent corroboration 2x2 on a labelled set (P88)",
+      "n": 17,
+      "cm": {
+        "trueVeto": 0,
+        "missedBlend": 10,
+        "falseVeto": 0,
+        "trueKeep": 7
+      },
+      "vetoPower": 0,
+      "falseVetoRate": 0,
+      "verdict": {
+        "safeToGate": false,
+        "reason": "zero false vetoes but veto power 0.00 (95% low 0.00) is below target 0.5 / not above chance 0.5 -- safe but under-powered",
+        "auc": null
+      },
+      "safeToGate": false,
+      "discoveryClaim": false
+    },
+    "multiepochDiP89": {
+      "label": "multi-epoch difference-imaging 2x2 (P89)",
+      "n": 5,
+      "cm": {
+        "trueVeto": 0,
+        "missedBlend": 3,
+        "falseVeto": 2,
+        "trueKeep": 0
+      },
+      "vetoPower": 0,
+      "falseVetoRate": 1,
+      "verdict": {
+        "safeToGate": false,
+        "reason": "2 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
+        "auc": 0
+      },
+      "safeToGate": false,
+      "discoveryClaim": false
+    },
+    "depthEstimatorsP90": {
+      "label": "measured vs catalogued transit depth across independent estimators (P90)",
+      "matched": 16,
+      "usable": 16,
+      "maxSectors": 3,
+      "summary": {
+        "boxMedianSignedErrPct": -35.4446867139151,
+        "boxMedianAbsErrPct": 36.67750339385802,
+        "perSectorMedianSignedErrPct": -26.16249963274827,
+        "perSectorMedianAbsErrPct": 44.15598806883628,
+        "publishedMedianSignedErrPct": -26.16249963274827,
+        "publishedMedianAbsErrPct": 33.01843258440082,
+        "boxWins": 8,
+        "perSectorWins": 8,
+        "errorBar": {
+          "note": "empirical coverage radii of the relative depth error against the archive, same period-matched rows; a median absolute error covers half the rows and is NOT a 1-sigma bar",
+          "published": {
+            "medianAbsPct": 33.01843258440082,
+            "r68Pct": 47.968938044751454,
+            "r95Pct": 104.44731292998998,
+            "kTo68": 1.4527927066838973,
+            "worstPct": 188.85930313767477
+          },
+          "box": {
+            "medianAbsPct": 36.67750339385802,
+            "r68Pct": 47.09758453197863,
+            "r95Pct": 116.39204761343964,
+            "kTo68": 1.2841000660875286,
+            "worstPct": 236.838041845745
+          },
+          "perSector": {
+            "medianAbsPct": 44.15598806883628,
+            "r68Pct": 72.86039517580691,
+            "r95Pct": 145.08515834197797,
+            "kTo68": 1.6500682775396704,
+            "worstPct": 188.85930313767477
+          },
+          "adoptedRelativeToBar": 0.5,
+          "n": 16
+        },
+        "signTestP": 1,
+        "boundSweep": [
+          {
+            "factor": 1.2,
+            "adopted": 4,
+            "medAbsErrPct": 35.4446867139151,
+            "boxWins": 15
+          },
+          {
+            "factor": 1.5,
+            "adopted": 7,
+            "medAbsErrPct": 35.17997964224582,
+            "boxWins": 14
+          },
+          {
+            "factor": 2,
+            "adopted": 11,
+            "medAbsErrPct": 32.3979811827437,
+            "boxWins": 13
+          },
+          {
+            "factor": 3,
+            "adopted": 13,
+            "medAbsErrPct": 33.01843258440082,
+            "boxWins": 11
+          },
+          {
+            "factor": 5,
+            "adopted": 13,
+            "medAbsErrPct": 33.01843258440082,
+            "boxWins": 11
+          },
+          {
+            "factor": 10,
+            "adopted": 15,
+            "medAbsErrPct": 39.31301590747114,
+            "boxWins": 9
+          },
+          {
+            "factor": 1000,
+            "adopted": 16,
+            "medAbsErrPct": 44.15598806883628,
+            "boxWins": 8
+          }
+        ],
+        "guardBetter": true,
+        "adopted": 13,
+        "refused": 3,
+        "adoptedWorseThanBox": 5,
+        "refusalsWhereBoxWasCloser": 3
+      },
+      "discoveryClaim": false
+    },
+    "claimProvenanceP91": {
+      "label": "claim-vs-primary provenance audit: does the resolved primary say what the post claims (P91)",
+      "mode": "live",
+      "axes": [
+        "subject",
+        "recency",
+        "attribution",
+        "band",
+        "corroboration"
+      ],
+      "controls": {
+        "rows": 5,
+        "withExpectations": 5,
+        "passed": 5,
+        "failed": []
+      },
+      "stamp": true,
+      "discoveryClaim": false
+    },
+    "caveat": "All re-derived from the committed P82-P91 report JSON; no new analysis, no hardcoded numbers. The negative results (veto power 0.00 / coverage collapse / a known-planet false veto) are reported as measured and kept off every gate.",
+    "safeToGate": false,
+    "discoveryClaim": false
+  },
+  "validationBuildP92P96": {
+    "label": "the statistical-validation build (authority roadmap P92-P96), re-derived from committed reports",
+    "scrambledFaP92": {
+      "optimumThresholdSnr": 22,
+      "completenessC": 0.88,
+      "reliabilityRFA": 0.7857142857142857,
+      "jointObjective": 0.24559797911818976,
+      "nInjections": 50,
+      "nScrambled": 57,
+      "nInverted": 0,
+      "scrambledSurvivorsAtOpt": 12,
+      "invertedSurvivorsAtOpt": 0,
+      "scrambledSurvivalRate": 0.21052631578947367,
+      "invertedSurvivalRate": null,
+      "scrambledMedianSnr": 10.847927474582729,
+      "invertedMedianSnr": null,
+      "meanScrambledSnr": 175.95791278137543,
+      "meanInvertedSnr": null
+    },
+    "fpTaxonomyP93": {
+      "planetValidated": 48,
+      "planetN": 48,
+      "ebFamilyRejected": 191,
+      "ebFamilyN": 192,
+      "blendedPlanetsMisvalidated": 96,
+      "blendedPlanetsN": 96
+    },
+    "unifiedCatalogP95": {
+      "blindRecoveredKnown": 8,
+      "recoveredAtOperatingThreshold": 5,
+      "nHosts": 12
+    },
+    "occurrenceKernelP96": {
+      "selectionIntegralS": 0.09950096821827054,
+      "box": {
+        "periodLo": 1,
+        "periodHi": 9.5,
+        "radiusFloorEarth": 1.5429069965490467,
+        "periodOverlap": 0.6619115405487862
+      },
+      "forwardModel": {
+        "nStars": 12,
+        "etaBox": 0.7281026946036648,
+        "expected": 0.8693630769047567,
+        "bandLo": 0.7429102657186102,
+        "bandHi": 0.9958158880909032
+      },
+      "observed": {
+        "recoveredKnownHosts": 8,
+        "consistency": {
+          "z": 2.0867163075235395,
+          "note": "observed 8 vs expected 0.87: 2.09 sigma, 2-3 sigma (tension)"
+        }
+      },
+      "naiveInvertedEtaNotAMeasurement": {
+        "eta": 6.700102306584914,
+        "lo": 3.901789358592947,
+        "hi": 9.625614480819229
+      },
+      "verdict": "KERNEL-CONSISTENT"
+    },
+    "caveat": "candidate-level scrambled false-alarm null + joint C/R (P92); labelled FP taxonomy + flux-validation ROC (P93); bounded unified catalogue + known-planet recovery (P95); occurrence kernel + measured selection integral S (P96). No inverted rate is claimed; all research-only.",
     "safeToGate": false,
     "discoveryClaim": false
   },

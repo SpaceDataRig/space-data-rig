@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-10-17T14:31:21.174Z",
-    "gitSha": "b185f45bb492da9be9d201edb01e051112b449e7",
+    "generatedAt": "2026-10-19T08:25:43.953Z",
+    "gitSha": "419b4219620420aa5c2410b33641148c6fe73c62",
     "inputs": [
       {
-        "path": "out/scaled/centroid.jsonl",
+        "path": "tests/fixtures/scaled/centroid.jsonl",
         "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
       }
     ],
-    "generatedFrom": "out/scaled/centroid.jsonl",
+    "generatedFrom": "tests/fixtures/scaled/centroid.jsonl",
     "rows": 500,
     "statistic": "eumemic per-contaminant multi-sector centroid F-test (src/detect/centroidFtest.ts)",
     "baseAlpha": 0.001

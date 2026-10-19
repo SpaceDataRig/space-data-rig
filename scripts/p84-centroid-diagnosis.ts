@@ -26,7 +26,7 @@ function arg(name: string, dflt: string): string {
   return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith("--") ? process.argv[i + 1] : dflt;
 }
 const ALPHA = Number(arg("alpha", "0.001"));
-const CHECKPOINT = arg("checkpoint", "out/scaled/centroid.jsonl");
+const CHECKPOINT = arg("checkpoint", "tests/fixtures/scaled/centroid.jsonl");
 
 interface Rec { tic: number; toi: string; label: string; nUsed: number; testable: boolean; pTarget: number; viableNeighbours: number; bestNeighbourP: number; falseReject: boolean; caught: boolean; }
 

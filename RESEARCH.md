@@ -23,9 +23,12 @@ disprove itself. This report is what the self-criticism measured:
 - The false positives that *survive* that filter are dominated by **coherent instrumental systematics** - a dip or
   spike shared across many stars at one cadence, which no single-star noise null can represent. Putting the measured
   common-mode template **into** the null and bounding the ensemble with Benjamini-Hochberg FDR cuts the real-data
-  false-positive rate from **72.5% to 17.5% (-76%)** at N=40 (P39) while a positive control shows the corrected
-  pipeline still recovers **100%** of injected planets at **0% extra cost**; a dedicated safety calibration (P40)
-  measures the new gate declining **0 of 40** real detections before it is ever offered to production.
+  false-positive rate from **61.0% to 16.0% (-74%)** at N=200 (P39). The interesting part is the price: that win
+  lives on the *un-subtracted* data, where the coherent-template null keeps only **3 of 17 (~18%)** injected planets -
+  the FP cut is paid for in completeness. In the intended subtract-then-gate posture the correction (not the null)
+  still recovers **100%** of injected planets at **0% extra FP cost**, and P42 shows the null then adds nothing
+  further; a dedicated safety calibration (P40) measures the new gate declining **0 of 40** real detections before it
+  is ever offered to production.
 - We **measured** the compute cost of scaling: detector time grows as **~(number of points)^2.94**, so a
   20,000-star, 2-sector catalog is ~22 CPU-hours - embarrassingly parallel, ~0.3 h wall-clock on a 64-way matrix.
 
@@ -254,11 +257,13 @@ expected FP count grow roughly as alpha x N, which is exactly why a big ensemble
 bound the *ensemble* false-discovery rate directly with a Benjamini-Hochberg step-up at a chosen q, independent of
 how many candidates are scanned.
 
-**Measured (P39, N=40 curves, sector 1, seed 7).** Across four stacked gates - SNR/depth/planetary-plausibility,
-then noise-FAP, then systematics-FAP, then +FDR - the false-positive rate on real curves falls **72.5% -> 17.5%
-(-76%)** once the coherent template enters the null, while the noise-only gate alone barely moves (it reproduces
-the P23/P31 result). Under the intended subtract-then-gate posture the corrected pipeline recovers **100%** of
-injected planets at **0% extra FP cost**, with a residual coherent template of only RMS 40 ppm / peak 197 ppm.
+**Measured (P39, N=200 curves, sector 1, seed 7).** Across four stacked gates - SNR/depth/planetary-plausibility,
+then noise-FAP, then systematics-FAP, then +FDR - the false-positive rate on the *un-subtracted* real curves falls
+**61.0% -> 16.0% (-74%)** once the coherent template enters the null, while the noise-only gate alone barely moves
+(it reproduces the P23/P31 result). The FP cut is not free: on this un-subtracted data only **3 of 17 (~18%)**
+injected planets survive the coherent-template gate - the false-positive win is paid for in completeness, which is
+the honest meaning of the number. Under the intended subtract-then-gate posture the correction itself keeps **100%**
+of injected planets at **0% extra FP cost**, with a residual coherent template of only RMS 46 ppm.
 
 **Safety-certified before enablement (P40, measure-before-gate, N=80).** A reject-style gate may only touch the
 money path once real samples prove it does not kill true positives. Over a 6x5 period x depth matrix, a star-specific

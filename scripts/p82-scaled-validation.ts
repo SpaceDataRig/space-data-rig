@@ -64,7 +64,7 @@ const ALPHA = num("alpha", 0.001);
 const CENSUS_ARCSEC = num("census-arcmin", 2) * 60;
 const SEED = Math.round(num("seed", 7));
 const RESUME = num("resume", 1) >= 1;
-const OUT = "out/scaled";
+const OUT = arg("checkpoint-dir", "out/scaled"); // --probe report can read committed fixtures via --checkpoint-dir tests/fixtures/scaled
 const minPeriod = 1, maxPeriod = 15;
 
 function mulberry32(a: number) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

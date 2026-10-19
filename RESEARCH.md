@@ -1103,5 +1103,35 @@ Reproduce: `npm run p92:scrambled-fa -- --targets 10 --perCurve 3 --maxsectors 1
 
 ---
 
+## 32. A labelled false-positive taxonomy and the flux-validation ROC it measures (P93)
+
+The field's statistical-validation machinery (RAVEN, Hadjigeorghiou+ 2025 MNRAS; LEO-Vetter, Kunimoto+ 2025 ApJ;
+TRICERATOPS, Giacalone+ 2020 ApJ) is trained and scored against a physical false-positive taxonomy -- a transiting
+planet (positive control) plus the eclipsing-binary family (EB, HEB, BEB, NEB) and the blended-planet family (HTP,
+NTP) -- and collapses its discriminants into one planet posterior cut at > 0.99. The rig had the ANALYSIS side of
+this (secondary-eclipse / odd-even discriminants in `src/detect/vetting.ts`, a neighbour blend FPP in
+`falsePositiveProbability.ts`, an alias grader in `triceratopsLite.ts`) but NO generator and NO combiner, so it had
+never measured "which FP classes a flux posterior can actually reject." `src/sim/falsePositiveTaxonomy.ts` (7 offline
+tests) is the missing generator -- it synthesises the labelled family onto real curves and pins the load-bearing
+physics: an EB carries a phase-0.5 secondary that survives dilution as a fixed ratio, a planet carries none, and a
+blended planet is flux-DEGENERATE with an on-target planet. `src/candidate/validationPosterior.ts` (7 offline tests) is
+the combiner -- a transparent additive-log-odds likelihood ratio that rewards a clean measured secondary, punishes a
+comparable one, and refuses to count an UNDETERMINED discriminant as planet evidence (so a too-shallow signal stays
+uncertain, never falsely validated). `scripts/p93-fp-taxonomy.ts` scores them on 12 committed byte-exact real SPOC
+fixtures (48 injections per class, flux-only arm, conditioned on the correct ephemeris).
+
+- **Measured.** Positive control (planet) validated 48/48 = 100%; the eclipsing-binary family rejected via its
+  secondary 191/192 = 99%; blended planets (HTP/NTP) mis-validated 96/96 = 100%. The last number is the honest point
+  of the whole study, not a failure: a diluted planet-shaped blend has no secondary and no resolvable neighbour, so
+  FLUX ALONE cannot separate it from a real transit -- only pixel/centroid vetting (P53 / P58 / P89) can break that
+  degeneracy, and those studies measure it as not yet safe to gate. A flux posterior is a real but PARTIAL step.
+- **Kept strictly research-only.** Neither module is wired into the critic, the verdict, the bundle hash, or any
+  money path; every coefficient is a stated assumption, not fitted here. `discoveryClaim` and `safeToGate` stay
+  structurally false. `reports/p93-fp-taxonomy.{md,json}`.
+
+Reproduce: `npm run p93:fp-taxonomy -- --perClassTrials 4 --prior 0.5 --minSnr 7`.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

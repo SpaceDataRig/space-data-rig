@@ -5,6 +5,23 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### A labelled false-positive taxonomy and the flux-validation ROC it measures (2026-10-19, tenth pass)
+The rig could analyse false positives (secondary-eclipse / odd-even discriminants, a neighbour blend FPP, an alias
+grader) but had never GENERATED the labelled family the field trains and scores on, nor COMBINED its discriminants
+into a single posterior. `src/sim/falsePositiveTaxonomy.ts` (7 offline tests) synthesises the physical FP taxonomy --
+planet, EB, HEB, BEB, NEB (the eclipsing-binary family) and HTP, NTP (blended planets) -- onto real curves; the tests
+pin the load-bearing physics: an EB carries a phase-0.5 secondary that survives dilution as a fixed ratio, a planet
+carries none, and a blended planet is flux-degenerate with an on-target planet. `src/candidate/validationPosterior.ts`
+(7 offline tests) folds the repo's own discriminants into one additive-log-odds planet posterior and applies the
+field's > 0.99 validate norm; crucially an UNDETERMINED discriminant contributes nothing, so a too-shallow signal
+stays uncertain and is never falsely validated. `scripts/p93-fp-taxonomy.ts` scores them on 12 committed byte-exact
+real SPOC fixtures (48 injections per class, flux-only arm, conditioned on the correct ephemeris): positive control
+validated 48/48 (100%), EB-family rejected via its secondary 191/192 (99%), blended planets HTP/NTP mis-validated
+96/96 (100%) -- the last being the honest point, not a failure: flux ALONE cannot separate a diluted planet-shaped
+blend from a real transit; only pixel/centroid vetting (P53 / P58 / P89) breaks that degeneracy. Neither module is
+wired into the critic, verdict, bundle hash, or money path; discoveryClaim / safeToGate false; RESEARCH section 32
+documents it. `reports/p93-fp-taxonomy.{md,json}`.
+
 ### A candidate-level scrambled false-alarm null, and the completeness/reliability gate it reads off real data (2026-10-19, ninth pass)
 `src/detect/falseAlarmNull.ts` (8 offline behavioural tests) gives the rig, for the first time, a CANDIDATE-level
 false-alarm POPULATION and the LEO-Vetter joint objective `sqrt((1-C)^2 + (1-R_FA)^2)` scored against it --

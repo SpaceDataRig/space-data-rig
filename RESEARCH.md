@@ -1133,5 +1133,34 @@ Reproduce: `npm run p93:fp-taxonomy -- --perClassTrials 4 --prior 0.5 --minSnr 7
 
 ---
 
+## 33. Running the field's actual vetter on our fixtures (P94 / benchmark-vs-field)
+
+RESEARCH section 4c has been the roadmap's hardest gap: the rig's VETTING was always scored against our OWN
+re-implementations (`validationPosterior.ts`, `falseAlarmNull.ts`, `triceratopsLite.ts`), never against the field's
+published reference system. Priority 1 closes that by running LEO-Vetter (Kunimoto et al. 2025, AJ 170, 280) -- the
+2025 reference flux/pixel vetter, pip-installable -- on the SAME committed byte-exact real-curve fixtures.
+
+- **`scripts/p94-stellar-params.ts`** sources the stellar parameters LEO-Vetter's `compute_flux_metrics` requires
+  ({Teff, radius, mass, density, logg}) from the SAME NASA Exoplanet Archive TAP the pipeline already trusts, picks
+  one row per host deterministically (the innermost confirmed planet's published parameters -- pscomppars lists a
+  star once per planet, and that ambiguity is exactly what churned p60), derives rho = mass/radius^3 from the same
+  catalog mass and radius, and commits it to `tests/fixtures/spoc-curves/stellar-params.json` with full provenance
+  (3 offline schema tests guard it). Limb darkening is NOT fabricated: LEO-Vetter's own `stellar.quadratic_ldc`
+  interpolates Claret (2021) tables from the real Teff/logg. The committed CSVs are untouched -- only the new
+  star-params file is added.
+- **`scripts/benchmark_vs_field.py`** (CI-only, runs in `crosscheck-python.yml` after the detection harness so a
+  dependency resolution cannot disturb it) feeds the fixtures + that stellar dictionary to LEO-Vetter: injected
+  planets across a depth grid give its Planet-Candidate COMPLETENESS (clearing both check_thresholds("FA") and
+  ("FP")), and an injected equal-brightness eclipsing binary gives its false-positive FLAG rate. Every cell is
+  individually guarded; the whole package import is guarded; the script ALWAYS exits 0 -- an honest
+  LEO-VETTER-MISSING report beats a masked null, and this arm can never redden CI.
+
+The measured LEO-Vetter numbers are published by the CI run into `reports/crosscheck/benchmark-vs-field.{md,json}`
+(read them there -- they are CI-measured, not asserted here) and sit beside p92's injected-planet completeness and
+p93's flux-posterior ROC on identical inputs. Nothing is wired into the critic or the money path; discoveryClaim and
+safeToGate stay false.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

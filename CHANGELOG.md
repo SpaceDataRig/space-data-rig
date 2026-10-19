@@ -5,6 +5,21 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Running the field's actual reference vetter (LEO-Vetter) on our fixtures -- closing the benchmark gap (2026-10-19, eleventh pass)
+RESEARCH section 4c: the rig's vetting had only ever been scored against our own re-implementations. Priority 1 runs
+the field's published 2025 vetter, LEO-Vetter (Kunimoto+ 2025, AJ 170, 280), on the SAME committed real-curve
+fixtures. `scripts/p94-stellar-params.ts` sources the stellar dictionary LEO-Vetter needs (Teff/radius/mass/rho/logg)
+from the NASA Exoplanet Archive TAP the pipeline already trusts -- one deterministic row per host (innermost confirmed
+planet; pscomppars lists a star once per planet, the ambiguity that churned p60), rho derived from the same catalog
+mass/radius, committed to `tests/fixtures/spoc-curves/stellar-params.json` with provenance (3 offline schema tests); limb
+darkening is computed by LEO-Vetter's own Claret (2021) interpolator, not fabricated; the CSVs are untouched.
+`scripts/benchmark_vs_field.py` runs in `crosscheck-python.yml` AFTER the detection harness (so a dependency resolution
+cannot disturb it): injected planets -> LEO-Vetter Planet-Candidate completeness across a depth grid; an injected
+equal-brightness eclipsing binary -> its false-positive flag rate. Every cell and the package import are guarded; the
+script always exits 0, so an honest LEO-VETTER-MISSING report beats a masked null and the arm can never redden CI. The
+CI-measured numbers publish to `reports/crosscheck/benchmark-vs-field.{md,json}` and sit beside p92 completeness and p93
+ROC on identical inputs. Research-only; discoveryClaim / safeToGate false; RESEARCH section 33 documents it.
+
 ### A labelled false-positive taxonomy and the flux-validation ROC it measures (2026-10-19, tenth pass)
 The rig could analyse false positives (secondary-eclipse / odd-even discriminants, a neighbour blend FPP, an alias
 grader) but had never GENERATED the labelled family the field trains and scores on, nor COMBINED its discriminants

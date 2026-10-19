@@ -18,8 +18,9 @@ on:
     branches: [main]
     paths:
       - scripts/cross_pipeline.py
-      - .github/workflows/crosscheck-python.yml
+      - scripts/benchmark_vs_field.py
       - tests/fixtures/spoc-curves/**
+      - .github/workflows/crosscheck-python.yml
 
 permissions:
   contents: write
@@ -47,6 +48,16 @@ jobs:
 
       - name: Run cross-pipeline harness
         run: python scripts/cross_pipeline.py
+
+      # Install LEO-Vetter ONLY after the cross-pipeline harness has run, so a dependency-resolution side effect
+      # (e.g. it pulling a different numpy) cannot disturb the already-completed detection arm. A resolve/install
+      # failure is tolerated: benchmark_vs_field.py imports it guarded and, if absent, still writes an honest
+      # LEO-VETTER-MISSING report and exits 0 -- this step can never redden the job.
+      - name: Install LEO-Vetter (external reference vetter)
+        run: pip install leo-vetter || echo "leo-vetter unavailable; benchmark arm will report LEO-VETTER-MISSING"
+
+      - name: Run benchmark-vs-field (LEO-Vetter) harness
+        run: python scripts/benchmark_vs_field.py
 
       - name: Upload cross-pipeline report
         if: always()

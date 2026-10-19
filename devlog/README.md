@@ -28,6 +28,7 @@ asserts the red lines above over every entry already committed here.
 
 | date | file | subject |
 | --- | --- | --- |
+| 2026-10-19 | [2026-10-19-stale-report-rerun-rules-without-call-sites.md](2026-10-19-stale-report-rerun-rules-without-call-sites.md) | the P41 re-run at its own parameters, three rules discovered with no call site, and a wait that turned out to be a mutex defect |
 | 2026-10-18 | [2026-10-18-report-freshness-and-starved-tier.md](2026-10-18-report-freshness-and-starved-tier.md) | the freshness gate counted a timestamp as verification; the build-note tier was starved by the science tier |
 | 2026-10-18 | [2026-10-18-posting-volume-unrationed.md](2026-10-18-posting-volume-unrationed.md) | four self-imposed posting rations removed, and the science-cursor defect that removing them exposed |
 | 2026-10-18 | [2026-10-18-byte-exact-devlog-archive.md](2026-10-18-byte-exact-devlog-archive.md) | the pushed summaries archived byte-exact, two stale handoff claims corrected, and authored text now pre-flighted through the real guard |

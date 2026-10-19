@@ -1187,5 +1187,32 @@ Reproduce: `npm run p95:unified-catalog -- --perCurve 3 --seed 7 --depths 300,50
 
 ---
 
+## 35. An occurrence-rate kernel, the real selection integral, and a forward-model consistency check (P96)
+
+An occurrence rate is the number a transit survey is ultimately judged by, and the one most easily faked. Priority 5
+lands the correct MACHINERY and a genuine sensitivity measurement while REFUSING to publish a rate it cannot support.
+`src/sim/occurrenceRate.ts` (7 unit tests) is the pure kernel: Gehrels (1986) Poisson intervals on a count, the
+`eta = n / (N*S)` inversion, and the forward model `E[N] = N * eta * S` with a standardised consistency score.
+`scripts/p96-occurrence-kernel.ts` then does two things with real inputs:
+
+- **Measured selection integral.** Composing the committed P47 completeness grid (960 injections on real photometry)
+  with real Keplerian geometry, log-area-weighted over the box the pipeline actually covers, gives **S = 0.0995** --
+  the mean probability that a planet in `P in [1,9.5] d`, `Rp >~ 1.5 R_earth` (solar-twin reference) is both
+  transiting and detected. That is a real, citable sensitivity number and the honest denominator for any future rate.
+- **Forward-model consistency, not a measurement.** Pushing the field's anchor rate (Gillis et al. 2025/2026, AJ,
+  1.10 +- 0.16 planets/star, R>1 R_earth, P<30 d) through S with a log-uniform period overlap predicts ~0.87
+  transiting detections over an UNBIASED sample of 12; the pipeline recovered 8 on its deliberately planet-bearing
+  committed hosts -- a +2.1 sigma excess that IS the known bias the P47 meta warns about, and we report it as exactly
+  that. The naive inverted "eta" (6.7/star) is printed only to prove the kernel runs and is explicitly labelled NOT a
+  measurement.
+
+The scientific point is the discipline: a selection function built on bright confirmed-planet hosts cannot support a
+rate, so we measure S (real) and validate the kernel wiring + bias direction against the field, and say plainly that a
+rate needs an unbiased target list. `discoveryClaim` and `safeToGate` stay false; `reports/p96-occurrence-kernel.{md,json}`.
+
+Reproduce: `npm run p96:occurrence-kernel -- --nstars 12 --refEta 1.10 --refSigma 0.16 --refPeriodMax 30`.
+
+---
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

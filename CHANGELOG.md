@@ -5,6 +5,19 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### An occurrence-rate kernel, a real selection integral, and a forward-model consistency check that refuses to fake a rate (2026-10-19, thirteenth pass)
+Priority 5. `src/sim/occurrenceRate.ts` (7 unit tests) is the pure kernel: Gehrels (1986) Poisson intervals on a
+count, the `eta = n/(N*S)` inversion, and the forward model `E[N] = N*eta*S` with a standardised consistency score.
+`scripts/p96-occurrence-kernel.ts` composes the committed P47 completeness grid (960 injections on real photometry)
+with real Keplerian geometry to MEASURE the survey selection integral **S = 0.0995** over the box it actually covers
+(P in [1,9.5] d, Rp ~> 1.5 R_earth, solar-twin reference) -- a real, citable sensitivity number. It then FORWARD-MODELS
+the field anchor rate (Gillis et al. 2025/2026, AJ, 1.10 +- 0.16 planets/star, R>1 R_earth, P<30 d) through S: ~0.87
+expected detections over an unbiased 12-star sample vs the pipeline's recovered 8 on its deliberately planet-bearing
+hosts, a +2.1 sigma excess that IS the known selection bias, reported as such. The naive inverted eta (6.7/star) is
+printed only to prove the kernel runs and is labelled NOT a measurement -- a selection function built on confirmed-
+planet hosts cannot support a rate, and the study says so. Research-only; discoveryClaim / safeToGate false; RESEARCH
+section 35 documents it. `reports/p96-occurrence-kernel.{md,json}`.
+
 ### A bounded, citable unified catalogue with a measured known-planet recovery and a joint C/R operating point (2026-10-19, twelfth pass)
 `scripts/p95-unified-catalog.ts` assembles ONE reproducible, quotable object from committed bytes -- the byte-exact
 real SPOC fixtures, the NASA-archive stellar parameters from p94, and the P3 candidate-level null -- no network, so

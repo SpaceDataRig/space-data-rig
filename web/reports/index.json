@@ -1,16 +1,16 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-19T06:28:30.094Z",
-  "builtAtGitSha": "b1de5a52cd69cf775a1998ed026cf910ee299951",
+  "generatedAt": "2026-10-19T06:39:57.506Z",
+  "builtAtGitSha": "b60d6c1f240b5c36cceb7e79e9eea2c3ee62a0f6",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
-  "count": 53,
+  "count": 54,
   "freshness": {
     "stamped": 8,
     "verified": 3,
     "fullyVerified": 3,
-    "total": 53,
+    "total": 54,
     "stale": []
   },
   "reports": [
@@ -748,6 +748,20 @@
       "title": "P95 bounded unified catalogue and its joint completeness/reliability operating point",
       "reproduce": "npm run p95:unified-catalog -- --perCurve 3 --seed 7 --depths 300,500,1000,2000,4000",
       "summary": "A reproducible, bounded catalogue of 12 committed byte-exact real TESS-SPOC hosts, each with its NASA-archive stellar parameters, its known planet periods, the pipeline's blind best BLS SNR/period, and whether a known planet is...",
+      "fresh": true,
+      "stamped": false,
+      "verified": false,
+      "rehashed": 0,
+      "reproducible": 0,
+      "unverifiableInputs": 0,
+      "untrackedInputs": 0
+    },
+    {
+      "id": "p96-occurrence-kernel",
+      "slug": "p96-occurrence-kernel",
+      "title": "P96 occurrence-rate kernel and forward-model consistency check",
+      "reproduce": "npm run p96:occurrence-kernel -- --nstars 12 --refEta 1.1 --refSigma 0.16 --refPeriodMax 30",
+      "summary": "Real selection integral from the committed P47 grid (960 injections on real photometry) x Keplerian geometry, over P=[1,9.5] d, Rp~>1.5 R_earth (solar-twin reference):",
       "fresh": true,
       "stamped": false,
       "verified": false,

@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p96-occurrence-kernel.ts",
+    "gridSource": "reports/p47-completeness-grid.json (real, 960 injections)",
+    "referenceRate": "Gillis et al. 2025/2026, AJ (10.3847/1538-3881/ae5810): cumulative 1.10 +- 0.16 planets/star, R>1 R_earth, P<30 d",
+    "stellarReference": "solar-twin R*=M*=1 for the radius<->depth map and geometry (documented assumption, as in P54)",
+    "periodOverlapModel": "log-uniform dN/dP over [1,30] d",
+    "kernel": "src/sim/occurrenceRate.ts",
+    "note": "Selection integral + forward-model consistency check only; NOT an inverted rate measurement (biased small sample). discoveryClaim false."
+  },
+  "selectionIntegralS": 0.09950096821827054,
+  "box": {
+    "periodLo": 1,
+    "periodHi": 9.5,
+    "radiusFloorEarth": 1.5429069965490467,
+    "periodOverlap": 0.6619115405487862
+  },
+  "forwardModel": {
+    "nStars": 12,
+    "etaBox": 0.7281026946036648,
+    "expected": 0.8693630769047567,
+    "bandLo": 0.7429102657186102,
+    "bandHi": 0.9958158880909032
+  },
+  "observed": {
+    "recoveredKnownHosts": 8,
+    "consistency": {
+      "z": 2.0867163075235395,
+      "note": "observed 8 vs expected 0.87: 2.09 sigma, 2-3 sigma (tension)"
+    }
+  },
+  "naiveInvertedEtaNotAMeasurement": {
+    "eta": 6.700102306584914,
+    "lo": 3.901789358592947,
+    "hi": 9.625614480819229
+  },
+  "perPeriodBin": [
+    {
+      "periodCentre": 1.5,
+      "geo": 0.18134106311929468,
+      "meanCompleteness": 0.9375903865906173
+    },
+    {
+      "periodCentre": 3,
+      "geo": 0.11423771131715713,
+      "meanCompleteness": 0.8663472097228968
+    },
+    {
+      "periodCentre": 5.25,
+      "geo": 0.07866546748803696,
+      "meanCompleteness": 0.72428347382513
+    },
+    {
+      "periodCentre": 8,
+      "geo": 0.059406003823323,
+      "meanCompleteness": 0.43876592894763866
+    }
+  ],
+  "verdict": "KERNEL-CONSISTENT",
+  "safeToGate": false,
+  "discoveryClaim": false
+}

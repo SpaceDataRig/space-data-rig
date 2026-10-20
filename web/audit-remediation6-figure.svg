@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" font-family="'Segoe UI',Helvetica,Arial,sans-serif">
+  <rect width="1200" height="675" fill="#0b1020"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#5aa9ff"/>
+  <text x="40" y="58" font-size="29" font-weight="800" fill="#e8ecf7">SIX-POINT EXTERNAL AUDIT -- CLOSED AND DEPLOYED</text>
+  <text x="40" y="86" font-size="14" fill="#9fb0d6">spacedatarig.app -- a deterministic TESS transit research rig. Research only; each number re-derived from a committed report.</text>
+
+  <rect x="40" y="112" width="540" height="470" rx="14" fill="#0e1428" stroke="#26314f"/>
+  <text x="64" y="144" font-size="20" font-weight="800" fill="#37d39b">CLOSED THIS PASS</text>
+
+  <text x="64" y="178" font-size="14" font-weight="700" fill="#e8ecf7">#1  a withdrawn coverage-loss figure purged</text>
+  <text x="80" y="200" font-size="13" fill="#9fb0d6">from both posters; live fetch: the stale % is gone</text>
+
+  <text x="64" y="232" font-size="14" font-weight="700" fill="#e8ecf7">#3  freshness gate: stamped 8 -&gt; 12 of 54</text>
+  <text x="80" y="254" font-size="13" fill="#9fb0d6">machine-verified 6 -&gt; 8 (p48 / p93 / p95 / p96)</text>
+
+  <text x="64" y="286" font-size="14" font-weight="700" fill="#e8ecf7">#3  ExoFOP CSV fetch timeout 45s -&gt; 180s</text>
+  <text x="80" y="308" font-size="13" fill="#9fb0d6">the ~3.8 MB anonymous pull aborted the old ceiling</text>
+
+  <text x="64" y="340" font-size="14" font-weight="700" fill="#e8ecf7">#3  P76 multi-source novelty relabeled</text>
+  <text x="80" y="362" font-size="13" fill="#9fb0d6">point-in-time snapshot, not continuously re-verified</text>
+
+  <text x="64" y="394" font-size="14" font-weight="700" fill="#e8ecf7">#4  README on-chain claim bounded</text>
+  <text x="80" y="416" font-size="13" fill="#9fb0d6">trust-free = re-reading the memo; /verify is not a chain check</text>
+
+  <text x="64" y="448" font-size="14" font-weight="700" fill="#e8ecf7">#5  degenerate fits no longer "physically-consistent"</text>
+  <text x="80" y="470" font-size="13" fill="#9fb0d6">harmonics widened with x4 and x1/4 (alias caught)</text>
+
+  <text x="64" y="502" font-size="14" font-weight="700" fill="#e8ecf7">#6  candidate countdown projected from the ephemeris</text>
+  <text x="80" y="524" font-size="13" fill="#9fb0d6">the stale baked day-count is no longer read</text>
+
+  <rect x="620" y="112" width="540" height="470" rx="14" fill="#0e1428" stroke="#26314f"/>
+  <text x="644" y="144" font-size="20" font-weight="800" fill="#f5b544">STANDING LIMITS (stated, not hidden)</text>
+
+  <text x="644" y="180" font-size="13.5" fill="#9fb0d6">#5  SNR optima P92=22 and P95=15 disagree; both</text>
+  <text x="660" y="200" font-size="13.5" fill="#9fb0d6">under-powered; the deployed floor stays 7</text>
+
+  <text x="644" y="232" font-size="13.5" fill="#9fb0d6">p59 / p90 flagged STALE (red banner) pending a</text>
+  <text x="660" y="252" font-size="13.5" fill="#9fb0d6">networked re-run -- shipped marked-red, not silent</text>
+
+  <text x="644" y="284" font-size="13.5" fill="#9fb0d6">P76 ExoFOP leg not reproduced in this sandbox</text>
+  <text x="660" y="304" font-size="13.5" fill="#9fb0d6">(CSV throttled) -- treated only as point-in-time</text>
+
+  <text x="644" y="336" font-size="13.5" fill="#9fb0d6">centroid blend catch 0/59: pixel-baseline-bound,</text>
+  <text x="660" y="356" font-size="13.5" fill="#9fb0d6">not a threshold problem (P84 / P85)</text>
+
+  <text x="644" y="388" font-size="13.5" fill="#9fb0d6">accepted-call precision ~42% at 425 curves (P82);</text>
+  <text x="660" y="408" font-size="13.5" fill="#9fb0d6">the coherent-systematics wall is unchanged</text>
+
+  <text x="644" y="440" font-size="13.5" fill="#9fb0d6">crossmatch tri-state lookup on a failed catalog fetch</text>
+  <text x="660" y="460" font-size="13.5" fill="#9fb0d6">still deferred -- it would move the content address</text>
+
+  <text x="644" y="500" font-size="13" fill="#6d7fa3">Nothing here widens a gate or supports a claim.</text>
+
+  <rect x="40" y="600" width="1120" height="46" rx="10" fill="#0e1428" stroke="#26314f"/>
+  <text x="60" y="628" font-size="14" fill="#37d39b">6 -&gt; 8 machine-verified   |   12/54 stamped   |   deploy f31b87a -- /health gitSha self-proves</text>
+  <text x="640" y="628" font-size="14" fill="#9fb0d6">discoveryClaim false, safeToGate false</text>
+</svg>

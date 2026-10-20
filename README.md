@@ -24,8 +24,15 @@ narration only (about 2% of the code, and removing it changes zero verdicts -- m
   P82/P84/P85 were re-run on the **corrected sky** after an ExoFOP right-ascension unit bug
   (sexagesimal hours read as degrees) was fixed; the earlier "0/56 / 71%" figures were measured
   against the wrong field and are withdrawn (see Capability boundaries).
-- **Independently auditable.** Same manifest content -> same `scienceHash`; the timestamped
-  `bundleHash` is anchored on-chain and anyone can re-read the memo with no trust in our database.
+- **Independently auditable -- precisely bounded.** `scienceHash` is the stable content address: the same
+  science manifest -> the same `scienceHash`. `bundleHash` is a *timestamped commitment* that changes on
+  every re-seal, so the `bundleHash` written into an on-chain memo attests *that this bundle existed at
+  that time* -- it is **not** a locator for the currently-served artifact, and a reader who looks for a
+  live file by the memo's `bundleHash` will not find one. Anyone can re-read the memo text from Solana
+  with no trust in our database; that trust-freedom covers *reading the memo*, not reconciling it with the
+  site. `/api/bundles/:id/verify` re-hashes the served bytes against a served `HASH.txt` (internal
+  tamper-evidence only -- it does not query the chain, and `HASH.txt` is not on the public artifact
+  allow-list). The exact limits this leaves open are stated in Capability boundaries.
 - **Under review, and answering it.** A point-by-point ledger of the audit-10 review -- criticism,
   fix, verification, and the residual risk that remains -- is in [RESPONSE-TO-AUDIT.md](RESPONSE-TO-AUDIT.md).
 
@@ -64,6 +71,18 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
 - **The token is not part of the science.** The $SDR named-observation payment layer is an isolated
   commercialisation experiment; no verdict, `bundleHash`, `scienceHash`, or discovery claim reads from
   it. It is listed here so its presence is not mistaken for a scientific credential.
+- **Local verify is not a chain check.** `/api/bundles/:id/verify` recomputes the served manifest hash and
+  compares it to a served `HASH.txt`, then re-hashes each artifact from the store. That proves the store
+  was not edited after sealing; it does **not** read Solana. The independent chain attestation is a separate
+  keyless daily job that re-reads recent mainnet memos and matches them to their hashes -- the two checks
+  are deliberately not conflated.
+- **`bundleHash` drifts by design, and `scienceHash` can move when science is re-derived.** Because
+  `bundleHash` wraps a timestamp it differs between a ledger anchor and the bytes served today, so a
+  historical anchor is reconciled to a live artifact by `scienceHash`, never by `bundleHash`. And when a
+  finding's science is re-derived -- e.g. the RA-unit coordinate fix re-running the blend pipeline -- its
+  `scienceHash` changes too: an *earlier-anchored* finding can now read `needs-more-data` where it was
+  accepted at anchor time. We do not assert that an anchored finding's current science still equals its
+  science at anchor time; that invariant is not enforced, and is stated here rather than papered over.
 
 **Project health & governance (all verifiable, none of it a claim of size):** automated
 checks run on every push/PR ([CI](https://github.com/SpaceDataRig/space-data-rig/actions));
@@ -167,8 +186,11 @@ verifiable happens. Space Data Rig is built to be the opposite:
   on-chain memos append the `scienceHash` (verification still matches the bundle-hash
   commitment; cross-run comparison uses the content address).
 - **It is independently auditable.** The bundle hash is written to Solana mainnet inside
-  an SPL Memo transaction; anyone can re-read the chain and confirm the memo matches,
-  with no trust in our database.
+  an SPL Memo transaction; anyone can re-read the chain and confirm the memo is what we
+  posted, with no trust in our database. Read that narrowly: the memo pins *that this exact
+  timestamped bundle existed at this time*. Because a re-seal changes the bundle hash, the
+  memo is not a handle for locating today's served bytes -- you reconcile a historical anchor
+  to a live artifact through the content address (`scienceHash`), not the memo's bundle hash.
 - **It is understandable.** The reporter seat translates every finding into a sentence a
   non-specialist gets, without dropping the real numbers.
 

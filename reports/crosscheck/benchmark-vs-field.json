@@ -3,9 +3,9 @@
     "generatedBy": "scripts/benchmark_vs_field.py (CI workflow crosscheck-python.yml)",
     "externalTool": "LEO-Vetter (Kunimoto et al. 2025, AJ 170, 280)",
     "leoImport": {
-      "ok": false,
-      "version": null,
-      "error": "ModuleNotFoundError: No module named 'pandas'"
+      "ok": true,
+      "version": "1.2.0",
+      "error": null
     },
     "fixtureSeed": 7,
     "injectPeriodDays": 3.0,
@@ -20,11 +20,604 @@
     "stellarSource": "NASA Exoplanet Archive pscomppars TAP (https://exoplanetarchive.ipac.caltech.edu/TAP/sync)",
     "fluxErrAssumption": "per-curve constant = 1.4826*MAD of the wotan-detrended flux (fixtures keep only time+flux); this only scales MES, not the shape tests",
     "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing.",
-    "wallClockSec": 0.6
+    "wallClockSec": 25.8
   },
   "summary": {
-    "status": "LEO-VETTER-MISSING",
-    "note": "the pip package did not import; no external numbers are claimed."
+    "status": "RAN",
+    "curves": 12,
+    "planetCompletenessByDepth": {
+      "1000": {
+        "pc": 9,
+        "n": 12,
+        "rate": 0.75
+      },
+      "2000": {
+        "pc": 10,
+        "n": 12,
+        "rate": 0.833
+      },
+      "4000": {
+        "pc": 11,
+        "n": 12,
+        "rate": 0.917
+      },
+      "8000": {
+        "pc": 10,
+        "n": 12,
+        "rate": 0.833
+      }
+    },
+    "ebFpRejection": {
+      "flaggedFP": 11,
+      "n": 12,
+      "rate": 0.917
+    },
+    "capturedErrors": []
   },
-  "rows": []
+  "rows": [
+    {
+      "host": "HD 39091",
+      "stellar": {
+        "Teff": 5998,
+        "rad": 1.17,
+        "mass": 1.07,
+        "rho": 0.9406517054993936,
+        "logg": 4.43
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 71.37,
+          "dep": 671.9
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 142.08,
+          "dep": 1337.6
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 283.27,
+          "dep": 2666.8
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 564.61,
+          "dep": 5315.4
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 4323.6
+      },
+      "sigmaPpm": 42.14
+    },
+    {
+      "host": "HR 858",
+      "stellar": {
+        "Teff": 6354,
+        "rad": 1.258,
+        "mass": 1.204,
+        "rho": 0.8515050312449232,
+        "logg": 4.3
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 45.6,
+          "dep": 676.0
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 89.96,
+          "dep": 1333.6
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 177.0,
+          "dep": 2624.0
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 346.59,
+          "dep": 5138.2
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 4312.0
+      },
+      "sigmaPpm": 54.35
+    },
+    {
+      "host": "HD 63433",
+      "stellar": {
+        "Teff": 5688,
+        "rad": 0.912,
+        "mass": 0.99,
+        "rho": 1.8376099528599887,
+        "logg": 4.52
+      },
+      "injected": {
+        "1000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 3.02,
+          "dep": 486.4
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 6.95,
+          "dep": 1117.9
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 14.76,
+          "dep": 2374.0
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 30.33,
+          "dep": 4878.6
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3817.0
+      },
+      "sigmaPpm": 323.61
+    },
+    {
+      "host": "HD 25463",
+      "stellar": {
+        "Teff": 6353,
+        "rad": 1.4182,
+        "mass": 1.251,
+        "rho": 0.6175150141005907,
+        "logg": 4.227
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 48.11,
+          "dep": 616.4
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 96.31,
+          "dep": 1234.0
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 194.01,
+          "dep": 2485.8
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 390.98,
+          "dep": 5009.6
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3679.3
+      },
+      "sigmaPpm": 93.23
+    },
+    {
+      "host": "AU Mic",
+      "stellar": {
+        "Teff": 3540,
+        "rad": 0.862,
+        "mass": 0.635,
+        "rho": 1.3959008850918397,
+        "logg": 4.37
+      },
+      "injected": {
+        "1000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 2.16,
+          "dep": 1041.5
+        },
+        "2000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 3.43,
+          "dep": 1658.0
+        },
+        "4000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 6.01,
+          "dep": 2903.2
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 11.2,
+          "dep": 5407.3
+        }
+      },
+      "eb": {
+        "PC": true,
+        "FA": false,
+        "FP": false,
+        "dep_sec": 3363.0
+      },
+      "sigmaPpm": 1324.03
+    },
+    {
+      "host": "TOI-480",
+      "stellar": {
+        "Teff": 6174,
+        "rad": 1.4877,
+        "mass": 1.2793,
+        "rho": 0.5470524478314998,
+        "logg": 4.194
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 40.19,
+          "dep": 729.7
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 77.57,
+          "dep": 1408.4
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 151.22,
+          "dep": 2745.5
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 297.49,
+          "dep": 5401.2
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3656.3
+      },
+      "sigmaPpm": 130.98
+    },
+    {
+      "host": "GJ 143",
+      "stellar": {
+        "Teff": 4640,
+        "rad": 0.695,
+        "mass": 0.73,
+        "rho": 3.0617596911550002,
+        "logg": 4.613
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 29.06,
+          "dep": 706.4
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 57.35,
+          "dep": 1393.8
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 113.81,
+          "dep": 2766.2
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 226.3,
+          "dep": 5500.2
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": true,
+        "FP": true,
+        "dep_sec": 4315.7
+      },
+      "sigmaPpm": 97.9
+    },
+    {
+      "host": "HD 1397",
+      "stellar": {
+        "Teff": 5521,
+        "rad": 2.336,
+        "mass": 1.324,
+        "rho": 0.14624200227753548,
+        "logg": 3.823
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 6.97,
+          "dep": 625.4
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 14.57,
+          "dep": 1308.0
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 29.75,
+          "dep": 2669.5
+        },
+        "8000": {
+          "PC": false,
+          "FA": false,
+          "FP": true,
+          "MES": 59.62,
+          "dep": 5350.6
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 4275.4
+      },
+      "sigmaPpm": 97.36
+    },
+    {
+      "host": "TOI-5739",
+      "stellar": {
+        "Teff": 6104.12,
+        "rad": 1.49138,
+        "mass": 1.15,
+        "rho": 0.4881300575098448,
+        "logg": 4.15159
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 25.32,
+          "dep": 670.0
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 49.82,
+          "dep": 1318.2
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 98.11,
+          "dep": 2595.8
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 193.88,
+          "dep": 5129.7
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 4027.3
+      },
+      "sigmaPpm": 104.03
+    },
+    {
+      "host": "KELT-11",
+      "stellar": {
+        "Teff": 5375,
+        "rad": 2.69,
+        "mass": 1.44,
+        "rho": 0.10416175938187656,
+        "logg": 3.7
+      },
+      "injected": {
+        "1000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 4.21,
+          "dep": 760.3
+        },
+        "2000": {
+          "PC": false,
+          "FA": true,
+          "FP": false,
+          "MES": 7.77,
+          "dep": 1404.1
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 14.87,
+          "dep": 2685.4
+        },
+        "8000": {
+          "PC": false,
+          "FA": false,
+          "FP": true,
+          "MES": 29.02,
+          "dep": 5240.7
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3649.1
+      },
+      "sigmaPpm": 149.75
+    },
+    {
+      "host": "HD 86226",
+      "stellar": {
+        "Teff": 5863,
+        "rad": 1.053,
+        "mass": 1.019,
+        "rho": 1.2288297730906272,
+        "logg": 4.4
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 26.42,
+          "dep": 586.0
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 53.98,
+          "dep": 1197.3
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 108.81,
+          "dep": 2413.4
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 219.52,
+          "dep": 4868.7
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3712.0
+      },
+      "sigmaPpm": 141.78
+    },
+    {
+      "host": "HD 207496",
+      "stellar": {
+        "Teff": 4819,
+        "rad": 0.769,
+        "mass": 0.8,
+        "rho": 2.4769293677269015,
+        "logg": 4.507
+      },
+      "injected": {
+        "1000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 15.21,
+          "dep": 698.6
+        },
+        "2000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 30.05,
+          "dep": 1380.4
+        },
+        "4000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 59.66,
+          "dep": 2740.5
+        },
+        "8000": {
+          "PC": true,
+          "FA": false,
+          "FP": false,
+          "MES": 118.02,
+          "dep": 5421.5
+        }
+      },
+      "eb": {
+        "PC": false,
+        "FA": false,
+        "FP": true,
+        "dep_sec": 3768.6
+      },
+      "sigmaPpm": 169.93
+    }
+  ]
 }

@@ -1,6 +1,12 @@
 // Audit-10 CLOSE figure -- the "every review item is now accounted for" poster. All-text, ASCII only,
 // deterministic. It only states COMMITTED facts and keeps honest labels (deploy-pending / blocked).
+// The centroid coverage-loss and blend-catch numbers are READ from reports/p84-centroid-diagnosis.json (report-driven),
+// never baked: a prior revision hard-printed the pre-coordinate-fix "71%", which is withdrawn (P84 now measures it).
 // Usage: npm run figure:audit10-close
+import { readFileSync, writeFileSync } from "node:fs";
+const p84 = JSON.parse(readFileSync("reports/p84-centroid-diagnosis.json", "utf8"));
+const neverLocalisePct: number = Math.round((p84.blends.coverageLossFrac as number) * 100); // 70
+const blendCaught: string = `${p84.blends.caught}/${p84.blends.testable}`; // 0/59
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 let texts = 0;
 const T = (x: number, y: number, s: string, size = 15, fill = "#e8ecf7", weight = "400") => {
@@ -19,14 +25,14 @@ let left = card(28, 96, 620, 356) + T(50, 130, "SHIPPED + verified on main", 18,
 const shipped = [
   ["#1  Bundle split", "scienceHash (content address) apart from the timestamped bundleHash."],
   ["#2  P81 guardrails", "Gaia-unavailable -> undetermined (not NaN); impossible depth -> blend evidence."],
-  ["#4  Centroid 2/6", "root-caused to pixel-baseline-bound (71% never localise), not the F-test."],
+  ["#4  Centroid 2/6", `root-caused to pixel-baseline-bound (${neverLocalisePct}% of blend targets never localise >=2 sector offsets), not the F-test.`],
   ["#5  P80 stratified", "headline names its easiest subset; a harder 300-1000 ppm tier shown beside it."],
   ["#6  Reusable null", "inverted planet-free null extracted to src/ + tested; README leads with P75."],
   ["#7  Deny-by-default", "unset ADMIN_TOKEN 401s admin writes; per-finding anchor lock vs SOL double-spend."],
   ["#8  Weekly live-probe", "keyless NASA/ExoFOP/Gaia field+row-count check; opens an issue on schema drift."],
   ["#9  On-chain re-check", "keyless daily job re-reads recent mainnet anchors and matches the memo."],
   ["#10 Audit response", "RESPONSE-TO-AUDIT.md four columns + a one-page README front."],
-  ["#11 Lint + coverage", "--max-warnings 0; branch coverage floor enforced (line 95.8 / branch 80.4)."],
+  ["#11 Lint + coverage", "--max-warnings 0; typecheck:all + the full offline test suite + eslint all green on main (counts live in CI)."],
 ];
 let yy = 156;
 for (const [a, b] of shipped) {
@@ -55,12 +61,11 @@ rb += T(706, 520, "No production threshold moved, no verdict", 13, "#9fb0d6");
 rb += T(706, 538, "flipped, no historical bundleHash altered,", 13, "#9fb0d6");
 rb += T(706, 556, "no money path touched.", 13, "#9fb0d6");
 rb += T(690, 596, "The ceilings stand as reported:", 14, "#9fb0d6", "600");
-rb += T(690, 620, "42% accepted precision  |  centroid 0/59 blends", 15, "#e8ecf7", "700");
+rb += T(690, 620, `42% accepted precision  |  centroid ${blendCaught} blends`, 15, "#e8ecf7", "700");
 rb += T(690, 648, "safeToGate false   discoveryClaim false", 14, "#9fb0d6", "700");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
   + bg + head + left + rt + rb + `</svg>\n`;
-import { writeFileSync } from "node:fs";
 writeFileSync("web/audit10-close-figure.svg", svg);
 const nonascii = (svg.match(/[^\x00-\x7F]/g) || []).length;
 console.log(`wrote web/audit10-close-figure.svg bytes=${Buffer.byteLength(svg)} textNodes=${texts} nonASCII=${nonascii}`);

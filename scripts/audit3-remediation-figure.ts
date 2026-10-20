@@ -1,6 +1,12 @@
 // Audit-3 remediation figure -- the third-round review's "done but half-done" + two new defects, closed.
 // All-text, ASCII only, deterministic; states only committed facts (deploy-pending where not yet live).
+// The centroid blend-catch and coverage-loss numbers are READ from reports/p84-centroid-diagnosis.json (report-driven),
+// never baked: a prior revision hard-printed the pre-coordinate-fix "~71%", now withdrawn (P84 measures 70%).
 // Usage: npm run figure:audit3
+import { readFileSync, writeFileSync } from "node:fs";
+const p84 = JSON.parse(readFileSync("reports/p84-centroid-diagnosis.json", "utf8"));
+const neverLocalisePct: number = Math.round((p84.blends.coverageLossFrac as number) * 100); // 70
+const blendCaught: string = `${p84.blends.caught}/${p84.blends.testable}`; // 0/59
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 let texts = 0;
 const T = (x: number, y: number, s: string, size = 15, fill = "#e8ecf7", weight = "400") => {
@@ -42,8 +48,8 @@ for (const [n, st, txt] of rows) {
 // Right-top: capability ceiling
 let rt = card(704, 96, 472, 232) + T(726, 126, "Capability boundary (stated, not sold)", 17, "#5aa9ff", "800");
 rt += T(726, 156, "Blended / multi-source-per-pixel scenes are unsupported.", 13, "#e8ecf7", "700");
-rt += T(726, 180, "Centroid false-positive test caught 0/59 labelled blends;", 12.5, "#9fb0d6");
-rt += T(726, 198, "~71% of those targets never localise a cross-sector offset.", 12.5, "#9fb0d6");
+rt += T(726, 180, `Centroid false-positive test caught ${blendCaught} labelled blends;`, 12.5, "#9fb0d6");
+rt += T(726, 198, `~${neverLocalisePct}% of those targets never localise a cross-sector offset.`, 12.5, "#9fb0d6");
 rt += T(726, 222, "Pixel-baseline-bound -- a method rebuild, not a threshold.", 12.5, "#e8ecf7", "600");
 rt += T(726, 254, "Accepted-precision 42.2% at 425 curves is the wall;", 12.5, "#9fb0d6");
 rt += T(726, 272, "recall 86.2% is printed alongside, never alone.", 12.5, "#9fb0d6");
@@ -54,7 +60,7 @@ let rb = card(704, 344, 472, 222) + T(726, 374, "Verification gate (this pass)",
 rb += T(726, 406, "typecheck:all / typecheck:worker", 13, "#e8ecf7", "600");
 rb += T(1080, 406, "exit 0", 14, "#37d39b", "800");
 rb += T(726, 436, "npm test (offline, auto-discovered)", 13, "#e8ecf7", "600");
-rb += T(1080, 436, "468 / 468", 14, "#37d39b", "800");
+rb += T(1080, 436, "all green", 14, "#37d39b", "800");
 rb += T(726, 466, "eslint --max-warnings 0", 13, "#e8ecf7", "600");
 rb += T(1080, 466, "exit 0", 14, "#37d39b", "800");
 rb += T(726, 496, "live-probe offline self-test", 13, "#e8ecf7", "600");
@@ -65,7 +71,6 @@ rb += T(726, 552, "safeToGate false   discoveryClaim false", 13, "#9fb0d6", "700
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
   + bg + head + left + rt + rb + `</svg>\n`;
-import { writeFileSync } from "node:fs";
 writeFileSync("web/audit3-remediation-figure.svg", svg);
 const nonascii = (svg.match(/[^\x00-\x7F]/g) || []).length;
 console.log(`wrote web/audit3-remediation-figure.svg bytes=${Buffer.byteLength(svg)} textNodes=${texts} nonASCII=${nonascii}`);

@@ -48,7 +48,7 @@ import { calibratedFap } from "../detect/significance.ts";
 import { robustPerSectorDepth } from "../detect/perSectorRun.ts";
 import type { ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
-import { fetchConfirmedPlanets, getFallbackCatalog } from "../data/exoplanetArchive.ts";
+import { fetchConfirmedPlanets, getFallbackCatalog, crossmatchPeriod, fetchPlanetsByHost } from "../data/exoplanetArchive.ts";
 import { fetchTocCandidates, toiToArchivePlanet } from "../data/toiArchive.ts";
 import { selectMixedWindow } from "../survey/rotation.ts";
 import { persistBundle, type EphemerisRecord } from "../bundle/bundle.ts";
@@ -465,6 +465,16 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
         await stub.updateTask(meta.taskId, { status: "reviewing" });
         const isReal = (fr.lc.source ?? "").includes("REAL photometry");
         const cand = dr.detection.candidate;
+        // crossmatch tri-state (audit #5): the bulk slice is magnitude-limited, and a failed catalog pull must
+        // not read as "novel". Only REAL critic rows are annotated, so the deterministic synthetic/bundle path
+        // (and its hash) stays byte-for-byte identical. When the slice missed a known host, ask the archive for
+        // that host directly: [] = completed-and-nothing-announced, non-empty = off-slice planet, null = the
+        // lookup itself failed. This can only relabel a novel reading -- it never widens the accept set.
+        const catalogSource = isReal ? ((cat?.source ?? "failed") as "nasa-tap" | "fallback" | "failed") : undefined;
+        let hostCatalog: ArchivePlanet[] | null | undefined;
+        if (isReal && meta.hostName && !crossmatchPeriod(cand.periodDays, cat?.planets ?? [], meta.hostName)) {
+          hostCatalog = await fetchPlanetsByHost(meta.hostName);
+        }
         // Noise-color calibrated significance is part of the DEFAULT path (honest-by-default):
         // EVERY candidate -- synthetic stand-in or real SPOC photometry -- is graded against a null
         // ensemble matched to its OWN noise color (rho) and scatter, and the empirical false-alarm
@@ -536,6 +546,8 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           detection: dr.detection,
           catalog: cat?.planets ?? [],
           hostName: meta.hostName,
+          catalogSource,
+          hostCatalog,
           confidence,
           truthPeriodDays: fr.truthPeriodDays,
           truthSource: isReal ? "catalog" : "injected",

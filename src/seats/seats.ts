@@ -119,6 +119,10 @@ export interface CritiqueInput {
   detection: DetectionResult;
   catalog: ArchivePlanet[];
   hostName?: string;
+  /** crossmatch tri-state (audit #5): provenance of the `catalog` slice + an optional targeted per-host
+   *  lookup. Both absent => identical review to before; supplied they can only downgrade a "novel" reading. */
+  catalogSource?: "nasa-tap" | "fallback" | "failed" | "unknown";
+  hostCatalog?: ArchivePlanet[] | null;
   confidence?: ConfidenceResult;
   truthPeriodDays?: number;
   /** what the reference period is: an injection or a catalog value (real photometry). */
@@ -141,12 +145,14 @@ export interface CritiqueInput {
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, confidence, truthPeriodDays, truthSource, recoveryGating, vetting, origin }: CritiqueInput): ReviewResult {
+export function critique({ detection, catalog, hostName, catalogSource, hostCatalog, confidence, truthPeriodDays, truthSource, recoveryGating, vetting, origin }: CritiqueInput): ReviewResult {
   const review = reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
     catalog,
     hostName,
+    catalogSource,
+    hostCatalog,
     confidence,
     truthPeriodDays,
     truthSource,

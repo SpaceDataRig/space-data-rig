@@ -19,7 +19,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RigStore, type BundleRecord } from "../core/store.ts";
 import type { ArchivePlanet, Finding, LightCurve, Task } from "../core/types.ts";
-import { fetchConfirmedPlanets, type ArchiveFetchResult } from "../data/exoplanetArchive.ts";
+import { fetchConfirmedPlanets, fetchPlanetsByHost, crossmatchPeriod, type ArchiveFetchResult } from "../data/exoplanetArchive.ts";
 import { generateSyntheticTransit, standInRhoForIndex, type InjectedTruth } from "../data/synthetic.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { curatedMastFor, truthFromCatalog } from "../data/mastCurated.ts";
@@ -507,10 +507,21 @@ export class Orchestrator {
         }
       }
     }
+    // crossmatch tri-state (audit #5): annotate only REAL critic rows so the deterministic synthetic/bundle
+    // path stays byte-identical. When the magnitude-limited slice missed a known host, ask the archive for that
+    // host directly ([] = nothing announced / non-empty = off-slice planet / null = lookup failed). Never widens
+    // the accept set -- it only relabels a novel reading so a failed fetch is not mistaken for novelty.
+    const catalogSource = isReal ? (cat.source as "nasa-tap" | "fallback" | "failed" | "unknown") : undefined;
+    let hostCatalog: ArchivePlanet[] | null | undefined;
+    if (isReal && ctx.planet.hostname && !crossmatchPeriod(cand.periodDays, cat.planets, ctx.planet.hostname)) {
+      hostCatalog = await fetchPlanetsByHost(ctx.planet.hostname);
+    }
     const review = critique({
       detection,
       catalog: cat.planets,
       hostName: ctx.planet.hostname,
+      catalogSource,
+      hostCatalog,
       confidence,
       truthPeriodDays: ctx.truth?.periodDays,
       truthSource: isReal ? "catalog" : "injected",

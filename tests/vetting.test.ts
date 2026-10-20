@@ -207,3 +207,55 @@ test("a candidate at x4 of a catalogued planet is recognized as a harmonic alias
   assert.equal(r.crossmatch.harmonic, 4, "the identified harmonic multiple is 4");
   assert.match(r.reason, /harmonic/, "the reason names it as a probable alias");
 });
+
+// ---- audit #5: the crossmatch tri-state (hit/alias vs no-match vs off-slice vs lookup-failed) ----
+
+const novel = (over: Partial<ReviewInput> = {}): ReviewInput => CAP(candidate, { catalog: [], ...over });
+
+test("crossmatch tri-state is opt-in: with no lookup fields the novel reason and crossmatch are unchanged", () => {
+  const r = reviewCandidate(novel());
+  assert.equal(r.verdict, "needs-more-data");
+  assert.match(r.reason, /with no catalog match -- a candidate for follow-up, not a claimed discovery\./);
+  assert.equal(r.crossmatch.status, undefined, "no tri-state stamped on the default path (hash unchanged)");
+  assert.ok(!r.checks.some((x) => x.name.startsWith("catalog-lookup")));
+});
+
+test("a FAILED catalog lookup is not read as novelty: the reason states novelty is undetermined", () => {
+  const r = reviewCandidate(novel({ catalogSource: "failed" }));
+  assert.equal(r.verdict, "needs-more-data");
+  assert.match(r.reason, /did NOT complete|novelty is undetermined/);
+  assert.doesNotMatch(r.reason, /not a claimed discovery/, "a failed lookup must not assert novelty either way");
+  assert.equal(r.crossmatch.status, "lookup-failed");
+  const chk = r.checks.find((x) => x.name === "catalog-lookup (informational, non-gating)");
+  assert.ok(chk && chk.pass === false, "the failed lookup is a NON-gating check (excluded from the content hash)");
+});
+
+test("a fallback slice is likewise 'lookup incomplete', never 'novel'", () => {
+  const r = reviewCandidate(novel({ catalogSource: "fallback" }));
+  assert.equal(r.crossmatch.status, "lookup-failed");
+  assert.match(r.reason, /undetermined/);
+});
+
+test("an off-slice planet is labeled already-published (NOT novel) and still never accepted", () => {
+  const offSlicePlanet: ArchivePlanet = { pl_name: "VET-TEST-1 b", hostname: "VET-TEST-1", pl_orbper: 3.5 };
+  const r = reviewCandidate(novel({ catalogSource: "nasa-tap", hostCatalog: [offSlicePlanet] }));
+  assert.equal(r.verdict, "needs-more-data", "an off-slice match must not create an accept");
+  assert.equal(r.crossmatch.matchedKnownPlanet, false, "the bulk slice genuinely did not match");
+  assert.equal(r.crossmatch.status, "off-slice");
+  assert.match(r.reason, /IS announced for this host|NOT novel/);
+  const chk = r.checks.find((x) => x.name === "catalog-lookup (informational, non-gating)");
+  assert.ok(chk && chk.pass === true, "a completed off-slice lookup is not a failure");
+});
+
+test("a completed per-host lookup with nothing announced is a genuine novel reading", () => {
+  const r = reviewCandidate(novel({ catalogSource: "nasa-tap", hostCatalog: [] }));
+  assert.equal(r.verdict, "needs-more-data");
+  assert.equal(r.crossmatch.status, "none");
+  assert.match(r.reason, /with no catalog match -- a candidate for follow-up, not a claimed discovery\./);
+});
+
+test("the tri-state never widens the accept set: a direct slice hit still accepts with status hit", () => {
+  const r = reviewCandidate({ ...baseInput, catalogSource: "nasa-tap" });
+  assert.equal(r.verdict, "accepted");
+  assert.equal(r.crossmatch.status, "hit");
+});

@@ -179,3 +179,52 @@ export function crossmatchPeriod(
   }
   return best != null && bestErr <= tolPct / 100 ? best : null;
 }
+
+/**
+ * Targeted per-host cross-match lookup (audit #5: the crossmatch tri-state).
+ *
+ * WHY. The bulk slice from fetchConfirmedPlanets is magnitude-limited, so a candidate can miss a planet that IS
+ * announced for its own host simply because that host fell outside the slice -- and the old `cat?.planets ?? []`
+ * path made a FAILED fetch indistinguishable from a genuinely-empty catalog, so a network error read as "novel".
+ * This resolves the two states the slice cannot:
+ *   []               -> the lookup COMPLETED and the archive announces NO confirmed planet for this host (a real
+ *                       "novel in the authoritative per-host view", not a silent miss);
+ *   ArchivePlanet[]  -> confirmed planets announced for this host (so a match OUTSIDE the bulk slice is caught);
+ *   null             -> the lookup FAILED (HTTP / timeout / transport): "no match" MUST NOT be read as novel.
+ *
+ * Returns normalized rows (pl_trandep in ppm, numeric `tic`) exactly like the bulk fetch, so a downstream
+ * crossmatchPeriod sees one unit. Never throws; failure is the `null` signal.
+ */
+export async function fetchPlanetsByHost(
+  hostname: string,
+  o: { timeoutMs?: number } = {},
+): Promise<ArchivePlanet[] | null> {
+  if (!hostname) return null;
+  const cols = PSOMPPARS_COLUMNS.join(",");
+  const safeHost = hostname.replace(/'/g, "''"); // SQL single-quote escape
+  const query = `select ${cols} from pscomppars where hostname='${safeHost}'`;
+  const url = `${TAP_SYNC}?query=${encodeURIComponent(query)}&format=json`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 20000);
+    try {
+      const r = await fetch(url, { signal: controller.signal, headers: { "User-Agent": UA, Accept: "application/json" } });
+      if (!r.ok) throw new Error(`TAP HTTP ${r.status}`);
+      const all = (await r.json()) as ArchivePlanet[];
+      if (!Array.isArray(all)) return []; // completed, no rows -> nothing announced
+      return all.map((p) => {
+        const row: ArchivePlanet & { tic_id?: string } = { ...p };
+        if (row.pl_trandep != null) row.pl_trandep = row.pl_trandep * 1e4;
+        const tic = parseTicId(row.tic_id);
+        if (tic != null) row.tic = tic;
+        return row;
+      });
+    } catch (e) {
+      if (attempt === 2) return null; // transport/HTTP failed -> the "lookup-failed" state
+      await new Promise((res) => setTimeout(res, 1200 * (attempt + 1)));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return null;
+}

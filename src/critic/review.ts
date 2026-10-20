@@ -38,6 +38,20 @@ export interface ReviewInput {
   catalog: ArchivePlanet[];
   /** restrict cross-match to one host when we know the target star. */
   hostName?: string;
+  /**
+   * Provenance of the `catalog` slice handed to the critic (audit #5 crossmatch tri-state). When it is
+   * "fallback" or "failed" the slice is NOT an authoritative reference, so a "no match" must read as
+   * "lookup incomplete", never as "novel". Absent => treated as an unknown-but-present slice, and the
+   * review output is byte-for-byte identical to before (the deterministic synthetic/bundle path untouched).
+   */
+  catalogSource?: "nasa-tap" | "fallback" | "failed" | "unknown";
+  /**
+   * Targeted per-host cross-match from fetchPlanetsByHost, supplied by the caller ONLY when the bulk slice
+   * produced no match. [] = lookup completed, nothing announced for this host; non-empty = a planet IS
+   * announced outside the slice ("off-slice"); null = the targeted lookup FAILED. Absent => the tri-state is
+   * not exercised and the result is unchanged.
+   */
+  hostCatalog?: ArchivePlanet[] | null;
   /** sim-runner per-signal recovery confidence (0..1). */
   confidence?: ConfidenceResult;
   /** what the reference period is: an injection or a catalog value (real photometry). */
@@ -124,6 +138,15 @@ export interface CrossmatchInfo {
   periodDeltaPct?: number;
   /** which harmonic matched (1 = direct). */
   harmonic?: number;
+  /**
+   * crossmatch tri-state (audit #5): "hit" (direct slice match) / "alias" (harmonic-only) / "none" (genuinely
+   * no announced match) / "off-slice" (announced for this host but outside the magnitude-limited slice) /
+   * "lookup-failed" (the catalog cross-match never completed -- a fetch error, NOT evidence of novelty).
+   * Absent for the default path so pre-tri-state callers and their bundle hashes are unchanged.
+   */
+  status?: "hit" | "alias" | "none" | "off-slice" | "lookup-failed";
+  /** for "off-slice": the name of the planet announced for this host outside the slice. */
+  offSliceName?: string;
 }
 
 export interface ReviewResult {
@@ -176,6 +199,32 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
 
   // --- cross-match ---
   const cm = crossmatch(c, input.catalog, input.hostName);
+
+  // crossmatch tri-state (audit #5): distinguish a direct hit / harmonic alias from "no match", and crucially
+  // from a lookup that never completed or a planet announced OUTSIDE the magnitude-limited slice. Backward
+  // compatible: unless the caller supplies catalogSource / hostCatalog, the status is hit/alias/none, no extra
+  // check is added, and the deterministic synthetic/bundle path (and its hash) is byte-for-byte untouched. It
+  // can only ever DOWNGRADE a "novel" reading -- it never produces a new accept (accept still needs a direct hit).
+  const lookupGiven = input.catalogSource != null || input.hostCatalog !== undefined;
+  let lookupStatus: "hit" | "alias" | "none" | "off-slice" | "lookup-failed";
+  if (cm.matchedKnownPlanet) lookupStatus = cm.harmonic === 1 ? "hit" : "alias";
+  else if (input.hostCatalog != null) {
+    const off = crossmatchPeriod(c.periodDays, input.hostCatalog, input.hostName);
+    if (off) { cm.offSliceName = off.pl_name; lookupStatus = "off-slice"; }
+    else lookupStatus = "none";
+  } else if (input.hostCatalog === null) lookupStatus = "lookup-failed";
+  else if (input.catalogSource === "fallback" || input.catalogSource === "failed") lookupStatus = "lookup-failed";
+  else lookupStatus = "none";
+  // Only stamp the tri-state onto the crossmatch object / add the check when the caller actually exercised it,
+  // so the deterministic synthetic/bundle path (no lookup fields) keeps a byte-identical crossmatch and hash.
+  if (lookupGiven) {
+    cm.status = lookupStatus;
+    checks.push({
+      name: "catalog-lookup (informational, non-gating)",
+      pass: lookupStatus !== "lookup-failed",
+      detail: `crossmatch lookup state = ${lookupStatus}${cm.offSliceName ? ` (${cm.offSliceName} announced for this host outside the slice)` : ""}`,
+    });
+  }
 
   // --- SNR check ---
   // The floor is applied to the statistic the SEARCH produced, not to the significance of a refined depth: the
@@ -323,10 +372,18 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
       verdict = "needs-more-data";
       reason = `Significant transit cross-matches ${cm.knownPlanetName} only at harmonic x${cm.harmonic} -- a probable alias, not a clean blind recovery. Flag for follow-up.`;
     } else {
-      // Evidence-strong but NO catalog match: the honest ceiling. A novel signal is flagged for
-      // follow-up, NEVER auto-accepted as a discovery (guards the no-claim red line + money path).
+      // Evidence-strong but NO match inside the slice: the honest ceiling. Never auto-accepted. The tri-state
+      // separates genuinely-novel ("none") from "announced outside our slice" ("off-slice") and from a lookup
+      // that never completed ("lookup-failed"), so a silent fetch failure is never read as novelty. The default
+      // "none" wording is byte-for-byte the prior text, so callers not exercising the tri-state are unchanged.
       verdict = "needs-more-data";
-      reason = `${degenerateSig ? "Significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "Significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) with no catalog match -- a candidate for follow-up, not a claimed discovery.`;
+      if (lookupStatus === "off-slice") {
+        reason = `Significant transit, no match inside the bulk catalog slice, but ${cm.offSliceName ?? "a planet"} IS announced for this host at a cross-matching period (the authoritative per-host lookup completed) -- already published outside the slice we scanned, NOT novel. Flag for follow-up, not a claimed discovery.`;
+      } else if (lookupStatus === "lookup-failed") {
+        reason = `${degenerateSig ? "Significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "Significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) but the catalog cross-match did NOT complete -- novelty is undetermined, this is neither evidence of a new planet nor of a known one. Flag for a re-run with a working catalog lookup.`;
+      } else {
+        reason = `${degenerateSig ? "Significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "Significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) with no catalog match -- a candidate for follow-up, not a claimed discovery.`;
+      }
     }
   }
 

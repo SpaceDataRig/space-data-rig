@@ -6,10 +6,10 @@ measurable deltas and states the standing limits honestly.
 
 ## Dispatch evidence
 
-- Workflow: `x-post.yml`, `workflow_dispatch` override (inputs.text + inputs.maxlen=25000).
-- Dispatch accepted: HTTP 204.
-- Actions run: https://github.com/SpaceDataRig/space-data-rig/actions/runs/39371685864 (conclusion: success, head_sha 963ccf4).
+- Dispatch accepted: HTTP `204` (POST .../workflows/x-post.yml/dispatches ref=main, inputs.text=<these bytes>, inputs.maxlen=25000).
+- Actions run: https://github.com/SpaceDataRig/space-data-rig/actions/runs/39371685864 (event=workflow_dispatch, conclusion: success, head_sha 963ccf4).
 - Job-log send line: `x:post: OK posted (id 2112406103032287631).` (2026-10-20T04:50:36Z).
+- posted id: `2112406103032287631`.
 - Pre-flight guard (`npm run x:post -- --text-file out/en.txt --max-len 25000`, no local keys): DRY RUN, length=1429/25000, zero non-ASCII, zero over-claim violations.
 - Deploy self-proof: `/health` gitSha == HEAD 963ccf4443a8fc7ef6c8a7cafa228127fe4a5d5b; CI run for that commit https://github.com/SpaceDataRig/space-data-rig/actions/runs/39370783015 conclusion: success.
 

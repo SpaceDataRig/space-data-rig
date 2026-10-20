@@ -1,15 +1,15 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-19T08:27:25.189Z",
-  "builtAtGitSha": "419b4219620420aa5c2410b33641148c6fe73c62",
+  "generatedAt": "2026-10-20T01:57:27.762Z",
+  "builtAtGitSha": "4541121524011b30bfe9b67decddc3de17c6eecd",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 54,
   "freshness": {
     "stamped": 8,
-    "verified": 3,
-    "fullyVerified": 3,
+    "verified": 6,
+    "fullyVerified": 6,
     "total": 54,
     "stale": []
   },
@@ -522,7 +522,7 @@
       "id": "p75-inverted-fp",
       "slug": "p75-inverted-fp",
       "title": "P75 inverted-curve false alarms: an empirical, model-free check on the AR(1) gate",
-      "reproduce": "npm run p75:inverted-fp -- --targets 16 --nnull 60 --trials 80 --maxsectors 1",
+      "reproduce": "npm run p75:inverted-fp -- --targets 200 --nnull 300 --trials 400 --maxsectors 1",
       "summary": "P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every catalogued planet...",
       "fresh": true,
       "stamped": false,
@@ -624,11 +624,11 @@
       "summary": "Same three audit-9 probes, run over a MUCH larger real target pool via one resumable, concurrent, byte-cached engine (out/scaled/*.jsonl checkpoints). Every number is measured on real public TESS-SPOC / Gaia / ExoFOP data.",
       "fresh": true,
       "stamped": true,
-      "verified": false,
+      "verified": true,
       "rehashed": 3,
-      "reproducible": 0,
+      "reproducible": 3,
       "unverifiableInputs": 0,
-      "untrackedInputs": 3
+      "untrackedInputs": 0
     },
     {
       "id": "p84-centroid-diagnosis",
@@ -638,11 +638,11 @@
       "summary": "Provenance: this diagnosis is re-derived on every run from the checkpoint's content-addressed sha256 (see meta), so it always matches the current P82 sweep -- here, the corrected host coordinates after the ExoFOP RA-unit fix.",
       "fresh": true,
       "stamped": true,
-      "verified": false,
+      "verified": true,
       "rehashed": 1,
-      "reproducible": 0,
+      "reproducible": 1,
       "unverifiableInputs": 0,
-      "untrackedInputs": 1
+      "untrackedInputs": 0
     },
     {
       "id": "p85-contaminant-fit",
@@ -652,11 +652,11 @@
       "summary": "Statistic: src/detect/centroidFtest.ts -- F = n(n-1)|m-s|^2 / RSS, 1\"/axis scatter floor, df=(2,2(n-1)), closed-form p. Run for the target (s=0,0) AND for every neighbour bright enough to cause the dip (neighbourCanCauseDip). Source:...",
       "fresh": true,
       "stamped": true,
-      "verified": false,
+      "verified": true,
       "rehashed": 1,
-      "reproducible": 0,
+      "reproducible": 1,
       "unverifiableInputs": 0,
-      "untrackedInputs": 1
+      "untrackedInputs": 0
     },
     {
       "id": "p88-independent-corroboration",

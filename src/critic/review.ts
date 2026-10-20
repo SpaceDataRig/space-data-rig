@@ -152,7 +152,7 @@ function crossmatch(c: TransitCandidate, catalog: ArchivePlanet[], hostName?: st
   // identify which harmonic produced the match
   let harmonic = 1;
   let bestErr = Infinity;
-  for (const f of [1, 2, 0.5, 3, 1 / 3]) {
+  for (const f of [1, 2, 0.5, 3, 1 / 3, 4, 1 / 4]) {
     const err = Math.abs(c.periodDays * f - match.pl_orbper) / match.pl_orbper;
     if (err < bestErr) {
       bestErr = err;
@@ -248,6 +248,27 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   if (recoveryGating && periodErrPct != null) score += periodErrPct < 1 ? 5 : periodErrPct < 2 ? 3 : 0;
   score = Math.max(0, Math.min(100, Math.round(score)));
 
+  // --- degeneracy guard (honesty, NOT a verdict gate) ---
+  // A box SNR far above anything a real transit on this baseline can reach, a depth whose significance was
+  // re-priced on a different number, or a period pinned on the long-edge of the search grid are NOT evidence of
+  // a "physically-consistent" signal. These flags never move the verdict tier (already capped at needs-more-data
+  // unless a DIRECT catalog match holds) -- they only stop the written reason from asserting a physical
+  // consistency the degenerate metrics do not support. An audit found 6 live findings whose reason claimed
+  // "physically-consistent transit" while carrying SNR up to 45171, a non-positive/repriced depth, or P=16.0000
+  // at the search boundary. Broadening harmonic detection elsewhere can only SHRINK the accepted set (acceptance
+  // requires harmonic===1), so this stays money-path conservative.
+  const snrImplausible = Math.abs(c.snr) > 1000;
+  let depthSigInconsistent = false;
+  if (Number.isFinite(c.noiseSigmaFrac as number) && (c.noiseSigmaFrac as number) > 0 && Number.isFinite(c.snr)) {
+    const nIn0 = Math.max(1, c.nPointsInTransit || 1);
+    const snrDepth0 = (c.snr * (c.noiseSigmaFrac as number)) / Math.sqrt(nIn0);
+    if (snrDepth0 > 0 && c.depthFrac > 0) {
+      const f0 = snrDepth0 / c.depthFrac;
+      if (f0 > 1.5 || f0 < 1 / 1.5) depthSigInconsistent = true;
+    }
+  }
+  const degenerateSig = snrImplausible || depthSigInconsistent || c.atSearchBoundary === true;
+
   // --- verdict ---
   const hardFail = !depthPass || !durPass || !nPass || !snrPass;
   let verdict: ReviewResult["verdict"];
@@ -295,7 +316,7 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
       // Evidence-strong AND it independently cross-matches a catalog planet at its fundamental
       // period -> a genuine blind recovery (no truth period was consulted to reach this verdict).
       verdict = "accepted";
-      reason = `Blind recovery: significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) independently cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period on evidence alone, without using any truth period.`;
+      reason = `Blind recovery: ${degenerateSig ? "significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) independently cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period on evidence alone, without using any truth period.`;
     } else if (cm.matchedKnownPlanet) {
       // Matched ONLY via a harmonic (x2, x3, x1/2 ...): a probable alias of a known planet, not a
       // clean recovery. Never accepted/anchored -- flagged for follow-up.
@@ -305,7 +326,7 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
       // Evidence-strong but NO catalog match: the honest ceiling. A novel signal is flagged for
       // follow-up, NEVER auto-accepted as a discovery (guards the no-claim red line + money path).
       verdict = "needs-more-data";
-      reason = `Significant, physically-consistent transit (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) with no catalog match -- a candidate for follow-up, not a claimed discovery.`;
+      reason = `${degenerateSig ? "Significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "Significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) with no catalog match -- a candidate for follow-up, not a claimed discovery.`;
     }
   }
 
@@ -445,6 +466,14 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
         });
       }
     }
+  }
+
+  if (snrImplausible) {
+    checks.push({
+      name: "significance-plausibility (informational, non-gating)",
+      pass: false,
+      detail: `the quoted SNR ${c.snr.toFixed(0)} is far above what a real transit on this baseline can reach, so the significance is a fit artifact, not physical-consistency evidence`,
+    });
   }
 
   return { verdict, reason, score, crossmatch: cm, checks };

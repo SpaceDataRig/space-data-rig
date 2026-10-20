@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-20T01:57:09.434Z",
+  "generatedAt": "2026-10-20T03:20:25.557Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -850,7 +850,13 @@
       "scrambledMedianSnr": 10.847927474582729,
       "invertedMedianSnr": null,
       "meanScrambledSnr": 175.95791278137543,
-      "meanInvertedSnr": null
+      "meanInvertedSnr": null,
+      "presentedAs": "INDICATIVE operating point -- NOT an adopted gate; deployed production SNR floor stays 7",
+      "sampleSize": {
+        "nInjections": 50,
+        "nScrambled": 57
+      },
+      "counterpoint": "a one-sample joint-C/R optimum near 22 SNR carries no confidence interval; on the SAME committed data the SNR>=7 floor alone still leaves 61.0% false positives on 200 quiet curves (P39), and P95 lands at a different ~15 on 12 hosts -- so neither is a threshold recommendation, and P92 vs P95 disagreeing is itself the small-sample signal."
     },
     "fpTaxonomyP93": {
       "planetValidated": 48,
@@ -863,7 +869,17 @@
     "unifiedCatalogP95": {
       "blindRecoveredKnown": 8,
       "recoveredAtOperatingThreshold": 5,
-      "nHosts": 12
+      "nHosts": 12,
+      "operatingPoint": {
+        "thresholdSnr": 15,
+        "completenessC": 0.9833333333333333,
+        "reliabilityRFA": 0.8939393939393939,
+        "jointObjective": 0.10736214386701139
+      },
+      "presentedAs": "INDICATIVE operating point -- NOT an adopted gate; deployed production SNR floor stays 7",
+      "sampleSize": {
+        "nHosts": 12
+      }
     },
     "occurrenceKernelP96": {
       "selectionIntegralS": 0.09950096821827054,
@@ -894,7 +910,7 @@
       },
       "verdict": "KERNEL-CONSISTENT"
     },
-    "caveat": "candidate-level scrambled false-alarm null + joint C/R (P92); labelled FP taxonomy + flux-validation ROC (P93); bounded unified catalogue + known-planet recovery (P95); occurrence kernel + measured selection integral S (P96). No inverted rate is claimed; all research-only.",
+    "caveat": "candidate-level scrambled false-alarm null + joint C/R (P92); labelled FP taxonomy + flux-validation ROC (P93); bounded unified catalogue + known-planet recovery (P95); occurrence kernel + measured selection integral S (P96). The P92/P95 SNR optima are indicative small-sample operating points (no interval), not adopted thresholds -- the rig still ships SNR>=7. No inverted rate is claimed; all research-only.",
     "safeToGate": false,
     "discoveryClaim": false
   },

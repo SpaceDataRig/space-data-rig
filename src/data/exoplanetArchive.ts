@@ -165,8 +165,11 @@ export function crossmatchPeriod(
   let bestErr = Infinity;
   for (const p of pool) {
     if (p.pl_orbper == null) continue;
-    // allow harmonic matches (candidate may be P/2 etc.)
-    for (const f of [1, 2, 0.5, 3, 1 / 3]) {
+    // allow harmonic matches (candidate may be P/2, P/3, P/4 etc.). 4 and 1/4 added after an audit: a live
+    // finding (F-TOI-1860-b) sat at x4 of a catalogued planet and was mis-read as "no catalog match". This can
+    // only ever RECLASSIFY a candidate as a probable alias (needs-more-data); acceptance still requires harmonic
+    // ===1 in review.ts, so the accepted / money-path set can never grow from a wider harmonic net.
+    for (const f of [1, 2, 0.5, 3, 1 / 3, 4, 1 / 4]) {
       const err = Math.abs(candidatePeriodDays * f - p.pl_orbper) / p.pl_orbper;
       if (err < bestErr) {
         bestErr = err;

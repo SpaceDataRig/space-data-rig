@@ -166,3 +166,44 @@ test("an unresolved odd-even alias (aliasMultiple != 1) is capped at needs-more-
   assert.equal(r.verdict, "needs-more-data", `an unresolved alias must not be accepted, got ${r.verdict}`);
   assert.match(r.reason, /alias/);
 });
+
+// ---- audit #5: a degenerate fit must not be described as "physically-consistent" ----
+
+const CAP = (cand: TransitCandidate, over: Partial<ReviewInput> = {}): ReviewInput => ({
+  ...baseInput, candidate: cand, ...over,
+});
+
+test("a clean cross-matched accept still says physically-consistent (control)", () => {
+  const r = reviewCandidate(baseInput);
+  assert.equal(r.verdict, "accepted");
+  assert.match(r.reason, /physically-consistent/, "a non-degenerate recovery keeps the plain wording");
+  assert.ok(!r.checks.some((x) => x.name.startsWith("significance-plausibility")));
+});
+
+test("a box SNR far above any physical transit is flagged degenerate, not " + '"physically-consistent"', () => {
+  const absurd: TransitCandidate = { ...candidate, snr: 45171 };
+  const r = reviewCandidate(CAP(absurd, { catalog: [] }));
+  assert.equal(r.verdict, "needs-more-data", "degeneracy must not flip the verdict tier (honesty-only wording)");
+  assert.doesNotMatch(r.reason, /physically-consistent/, "a 45171 SNR cannot be called physically-consistent");
+  assert.match(r.reason, /DEGENERATE/);
+  assert.ok(r.checks.some((x) => x.name === "significance-plausibility (informational, non-gating)" && x.pass === false),
+    "the implausible SNR is recorded as a non-gating check");
+});
+
+test("a period at the long-edge of the search grid is not called physically-consistent", () => {
+  const edge: TransitCandidate = { ...candidate, periodDays: 16.0, atSearchBoundary: true, searchMaxPeriodDays: 16 } as TransitCandidate;
+  const r = reviewCandidate(CAP(edge, { catalog: [] }));
+  assert.doesNotMatch(r.reason, /physically-consistent/, "an unmeasured boundary period cannot claim physical consistency");
+  assert.match(r.reason, /DEGENERATE/);
+});
+
+test("a candidate at x4 of a catalogued planet is recognized as a harmonic alias (audit: F-TOI-1860-b)", () => {
+  // catalog planet at 3.5 d; candidate at 0.875 d = 3.5/4. Before harmonics 4 and 1/4 were added this read as
+  // "no catalog match"; now crossmatchPeriod finds it at f=4 and review names the alias.
+  const x4: TransitCandidate = { ...candidate, periodDays: 0.875 };
+  const r = reviewCandidate(CAP(x4));
+  assert.equal(r.verdict, "needs-more-data", "an x4 harmonic-only match must never be accepted/anchored");
+  assert.ok(r.crossmatch.matchedKnownPlanet, "the catalogued planet must now be recognized via the x4 harmonic");
+  assert.equal(r.crossmatch.harmonic, 4, "the identified harmonic multiple is 4");
+  assert.match(r.reason, /harmonic/, "the reason names it as a probable alias");
+});

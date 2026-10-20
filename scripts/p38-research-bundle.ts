@@ -407,11 +407,26 @@ const payload = {
   },
   validationBuildP92P96: {
     label: "the statistical-validation build (authority roadmap P92-P96), re-derived from committed reports",
-    scrambledFaP92: p92.summary || p92.result || p92.verdict || null,
+    // The joint completeness/reliability SNR optima are INDICATIVE operating points on small bounded samples,
+    // not adopted gates: the deployed production SNR floor stays 7 (src/critic/review.ts default), and a single
+    // sample carries no confidence interval. They disagree with each other (P92 ~22 vs P95 ~15) precisely because
+    // both are under-powered. Surfaced with their sample sizes and the P39 counterpoint so no reader takes 22 as a
+    // recommendation.
+    scrambledFaP92: {
+      ...p92.summary,
+      presentedAs: "INDICATIVE operating point -- NOT an adopted gate; deployed production SNR floor stays 7",
+      sampleSize: { nInjections: p92.summary.nInjections, nScrambled: p92.summary.nScrambled },
+      counterpoint: `a one-sample joint-C/R optimum near ${p92.summary.optimumThresholdSnr} SNR carries no confidence interval; on the SAME committed data the SNR>=7 floor alone still leaves ${(p39.raw.fpA / p39.raw.n * 100).toFixed(1)}% false positives on ${p39.raw.n} quiet curves (P39), and P95 lands at a different ~${p95.operatingPoint.thresholdSnr} on ${p95.recovery.nHosts} hosts -- so neither is a threshold recommendation, and P92 vs P95 disagreeing is itself the small-sample signal.`,
+    },
     fpTaxonomyP93: p93.summary || p93.result || null,
-    unifiedCatalogP95: p95.summary || p95.recovery || null,
+    unifiedCatalogP95: {
+      ...p95.recovery,
+      operatingPoint: p95.operatingPoint,
+      presentedAs: "INDICATIVE operating point -- NOT an adopted gate; deployed production SNR floor stays 7",
+      sampleSize: { nHosts: p95.recovery.nHosts },
+    },
     occurrenceKernelP96: { selectionIntegralS: p96.selectionIntegralS, box: p96.box, forwardModel: p96.forwardModel, observed: p96.observed, naiveInvertedEtaNotAMeasurement: p96.naiveInvertedEtaNotAMeasurement, verdict: p96.verdict },
-    caveat: "candidate-level scrambled false-alarm null + joint C/R (P92); labelled FP taxonomy + flux-validation ROC (P93); bounded unified catalogue + known-planet recovery (P95); occurrence kernel + measured selection integral S (P96). No inverted rate is claimed; all research-only.",
+    caveat: "candidate-level scrambled false-alarm null + joint C/R (P92); labelled FP taxonomy + flux-validation ROC (P93); bounded unified catalogue + known-planet recovery (P95); occurrence kernel + measured selection integral S (P96). The P92/P95 SNR optima are indicative small-sample operating points (no interval), not adopted thresholds -- the rig still ships SNR>=7. No inverted rate is claimed; all research-only.",
     safeToGate: false, discoveryClaim: false,
   },
   compute,

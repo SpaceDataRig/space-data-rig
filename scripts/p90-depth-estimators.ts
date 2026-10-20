@@ -167,7 +167,16 @@ async function main(): Promise<void> {
   // the error-bar calibration below, from the rows that run stored. No network and no new measurement: the light
   // curves were fetched then, not now. A regenerated report says so, because a reader has to be able to tell a
   // re-analysis from a fresh observation -- the same reason the stamp carries a git SHA.
-  const REPLAY = arg("from-json", "");
+  // THE FROZEN DATA SOURCE. p90 calibrates the two depth estimators against the NASA Exoplanet Archive -- a LIVE
+  // catalog that gains/loses rows between runs, so a plain re-fetch re-MEASURES and silently moves the published
+  // numbers (this exact drift was caught: one CI refresh took the period-matched sample from 16 to 6 because the
+  // live Archive had moved, changing a figure that src/core/depthFormat.ts bakes into the public depth cards). A
+  // number that production cites must be reproducible, not a lottery on when the job happened to run. So the
+  // measurement is FROZEN into reports/fixtures/p90-frozen-rows.json (a committed, immutable snapshot of the rows a
+  // live run actually gathered, with its original date), and the DEFAULT mode replays every statistic from those
+  // rows -- offline, deterministic, byte-stable. `--live` (or `--from-json=`) is the deliberate re-measure path.
+  const FROZEN = "reports/fixtures/p90-frozen-rows.json";
+  const REPLAY = arg("from-json", process.argv.includes("--live") ? "" : FROZEN);
   const replayed = REPLAY
     ? (() => {
         const j = JSON.parse(readFileSync(REPLAY, "utf8")) as {
@@ -475,6 +484,7 @@ async function main(): Promise<void> {
           scanned,
           recorded: rows.length,
           replayFrom: REPLAY || undefined,
+          measuredAt: replayed ? replayed.generatedAt : undefined,
           matched: matchedRows.length,
           usable: withPer.length,
           adoptionMaxFactor: DEPTH_ADOPTION_MAX_FACTOR,
@@ -506,19 +516,28 @@ async function main(): Promise<void> {
           reference: "nasa-exoplanet-archive pl_trandep (post-hoc; never passed to a fit)",
           detector: "seats.scout -> detectTransit {minPeriodDays 0.8, maxPeriodDays 16, oversample 8, nDurations 12}",
           perSector: "detect/perSectorRun.robustPerSectorDepth at the DETECTOR ephemeris",
-          generatedBy: "scripts/p90-depth-estimators.ts",
-          ...buildStamp([
-            "scripts/p90-depth-estimators.ts",
-            "src/seats/seats.ts",
-            "src/detect/pipeline.ts",
-            "src/detect/bls.ts",
-            "src/detect/perSectorRun.ts",
-            "src/detect/perSector.ts",
-            "src/detect/depthAdoption.ts",
-            "src/detect/transitFit.ts",
-            "src/data/exoplanetArchive.ts",
-            "src/data/mastS3.ts",
-          ]),
+          generatedBy: replayed ? `scripts/p90-depth-estimators.ts --from-json=${REPLAY} (replay of frozen rows)` : "scripts/p90-depth-estimators.ts",
+          // A replay's result depends ONLY on the frozen rows and this script's own statistics -- not on the live
+          // fetch layer or the detector seats (the photometry was measured at `measuredAt`, not re-run). Stamping
+          // the frozen fixture instead of src/data/exoplanetArchive.ts is what makes editing that fetch module stop
+          // flagging p90 stale: the frozen measurement genuinely did not change. A LIVE run keeps the full source
+          // dependency list, because then those files really did produce the numbers.
+          ...buildStamp(
+            replayed
+              ? ["scripts/p90-depth-estimators.ts", REPLAY]
+              : [
+                  "scripts/p90-depth-estimators.ts",
+                  "src/seats/seats.ts",
+                  "src/detect/pipeline.ts",
+                  "src/detect/bls.ts",
+                  "src/detect/perSectorRun.ts",
+                  "src/detect/perSector.ts",
+                  "src/detect/depthAdoption.ts",
+                  "src/detect/transitFit.ts",
+                  "src/data/exoplanetArchive.ts",
+                  "src/data/mastS3.ts",
+                ],
+          ),
         },
         rows,
       },

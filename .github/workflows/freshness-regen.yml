@@ -1,0 +1,116 @@
+name: freshness-regen (re-stamp network-bound reports + rebuild the report library)
+
+# Audit point #3 follow-up. The report-freshness gate (scripts/report-freshness.ts, applied by p86) marks a
+# report HARD-STALE when a file its numbers were stamped against changed AFTER it was generated. Four reports
+# derive from LIVE catalogs (ExoFOP ToI table, NASA Exoplanet Archive, MAST SPOC light curves) and their
+# buildStamp covers tracked SOURCE files, so the moment those sources are edited -- e.g. the RA-unit fix in
+# src/data/toiDispositions.ts, the crossmatch tri-state in src/data/exoplanetArchive.ts -- the checked-in
+# reports go stale even though their science is unchanged. On a dev laptop the catalogs are often unreachable
+# within the fetch timeout, so the honest fix is NOT to hand-edit the stamp or ship marked-red: it is to re-run
+# the generators on a networked runner where ExoFOP/Gaia/MAST answer, let each re-emit buildStamp over the
+# CURRENT tree, rebuild the report library, and PUBLISH the refreshed reports + web/reports/ back -- exactly the
+# self-publish pattern scale-roc/veto-multisector/leo-vetter already use.
+#
+# SCOPE (and why these four):
+#   - p76 multisource-novelty   : fetchToiTable (ExoFOP, a multi-MB CSV the sandbox times out on)  -> was unstamped
+#   - p92 scrambled-fa          : fetchSpocLightCurve (MAST S3) + fetchConfirmedPlanets (Archive)   -> was unstamped
+#   - p90 depth-estimators      : fetchConfirmedPlanets (Archive) + fetchSpocLightCurve (MAST)       -> STALE after exoplanetArchive edit
+#   - p59 offtarget-subset      : Gaia blend census (reads the committed p58 report, does NOT rerun p58) -> STALE after toiDispositions edit
+# Nothing here gates, anchors, claims, or deploys. These are point-in-time measurements on real public data; the
+# live catalog may have moved a handful of rows since the previous run -- that is precisely what the stamp records
+# (a fresh generatedAt/gitSha), and the numbers stay honest because they are re-MEASURED, not copied. discoveryClaim
+# remains structurally false.
+#
+# TRIGGERS: manual dispatch, and any push to main that edits one of the four generators, this workflow, or a
+# tracked source a stamp covers -- so the drift that caused the STALE flags can no longer reappear silently. The
+# publish commit touches only reports/ and web/reports/ (never a trigger path), so it cannot re-trigger this job.
+
+on:
+  workflow_dispatch:
+    inputs:
+      p90_targets:
+        description: "p90 depth-estimators: catalogue-matched confirmed planets to scan"
+        required: true
+        default: "16"
+      p92_curves:
+        description: "p92 scrambled-fa: host curves to scramble"
+        required: true
+        default: "10"
+      p92_maxsectors:
+        description: "p92 scrambled-fa: max sectors per curve"
+        required: true
+        default: "1"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p76-multisource-novelty.ts
+      - scripts/p92-scrambled-fa.ts
+      - scripts/p90-depth-estimators.ts
+      - scripts/p59-offtarget-subset.ts
+      - src/data/toiDispositions.ts
+      - src/data/exoplanetArchive.ts
+      - src/data/gaiaDilution.ts
+      - src/data/mastS3.ts
+      - .github/workflows/freshness-regen.yml
+
+permissions:
+  contents: write
+
+# One refresh at a time; never cancel a running one (its published report is the artifact we want).
+concurrency:
+  group: freshness-regen
+  cancel-in-progress: false
+
+jobs:
+  freshness-regen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # FAST arms first so a timeout still publishes whichever reports refreshed (the crosscheck-python starvation
+      # lesson: never park an arm behind a longer one inside the same job).
+      - name: Multi-source novelty snapshot vs live ExoFOP (p76)
+        run: npm run p76:multisource-novelty
+
+      - name: Scrambled false-alarm null on real MAST curves (p92)
+        run: npm run p92:scrambled-fa -- --targets "${{ github.event.inputs.p92_curves || '10' }}" --maxsectors "${{ github.event.inputs.p92_maxsectors || '1' }}" --perCurve 3 --seed 7
+
+      - name: Depth-estimator calibration vs Archive reference (p90)
+        run: npm run p90:depth-estimators -- --targets "${{ github.event.inputs.p90_targets || '16' }}" --maxsectors 3 --tmag 9.5 --scan 90
+
+      - name: Localization-addressable subset veto (p59, reads the committed p58 report)
+        run: npm run p59:offtarget-subset -- --aperture 21 --min-sep 1.5
+
+      - name: Rebuild the report library + freshness index from the refreshed reports
+        # --allow-stale so a single catalog that refused to answer still publishes the OTHER three, marked honestly;
+        # the publish summary below echoes how many remain stale so a red run is never a mystery.
+        run: npm run p86:report-library -- --allow-stale
+
+      - name: Publish refreshed reports + rebuilt library back to the repo
+        if: always()
+        run: |
+          git config user.name "sdr-bot"
+          git config user.email "bot@spacedatarig.app"
+          git fetch origin main --depth=1
+          git checkout -B main origin/main
+          git add reports/p76-multisource-novelty.json reports/p76-multisource-novelty.md \
+                  reports/p92-scrambled-fa.json reports/p92-scrambled-fa.md \
+                  reports/p90-depth-estimators.json reports/p90-depth-estimators.md \
+                  reports/p59-offtarget-subset.json reports/p59-offtarget-subset.md \
+                  web/reports/ || true
+          if ! git diff --cached --quiet; then
+            git commit -m "freshness-regen: re-stamp p59/p76/p90/p92 + rebuild report library (run $GITHUB_RUN_ID, CI-measured)"
+            git push origin HEAD:main
+          else
+            echo "reports and index unchanged; nothing to publish"
+          fi
+          node -e "const j=require('./web/reports/index.json');console.log('published freshness:',JSON.stringify(j.freshness))" || true

@@ -1,0 +1,86 @@
+name: inverted-fp-scale (P75 AR(1) significance gate empirical FP on real noise)
+
+# The single most-cited thing this project can own (external audit Step 1): an EMPIRICAL false-alarm rate for the
+# production AR(1) significance gate on REAL, planet-free TESS noise, at sample size. scripts/p75-inverted-fp.ts
+# builds a star-by-star inverted null (invertCurve) after masking the known transits (maskKnownTransits) so the
+# curve carries real red noise but no injected planet, then runs the SAME production gate (calibratedFap AR(1))
+# against a model-free block-bootstrap FAP (estimateFap). The committed report was measured at n=16; this workflow
+# runs the identical script at scale (hundreds of planet-free light curves from token-free public TESS-SPOC,
+# reproducible seed) on CI, where the coordinate->sector resolver (MAST) and the S3 curve host are reachable, and
+# publishes the measured report back into the repository so it is publicly readable without artifact authentication.
+#
+# Why it runs in CI and not locally: the sector resolver hits mast.stsci.edu, which is intermittently unreachable
+# from a laptop sandbox. On CI the fetch path is reliable, so the numbers are genuinely measured, never fabricated:
+# if the run resolves too few curves the script self-reports INSUFFICIENT-DATA and the publish step skips. Nothing
+# here gates, anchors, claims a discovery, or deploys -- it measures and reports. discoveryClaim stays false.
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "number of real planet-free light curves to build inverted nulls from"
+        required: true
+        default: "200"
+      nnull:
+        description: "null (noise-bump) draws per curve"
+        required: true
+        default: "300"
+      trials:
+        description: "block-bootstrap trials per null draw"
+        required: true
+        default: "400"
+  push:
+    branches: [main]
+    paths:
+      - scripts/p75-inverted-fp.ts
+      - src/detect/invertedNull.ts
+      - .github/workflows/inverted-fp-scale.yml
+
+permissions:
+  contents: write
+
+# One sweep at a time; never cancel a running sweep (its published report is the artifact we want).
+concurrency:
+  group: inverted-fp-scale
+  cancel-in-progress: false
+
+jobs:
+  inverted-fp-scale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run inverted-curve AR(1) gate empirical FP measurement at scale
+        env:
+          TARGETS: ${{ github.event.inputs.targets || '200' }}
+          NNULL: ${{ github.event.inputs.nnull || '300' }}
+          TRIALS: ${{ github.event.inputs.trials || '400' }}
+        run: npm run p75:inverted-fp -- --targets "$TARGETS" --maxsectors 1 --nnull "$NNULL" --trials "$TRIALS" --seed 7
+
+      - name: Publish measured report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/p75-inverted-fp.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            git fetch origin main --depth=1
+            git checkout -B main origin/main
+            git add reports/p75-inverted-fp.md reports/p75-inverted-fp.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Track B: publish inverted-curve AR(1) gate empirical FP report (run $GITHUB_RUN_ID, CI-measured at scale)"
+              git push origin HEAD:main
+            else
+              echo "report unchanged; nothing to publish"
+            fi
+          else
+            echo "report not produced; nothing to publish"
+          fi

@@ -150,12 +150,14 @@ publishes `reports/crosscheck/cross-pipeline.{md,json}` back into the repo.
 
 Both cross-checks above are **re-implementations of the same problem we solve** -- a general period finder (PDM) and
 a second BLS written in an unrelated language (wotan + astropy). They rule out *our own* code being the only reason
-a signal appears; they do **not** compare against the field's mature, operationally-validated transit systems. As of
-this writing we have run **no quantitative benchmark against TCE / the NASA TAP (Transit Analysis Validation
-Environment, DAVE) / Drisser's transit-probability machinery (TPM)** -- the tools whose completeness/veto curves are
-the accepted reference. Our sample is also small for occurrence-rate claims: the independent arm is 12 committed
-fixtures, the method arm 33 hosts, and the baseline studies (P41) span 27-54 days on 29 hosts -- far from a survey-
-scale selection function.
+a signal appears. We have since closed one rung of that ladder: **LEO-Vetter (Kunimoto et al. 2025, AJ 170, 280) -- a
+published, pip-installable reference flux/pixel vetter -- now runs on the SAME byte-exact committed fixtures** (section
+33), giving Planet-Candidate completeness 0.75 -> 0.917 across a 1000 -> 4000 ppm depth grid and an equal-brightness
+eclipsing-binary false-positive flag rate of 11/12 (both CI-measured; read `reports/crosscheck/benchmark-vs-field.md`,
+not asserted here). What we have still **not** benchmarked against is TCE / the NASA TAP (Transit Analysis Validation
+Environment, DAVE) / Drisser's transit-probability machinery (TPM). Our sample is also small for occurrence-rate
+claims: the independent arm is 12 committed fixtures, the method arm 33 hosts, and the baseline studies (P41) span
+27-54 days on 29 hosts -- far from a survey-scale selection function.
 
 The honest scope of this repo is therefore: a **reproducible, measure-before-gate harness plus a set of quantified
 NEGATIVE results** (which vetting levers do NOT discriminate on real short-baseline data), not a new detector nor a
@@ -1153,8 +1155,11 @@ published reference system. Priority 1 closes that by running LEO-Vetter (Kunimo
   (3 offline schema tests guard it). Limb darkening is NOT fabricated: LEO-Vetter's own `stellar.quadratic_ldc`
   interpolates Claret (2021) tables from the real Teff/logg. The committed CSVs are untouched -- only the new
   star-params file is added.
-- **`scripts/benchmark_vs_field.py`** (CI-only, runs in `crosscheck-python.yml` after the detection harness so a
-  dependency resolution cannot disturb it) feeds the fixtures + that stellar dictionary to LEO-Vetter: injected
+- **`scripts/benchmark_vs_field.py`** (CI-only. It first lived behind the `cross_pipeline` detection arm in
+  `crosscheck-python.yml`, but that ~40-75 min arm repeatedly consumed the job's whole timeout before the benchmark
+  could run; it now has its own dedicated `leo-vetter.yml` job so the external-reference numbers land in minutes, in a
+  fresh Python env where the leo-vetter/pandas dependency resolution cannot disturb the detection stack) feeds the
+  fixtures + that stellar dictionary to LEO-Vetter: injected
   planets across a depth grid give its Planet-Candidate COMPLETENESS (clearing both check_thresholds("FA") and
   ("FP")), and an injected equal-brightness eclipsing binary gives its false-positive FLAG rate. Every cell is
   individually guarded; the whole package import is guarded; the script ALWAYS exits 0 -- an honest

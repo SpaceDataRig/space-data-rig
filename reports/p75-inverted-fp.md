@@ -1,6 +1,6 @@
 # P75 inverted-curve false alarms: an empirical, model-free check on the AR(1) gate
 
-Reproduce: `npm run p75:inverted-fp -- --targets 16 --nnull 60 --trials 80 --maxsectors 1`
+Reproduce: `npm run p75:inverted-fp -- --targets 200 --nnull 300 --trials 400 --maxsectors 1`
 
 P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external
 project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every
@@ -10,11 +10,11 @@ candidate, scored under the production AR(1) gate and a model-free block bootstr
 
 | null | false alarms at FAP<0.05 | rate |
 |---|---|---|
-| AR(1)-model gate | 12/16 | 75% (nominal 5%) |
-| model-free block | 5/16 | 31% |
+| AR(1)-model gate | 148/200 | 74% (nominal 5%) |
+| model-free block | 64/200 | 32% |
 
-AR(1) passes but model-free rejects: 7/16 (red 0/0, quiet 7/16); mean FAP delta (block-AR1) 0.1638.
+AR(1) passes but model-free rejects: 86/200 (red 1/3, quiet 85/197); mean FAP delta (block-AR1) 0.1869.
 
-**VERDICT: GATE-OPTIMISTIC-ON-REAL-NOISE: on inverted (planet-free) curves the production AR(1) gate signs off 12/16 noise bumps as significant at FAP<0.05 -- 75% >> the nominal 5% -- and the model-free block bootstrap rejects 7 of them; real systematics have tails AR(1) under-states (recovers P69's finding on a CLEAN null). Measured only; threshold unchanged.**
+**VERDICT: GATE-OPTIMISTIC-ON-REAL-NOISE: on inverted (planet-free) curves the production AR(1) gate signs off 148/200 noise bumps as significant at FAP<0.05 -- 74% >> the nominal 5% -- and the model-free block bootstrap rejects 86 of them; real systematics have tails AR(1) under-states (recovers P69's finding on a CLEAN null). Measured only; threshold unchanged.**
 
 Quantifies the existing gate's calibration on a model-free null; changes no threshold, touches no money path; discoveryClaim false.

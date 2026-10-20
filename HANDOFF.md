@@ -607,7 +607,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-19)
+## 13. Current state (as of 2026-10-20)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -616,43 +616,40 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is 56e4574 ("fix(stats,core): serve the counter definitions, and delete
-  the dead cursor RPC"), on top of 777461e (the P41 re-run) and 0788adb (the measured deploy window). Commits land
-  faster than a document can be refreshed, so this line is deliberately about the revision measured below, not a
-  claim about the tip -- `git log` is the authority there, and the commit carrying this text follows 56e4574.
-  CI run 39143833493 for 56e4574: completed, success.
-- Production: wrangler version a3d0ea01-df36-47d0-88fb-0c0f46f5ff37, gitSha 75e13a4a23b4cd1141bf551c883ae07bf87f7dce
-  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed 2026-10-19T01:17Z. An earlier
-  version of this bullet recorded 045d730c / 56e4574, which was the audited revision of the code; this one added the
-  static assets (the M4 panel and the 27-entry figure manifest) on top of it. Triggers: schedule `*/15 * * * *`,
+- Git: the revision this snapshot describes is ad7b61a, the tip of main carrying this session's six-point audit
+  remediation on top of the earlier passes -- crossmatch tri-state (ee7389d), the keyless on-chain verify endpoint
+  (13a30bb), the freshness-regen CI workflow that clears every red STALE (b38ae21), and the frozen, reproducible p90
+  depth calibration (e8d6de4). Commits land faster than a document can be refreshed, so this line is about the
+  revision measured below, not a standing claim about the tip -- `git log` is the authority there, and the commit
+  carrying this text follows ad7b61a. CI is green on ad7b61a.
+- Production: wrangler version 8aede3ec-9426-47b8-8e34-036866bcd4d5, gitSha ad7b61a6aac04746a9ea635084c66f2d12998097
+  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed 2026-10-20. It supersedes the
+  previous version/sha pair (a3d0ea01 / 75e13a4, the 10-19 static-asset refresh). Triggers: schedule `*/15 * * * *`,
   workflow `rig-run`, custom domain spacedatarig.app. Any later deploy supersedes this version/sha pair, so
-  `GET /health` is the authority on what runs now.
-  STATED EXCEPTION, because `npm run deploy:window` said WAIT at that moment and I uploaded anyway: between 17:39Z and
-  01:15Z the tool returned WAIT on fourteen consecutive checks and one UNKNOWN (a transient network refusal, which it
-  reports as UNKNOWN rather than a reassuring GO). The reason was not a pass doing work -- see the open defect below --
-  and the change being published touches no code: `git diff 56e4574..75e13a4 -- src` is 0 bytes, only `web/`,
-  `reports/`, `tests/`, docs and `ci.yml` differ, so no survey pass could have straddled two code versions. That is the
-  judgement the window exists to force, made explicitly with its evidence rather than by quietly ignoring the verdict.
+  `GET /health` is the authority on what runs now. The deploy went through `cf:deploy:sha`, which refuses a dirty tree;
+  `GET /api/state` read `activeRun.running=false` at the snapshot time below, so the upload did not straddle a live pass.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state`, measured 2026-10-19T01:17Z; the payload carries
+- Public counters at that same moment (`GET /api/state`, measured 2026-10-20T09:39Z; the payload carries
   `statDefinitions` -- the sentence saying what each of these counts, from `src/core/stats-definitions.ts`):
-  surveyPass 99 CLAIMED, distinctHosts 97 hosts with a recorded result, blindHeld 29 over blindCandidates 50 assessed,
-  bundlesAnchored 5 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 77. The report library serves
-  50 reports with `stale: []`, `verified: 3`, `fullyVerified: 3`.
+  surveyPass 216 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53 assessed,
+  bundlesAnchored 5 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 97. The report library serves
+  54 reports with `stale: []`, `stamped: 14`, `verified: 12`, `fullyVerified: 12`.
   Note the anchor pair moved since the previous snapshot (11 published-bytes against 20 commitments became 5 against
   20): that is the documented semantics at work, not a lost anchor -- the rotating survey re-derives a sealed record,
   its bundle hash changes with the new run timestamp, and the record leaves `bundlesAnchored` while staying on chain.
   Nothing was un-anchored; the count is a statement about the bytes published now.
 
-- Tests: 104 files / 798 tests as this snapshot was taken (via `npm run test:coverage`, which is the CI command, so the
-  coverage floors are part of the same green), and `npm run typecheck:all` clean. The count is itself a
+- Tests: 113 files / 861 tests as this snapshot was taken (via `npm run test:coverage`, which is the CI command, so the
+  coverage floors -- 95.95% lines / 83.03% branches against a 90/78 floor -- are part of the same green), and
+  `npm run typecheck:all` and `eslint --max-warnings 0` are clean. The count is itself a
   snapshot -- trust the run over any number written in a document, including this one.
 
-OPEN DEFECT, MEASURED AND NOT YET FIXED (the next pass starts here). Two consecutive autonomous passes finished their
-work and then held the run mutex until the 30-minute stale takeover released it:
+MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- NOT REPRODUCED SINCE, NOT PROVEN FIXED (keep observing). At that snapshot
+two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover
+released it:
 
 - `run-20261019-001518`: claimed 00:15:18Z, last event 00:19:24Z (6 rows written), still `running=true` when the slot
   was taken over at 00:45:18Z -- 30 minutes of occupancy for 4 minutes of work.
@@ -668,6 +665,11 @@ cannot help if `finishRun` is never called. Do not "fix" it by shortening `STALE
 genuinely slow pass and lets two passes write concurrently. Start by finding out where the workflow stops -- per-target
 steps that are still running, a step that throws and skips the tail, or a Workflow instance that never resumes -- and
 make the answer observable before changing the timeout semantics.
+
+UPDATE, measured 2026-10-20: the freeze has NOT been reproduced since. `GET /api/state` now reports surveyPass 216 (up
+from 99 at the 10-19 snapshot), so the survey has been finishing and advancing continuously across roughly the last
+32 hours. That makes the defect dormant, not resolved -- no code fix landed, and the dependency is structural (the
+finish tail must actually run). The observability step above still stands as the next action if it reappears.
 
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),

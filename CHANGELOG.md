@@ -5,6 +5,54 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Six-point quantitative external audit: a keyless on-chain read-back, a crossmatch that cannot call a failed lookup "novel", and a depth calibration frozen so a cited number stops moving (2026-10-20)
+A third-party six-point audit found the same shape of defect across the whole stack -- *a thing was computed but never
+actually reaches the surface a reader checks*. Each point was closed against code, not prose:
+- **#1 (retracted number still printed live)** `audit10-close-figure.svg` / `audit3-remediation-figure.svg` still printed a
+  withdrawn `71%` (correct values: P84 coverage-loss 70%, P85 contaminant 77.2%, both report-driven); the
+  figure-no-retracted guard only scanned top-level SVGs and its banned-token list predated `71%`. Widened the guard to
+  recurse over every served SVG/HTML fragment and added the retracted string (`fe0c268`).
+- **#2 (false "not machine-verifiable" banner)** the served index under-counted `verified`/`fullyVerified` and three reports
+  carried a red "blind.jsonl not tracked" note that was no longer true. Fixed in the prior batch (`55dec68`/`b367e09`) and
+  re-verified live this pass.
+- **#3 (freshness coverage + stale presented as current)** the gate covered 8 of 54 reports; P92/P93/P95/P96/P48/P76
+  carried no `generatedAt`/`gitSha`/`inputs`; and `research.json`/`app.js` rendered the P76 multi-source figure as a live
+  count while its generator had not re-run since the ExoFOP 3.8 MB pull timed out at the old 45 s default. Wired
+  `buildStamp` into those generators, raised the ExoFOP fetch timeout to 180 s, and marked P76 point-in-time with a
+  `snapshotAt`/`stamped` caveat rather than presenting a shrink-0 as a current number (`b4f1518`).
+- **#4 (README over-promised on-chain trust)** `/api/bundles/:id/verify` only self-compares the served bytes to a served
+  `HASH.txt` -- it never queried Solana -- so "anyone can re-read the memo and check the science against the site" was a
+  write-path fact with no read path. Reworded the README to the narrow truth (`f31b87a`) and then MADE it true: a shared,
+  runtime-agnostic, dependency-free `src/solana/memoVerify.ts` decodes the sealed memo's `bundleHash` AND `scienceHash`
+  from a live `jsonParsed` getTransaction and compares both to what the site serves now, surfaced as keyless
+  `GET /api/bundles/:id/verify-onchain` on both runtimes, reporting `chainReadable:false` rather than a false "verified"
+  when no RPC answers, and an explicit `anchoredScienceDrift` only when the chain sealed a *different* science (a
+  historical 3-field memo is `legacyMemo`, deliberately not drift) (`13a30bb`, 11 offline mock-RPC tests).
+- **#5 (degeneracy called "physically-consistent"; crossmatch conflated a failed lookup with empty)** stopped labelling
+  degenerate fits physically consistent and widened the harmonics sweep (`b1fd728`); and `crossmatchPeriod` is now
+  tri-state: `fetchPlanetsByHost` distinguishes "completed-and-empty" from "lookup-failed", the critic adds a
+  non-gating `catalog-lookup` status (`hit`/`alias`/`off-slice`/`none`/`lookup-failed`), a failed/off-slice lookup can only
+  DOWNGRADE a "novel" reading and the accepted set never widens, and the default synthetic/bundle path is byte-identical
+  (`ee7389d`, +6 behaviour tests).
+- **#6 (candidate countdown baked a stale day-count)** the countdown printed a value frozen at build time; it is now
+  projected live (`724cfc1`).
+- **Making the clears stick.** A dedicated CI workflow `freshness-regen.yml` re-runs the network-bound reports on a
+  runner where ExoFOP/MAST/Gaia answer (they time out in a laptop sandbox) and publishes the re-stamped reports + the
+  rebuilt library back to the repo, clearing every red STALE and giving p92/p76 a real stamp (`b38ae21` -> `80d179c`);
+  the live library is now `stale:[]`, 14 stamped / 12 verified / 12 fullyVerified of 54. Re-measuring p90 against the
+  LIVE Archive moved its period-matched sample 16 -> 6 and the published depth error bar 48% -> 58% -- a figure
+  `src/core/depthFormat.ts` bakes into the public cards -- so p90 is now frozen against a committed snapshot
+  (`reports/fixtures/p90-frozen-rows.json`) and replays OFFLINE/deterministically by default, its data stamp pointing at
+  the fixture rather than the fetch layer, so a scheduled job can no longer gamble a cited number on when it ran;
+  the published 16/48 numbers are UNCHANGED and `--live` stays the deliberate re-measure path (`e8d6de4`, `ad7b61a`).
+
+Verified end to end: `typecheck:all` and `eslint --max-warnings 0` clean, 113 test files green with coverage 95.95% lines
+/ 83.03% branches; deployed via `cf:deploy:sha` (version `8aede3ec`) with `/health.gitSha` equal to the deployed commit
+`ad7b61a` and CI green on it; live `GET /api/bundles/F-HR-858-b/verify-onchain` returns `chainReadable:true`,
+`ledgerBundleMatch:true`, `anchorCoversCurrentBundle:false` (the timestamped bundle re-derived) yet
+`scienceHashMatch:true` / `anchoredScienceDrift:false` (the science content address held). Research-only throughout;
+no discovery claim, and no production verdict-gate semantics changed without measurement.
+
 ### An occurrence-rate kernel, a real selection integral, and a forward-model consistency check that refuses to fake a rate (2026-10-19, thirteenth pass)
 Priority 5. `src/sim/occurrenceRate.ts` (7 unit tests) is the pure kernel: Gehrels (1986) Poisson intervals on a
 count, the `eta = n/(N*S)` inversion, and the forward model `E[N] = N*eta*S` with a standardised consistency score.

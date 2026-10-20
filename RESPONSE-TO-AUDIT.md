@@ -246,3 +246,41 @@ byte-equality assertions over it now run rather than being skipped. The figure r
 matched 0 of 17; PSF double-difference veto power 0.00 on 5 curves) in the warn colour: they are measurements, not
 failures to look. And the p41 re-run reproduced the published table; it did not improve or re-validate it, and the
 40-host variant is quoted nowhere in this repository because it is not what the documents cite.
+
+## 2026-10-20 -- six-point quantitative external audit
+
+A separate auditor scored the stack on six points. They share one failure shape: a value was *computed* somewhere but
+never actually reached the surface a reader checks -- a retracted number still printed on a deployed figure, a banner
+asserting a file was untracked when it was, a README claiming a read-back that no endpoint performed, a label that
+called a degenerate fit "physically consistent". Each row states what was measured, not what was intended.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| A retracted 71% still printed on the live figures | `audit10-close-figure.svg` / `audit3-remediation-figure.svg` carried a withdrawn `71%`; the correct report-driven values are P84 coverage-loss 70% and P85 contaminant 77.2%. The guard missed it because its banned-token list predated `71%` and it only scanned top-level SVGs, not nested `<g>` fragments. | Replaced the hard-coded strings with the live report numbers and widened the guard to recurse every served SVG/HTML fragment with `71%` in its banned set. | `tests/figure-no-retracted.test.ts` fails if any served figure contains a banned token; deployed `web/*.svg` fetched with cache-bust contain no bare `71%`. | Shipped (`fe0c268`). |
+| The served index under-reported verification and stamped three reports as unverifiable | `index.json` showed `verified:3`/`fullyVerified:3` while 12 were actually verifiable, and p82/p84/p85 carried a red "PROVENANCE NOT MACHINE-VERIFIABLE ... blind.jsonl not tracked" note that was stale -- the file is tracked. | Corrected the tag counting and removed the obsolete notes. | Re-checked against the live library this pass: `stale:[]`, 14 stamped / 12 verified / 12 fullyVerified of 54. | Shipped (`55dec68`/`b367e09`), live-verified. |
+| The freshness gate covered only 8 of 54 reports, and a stale figure was presented as current | P92/P93/P95/P96/P48/P76 had no `generatedAt`/`gitSha`/`inputs`; `research.json`/`app.js` rendered the P76 multi-source figure as a live number though its generator had not re-run since the ExoFOP 3.8 MB table timed out at the old 45 s default. | Wired `buildStamp` into those generators, raised the ExoFOP fetch timeout to 180 s so the default path no longer returns empty, and marked P76 point-in-time (`snapshotAt`/`stamped`) rather than presenting a measured zero as current. | `npm run p86:report-library` exits non-zero on any HARD-STALE; after the CI re-run the live library is `stale:[]`. | Shipped (`b4f1518`). |
+| `/verify` proved nothing about the chain and the README over-promised | `/api/bundles/:id/verify` re-hashes the served bundle against the served `HASH.txt` only -- it never queried Solana -- so "re-read the memo and check the science against the site" was a write-path fact with no read path. | First told the truth (README reworded to the narrow fact), then made it true: a dependency-free, runtime-agnostic `src/solana/memoVerify.ts` decodes the sealed `bundleHash` AND `scienceHash` from a live `jsonParsed` getTransaction and compares both to the site's current values, exposed as keyless `GET /api/bundles/:id/verify-onchain`, honest `chainReadable:false` when no RPC answers, and `anchoredScienceDrift` only when the chain sealed a *different* science (a historical 3-field memo is `legacyMemo`, not drift). | 11 offline mock-RPC tests + worker parity source test; live `F-HR-858-b` returns `chainReadable:true`, `ledgerBundleMatch:true`, `anchorCoversCurrentBundle:false`, `scienceHashMatch:true`, `anchoredScienceDrift:false`. | Shipped + mainnet-proven (`f31b87a` reword, `13a30bb` endpoint). |
+| Degenerate fits were called "physically-consistent" and a failed catalog lookup was indistinguishable from a genuinely empty one | The fit classifier labelled degenerate solutions consistent, and `crossmatchPeriod` collapsed three modes into "no known planet here" -- (i) lookup failed, (ii) succeeded but the planet was off the slice, (iii) succeeded and truly none -- which could overstate a signal as novel. | Stopped the consistent label and widened the harmonics sweep; and made the crossmatch tri-state: `fetchPlanetsByHost` distinguishes completed-and-empty from lookup-failed, the critic emits a non-gating `catalog-lookup` status, a failed/off-slice lookup can only DOWNGRADE a novel reading (the accepted set never widens), and the default synthetic/bundle path is left byte-identical. | `tests/vetting.test.ts` +6 behaviour tests (empty-with-hits stays, failed lookup no longer reads novel, off-slice handled, accept-set monotone). | Shipped (`b1fd728`, `ee7389d`). |
+| The candidate countdown printed a number frozen at build time | A day-count was baked into the built artifact, so it aged wrongly between builds. | Projected live from the state the dashboard already reads. | Renders against `/api/state` counts. | Shipped (`724cfc1`). |
+
+### Process finding this pass surfaced (recorded because it changed a design, not just a number)
+
+Clearing the red STALE banners required re-running p90 on a runner (its network inputs are unreachable from a laptop
+sandbox). Doing so moved p90's period-matched sample from 16 to 6 and the published depth error bar from 48% to 58% --
+because the NASA Archive had added planets since 2026-10-18 -- and `src/core/depthFormat.ts` bakes that radius into the
+public cards, breaking two parity guards. A CI job should not gamble a cited scientific number on WHEN it ran. The
+operator was asked and chose to make p90 reproducible: it now replays a committed frozen snapshot
+(`reports/fixtures/p90-frozen-rows.json`) offline and deterministically by default, and its data stamp tracks the
+fixture + the script rather than the fetch layer, so scheduled re-runs no longer re-measure against a live catalog.
+The published 16/48 numbers are unchanged; `--live` remains the deliberate, auditable re-measure path. The regeneration
+workflow itself is now driven only by the data-layer sources still safe to re-measure (ExoFOP / TOI / Gaia-dilution /
+MAST-S3), not by p90 or its archive query module, and no longer self-triggers on its own edits.
+
+### Honesty note on the six-point audit
+
+Every fix here is a *narrowing of a claim to what is actually verifiable*, not an expansion of what the rig asserts.
+The on-chain endpoint reports bundle drift honestly for a re-derived historical bundle and distinguishes it from a
+science-address change; the crossmatch change can only ever shrink the set of "novel" readings; and the p90 change
+does NOT re-measure or improve anything -- it freezes a measurement so a number already cited in the docs stops
+moving under readers. Nothing on any path claims a new planet, and no production verdict gate was enabled without its
+criterion being measured first.

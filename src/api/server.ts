@@ -25,7 +25,7 @@ import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
-import { verifyBundle } from "../bundle/bundle.ts";
+import { verifyBundle, hashManifest, hashScience } from "../bundle/bundle.ts";
 import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { FsArtifactStore } from "../node/artifact-store.ts";
 import { readCodeVersion } from "../node/code-version.ts";
@@ -36,6 +36,7 @@ import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
 import { buildObservationEvidence } from "../observe/evidence.ts";
 import { handleBrowserRpcProxy } from "../observe/rpcProxy.ts";
 import { endpointList } from "../solana/anchor-core.ts";
+import { readChainMemo, compareAnchor, type MemoFetch } from "../solana/memoVerify.ts";
 import type { ObservationRecord } from "../observe/observation.ts";
 import { discussionMode, llmProviderLabel } from "../ai/llm.ts";
 import { threadsFor, buildDiscussion } from "../ai/discussion.ts";
@@ -249,6 +250,33 @@ app.get("/api/bundles/:id/verify", async (c) => {
   if (!id || !(await artifacts.exists(`bundles/${id}/manifest.json`))) return c.json({ error: "bundle not found" }, 404);
   try {
     return c.json({ findingId: id, ...(await verifyBundle(artifacts, id)) });
+  } catch (e) {
+    return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  }
+});
+
+// Read-only ON-CHAIN verification (audit #4): re-read this finding's sealed Solana transaction, decode the memo
+// fields, and compare BOTH the bundleHash and the scienceHash the chain actually carries against the bundle this
+// server reads right now. Mirrors the Worker route exactly (shared memoVerify core). GET only; reads the chain,
+// spends nothing, needs no key; reports chainReadable:false rather than claiming a match it cannot check.
+app.get("/api/bundles/:id/verify-onchain", async (c) => {
+  const id = safeName(c.req.param("id"));
+  if (!id) return c.json({ error: "bundle not found" }, 404);
+  const text = await artifacts.getText(`bundles/${id}/manifest.json`);
+  if (text == null) return c.json({ error: "bundle not found" }, 404);
+  try {
+    const manifest = JSON.parse(text) as Parameters<typeof hashManifest>[0];
+    const currentBundleHash = await hashManifest(manifest);
+    const currentScienceHash = await hashScience(manifest);
+    const entry = readLedger(LEDGER_PATH).find((e) => e.findingId === id);
+    if (!entry || entry.status !== "anchored" || !entry.signature) {
+      return c.json({ findingId: id, anchored: false, chainReadable: false, verifiable: false, reason: "no anchored ledger row with a signature for this finding" });
+    }
+    const endpoints = endpointList(undefined, process.env.SOLANA_RPC, process.env.SOLANA_RPC_FALLBACKS);
+    const fetchImpl: MemoFetch = (url, init) => fetch(url, init);
+    const read = await readChainMemo({ endpoints, signature: entry.signature, fetchImpl });
+    const cmp = compareAnchor(read, { findingId: id, ledgerBundleHash: entry.bundleHash, currentBundleHash, currentScienceHash });
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

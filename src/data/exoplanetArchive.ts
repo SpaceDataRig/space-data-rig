@@ -219,7 +219,7 @@ export async function fetchPlanetsByHost(
         if (tic != null) row.tic = tic;
         return row;
       });
-    } catch (e) {
+    } catch {
       if (attempt === 2) return null; // transport/HTTP failed -> the "lookup-failed" state
       await new Promise((res) => setTimeout(res, 1200 * (attempt + 1)));
     } finally {

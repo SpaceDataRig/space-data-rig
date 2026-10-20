@@ -29,10 +29,13 @@ narration only (about 2% of the code, and removing it changes zero verdicts -- m
   every re-seal, so the `bundleHash` written into an on-chain memo attests *that this bundle existed at
   that time* -- it is **not** a locator for the currently-served artifact, and a reader who looks for a
   live file by the memo's `bundleHash` will not find one. Anyone can re-read the memo text from Solana
-  with no trust in our database; that trust-freedom covers *reading the memo*, not reconciling it with the
-  site. `/api/bundles/:id/verify` re-hashes the served bytes against a served `HASH.txt` (internal
-  tamper-evidence only -- it does not query the chain, and `HASH.txt` is not on the public artifact
-  allow-list). The exact limits this leaves open are stated in Capability boundaries.
+  with no trust in our database. Reading the memo *and* reconciling it to the bytes this site serves is now
+  itself an endpoint: keyless `GET /api/bundles/:id/verify-onchain` re-reads the sealed transaction, decodes
+  both the `bundleHash` and the `scienceHash` the chain carries, and compares them to the manifest served
+  today -- reporting `anchoredScienceDrift` when they diverge, and `chainReadable:false` (never a false
+  "verified") when no RPC answers. Separately, `/api/bundles/:id/verify` re-hashes the served bytes against a
+  served `HASH.txt` (internal tamper-evidence only -- it does not query the chain, and `HASH.txt` is not on
+  the public artifact allow-list). The exact limits these leave open are stated in Capability boundaries.
 - **Under review, and answering it.** A point-by-point ledger of the audit-10 review -- criticism,
   fix, verification, and the residual risk that remains -- is in [RESPONSE-TO-AUDIT.md](RESPONSE-TO-AUDIT.md).
 
@@ -71,18 +74,23 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
 - **The token is not part of the science.** The $SDR named-observation payment layer is an isolated
   commercialisation experiment; no verdict, `bundleHash`, `scienceHash`, or discovery claim reads from
   it. It is listed here so its presence is not mistaken for a scientific credential.
-- **Local verify is not a chain check.** `/api/bundles/:id/verify` recomputes the served manifest hash and
-  compares it to a served `HASH.txt`, then re-hashes each artifact from the store. That proves the store
-  was not edited after sealing; it does **not** read Solana. The independent chain attestation is a separate
-  keyless daily job that re-reads recent mainnet memos and matches them to their hashes -- the two checks
-  are deliberately not conflated.
+- **Local verify and chain verify are two endpoints, kept apart.** `/api/bundles/:id/verify` recomputes the
+  served manifest hash and compares it to a served `HASH.txt`, then re-hashes each artifact from the store:
+  that proves the store was not edited after sealing, but does **not** read Solana.
+  `/api/bundles/:id/verify-onchain` does the chain read -- re-reads the sealed transaction, decodes the memo,
+  and matches its `bundleHash`/`scienceHash` against the bundle served now (with a keyless daily job re-checking
+  recent memos beside it). The two are deliberately not conflated: one is tamper-evidence of our store, the other
+  is on-chain reconciliation, and the latter returns `chainReadable:false` rather than a pass when no RPC answers.
 - **`bundleHash` drifts by design, and `scienceHash` can move when science is re-derived.** Because
   `bundleHash` wraps a timestamp it differs between a ledger anchor and the bytes served today, so a
   historical anchor is reconciled to a live artifact by `scienceHash`, never by `bundleHash`. And when a
   finding's science is re-derived -- e.g. the RA-unit coordinate fix re-running the blend pipeline -- its
   `scienceHash` changes too: an *earlier-anchored* finding can now read `needs-more-data` where it was
   accepted at anchor time. We do not assert that an anchored finding's current science still equals its
-  science at anchor time; that invariant is not enforced, and is stated here rather than papered over.
+  science at anchor time -- but that drift is no longer hidden: `verify-onchain` decodes the anchored
+  `scienceHash` and sets `anchoredScienceDrift:true` the moment the chain-sealed science differs from what is
+  served. Surfacing it is the guarantee; re-anchoring on every re-derivation is not, so a flagged finding stays
+  as-posted until an operator chooses to re-seal.
 
 **Project health & governance (all verifiable, none of it a claim of size):** automated
 checks run on every push/PR ([CI](https://github.com/SpaceDataRig/space-data-rig/actions));
@@ -187,7 +195,11 @@ verifiable happens. Space Data Rig is built to be the opposite:
   commitment; cross-run comparison uses the content address).
 - **It is independently auditable.** The bundle hash is written to Solana mainnet inside
   an SPL Memo transaction; anyone can re-read the chain and confirm the memo is what we
-  posted, with no trust in our database. Read that narrowly: the memo pins *that this exact
+  posted, with no trust in our database. That reconciliation is now a keyless endpoint, not only a manual
+  step: `GET /api/bundles/:id/verify-onchain` re-reads the transaction, decodes the memo's `bundleHash` and
+  `scienceHash`, and compares both to the bytes served now -- flagging `anchoredScienceDrift` when the
+  chain-sealed science no longer matches the served science, and `chainReadable:false` (never a false pass)
+  when the chain is unreachable. Read the guarantee narrowly: the memo pins *that this exact
   timestamped bundle existed at this time*. Because a re-seal changes the bundle hash, the
   memo is not a handle for locating today's served bytes -- you reconcile a historical anchor
   to a live artifact through the content address (`scienceHash`), not the memo's bundle hash.

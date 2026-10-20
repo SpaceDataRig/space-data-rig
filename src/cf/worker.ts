@@ -15,7 +15,7 @@ import { RigStateDO } from "./rig-state.do.ts";
 import { RateLimitDO } from "./rate-limit.do.ts";
 import { RigRunWorkflow } from "./workflow.ts";
 import { R2ArtifactStore } from "./artifact-store.ts";
-import { verifyBundle } from "../bundle/bundle.ts";
+import { verifyBundle, hashManifest, hashScience } from "../bundle/bundle.ts";
 import { isAdminAuthorized, ADMIN_UNAUTHORIZED } from "../core/auth.ts";
 import { createFixedWindowLimiter, clientRateKey, type RateDecision, type RateLimiter } from "../core/rateLimit.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -23,6 +23,7 @@ import { buildDiscussion } from "../ai/discussion.ts";
 import { threadsFor } from "../ai/threads.ts";
 import { buildDeliberationReceipt, hashDeliberation, persistDeliberation, verifyDeliberation } from "../ai/deliberation.ts";
 import { explorerUrl, endpointList, verifyOnEndpoints, OBSERVE_MEMO_PREFIX } from "../solana/anchor-core.ts";
+import { readChainMemo, compareAnchor, type MemoFetch } from "../solana/memoVerify.ts";
 import { computeObservation } from "../observe/observeApi.ts";
 import { buildPaymentRequired, buildPaymentResponse } from "../observe/x402.ts";
 import { buildObservationEvidence } from "../observe/evidence.ts";
@@ -335,6 +336,37 @@ app.get("/api/bundles/:id/verify", async (c) => {
   if (!id || !(await store.exists(`bundles/${id}/manifest.json`))) return c.json({ error: "bundle not found" }, 404);
   try {
     return c.json({ findingId: id, ...(await verifyBundle(store, id)) });
+  } catch (e) {
+    return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  }
+});
+
+// Read-only ON-CHAIN verification (audit #4): re-read this finding's sealed Solana transaction, decode the memo
+// fields, and compare BOTH the bundleHash and the scienceHash the chain actually carries against the bundle this
+// site serves right now. Unlike /verify (a self-consistency re-hash of the stored artifacts) this trusts NOTHING
+// local. When the chain cannot be reached it reports chainReadable:false and makes no match claim -- it never
+// presents an unverified anchor as verified. GET only, reads public photometry + the chain, spends nothing, needs
+// no admin token, and touches neither the ledger nor any verdict.
+app.get("/api/bundles/:id/verify-onchain", async (c) => {
+  const id = safeName(c.req.param("id") ?? "");
+  const store = artifacts(c.env);
+  if (!id) return c.json({ error: "bundle not found" }, 404);
+  const text = await store.getText(`bundles/${id}/manifest.json`);
+  if (text == null) return c.json({ error: "bundle not found" }, 404);
+  try {
+    const manifest = JSON.parse(text) as Parameters<typeof hashManifest>[0];
+    const currentBundleHash = await hashManifest(manifest);
+    const currentScienceHash = await hashScience(manifest);
+    const ledger: LedgerEntry[] = await rigStub(c.env).listLedger();
+    const entry = ledger.find((e) => e.findingId === id);
+    if (!entry || entry.status !== "anchored" || !entry.signature) {
+      return c.json({ findingId: id, anchored: false, chainReadable: false, verifiable: false, reason: "no anchored ledger row with a signature for this finding" });
+    }
+    const endpoints = endpointList(undefined, c.env.SOLANA_RPC, c.env.SOLANA_RPC_FALLBACKS);
+    const fetchImpl: MemoFetch = (url, init) => fetch(url, init);
+    const read = await readChainMemo({ endpoints, signature: entry.signature, fetchImpl });
+    const cmp = compareAnchor(read, { findingId: id, ledgerBundleHash: entry.bundleHash, currentBundleHash, currentScienceHash });
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

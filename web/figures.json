@@ -1,9 +1,9 @@
 {
   "schema": "sdr-figures/1",
-  "generatedAt": "2026-10-18T16:34:45.236Z",
+  "generatedAt": "2026-10-20T04:34:56.409Z",
   "generatedBy": "scripts/p87-figures-manifest.ts (from committed web/*.svg)",
   "note": "Every figure the rig has published, inventoried from the committed web/ directory. Titles are derived mechanically from each filename; each card links to the SVG exactly as deployed.",
-  "count": 27,
+  "count": 28,
   "figures": [
     {
       "src": "results-figure.svg",
@@ -24,6 +24,10 @@
     {
       "src": "anchor-decode-proof.svg",
       "title": "Anchor Decode Proof"
+    },
+    {
+      "src": "audit-remediation6-figure.svg",
+      "title": "Audit Remediation6"
     },
     {
       "src": "audit-round-figure.svg",

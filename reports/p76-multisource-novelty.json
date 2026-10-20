@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generatedAt": "2026-10-20T06:52:32.952Z",
-    "gitSha": "b38ae215e6d9b0b72b200613a84989cf14b626a0",
+    "generatedAt": "2026-10-20T07:40:25.640Z",
+    "gitSha": "e8d6de459ffb29a8e8458db21c36cdf8d2f7d819",
     "inputs": [
       {
         "path": "web/candidates.json",

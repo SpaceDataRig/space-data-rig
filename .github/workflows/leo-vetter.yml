@@ -1,0 +1,77 @@
+name: leo-vetter-benchmark (external reference vetter on committed real curves)
+
+# WHY A SEPARATE JOB. The cross-pipeline job runs benchmark_vs_field.py only AFTER the slow cross_pipeline.py
+# detection arm (~40-75 min of wotan detrending), so on a busy runner the whole job can consume its timeout in the
+# detection arm and NEVER reach the LEO-Vetter benchmark (this happened: two runs published cross-pipeline but left
+# the benchmark step pending). This workflow runs ONLY the external-reference arm in a fresh Python env, so the
+# LEO-Vetter numbers can land in minutes instead of waiting behind an arm it does not depend on. benchmark_vs_field.py
+# imports cross_pipeline as a LIBRARY (fixture reading + transit model helpers, which need only numpy) and reads the
+# committed real-curve fixtures + p94 stellar parameters -- byte-identical, no MAST needed. If leo-vetter still fails
+# to import, the harness writes an honest LEO-VETTER-MISSING report and exits 0; the publish step rebase-retries so it
+# cannot collide with the cross-pipeline job's own publish-back. Research only: nothing gates, anchors, claims, deploys.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/benchmark_vs_field.py
+      - tests/fixtures/spoc-curves/**
+      - .github/workflows/leo-vetter.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leo-vetter-benchmark
+  cancel-in-progress: false
+
+jobs:
+  leo-vetter-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install detection helpers (cross_pipeline import) + LEO-Vetter stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy==1.26.4 astropy==5.3.4 batman-package==2.4.9 wotan==1.9
+          # leo-vetter imports pandas + scipy in leo_vetter.stellar (Claret limb-darkening tables via pandas,
+          # nearest-neighbour interpolation via scipy); neither is forced by the wheel metadata, so install them.
+          pip install pandas scipy || echo "pandas/scipy unavailable; benchmark arm will report LEO-VETTER-MISSING"
+          pip install leo-vetter || echo "leo-vetter unavailable; benchmark arm will report LEO-VETTER-MISSING"
+
+      - name: Run benchmark-vs-field (LEO-Vetter) harness
+        run: python scripts/benchmark_vs_field.py
+
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leo-vetter-benchmark-report
+          path: reports/crosscheck/benchmark-vs-field.md
+          if-no-files-found: warn
+
+      - name: Publish measured benchmark report back to the repo
+        if: always()
+        run: |
+          if [ -f reports/crosscheck/benchmark-vs-field.md ]; then
+            git config user.name "sdr-bot"
+            git config user.email "bot@spacedatarig.app"
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main --depth=1
+              git checkout -B main origin/main
+              git add reports/crosscheck/benchmark-vs-field.md reports/crosscheck/benchmark-vs-field.json
+              if git diff --cached --quiet; then echo "benchmark report unchanged; nothing to publish"; break; fi
+              git commit -m "Track C: publish LEO-Vetter benchmark-vs-field report (run $GITHUB_RUN_ID, CI-measured)"
+              if git push origin HEAD:main; then echo "benchmark report published"; break; fi
+              echo "push contention (attempt $attempt); rebasing onto latest and retrying"; sleep 5
+            done
+          else
+            echo "no benchmark report produced; nothing to publish"
+          fi

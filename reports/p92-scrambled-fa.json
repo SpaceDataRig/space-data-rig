@@ -1,5 +1,25 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T06:52:44.400Z",
+    "gitSha": "b38ae215e6d9b0b72b200613a84989cf14b626a0",
+    "inputs": [
+      {
+        "path": "src/detect/falseAlarmNull.ts",
+        "sha256": "2b727197d26f6c07f8013532f90671b2cb82f7e14549090e0dbd00729599673e"
+      },
+      {
+        "path": "src/detect/invertedNull.ts",
+        "sha256": "f24f286d8d32cbd982db9d773fcb3153150048ba9b5c75d2b3f4ab5602a103ca"
+      },
+      {
+        "path": "src/data/mastS3.ts",
+        "sha256": "017ff9a2728df1741ea9fd90f96625f66896792d1700db761e00b4729b1418ce"
+      },
+      {
+        "path": "scripts/p92-scrambled-fa.ts",
+        "sha256": "0cb7e2530c6fd7fdb7ed669560b2e8967df68c4757149eab6bf027009379b95a"
+      }
+    ],
     "generatedBy": "scripts/p92-scrambled-fa.ts",
     "nCurves": 10,
     "perCurve": 3,

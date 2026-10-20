@@ -1,7 +1,28 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T06:52:32.952Z",
+    "gitSha": "b38ae215e6d9b0b72b200613a84989cf14b626a0",
+    "inputs": [
+      {
+        "path": "web/candidates.json",
+        "sha256": "33238c1201dfd52a7ab7f002d627ce9eacac2d143883b5cc93e9051575c50c34"
+      },
+      {
+        "path": "src/candidate/novelty.ts",
+        "sha256": "8d42819533fbdc8aeab36265fb216b0da13343a8ff37ec8ad2125204a7e8716b"
+      },
+      {
+        "path": "src/data/toiDispositions.ts",
+        "sha256": "af124436d8dee8e19b5fa822df9e84e73c2376bdcbd5824bf33b0cb64748f1bc"
+      },
+      {
+        "path": "scripts/p76-multisource-novelty.ts",
+        "sha256": "5c71361da2287dd601726cd8930b14b2458435d219bf425ccd8f95773918cd9c"
+      }
+    ],
     "generatedBy": "scripts/p76-multisource-novelty.ts",
     "catalogs": "NASA Exoplanet Archive TAP `toi`+`pscomppars` (as P48) PLUS ExoFOP-TESS public TOI/CTOI table (token-free, community FP/EB/KP dispositions)",
+    "exofopLegCaveat": "The ExoFOP-TESS leg reads a single anonymous ~3.8 MB CSV; on a slow or throttled mirror it can exceed the fetch timeout and return 0 rows, which trips the INCONCLUSIVE-CONTROL guard and ABORTS before this report is written. A committed report therefore reflects ONE time-truncated snapshot taken on a machine that happened to reach ExoFOP; it is not continuously re-verified and must be treated as a point-in-time result, not a live figure.",
     "radiusArcsec": 30,
     "boxDeg": 0.05,
     "controls": {

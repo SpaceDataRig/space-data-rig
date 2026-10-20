@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generatedAt": "2026-10-17T15:15:53.616Z",
-    "gitSha": "19251cba2e31e48e2be07c2c359a929c0ae5d95e",
+    "generatedAt": "2026-10-20T06:53:52.017Z",
+    "gitSha": "b38ae215e6d9b0b72b200613a84989cf14b626a0",
     "inputs": [
       {
         "path": "reports/p58-veto-2x2.json",
@@ -9,7 +9,7 @@
       },
       {
         "path": "src/data/toiDispositions.ts",
-        "sha256": "f6115c850fc181abe043e81fcd70ff3e7e5779d3a132f64e16a59fad15efbc18"
+        "sha256": "af124436d8dee8e19b5fa822df9e84e73c2376bdcbd5824bf33b0cb64748f1bc"
       },
       {
         "path": "src/data/gaiaDilution.ts",

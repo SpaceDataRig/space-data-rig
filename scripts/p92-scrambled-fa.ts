@@ -38,6 +38,7 @@ import {
   optimizeThreshold,
 } from "../src/detect/falseAlarmNull.ts";
 import { writeFileSync, mkdirSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import type { LightCurve } from "../src/core/types.ts";
 
 function arg(name: string, dflt: string): string {
@@ -186,6 +187,7 @@ async function main(): Promise<void> {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["src/detect/falseAlarmNull.ts", "src/detect/invertedNull.ts", "src/data/mastS3.ts", "scripts/p92-scrambled-fa.ts"]),
       generatedBy: "scripts/p92-scrambled-fa.ts", nCurves: curves.length, perCurve, maxSectors, seed,
       injectPeriodDays: injPeriod, depthsPpm, thresholds: THRESHOLDS, blsGrid: GRID,
       data: "real TESS-SPOC PDCSAP light curves (token-free public S3); injected transits for completeness, time-scrambled and inverted curves for the false-alarm nulls",

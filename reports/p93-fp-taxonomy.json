@@ -1,5 +1,25 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T03:52:48.300Z",
+    "gitSha": "b1fd7287306c2c9a59bb0fb3110da98f8a165b71",
+    "inputs": [
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "src/sim/falsePositiveTaxonomy.ts",
+        "sha256": "2d1720991f80a4a4665a4e9a207ae7f72b7dd85be2c2ba33b207c6cf8f7b0cf1"
+      },
+      {
+        "path": "src/detect/vetting.ts",
+        "sha256": "7e31c0b63ea7be87752ef27068f135350baba29c7f701d0f361850275f48d59b"
+      },
+      {
+        "path": "src/candidate/validationPosterior.ts",
+        "sha256": "6b0f7b7e0129f8e752825c792e5810778b80746ca7a2dac06887bab334019824"
+      }
+    ],
     "generatedBy": "scripts/p93-fp-taxonomy.ts",
     "nFixtures": 12,
     "perClassTrials": 4,

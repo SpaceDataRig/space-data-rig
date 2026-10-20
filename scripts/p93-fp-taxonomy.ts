@@ -28,6 +28,7 @@ import { secondaryEclipse, oddEvenDepth } from "../src/detect/vetting.ts";
 import { synthesizeFalsePositive, type FpKind } from "../src/sim/falsePositiveTaxonomy.ts";
 import { planetPosterior } from "../src/candidate/validationPosterior.ts";
 import { readFileSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { join } from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 import type { LightCurve } from "../src/core/types.ts";
@@ -138,6 +139,7 @@ function main(): void {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["tests/fixtures/spoc-curves/manifest.json", "src/sim/falsePositiveTaxonomy.ts", "src/detect/vetting.ts", "src/candidate/validationPosterior.ts"]),
       generatedBy: "scripts/p93-fp-taxonomy.ts", nFixtures: hosts.length, perClassTrials, prior, minSnr, kinds: KINDS, periods: PERIODS,
       data: "committed byte-exact real TESS-SPOC fixture curves (tests/fixtures/spoc-curves, no network), labelled FP family injected via src/sim/falsePositiveTaxonomy.ts",
       note: "flux-only validation posterior (secondaryEclipse + oddEvenDepth -> planetPosterior, validateAt 0.99) scored against a KNOWN-labelled FP population; conditioned on the correct ephemeris so it isolates FP-discrimination from detection/alias; blend FPP and pixels deliberately OFF. Measures only; wires nothing; discoveryClaim/safeToGate false.",

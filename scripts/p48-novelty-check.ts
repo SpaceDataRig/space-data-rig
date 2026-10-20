@@ -16,6 +16,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { disposition, type CatalogEntry, type CandidatePos } from "../src/candidate/novelty.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 const TAP = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
@@ -119,6 +120,7 @@ async function main(): Promise<void> {
 
   const json = {
     meta: {
+      ...buildStamp(["web/candidates.json", "src/candidate/novelty.ts", "scripts/p48-novelty-check.ts"]),
       generatedBy: "scripts/p48-novelty-check.ts",
       catalogs: "NASA Exoplanet Archive TAP: table `toi` (announced candidate transits) + `pscomppars` (confirmed planets)",
       radiusArcsec: RADIUS_ARCSEC, boxDeg: BOX_DEG, control: "TOI-1011 field",

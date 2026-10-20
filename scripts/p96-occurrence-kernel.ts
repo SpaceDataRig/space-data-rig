@@ -22,6 +22,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { buildStamp } from "./report-freshness.ts";
 import { geometricTransitProbability } from "../src/sim/selectionFunction.ts";
 import { expectedYield, consistencyZ, etaFromCounts } from "../src/sim/occurrenceRate.ts";
 
@@ -116,6 +117,7 @@ function main(): void {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["reports/p47-completeness-grid.json", "src/sim/occurrenceRate.ts", "src/sim/selectionFunction.ts"]),
       generatedBy: "scripts/p96-occurrence-kernel.ts", gridSource: "reports/p47-completeness-grid.json (real, 960 injections)",
       referenceRate: "Gillis et al. 2025/2026, AJ (10.3847/1538-3881/ae5810): cumulative 1.10 +- 0.16 planets/star, R>1 R_earth, P<30 d",
       stellarReference: "solar-twin R*=M*=1 for the radius<->depth map and geometry (documented assumption, as in P54)",

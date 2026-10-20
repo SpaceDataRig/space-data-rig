@@ -1,5 +1,21 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T03:56:53.175Z",
+    "gitSha": "b1fd7287306c2c9a59bb0fb3110da98f8a165b71",
+    "inputs": [
+      {
+        "path": "web/candidates.json",
+        "sha256": "33238c1201dfd52a7ab7f002d627ce9eacac2d143883b5cc93e9051575c50c34"
+      },
+      {
+        "path": "src/candidate/novelty.ts",
+        "sha256": "8d42819533fbdc8aeab36265fb216b0da13343a8ff37ec8ad2125204a7e8716b"
+      },
+      {
+        "path": "scripts/p48-novelty-check.ts",
+        "sha256": "8fc33e39c4a285ce744662ecddd310d42024d72710e7ba2777fe0711eca12a69"
+      }
+    ],
     "generatedBy": "scripts/p48-novelty-check.ts",
     "catalogs": "NASA Exoplanet Archive TAP: table `toi` (announced candidate transits) + `pscomppars` (confirmed planets)",
     "radiusArcsec": 30,

@@ -1,5 +1,21 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T03:52:49.136Z",
+    "gitSha": "b1fd7287306c2c9a59bb0fb3110da98f8a165b71",
+    "inputs": [
+      {
+        "path": "reports/p47-completeness-grid.json",
+        "sha256": "310f51a5970428b93cea111a7fc508a542108cb5e35ec60da8be2b2f7dcfdad7"
+      },
+      {
+        "path": "src/sim/occurrenceRate.ts",
+        "sha256": "38770a4b2bc1364f5ed20565db353cefdf9d61ddd596f63fdb0c1f3f412139af"
+      },
+      {
+        "path": "src/sim/selectionFunction.ts",
+        "sha256": "4d03e6a775341828d8d66bfb475dbdf6cba520381058d98a0f314b15b29c94b5"
+      }
+    ],
     "generatedBy": "scripts/p96-occurrence-kernel.ts",
     "gridSource": "reports/p47-completeness-grid.json (real, 960 injections)",
     "referenceRate": "Gillis et al. 2025/2026, AJ (10.3847/1538-3881/ae5810): cumulative 1.10 +- 0.16 planets/star, R>1 R_earth, P<30 d",

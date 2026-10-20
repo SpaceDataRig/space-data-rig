@@ -145,9 +145,13 @@ export interface ToiFetchOptions { timeoutMs?: number; }
 
 /** Fetch + parse the anonymous public TOI table. Returns [] on any failure (callers must not fabricate). */
 export async function fetchToiTable(o: ToiFetchOptions = {}): Promise<ToiRecord[]> {
+  // The full anonymous CSV is ~3.8 MB / ~8k rows. The old 45 s ceiling aborted a slow-but-working
+  // mirror (a few KB/s never finishes 3.8 MB in 45 s), so the ExoFOP leg returned 0 rows and every
+  // consumer's control correctly judged the run INCONCLUSIVE. 180 s covers ~21 KB/s end-to-end; a
+  // genuinely throttled/blocked mirror still returns [] and the caller must not fabricate from it.
   for (let attempt = 0; attempt < 3; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 45000);
+    const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 180000);
     try {
       const r = await fetch(TOI_CSV_URL, { signal: controller.signal, headers: { "User-Agent": UA, Accept: "text/plain" } });
       if (!r.ok) throw new Error(`TOI HTTP ${r.status}`);

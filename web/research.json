@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-20T03:20:25.557Z",
+  "generatedAt": "2026-10-20T04:01:42.762Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -554,9 +554,12 @@
       "novelArchive": 5,
       "novelUnion": 5,
       "shrink": 0,
-      "n": 5
+      "n": 5,
+      "snapshotAt": null,
+      "stamped": false,
+      "presentedAs": "point-in-time snapshot, NOT a live figure: the committed run predates the RA-unit coordinate fix and its ExoFOP-TESS leg is a single anonymous ~3.8 MB CSV that a slow/throttled mirror cannot re-fetch within the timeout, so this has not been continuously re-verified."
     },
-    "caveat": "all re-derived from the committed P73-P76 reports; positive controls on known planets / a model-free inverted null / a token-free catalog cross-check. Sibling masking gives a modest +1 re-find of 20 (P73); cross-sector coherence removes all single-sector known-planet false-kills but loses blend power (P74); the AR(1) significance gate false-alarms far above nominal on inverted planet-free noise (P75); adding the ExoFOP TOI/CTOI table changes no candidate's novelty (P76). None is wired into a gate.",
+    "caveat": "all re-derived from the committed P73-P76 reports; positive controls on known planets / a model-free inverted null / a token-free catalog cross-check. Sibling masking gives a modest +1 re-find of 20 (P73); cross-sector coherence removes all single-sector known-planet false-kills but loses blend power (P74); the AR(1) significance gate false-alarms far above nominal on inverted planet-free noise (P75); on a point-in-time snapshot the ExoFOP TOI/CTOI table changed no candidate's novelty (P76 -- NOT continuously re-verified; its ExoFOP CSV leg is time-truncated on a slow mirror and the committed run predates the RA-unit coordinate fix). None is wired into a gate.",
     "safeToGate": false,
     "discoveryClaim": false
   },

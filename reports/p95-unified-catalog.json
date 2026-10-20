@@ -1,5 +1,25 @@
 {
   "meta": {
+    "generatedAt": "2026-10-20T03:52:27.929Z",
+    "gitSha": "b1fd7287306c2c9a59bb0fb3110da98f8a165b71",
+    "inputs": [
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/stellar-params.json",
+        "sha256": "94c99b4bc40a71311e83bd566b9d0153d11fc1e7a692cc9e4c979ff01a37503c"
+      },
+      {
+        "path": "src/detect/falseAlarmNull.ts",
+        "sha256": "2b727197d26f6c07f8013532f90671b2cb82f7e14549090e0dbd00729599673e"
+      },
+      {
+        "path": "src/detect/bls.ts",
+        "sha256": "bc9a24f4c984379c5fcfdd9a21078e14a057ae74ff20f69f24a9dd923534f8ec"
+      }
+    ],
     "generatedBy": "scripts/p95-unified-catalog.ts",
     "nHosts": 12,
     "seed": 7,

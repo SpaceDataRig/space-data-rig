@@ -24,6 +24,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { buildStamp } from "./report-freshness.ts";
 import { preprocess } from "../src/detect/detrend.ts";
 import { bls } from "../src/detect/bls.ts";
 import { isAliasOf } from "../src/detect/iterative.ts";
@@ -170,6 +171,7 @@ function main(): void {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["tests/fixtures/spoc-curves/manifest.json", "tests/fixtures/spoc-curves/stellar-params.json", "src/detect/falseAlarmNull.ts", "src/detect/bls.ts"]),
       generatedBy: "scripts/p95-unified-catalog.ts", nHosts: rows.length, seed, injectPeriodDays: injPeriod,
       depthsPpm, thresholds: THRESHOLDS, blsGrid: GRID, perCurve,
       stellarParamsSource: "tests/fixtures/spoc-curves/stellar-params.json (NASA Exoplanet Archive, via scripts/p94-stellar-params.ts)",

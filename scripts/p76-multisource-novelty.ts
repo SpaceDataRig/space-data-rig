@@ -21,6 +21,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { disposition, findMatches, type CatalogEntry, type CandidatePos } from "../src/candidate/novelty.ts";
 import { fetchToiTable, type ToiRecord } from "../src/data/toiDispositions.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 const TAP = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
@@ -140,8 +141,10 @@ async function main(): Promise<void> {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["web/candidates.json", "src/candidate/novelty.ts", "src/data/toiDispositions.ts", "scripts/p76-multisource-novelty.ts"]),
       generatedBy: "scripts/p76-multisource-novelty.ts",
       catalogs: "NASA Exoplanet Archive TAP `toi`+`pscomppars` (as P48) PLUS ExoFOP-TESS public TOI/CTOI table (token-free, community FP/EB/KP dispositions)",
+      exofopLegCaveat: "The ExoFOP-TESS leg reads a single anonymous ~3.8 MB CSV; on a slow or throttled mirror it can exceed the fetch timeout and return 0 rows, which trips the INCONCLUSIVE-CONTROL guard and ABORTS before this report is written. A committed report therefore reflects ONE time-truncated snapshot taken on a machine that happened to reach ExoFOP; it is not continuously re-verified and must be treated as a point-in-time result, not a live figure.",
       radiusArcsec: RADIUS_ARCSEC, boxDeg: BOX_DEG,
       controls: { archive: "TOI-1011 field via TAP", exofop: "table loads + contains 1011.01" },
       note: "novelUnion = nothing announced at/near the position across ALL THREE sources; strictly more conservative than P48. NOT a planet claim. SPOC TCE and the literature are not covered.",

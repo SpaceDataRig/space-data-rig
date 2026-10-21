@@ -117,6 +117,7 @@
     "figure:p82-results": "tsx scripts/p82-results-figure.ts",
     "figure:audit10-response": "tsx scripts/audit10-response-figure.ts",
     "figure:audit10-close": "tsx scripts/audit10-close-figure.ts",
+    "figure:audit6-remediation": "tsx scripts/audit6-remediation-figure.ts",
     "figure:deploy-audit10": "tsx scripts/deploy-audit10-figure.ts",
     "figure:audit10-v011": "tsx scripts/audit10-v011-figure.ts",
     "figure:audit3": "tsx scripts/audit3-remediation-figure.ts",

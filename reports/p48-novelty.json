@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generatedAt": "2026-10-20T03:56:53.175Z",
-    "gitSha": "b1fd7287306c2c9a59bb0fb3110da98f8a165b71",
+    "generatedAt": "2026-10-21T06:52:54.591Z",
+    "gitSha": "72cc5e4e06a29c7b929fe94851537a808af017d1",
     "inputs": [
       {
         "path": "web/candidates.json",
-        "sha256": "33238c1201dfd52a7ab7f002d627ce9eacac2d143883b5cc93e9051575c50c34"
+        "sha256": "4d712330634728416d202fc288ba625979980ed4523df6d08b9fbdd19e232544"
       },
       {
         "path": "src/candidate/novelty.ts",
@@ -24,8 +24,8 @@
     "note": "novelLocation means nothing is announced at/near the position in these two catalogs; it is NOT a claim of a planet. ExoFOP-TESS and the peer-reviewed literature are NOT covered here."
   },
   "controlOk": true,
-  "nCandidates": 5,
-  "novelLocationCount": 5,
+  "nCandidates": 4,
+  "novelLocationCount": 4,
   "samePeriodAnnouncedCount": 0,
   "systematicPairCount": 0,
   "discoveryClaim": false,
@@ -47,44 +47,28 @@
       "nearestSepArcsec": null
     },
     {
+      "tic": 139091019,
+      "ra": 319.343331719987,
+      "dec": -47.0030448498162,
+      "periodDays": 10.1313,
+      "depthPpm": 62671,
+      "snr": 24.52,
+      "corroboratedSectors": 1,
+      "distinctHostsSharingEphemeris": 1,
+      "suspectedCommonSystematic": false,
+      "announced": false,
+      "novelLocation": true,
+      "samePeriodAnnounced": false,
+      "nearestLabel": null,
+      "nearestSepArcsec": null
+    },
+    {
       "tic": 139068135,
       "ra": 319.3243063673769,
       "dec": -47.01339253259216,
       "periodDays": 4.7951,
       "depthPpm": 9499,
       "snr": 14.39,
-      "corroboratedSectors": 1,
-      "distinctHostsSharingEphemeris": 1,
-      "suspectedCommonSystematic": false,
-      "announced": false,
-      "novelLocation": true,
-      "samePeriodAnnounced": false,
-      "nearestLabel": null,
-      "nearestSepArcsec": null
-    },
-    {
-      "tic": 316781499,
-      "ra": 355.0439815861802,
-      "dec": -35.07414824701883,
-      "periodDays": 0.608,
-      "depthPpm": 2415,
-      "snr": 9.54,
-      "corroboratedSectors": 1,
-      "distinctHostsSharingEphemeris": 1,
-      "suspectedCommonSystematic": false,
-      "announced": false,
-      "novelLocation": true,
-      "samePeriodAnnounced": false,
-      "nearestLabel": null,
-      "nearestSepArcsec": null
-    },
-    {
-      "tic": 43450945,
-      "ra": 11.35709329542496,
-      "dec": -27.21112990715863,
-      "periodDays": 0.7786,
-      "depthPpm": 5380,
-      "snr": 7.68,
       "corroboratedSectors": 1,
       "distinctHostsSharingEphemeris": 1,
       "suspectedCommonSystematic": false,

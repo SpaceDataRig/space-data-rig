@@ -9,13 +9,12 @@ A control query against a known TOI field runs first; only if it returns do we t
 | TIC | our P (d) | depth (ppm) | corrob. sectors | shared-eph hosts | announced nearby? | same period? |
 |---|---|---|---|---|---|---|
 | 43450939 | 8.424 | 4298 | 1 | 1 | NO | no |
+| 139091019 | 10.131 | 62671 | 1 | 1 | NO | no |
 | 139068135 | 4.795 | 9499 | 1 | 1 | NO | no |
-| 316781499 | 0.608 | 2415 | 1 | 1 | NO | no |
-| 43450945 | 0.779 | 5380 | 1 | 1 | NO | no |
 | 316781502 | 2.410 | 1965 | 1 | 1 | NO | no |
 
-**5/5** candidates sit at a location with no announcement in these catalogs, and
-**0/5** match an already-announced period.
+**4/4** candidates sit at a location with no announcement in these catalogs, and
+**0/4** match an already-announced period.
 
 Honest reading (this is the whole point): `novelLocation` is a statement about the CATALOGS, not about nature.
 Every one of these is deep (EB/blend-like ppm), single-sector (corroboratedSectors=1), and the board reports

@@ -10,15 +10,14 @@ announced across all three. More catalogs can only make novelty harder; we measu
 | TIC | our P (d) | depth (ppm) | corrob. sectors | novel (Archive only) | novel (Archive + ExoFOP) | ExoFOP FP/EB on host |
 |---|---|---|---|---|---|---|
 | 43450939 | 8.424 | 4298 | 1 | yes | yes | no |
+| 139091019 | 10.131 | 62671 | 1 | yes | yes | no |
 | 139068135 | 4.795 | 9499 | 1 | yes | yes | no |
-| 316781499 | 0.608 | 2415 | 1 | yes | yes | no |
-| 43450945 | 0.779 | 5380 | 1 | yes | yes | no |
 | 316781502 | 2.410 | 1965 | 1 | yes | yes | no |
 
-**Archive-only novel (P48): 5/5. After adding ExoFOP: 5/5 (shrink 0).**
-ExoFOP FP/EB on the same host: 0/5.
+**Archive-only novel (P48): 4/4. After adding ExoFOP: 4/4 (shrink 0).**
+ExoFOP FP/EB on the same host: 0/4.
 
-**VERDICT: NO-EXTRA-SHRINK: the ExoFOP TOI/CTOI table announced none of the 5 Archive-novel candidates, so all 5/5 stay unannounced across Archive + ExoFOP -- but that is a statement about the catalogs, not a planet claim.**
+**VERDICT: NO-EXTRA-SHRINK: the ExoFOP TOI/CTOI table announced none of the 4 Archive-novel candidates, so all 4/4 stay unannounced across Archive + ExoFOP -- but that is a statement about the catalogs, not a planet claim.**
 
 Honest reading: `novel` is a statement about the CATALOGS, not nature. Every remaining candidate is deep and
 single-sector with 0 corroborating hosts -- the TESS pipelines flagged NO credible transit there, which is

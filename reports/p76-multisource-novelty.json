@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generatedAt": "2026-10-20T07:40:25.640Z",
-    "gitSha": "e8d6de459ffb29a8e8458db21c36cdf8d2f7d819",
+    "generatedAt": "2026-10-21T07:04:04.597Z",
+    "gitSha": "6b3b158b8a45ca878fe8c7780d1f14fd0f9663b1",
     "inputs": [
       {
         "path": "web/candidates.json",
-        "sha256": "33238c1201dfd52a7ab7f002d627ce9eacac2d143883b5cc93e9051575c50c34"
+        "sha256": "4d712330634728416d202fc288ba625979980ed4523df6d08b9fbdd19e232544"
       },
       {
         "path": "src/candidate/novelty.ts",
@@ -32,9 +32,9 @@
     "note": "novelUnion = nothing announced at/near the position across ALL THREE sources; strictly more conservative than P48. NOT a planet claim. SPOC TCE and the literature are not covered."
   },
   "controlOk": true,
-  "nCandidates": 5,
-  "novelArchiveCount": 5,
-  "novelUnionCount": 5,
+  "nCandidates": 4,
+  "novelArchiveCount": 4,
+  "novelUnionCount": 4,
   "shrinkCount": 0,
   "exofopFpEbSameTicCount": 0,
   "discoveryClaim": false,
@@ -58,46 +58,29 @@
       "nearestUnion": null
     },
     {
+      "tic": 139091019,
+      "ra": 319.343331719987,
+      "dec": -47.0030448498162,
+      "periodDays": 10.1313,
+      "depthPpm": 62671,
+      "snr": 24.52,
+      "corroboratedSectors": 1,
+      "distinctHostsSharingEphemeris": 1,
+      "suspectedCommonSystematic": false,
+      "novelArchive": true,
+      "novelUnion": true,
+      "shrankByExofop": false,
+      "exofopMatches": 0,
+      "exofopFpEbSameTic": false,
+      "nearestUnion": null
+    },
+    {
       "tic": 139068135,
       "ra": 319.3243063673769,
       "dec": -47.01339253259216,
       "periodDays": 4.7951,
       "depthPpm": 9499,
       "snr": 14.39,
-      "corroboratedSectors": 1,
-      "distinctHostsSharingEphemeris": 1,
-      "suspectedCommonSystematic": false,
-      "novelArchive": true,
-      "novelUnion": true,
-      "shrankByExofop": false,
-      "exofopMatches": 0,
-      "exofopFpEbSameTic": false,
-      "nearestUnion": null
-    },
-    {
-      "tic": 316781499,
-      "ra": 355.0439815861802,
-      "dec": -35.07414824701883,
-      "periodDays": 0.608,
-      "depthPpm": 2415,
-      "snr": 9.54,
-      "corroboratedSectors": 1,
-      "distinctHostsSharingEphemeris": 1,
-      "suspectedCommonSystematic": false,
-      "novelArchive": true,
-      "novelUnion": true,
-      "shrankByExofop": false,
-      "exofopMatches": 0,
-      "exofopFpEbSameTic": false,
-      "nearestUnion": null
-    },
-    {
-      "tic": 43450945,
-      "ra": 11.35709329542496,
-      "dec": -27.21112990715863,
-      "periodDays": 0.7786,
-      "depthPpm": 5380,
-      "snr": 7.68,
       "corroboratedSectors": 1,
       "distinctHostsSharingEphemeris": 1,
       "suspectedCommonSystematic": false,

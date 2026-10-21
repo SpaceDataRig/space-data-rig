@@ -607,7 +607,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-20)
+## 13. Current state (as of 2026-10-21)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -616,34 +616,36 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is ad7b61a, the tip of main carrying this session's six-point audit
-  remediation on top of the earlier passes -- crossmatch tri-state (ee7389d), the keyless on-chain verify endpoint
-  (13a30bb), the freshness-regen CI workflow that clears every red STALE (b38ae21), and the frozen, reproducible p90
-  depth calibration (e8d6de4). Commits land faster than a document can be refreshed, so this line is about the
-  revision measured below, not a standing claim about the tip -- `git log` is the authority there, and the commit
-  carrying this text follows ad7b61a. CI is green on ad7b61a.
-- Production: wrangler version 8aede3ec-9426-47b8-8e34-036866bcd4d5, gitSha ad7b61a6aac04746a9ea635084c66f2d12998097
-  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed 2026-10-20. It supersedes the
-  previous version/sha pair (a3d0ea01 / 75e13a4, the 10-19 static-asset refresh). Triggers: schedule `*/15 * * * *`,
+- Git: the revision this snapshot describes is d5dd629, the tip of main carrying this session's seven-point audit
+  remediation on top of the six-point pass it followed -- R1 gate coverage over the two headline external benchmarks
+  (c7f29b6, benchmark re-verified 7d5f8d0), the generated six-point poster (1ed1ddf), the shared SNR threshold +
+  render-layer degeneracy caveat and the per-card on-chain verify button (76b3524), and the candidate-board contract
+  boundary that can no longer bake a rotting countdown (d5dd629). Commits land faster than a document can be refreshed,
+  so this line is about the revision measured below, not a standing claim about the tip -- `git log` is the authority
+  there, and the commit carrying this text follows d5dd629. CI is green on d5dd629.
+- Production: wrangler version 0684a371-92da-484a-834d-5f17d87deba4, gitSha d5dd629b28819b56268f20621c09aad363e406e5
+  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed 2026-10-21. It supersedes the
+  previous version/sha pair (8aede3ec / ad7b61a, the 10-20 six-point remediation). Triggers: schedule `*/15 * * * *`,
   workflow `rig-run`, custom domain spacedatarig.app. Any later deploy supersedes this version/sha pair, so
   `GET /health` is the authority on what runs now. The deploy went through `cf:deploy:sha`, which refuses a dirty tree;
-  `GET /api/state` read `activeRun.running=false` at the snapshot time below, so the upload did not straddle a live pass.
+  `npm run deploy:window` read `activeRun.running=false` with 318 s of measured idle before the next claim, so the
+  upload did not straddle a live pass.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state`, measured 2026-10-20T09:39Z; the payload carries
+- Public counters at that same moment (`GET /api/state`, measured 2026-10-21; the payload carries
   `statDefinitions` -- the sentence saying what each of these counts, from `src/core/stats-definitions.ts`):
-  surveyPass 216 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53 assessed,
-  bundlesAnchored 5 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 97. The report library serves
-  54 reports with `stale: []`, `stamped: 14`, `verified: 12`, `fullyVerified: 12`.
-  Note the anchor pair moved since the previous snapshot (11 published-bytes against 20 commitments became 5 against
-  20): that is the documented semantics at work, not a lost anchor -- the rotating survey re-derives a sealed record,
-  its bundle hash changes with the new run timestamp, and the record leaves `bundlesAnchored` while staying on chain.
-  Nothing was un-anchored; the count is a statement about the bytes published now.
+  surveyPass 281 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53 assessed,
+  bundlesAnchored 1 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 95. The report library serves
+  56 reports with `stale: []`, `stamped: 16`, `verified: 14`, `fullyVerified: 14`.
+  Note the anchor pair moved again since the previous snapshot (5 published-bytes became 1, against a steady 20
+  commitments): that is the documented rotation semantics at work, not a lost anchor -- the survey re-derives a sealed
+  record, its bundle hash changes with the new run timestamp, and the record leaves `bundlesAnchored` while staying on
+  chain. Nothing was un-anchored; the count is a statement about the bytes published now.
 
-- Tests: 113 files / 861 tests as this snapshot was taken (via `npm run test:coverage`, which is the CI command, so the
-  coverage floors -- 95.95% lines / 83.03% branches against a 90/78 floor -- are part of the same green), and
+- Tests: 115 files / 875 tests as this snapshot was taken (via `npm run test:coverage`, which is the CI command, so the
+  coverage floors -- 95.97% lines / 83.02% branches against a 90/78 floor -- are part of the same green), and
   `npm run typecheck:all` and `eslint --max-warnings 0` are clean. The count is itself a
   snapshot -- trust the run over any number written in a document, including this one.
 

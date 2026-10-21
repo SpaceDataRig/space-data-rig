@@ -1,6 +1,7 @@
 # P75 inverted-curve false alarms: an empirical, model-free check on the AR(1) gate
 
-Reproduce: `npm run p75:inverted-fp -- --targets 200 --nnull 300 --trials 400 --maxsectors 1`
+Reproduce: `npm run p75:inverted-fp` replays the frozen rows offline; `npm run p75:inverted-fp -- --live` re-measures against the live Archive/S3 (and may move the numbers).
+This report is an OFFLINE REPLAY of the 200 rows frozen on 2026-10-20T01:48:43Z; the false-alarm rate is byte-stable across runs.
 
 P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external
 project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every

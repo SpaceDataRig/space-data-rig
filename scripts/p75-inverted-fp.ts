@@ -35,8 +35,9 @@ import { estimateFap } from "../src/detect/fap.ts";
 import { estimateRho } from "../src/sim/redNoise.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve, stitchLightCurves } from "../src/data/mastS3.ts";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
 import type { LightCurve } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -77,7 +78,12 @@ interface Row {
   fapAR1: number; fapBlock: number; delta: number; ar1FalseAlarm: boolean; blockFalseAlarm: boolean; flip: boolean;
 }
 
-async function main(): Promise<void> {
+/**
+ * The LIVE measurement path -- only reached with `--live`. Fetches bright, well-covered hosts from the LIVE NASA
+ * Exoplanet Archive, resolves sectors, pulls token-free TESS-SPOC curves, INVERTS each and MASKS every catalogued
+ * planet, then scores the surviving positive residual dip under BOTH the AR(1) gate and a model-free block bootstrap.
+ */
+async function measureLive(): Promise<Row[]> {
   console.log(`P75 INVERTED-CURVE FALSE-ALARMS: model-free empirical FP rate for the AR(1) significance gate (answers P69's masked-residual caveat). targets=${wantTargets}, nNull=${nNull}, trials=${trials}, seed=${seed}, FAP bar ${FAP_BAR}. Token-free real SPOC; inverted by construction; no discovery claim.`);
 
   // Bright, well-covered hosts. For each: INVERT, then MASK every catalogued planet (ground-truth ephemeris,
@@ -138,6 +144,43 @@ async function main(): Promise<void> {
     console.log(`  ${c.name.padEnd(18)} rho ${rows[rows.length - 1].rho.toFixed(2)} [${rows[rows.length - 1].bucket}]  bumpSnr ${b.snr.toFixed(1)} P ${b.periodDays.toFixed(2)}d (masked ${c.masks.length}, search<${searchMax.toFixed(0)})  fapAR1 ${fapAR1.toFixed(3)}${ar1FalseAlarm ? " <FALSE>" : ""}  fapBlock ${fapBlock.toFixed(3)}${blockFalseAlarm ? " <FALSE>" : ""}  delta ${delta >= 0 ? "+" : ""}${delta.toFixed(3)}${flip ? "  AR1-OVERCALLS" : ""}`);
   }
 
+  return rows;
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p90 precedent, applied to the project's most-cited number. p75 measures against the LIVE
+  // Archive + S3, so a plain re-fetch re-MEASURES and can silently move the published false-alarm rate the way p90's
+  // depth error bar moved when the Archive added planets. A number cited in the figures, research.json and the report
+  // library must be reproducible, not a lottery on when inverted-fp-scale.yml happened to run. The 200 measured rows
+  // are therefore frozen into reports/fixtures/p75-frozen-rows.json (a committed, immutable snapshot of what the live
+  // run actually gathered), and the DEFAULT replays every statistic from them OFFLINE and deterministically. `--live`
+  // (or `--from-json=`) is the deliberate re-measure path.
+  const FROZEN = "reports/fixtures/p75-frozen-rows.json";
+  const REPLAY = arg("from-json", process.argv.includes("--live") ? "" : FROZEN);
+  let rows: Row[] = [];
+  // Params shown in the report come from the run that gathered the rows, so a replay never describes a sampling it
+  // did not use.
+  let shownNNull = nNull, shownTrials = trials, shownMaxSectors = maxSectors, shownSeed = seed, shownSearchMax = SEARCH_MAX, shownPad = padFrac;
+  let measuredAt = new Date().toISOString();
+  if (REPLAY) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as {
+      rows: Row[];
+      measuredAt?: string;
+      meta?: { nNull?: number; trials?: number; maxSectors?: number; seed?: number; searchMaxDays?: number; padFrac?: number; generatedAt?: string };
+    };
+    rows = j.rows;
+    shownNNull = j.meta?.nNull ?? nNull;
+    shownTrials = j.meta?.trials ?? trials;
+    shownMaxSectors = j.meta?.maxSectors ?? maxSectors;
+    shownSeed = j.meta?.seed ?? seed;
+    shownSearchMax = j.meta?.searchMaxDays ?? SEARCH_MAX;
+    shownPad = j.meta?.padFrac ?? padFrac;
+    measuredAt = j.measuredAt ?? j.meta?.generatedAt ?? "unknown";
+    console.log(`[p75] REPLAY from ${REPLAY}: ${rows.length} stored rows, original measurement ${measuredAt}. No network, no new measurement.`);
+  } else {
+    rows = await measureLive();
+  }
+
   if (rows.length < 4) { console.log(`\nonly ${rows.length} planet-free bumps resolved. VERDICT: INSUFFICIENT-DATA`); process.exitCode = 0; return; }
 
   const n = rows.length;
@@ -168,9 +211,22 @@ async function main(): Promise<void> {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p75-inverted-fp.ts", n, nNull, trials, maxSectors, seed, fapBar: FAP_BAR, searchMaxDays: SEARCH_MAX, padFrac,
-      data: "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3",
-      note: "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false." },
+    meta: {
+      generatedBy: REPLAY ? `scripts/p75-inverted-fp.ts --from-json=${REPLAY} (offline replay of frozen rows)` : "scripts/p75-inverted-fp.ts (live measurement)",
+      n, nNull: shownNNull, trials: shownTrials, maxSectors: shownMaxSectors, seed: shownSeed, fapBar: FAP_BAR, searchMaxDays: shownSearchMax, padFrac: shownPad,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3 -- the live sample as measured, replayed offline"
+        : "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3",
+      note: "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false.",
+      // Replay stamps the SCRIPT + the FROZEN rows (both tracked, so any clean checkout re-hashes them -> verified) --
+      // deliberately NOT the live-catalog modules, so a NASA Archive update cannot mark this cited report stale and
+      // force a re-measure that would move the number (the exact p90 failure mode). `--live` stamps the algorithm +
+      // data modules instead, because there the live fetch IS the measurement.
+      ...(REPLAY
+        ? buildStamp(["scripts/p75-inverted-fp.ts", FROZEN])
+        : buildStamp(["scripts/p75-inverted-fp.ts", "src/detect/invertedNull.ts", "src/detect/significance.ts", "src/detect/fap.ts", "src/detect/bls.ts", "src/detect/detrend.ts", "src/sim/redNoise.ts", "src/data/exoplanetArchive.ts", "src/data/mastS3.ts"])),
+    },
     summary: { ar1FalseAlarms: ar1Fp, blockFalseAlarms: blockFp, n, ar1FpRate: ar1Fp / n, blockFpRate: blockFp / n, flips, meanDeltaFap: meanDelta, quiet: quiet.length, red: red.length, redFlips, quietFlips },
     verdict: ar1Over && bothPermissive ? "GATE-OPTIMISTIC-ON-REAL-NOISE" : ar1Over ? "MILD-AR1-OPTIMISM" : "GATE-CALIBRATED",
     safeToGate: false, discoveryClaim: false, rows,
@@ -179,7 +235,10 @@ async function main(): Promise<void> {
   const md = [
     "# P75 inverted-curve false alarms: an empirical, model-free check on the AR(1) gate",
     "",
-    `Reproduce: \`npm run p75:inverted-fp -- --targets ${wantTargets} --nnull ${nNull} --trials ${trials} --maxsectors ${maxSectors}\``,
+    REPLAY
+      ? `Reproduce: \`npm run p75:inverted-fp\` replays the frozen rows offline; \`npm run p75:inverted-fp -- --live\` re-measures against the live Archive/S3 (and may move the numbers).`
+      : `Reproduce: \`npm run p75:inverted-fp -- --targets ${wantTargets} --nnull ${shownNNull} --trials ${shownTrials} --maxsectors ${shownMaxSectors} --seed ${shownSeed}\``,
+    REPLAY ? `This report is an OFFLINE REPLAY of the ${n} rows frozen on ${measuredAt}; the false-alarm rate is byte-stable across runs.` : "",
     "",
     "P69 flagged that its masked-residual comparison kept real sibling bumps. This study uses the external",
     "project's cleaner null: on a real TESS-SPOC sector INVERT the curve (dips become bumps), then MASK every",

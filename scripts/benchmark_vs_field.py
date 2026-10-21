@@ -33,6 +33,9 @@ import json
 import os
 import sys
 import time
+import hashlib
+import subprocess
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -43,6 +46,53 @@ import cross_pipeline as cp  # noqa: E402
 
 OUT_DIR = os.path.join("reports", "crosscheck")
 STAR_FILE = os.path.join(cp.FIXTURE_DIR, "stellar-params.json")
+
+# PROVENANCE STAMP (external audit R1: this LEO-Vetter benchmark is one of the two most-cited EXTERNAL numbers, yet
+# it carried no generatedAt/gitSha/input-hash and sat OUTSIDE scripts/p86-report-library.ts's freshness gate). These
+# are the tracked, committed inputs the run actually reads -- the code plus the byte-identical real-curve fixtures.
+# The run is deterministic on them (no live catalog: it reads committed fixtures + p94 stellar params), so a clean
+# checkout re-hashes the same bytes and calls the report machine-verified, exactly like the TypeScript reports.
+STAMP_INPUTS = [
+    "scripts/benchmark_vs_field.py",
+    "scripts/cross_pipeline.py",
+    os.path.join(cp.FIXTURE_DIR, "manifest.json"),
+    STAR_FILE,
+]
+
+
+def _normalize_eol(path):
+    """Mirror scripts/report-freshness.ts normalizeEol so the Python-side hash equals the gate's: CRLF/CR -> LF for
+    text, binary (NUL in the leading 8 KiB) returned untouched. This is what keeps a Windows working tree from
+    reading as stale against the LF bytes CI committed."""
+    with open(path, "rb") as fh:
+        b = fh.read()
+    if b[:8192].find(b"\x00") >= 0:
+        return b
+    if b.find(b"\r") < 0:
+        return b
+    return b.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _sha256(path):
+    try:
+        return hashlib.sha256(_normalize_eol(path)).hexdigest()
+    except Exception:
+        return None
+
+
+def _git_sha():
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    except Exception:
+        return ""
+
+
+def freshness_stamp(input_paths):
+    return {
+        "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+        "gitSha": _git_sha(),
+        "inputs": [{"path": p, "sha256": _sha256(p)} for p in input_paths],
+    }
 
 # A small depth grid keeps the CI runtime bounded; the field-relevant regime for these bright SPOC hosts is the top
 # three, but we span deep-to-shallow so the completeness knee is visible.
@@ -141,6 +191,7 @@ def main():
             "stellarSource": stars["meta"]["source"], "fluxErrAssumption": "per-curve constant = 1.4826*MAD of the "
                 "wotan-detrended flux (fixtures keep only time+flux); this only scales MES, not the shape tests",
             "provenance": manifest["provenance"], "wallClockSec": None,
+            **freshness_stamp(STAMP_INPUTS),
         },
         "summary": None, "rows": [],
     }

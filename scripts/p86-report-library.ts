@@ -21,7 +21,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { slugify, mdToHtml, extractMeta, escHtml } from "./report-md.ts";
+import { mdToHtml, extractMeta, escHtml } from "./report-md.ts";
 import {
   type FreshnessStamp,
   type FreshnessVerdict,
@@ -56,6 +56,11 @@ const SOURCE_DEPS: Record<string, string[]> = {
   "p85-contaminant-fit": ["src/detect/centroidFtest.ts", "scripts/p85-contaminant-fit.ts"],
   "p88-independent-corroboration": ["src/data/toiDispositions.ts", "src/data/gaiaDilution.ts", "src/data/gaiaRv.ts", "scripts/p88-independent-corroboration.ts"],
   "p89-multiepoch-di": ["src/data/toiDispositions.ts", "src/detect/psfDiffImaging.ts", "scripts/p89-multiepoch-di.ts"],
+  // The two external-benchmark studies in reports/crosscheck/. Once their generators stamp the artifact with hashed
+  // inputs the gate re-hashes those; these SOURCE_DEPS are the git-provenance fallback for the window before a
+  // re-run, so editing the Python harness at least shows up as a newer-than-report soft note rather than nothing.
+  "crosscheck/benchmark-vs-field": ["scripts/benchmark_vs_field.py", "scripts/cross_pipeline.py"],
+  "crosscheck/cross-pipeline": ["scripts/cross_pipeline.py"],
 };
 
 /** Numeric P-phase prefix for stable ordering (p33 -> 33); anything unprefixed sorts last. */
@@ -144,10 +149,22 @@ function main(): void {
     console.error(`p86: no ${REPORTS_DIR}/ directory found (run from the repo root).`);
     process.exit(1);
   }
-  const files = readdirSync(REPORTS_DIR)
-    .filter((f) => f.toLowerCase().endsWith(".md"))
-    .sort();
-  if (!files.length) {
+  // Enumerate the top-level reports AND the reports/crosscheck/ subdirectory (external audit R1). The crosscheck
+  // reports -- the LEO-Vetter benchmark and the separate-Python cross-pipeline -- are exactly the EXTERNAL numbers a
+  // scientist would cite, yet they lived entirely OUTSIDE this gate: p86 never scanned the subdir, so they were never
+  // stamped, never re-hashed, and never shown on the site. Pages are written FLAT with a "crosscheck-" prefixed slug
+  // so they cannot collide with a top-level report and route as ordinary /reports/<slug>.html static assets.
+  const sources: { id: string; mdAbs: string }[] = [];
+  for (const f of readdirSync(REPORTS_DIR).filter((f) => f.toLowerCase().endsWith(".md")).sort()) {
+    sources.push({ id: f.replace(/\.md$/i, ""), mdAbs: join(REPORTS_DIR, f) });
+  }
+  const CROSSCHECK_DIR = join(REPORTS_DIR, "crosscheck");
+  if (existsSync(CROSSCHECK_DIR)) {
+    for (const f of readdirSync(CROSSCHECK_DIR).filter((f) => f.toLowerCase().endsWith(".md")).sort()) {
+      sources.push({ id: `crosscheck/${f.replace(/\.md$/i, "")}`, mdAbs: join(CROSSCHECK_DIR, f) });
+    }
+  }
+  if (!sources.length) {
     console.error(`p86: no reports/*.md found; nothing to do.`);
     process.exit(1);
   }
@@ -163,10 +180,10 @@ function main(): void {
   let verifiedCount = 0;
   let fullCount = 0;
 
-  for (const f of files) {
-    const md = readFileSync(join(REPORTS_DIR, f), "utf8");
-    const id = f.replace(/\.md$/i, "");
-    const slug = slugify(f) || id.toLowerCase();
+  for (const s of sources) {
+    const md = readFileSync(s.mdAbs, "utf8");
+    const id = s.id;
+    const slug = id.split("/").join("-");
     const meta = extractMeta(md);
     const { verdict } = freshnessFor(id);
     if (verdict.stamped) stampedCount++;

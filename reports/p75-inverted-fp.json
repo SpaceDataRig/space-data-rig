@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedBy": "scripts/p75-inverted-fp.ts",
+    "generatedBy": "scripts/p75-inverted-fp.ts --from-json=reports/fixtures/p75-frozen-rows.json (offline replay of frozen rows)",
     "n": 200,
     "nNull": 300,
     "trials": 400,
@@ -9,8 +9,21 @@
     "fapBar": 0.05,
     "searchMaxDays": 40,
     "padFrac": 0.5,
-    "data": "real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3",
-    "note": "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false."
+    "measuredAt": "2026-10-20T01:48:43Z",
+    "data": "FROZEN snapshot of real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3 -- the live sample as measured, replayed offline",
+    "note": "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false.",
+    "generatedAt": "2026-10-21T00:34:05.360Z",
+    "gitSha": "3ecaa9cb8787ea99e4aebf6ac6436de812320644",
+    "inputs": [
+      {
+        "path": "scripts/p75-inverted-fp.ts",
+        "sha256": "bc7e8b03445e15a461e67eb7c74b7f6a9df3e72fe55121c9b93f3a24d2f5632f"
+      },
+      {
+        "path": "reports/fixtures/p75-frozen-rows.json",
+        "sha256": "302fc22f18ec915f8ee03f46893e44e9991d95e6efd5f8c50b7b98415a13306d"
+      }
+    ]
   },
   "summary": {
     "ar1FalseAlarms": 148,

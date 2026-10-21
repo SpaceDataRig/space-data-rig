@@ -616,30 +616,34 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is d5dd629, the tip of main carrying this session's seven-point audit
+- Git: the revision this snapshot describes is 14f1d15, the tip of main carrying this session's seven-point audit
   remediation on top of the six-point pass it followed -- R1 gate coverage over the two headline external benchmarks
   (c7f29b6, benchmark re-verified 7d5f8d0), the generated six-point poster (1ed1ddf), the shared SNR threshold +
-  render-layer degeneracy caveat and the per-card on-chain verify button (76b3524), and the candidate-board contract
-  boundary that can no longer bake a rotting countdown (d5dd629). Commits land faster than a document can be refreshed,
-  so this line is about the revision measured below, not a standing claim about the tip -- `git log` is the authority
-  there, and the commit carrying this text follows d5dd629. CI is green on d5dd629.
-- Production: wrangler version 0684a371-92da-484a-834d-5f17d87deba4, gitSha d5dd629b28819b56268f20621c09aad363e406e5
-  -- verified from the live rig, `GET /health` returns exactly that sha -- deployed 2026-10-21. It supersedes the
-  previous version/sha pair (8aede3ec / ad7b61a, the 10-20 six-point remediation). Triggers: schedule `*/15 * * * *`,
-  workflow `rig-run`, custom domain spacedatarig.app. Any later deploy supersedes this version/sha pair, so
-  `GET /health` is the authority on what runs now. The deploy went through `cf:deploy:sha`, which refuses a dirty tree;
-  `npm run deploy:window` read `activeRun.running=false` with 318 s of measured idle before the next claim, so the
-  upload did not straddle a live pass.
+  render-layer degeneracy caveat and the per-card on-chain verify button (76b3524), the candidate-board contract
+  boundary that can no longer bake a rotting countdown (d5dd629), the freshness-regen fleet widened to auto-heal p48
+  (d9c270f), the live-`p22` board re-observation to `/2` + local p48 re-stamp (6b3b158), and the CI re-stamp of p76 +
+  rebuilt library (14f1d15). Commits land faster than a document can be refreshed, so this line is about the revision
+  measured below, not a standing claim about the tip -- `git log` is the authority there, and the commit carrying this
+  text follows 14f1d15. CI is green on 14f1d15.
+- Production: wrangler version 919be633-b3c2-4d32-9156-493e45a9a230, gitSha 14f1d151e0d645d13f3aa4f677d0c88d95d173ab
+  -- verified from the live rig, `GET /health` returns exactly that sha, and the live `GET /candidates.json` now serves
+  schema `sdr-candidates/2` (4 rows, no baked `daysUntilNext`/`nextTransitBjd`, every `discoveryClaim` false) -- deployed
+  2026-10-21. It supersedes the previous version/sha pair (0684a371 / d5dd629, the seven-point web/poster deploy). Triggers:
+  schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. Any later deploy supersedes this version/sha
+  pair, so `GET /health` is the authority on what runs now. The deploy went through `cf:deploy:sha`, which refuses a dirty
+  tree and aborts if the GIT_SHA secret cannot be set (one transient secret-set failure was retried to success); `npm run
+  deploy:window` read `activeRun.running=false` with 263 s of measured idle before the next claim, so the upload did not
+  straddle a live pass.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
 - Public counters at that same moment (`GET /api/state`, measured 2026-10-21; the payload carries
   `statDefinitions` -- the sentence saying what each of these counts, from `src/core/stats-definitions.ts`):
-  surveyPass 281 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53 assessed,
-  bundlesAnchored 1 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 95. The report library serves
+  surveyPass 302 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53 assessed,
+  bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 95. The report library serves
   56 reports with `stale: []`, `stamped: 16`, `verified: 14`, `fullyVerified: 14`.
-  Note the anchor pair moved again since the previous snapshot (5 published-bytes became 1, against a steady 20
+  Note the anchor pair moved again since the previous snapshot (1 published-byte became 0, against a steady 20
   commitments): that is the documented rotation semantics at work, not a lost anchor -- the survey re-derives a sealed
   record, its bundle hash changes with the new run timestamp, and the record leaves `bundlesAnchored` while staying on
   chain. Nothing was un-anchored; the count is a statement about the bytes published now.

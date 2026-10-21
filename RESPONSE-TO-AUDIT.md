@@ -307,11 +307,15 @@ measured fact and the residual, not the intent.
 
 ### Honesty note on the seven-point audit
 
-Two residuals are stated rather than papered over. The served candidate board is still the `/1` snapshot: flipping it to
-`/2` requires a live `p22` re-observation, and re-stamping its dependants `p48`/`p76` needs ExoFOP, which returns 0 rows
-to an anonymous sandbox fetch -- so the board and its dependants are left to refresh together on a networked runner
-rather than hand-edited into the exact HARD-STALE inconsistency this audit is about. The `/api/state` latency is an
-infra characteristic of a busy single-threaded DO, not a data bug; no blind caching or eventual-consistency change was
-shipped because its benefit could not be re-measured against the contention window from here. Everything else is closed
-against bytes and re-checked on the deployed site. Research-only throughout; no verdict gate or money path moved.
+Two residuals were stated rather than papered over, and the first is now closed. The served candidate board: flipping
+it from `/1` to `/2` requires a live `p22` re-observation and re-stamping its dependants `p48`/`p76` needs ExoFOP, which
+returns 0 rows to an anonymous sandbox fetch -- so rather than hand-edit it into the exact HARD-STALE inconsistency this
+audit is about, the fleet was widened (`d9c270f`) so `p48` also auto-heals and `web/candidates.json` became a trigger, then
+`p22` was re-observed against live MAST + Archive to emit a `/2` board (4 rows, no baked countdown, `discoveryClaim` false),
+p48 re-stamped locally, and the push auto-fired `freshness-regen` to re-stamp p76 + rebuild the library to `stale:[]`
+(`14f1d15`) and deploy (`919be633`) -- live `/candidates.json` now serves `/2` with no rotting day-count. The second
+residual stands: the `/api/state` latency is an infra characteristic of a busy single-threaded DO, not a data bug, and no
+blind caching or eventual-consistency change was shipped because its benefit could not be re-measured against the
+contention window from here. Everything else is closed against bytes and re-checked on the deployed site. Research-only
+throughout; no verdict gate or money path moved.
 

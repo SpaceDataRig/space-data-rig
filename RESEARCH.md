@@ -983,10 +983,12 @@ port each one and MEASURE it on our own data with positive controls -- the same 
   `safeToGate=false`.
 - **P75 inverted-curve empirical FP rate** (`scripts/p75-inverted-fp.ts`). The clean null P69 asked for: INVERT a real
   curve (dips become bumps) and MASK every catalogued planet (single sector, exact ephemeris), keep only a positive
-  transit-like residual dip -- a false alarm by construction. On 16 such curves the production AR(1) gate signs off
-  12/16 (75%) as significant at FAP<0.05 versus the 5% it advertises, while a model-free block bootstrap flags only
-  5/16 and overturns 7 of the AR(1) passes (mean FAP delta +0.16). Verdict `GATE-OPTIMISTIC-ON-REAL-NOISE` -- it
-  recovers P69's concern on a genuinely planet-free null. Measured only; no threshold moved.
+  transit-like residual dip -- a false alarm by construction. On 200 such curves the production AR(1) gate signs off
+  148/200 (74%) as significant at FAP<0.05 versus the 5% it advertises, while a model-free block bootstrap flags only
+  64/200 (32%) and overturns 86 of the AR(1) passes (mean FAP delta +0.19). Verdict `GATE-OPTIMISTIC-ON-REAL-NOISE` -- it
+  recovers P69's concern on a genuinely planet-free null. Measured only; no threshold moved. The 200-row sample is now
+  frozen into `reports/fixtures/p75-frozen-rows.json` and replayed offline, so this rate is reproducible rather than a
+  fresh re-measure of the live Archive on every CI run.
 - **P76 multi-source novelty** (`scripts/p76-multisource-novelty.ts`). P48 checked only two Archive tables and flagged
   that it missed ExoFOP/CTOIs. Adding the token-free ExoFOP TOI/CTOI table (8151 rows, community FP/EB/KP labels) as a
   third catalog -- with live controls on both query paths -- moves 0/5 board candidates out of "novel" (shrink 0), so

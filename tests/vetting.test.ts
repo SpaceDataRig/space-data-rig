@@ -254,6 +254,18 @@ test("a completed per-host lookup with nothing announced is a genuine novel read
   assert.match(r.reason, /with no catalog match -- a candidate for follow-up, not a claimed discovery\./);
 });
 
+test("R4: a real row whose per-host lookup never RAN is 'lookup-not-run', NOT the completed-empty 'none'", () => {
+  // catalogSource is set but hostCatalog is undefined -- exactly workflow.ts when meta.hostName is absent, so the
+  // per-host re-query was skipped. This must be distinguishable from hostCatalog === [] (a lookup that ran and
+  // announced nothing): here novelty is UNDETERMINED, so the reason must not read as a novel follow-up candidate.
+  const r = reviewCandidate(novel({ catalogSource: "nasa-tap" }));
+  assert.equal(r.crossmatch.status, "lookup-not-run", "undefined hostCatalog with a real source is not-run, not none");
+  assert.match(r.reason, /did NOT complete|novelty is undetermined/, "novelty is undetermined, not asserted");
+  assert.doesNotMatch(r.reason, /not a claimed discovery\.\s*$/, "the bare 'novel candidate' wording must not be used");
+  const chk = r.checks.find((x) => x.name === "catalog-lookup (informational, non-gating)");
+  assert.ok(chk && chk.pass === false, "a not-run lookup is an incomplete (non-gating) check, like a failure");
+});
+
 test("the tri-state never widens the accept set: a direct slice hit still accepts with status hit", () => {
   const r = reviewCandidate({ ...baseInput, catalogSource: "nasa-tap" });
   assert.equal(r.verdict, "accepted");

@@ -60,7 +60,7 @@ test("the boundary is INCLUSIVE: RELABEL_POLICY_DATE itself is legacy, the next 
 // --- structural: behaviour on the pure predicate cannot prove it is still WIRED into the render path ---
 
 test("app.js imports the shared predicate and renders its note in cardHtml", () => {
-  assert.match(APP, /import \{ headlineRelabelNote \} from "\/relabel\.js"/, "app.js must import the ONE shared predicate");
+  assert.match(APP, /import \{[^}]*\bheadlineRelabelNote\b[^}]*\} from "\/relabel\.js"/, "app.js must import the ONE shared predicate");
   assert.match(APP, /const relabel = headlineRelabelNote\(f\)/, "cardHtml must call the predicate");
   assert.match(APP, /\$\{relabel \? `<div class="relabel-note">/, "cardHtml must render the note when present");
 });

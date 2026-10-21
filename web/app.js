@@ -12,7 +12,7 @@
 
 import { MissionRoom, SEAT_META } from "/space.js";
 import { connectLive } from "/live.js";
-import { headlineRelabelNote } from "/relabel.js";
+import { headlineRelabelNote, degeneracyCaveat } from "/relabel.js";
 // Depth and period are MEASUREMENTS with a known error, not exact numbers. This module carries the error bars the
 // records can support (browser mirror of src/core/depthFormat.ts and src/core/periodFormat.ts, kept in step by
 // tests/depth-honesty.test.ts). Before it, every cell below printed a bare integer ppm and a period to three
@@ -374,6 +374,7 @@ function cardHtml(f) {
   const pill = ORIGIN_PILL[originOf(f)];
   const headline = f.narration?.headline || f.verdictReason || "Finding";
   const relabel = headlineRelabelNote(f);
+  const degen = degeneracyCaveat(f);
   const explainer = f.narration?.explainer || "";
   const score = f.score != null ? `<span class="score">${f.score}/100</span>` : "";
   const chain = f.solanaTx
@@ -383,6 +384,7 @@ function cardHtml(f) {
     <div class="card-top"><span class="card-target">${esc(f.targetId)}</span><span class="card-side">${score}<span class="origin-pill ${pill.cls}">${pill.label}</span><span class="badge ${badge.tone}">${badge.label}</span></span></div>
     <div class="headline">${esc(headline)}</div>
     ${relabel ? `<div class="relabel-note">${esc(relabel)}</div>` : ""}
+    ${degen ? `<div class="relabel-note">${esc(degen)}</div>` : ""}
     <div class="metrics">${metricsHtml(f)}</div>
     ${explainer ? `<div class="explainer-text">${esc(explainer)}</div>` : ""}
     <div class="prov"><span><b>bundle</b> ${esc(shortHash(f.bundleHash))}</span>${chain}</div>
@@ -391,6 +393,7 @@ function cardHtml(f) {
       <button class="btn tiny ghost" data-action="plots">Plots</button>
       <button class="btn tiny ghost" data-action="verify">Verify</button>
       <button class="btn tiny" data-action="anchor">${f.solanaTx ? "Re-anchor" : "Anchor"}</button>
+      <button class="btn tiny ghost" data-action="verify-chain">On-chain</button>
       <span class="verify-out" data-status></span>
     </div>
     <details class="card-details">
@@ -1097,6 +1100,25 @@ boardEl.addEventListener("click", async (e) => {
         status.textContent = `verify failed: ${why}`;
       }
     } catch (err) { status.className = "verify-out bad"; status.textContent = `verify error: ${err.message}`; }
+    return;
+  }
+
+  if (action === "verify-chain") {
+    // R7: the read-only, keyless on-chain verification (GET /api/bundles/:id/verify-onchain) decodes the sealed
+    // sdr:1 memo from a live getTransaction and compares BOTH its bundleHash and scienceHash to what the site
+    // serves now. It existed on both runtimes but was reachable only from the README -- surfacing it here puts the
+    // honest read-back under a reader's cursor, including whether the anchored SCIENCE has since moved.
+    status.className = "verify-out"; status.textContent = "reading the chain...";
+    try {
+      const v = await fetchJSON(`/api/bundles/${encodeURIComponent(id)}/verify-onchain`);
+      if (!v.anchored) { status.className = "verify-out"; status.textContent = "not anchored on-chain yet"; return; }
+      if (!v.chainReadable) { status.className = "verify-out bad"; status.textContent = "anchor exists but no RPC answered to read it (chain unavailable right now -- not a failure of the anchor)"; return; }
+      if (!v.verifiable) { status.className = "verify-out bad"; status.textContent = "anchor exists but its memo could not be decoded"; return; }
+      if (v.anchoredScienceDrift) { status.className = "verify-out bad"; status.textContent = "SCIENCE HAS MOVED: the sealed memo commits a different science hash than the site serves now"; return; }
+      const sci = v.scienceCompareAvailable === false ? "science not comparable (legacy 3-field memo)" : v.scienceHashMatch ? "sealed science still matches what the site serves" : "sealed science differs";
+      const bnd = v.anchorCoversCurrentBundle ? "sealed bundle == current bundle" : "sealed bundle pre-dates a re-derive (timestamp moved); content address stable";
+      status.className = "verify-out ok"; status.textContent = `chain read OK: ${sci}; ${bnd}`;
+    } catch (err) { status.className = "verify-out bad"; status.textContent = `on-chain verify error: ${err.message}`; }
     return;
   }
 

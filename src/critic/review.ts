@@ -159,6 +159,11 @@ export interface ReviewResult {
   checks: { name: string; pass: boolean; detail: string }[];
 }
 
+/** A box SNR above this cannot be a physically plausible single transit on a TESS baseline, so the critic refuses
+ * to call such a signal "physically-consistent". Named constant so the browser projection-relabel mirror
+ * (web/relabel.js) and this authority stay guarded-equal by tests/degeneracy-relabel.test.ts. */
+export const SNR_IMPLAUSIBLE = 1000;
+
 /** Physical sanity bounds for a genuine transit signal. */
 const SANITY = {
   minDepthPpm: 20,
@@ -313,7 +318,7 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
   // "physically-consistent transit" while carrying SNR up to 45171, a non-positive/repriced depth, or P=16.0000
   // at the search boundary. Broadening harmonic detection elsewhere can only SHRINK the accepted set (acceptance
   // requires harmonic===1), so this stays money-path conservative.
-  const snrImplausible = Math.abs(c.snr) > 1000;
+  const snrImplausible = Math.abs(c.snr) > SNR_IMPLAUSIBLE;
   let depthSigInconsistent = false;
   if (Number.isFinite(c.noiseSigmaFrac as number) && (c.noiseSigmaFrac as number) > 0 && Number.isFinite(c.snr)) {
     const nIn0 = Math.max(1, c.nPointsInTransit || 1);

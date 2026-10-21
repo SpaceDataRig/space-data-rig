@@ -588,9 +588,9 @@ function candCardHtml(c) {
   if (c.suspectedCommonSystematic) flags.push(`<span class="cand-flag bad">shared ephemeris &times;${c.distinctHostsSharingEphemeris} hosts &rarr; likely one systematic, not ${c.distinctHostsSharingEphemeris} planets</span>`);
   if (c.corroboratedSectors >= 2) flags.push(`<span class="cand-flag good">recurs in ${c.corroboratedSectors} sectors</span>`);
   if (c.depthRegime === "deep-suspect") flags.push(`<span class="cand-flag warn">depth in the EB / blend band</span>`);
-  // Countdown is PROJECTED LIVE from the stable linear ephemeris (epochBjd + periodDays), never read from the
-  // snapshot's baked daysUntilNext: that board is a dated snapshot and a baked day-count silently rots (an audit
-  // found it still printing "in 7.8 d" for a transit that had already folded to today). Barycentric, approximate UTC.
+  // Countdown is PROJECTED LIVE from the stable linear ephemeris (epochBjd + periodDays). The /2 snapshot
+  // deliberately no longer bakes a daysUntilNext/nextTransitBjd: a dated static board cannot honestly carry a
+  // now-relative day-count -- it silently rots (a prior board printed "in 7.8 d" for a transit already folded).
   const ntCand = Number.isFinite(c.epochBjd) && c.periodDays > 0 ? nextTransit({ t0Bjd: c.epochBjd, periodDays: c.periodDays }) : null;
   const next = ntCand ? `${ntCand.nextBjd.toFixed(3)} BJD (in ${((ntCand.nextMs - Date.now()) / MS_PER_DAY).toFixed(1)} d)` : "unpredictable";
   const place = c.altitudeDeg != null ? `${c.altitudeDeg.toFixed(1)}&deg; at mid-transit &middot; ${c.observable ? "well placed" : "below 20&deg;"} from ${esc(c.siteName)}` : "position unavailable";

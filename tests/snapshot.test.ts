@@ -10,7 +10,7 @@ function row(over: Partial<CandidateRow> = {}): CandidateRow {
     tic: 139114989, ra: 319.8, dec: -46.9, tmag: 13.69,
     periodDays: 10.1313, epochBjd: 2458349.1827, depthPpm: 12000, snr: 43.6,
     tier: "low", depthRegime: "planet-plausible", priorityBand: "medium", priorityScore: 0.55,
-    nextTransitBjd: 2461327.79, daysUntilNext: 1.9, altitudeDeg: -62.1, observable: false, siteName: "Maunakea (reference site)",
+    altitudeDeg: -62.1, observable: false, siteName: "Maunakea (reference site)",
     distinctHostsSharingEphemeris: 1, suspectedCommonSystematic: false, corroboratedSectors: 1,
     discoveryClaim: false,
     ...over,
@@ -66,9 +66,20 @@ test("missing candidates array and non-object input are rejected", () => {
   assert.equal(validateSnapshot("nope").ok, false);
 });
 
-test("null next-transit / altitude are allowed (unmeasurable, honestly null)", () => {
-  const v = validateSnapshot(snap({ candidates: [row({ nextTransitBjd: null, altitudeDeg: null, daysUntilNext: null })] }));
+test("null altitude is allowed (unmeasurable, honestly null)", () => {
+  const v = validateSnapshot(snap({ candidates: [row({ altitudeDeg: null })] }));
   assert.equal(v.ok, true);
+});
+
+test("the /2 contract drops the now-relative baked countdown fields", () => {
+  assert.equal(CANDIDATE_SCHEMA, "sdr-candidates/2");
+  assert.ok(!("nextTransitBjd" in row()), "row must not carry a baked nextTransitBjd (it rots in a static file)");
+  assert.ok(!("daysUntilNext" in row()), "row must not carry a baked daysUntilNext countdown");
+});
+
+test("a stale /1 snapshot is rejected at the boundary (guards against re-publishing a rotting board)", () => {
+  const v = validateSnapshot(snap({ schema: "sdr-candidates/1" as typeof CANDIDATE_SCHEMA }));
+  assert.equal(v.ok, false);
 });
 
 test("a suspected common systematic row still validates (flagged, not hidden)", () => {

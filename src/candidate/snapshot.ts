@@ -9,7 +9,11 @@
 //
 // PURE + RESEARCH-ONLY. No network, no worker import, cannot touch a verdict / bundle hash / money path.
 
-export const CANDIDATE_SCHEMA = "sdr-candidates/1";
+// Bumped to /2: the static snapshot no longer bakes the now-relative countdown fields (nextTransitBjd /
+// daysUntilNext). A dated board cannot honestly carry "days until next transit" -- that value silently rots,
+// and a prior snapshot kept advertising "in 7.8 d" long after the transit had folded. The stable ephemeris
+// (epochBjd + periodDays) is retained so any consumer projects the countdown LIVE, exactly as the console does.
+export const CANDIDATE_SCHEMA = "sdr-candidates/2";
 
 export const CANDIDATE_DISCLAIMER =
   "These are CANDIDATES from an automated blind search over real TESS full-frame-image photometry. They are " +
@@ -30,9 +34,7 @@ export interface CandidateRow {
   depthRegime: string; // planet-plausible | deep-suspect | not-planetary | unknown
   priorityBand: string; // high | medium | low | not-rankable
   priorityScore: number; // 0..1
-  nextTransitBjd: number | null;
-  daysUntilNext: number | null;
-  altitudeDeg: number | null; // mid-transit altitude from the reference site
+  altitudeDeg: number | null; // mid-transit altitude from the reference site (geometric placement, not a clock)
   observable: boolean;
   siteName: string;
   distinctHostsSharingEphemeris: number; // >1 -> a suspected sector-common systematic, not independent planets
@@ -111,7 +113,6 @@ export function validateSnapshot(obj: unknown): SnapshotValidation {
       if (typeof r.depthRegime !== "string" || !r.depthRegime) at("depthRegime must be a non-empty string");
       if (typeof r.priorityBand !== "string" || !r.priorityBand) at("priorityBand must be a non-empty string");
       if (!isNum(r.priorityScore) || (r.priorityScore as number) < 0 || (r.priorityScore as number) > 1) at("priorityScore must be in [0,1]");
-      if (!isNumOrNull(r.nextTransitBjd)) at("nextTransitBjd must be a number or null");
       if (!isNumOrNull(r.altitudeDeg)) at("altitudeDeg must be a number or null");
       if (typeof r.observable !== "boolean") at("observable must be a boolean");
       if (typeof r.suspectedCommonSystematic !== "boolean") at("suspectedCommonSystematic must be a boolean");

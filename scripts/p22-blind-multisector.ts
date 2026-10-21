@@ -173,8 +173,8 @@ async function main(): Promise<void> {
       periodDays: record.detection.periodDays, epochBjd: record.detection.epochBjd, depthPpm: record.detection.depthPpm, snr: record.detection.snr,
       tier: record.tier, depthRegime: record.vetting?.depth?.regime ?? "unknown",
       priorityBand: p.priorityBand, priorityScore: p.priorityScore,
-      nextTransitBjd: Number.isFinite(p.nextTransitBjd) ? p.nextTransitBjd : null,
-      daysUntilNext: Number.isFinite(p.daysUntilNext) ? p.daysUntilNext : null,
+      // No baked countdown: nextTransitBjd/daysUntilNext are now-relative and rot in a static file. Consumers
+      // project them live from epochBjd + periodDays (as the console does). altitudeDeg/observable are geometric.
       altitudeDeg: p.altitudeAtMidTransitDeg, observable: p.observableFromSite, siteName: DEFAULT_SITE.name,
       distinctHostsSharingEphemeris: g.distinctHosts, suspectedCommonSystematic: g.suspectedCommonSystematic,
       corroboratedSectors: corrobByTic.get(record.host.tic)?.distinctSectors ?? 1,

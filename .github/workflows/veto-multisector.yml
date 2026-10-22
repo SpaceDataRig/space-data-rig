@@ -70,7 +70,7 @@ jobs:
         if: always()
         run: |
           if ls reports/p60-joint-vs-single.md reports/p58-veto-2x2.md reports/p59-offtarget-subset.md >/dev/null 2>&1; then
-            git config user.name "sdr-bot"
+            git config user.name "Space Data Rig"
             git config user.email "bot@spacedatarig.app"
             git fetch origin main --depth=1
             git checkout -B main origin/main
@@ -78,7 +78,7 @@ jobs:
                     reports/p58-veto-2x2.md reports/p58-veto-2x2.json \
                     reports/p59-offtarget-subset.md reports/p59-offtarget-subset.json
             if ! git diff --cached --quiet; then
-              git commit -m "Roadmap-5: publish joint-search + true-veto 2x2 reports (run $GITHUB_RUN_ID, CI-measured)"
+              git commit -m "Roadmap-5: publish joint-search + true-veto 2x2 reports (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
               git push origin HEAD:main
             else
               echo "reports unchanged; nothing to publish"

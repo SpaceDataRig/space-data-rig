@@ -66,13 +66,13 @@ jobs:
         if: always()
         run: |
           if [ -f reports/p39-instrumental-fp.md ]; then
-            git config user.name "sdr-bot"
+            git config user.name "Space Data Rig"
             git config user.email "bot@spacedatarig.app"
             git fetch origin main --depth=1
             git checkout -B main origin/main
             git add reports/p39-instrumental-fp.md reports/p39-candidates.json
             if ! git diff --cached --quiet; then
-              git commit -m "Track A: publish systematics-aware FP / FDR report (run $GITHUB_RUN_ID, CI-measured)"
+              git commit -m "Track A: publish systematics-aware FP / FDR report (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
               git push origin HEAD:main
             else
               echo "report unchanged; nothing to publish"

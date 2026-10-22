@@ -1,19 +1,17 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-22T03:42:57.930Z",
-  "builtAtGitSha": "ad1d8043e850c39832c4c062299e2ded4dac05a6",
+  "generatedAt": "2026-10-22T04:06:13.406Z",
+  "builtAtGitSha": "fc59dccdf9b6224b70a2627efbb4d58c3063e9a1",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 56,
   "freshness": {
     "stamped": 16,
-    "verified": 13,
-    "fullyVerified": 13,
+    "verified": 14,
+    "fullyVerified": 14,
     "total": 56,
-    "stale": [
-      "crosscheck/benchmark-vs-field"
-    ]
+    "stale": []
   },
   "reports": [
     {
@@ -778,11 +776,11 @@
       "title": "Benchmark vs the field: LEO-Vetter on the committed real-curve fixtures",
       "reproduce": "",
       "summary": "External tool: LEO-Vetter (Kunimoto et al. 2025, AJ 170, 280), import OK v1.2.0 Stellar parameters: NASA Exoplanet Archive pscomppars TAP (https://exoplanetarchive.ipac.caltech.edu/TAP/sync) (committed by scripts/p94-stellar-params.ts)....",
-      "fresh": false,
+      "fresh": true,
       "stamped": true,
-      "verified": false,
-      "rehashed": 3,
-      "reproducible": 3,
+      "verified": true,
+      "rehashed": 4,
+      "reproducible": 4,
       "unverifiableInputs": 0,
       "untrackedInputs": 0
     },

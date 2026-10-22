@@ -319,3 +319,32 @@ blind caching or eventual-consistency change was shipped because its benefit cou
 contention window from here. Everything else is closed against bytes and re-checked on the deployed site. Research-only
 throughout; no verdict gate or money path moved.
 
+## Twelfth-round audit response (2026-10-22, HEAD tested `ad1d804`+)
+
+The audit's own framing was the correction: the defect class had moved from "fixed but never shipped" to
+**"the shipping pipeline re-verified a rotten fact"**. The auditor independently reproduced every claimed number
+against served bytes -- the first round where that held -- and then found what byte-vs-input gates structurally
+cannot see: prose that disagrees with its own JSON. Response, per finding:
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| D1: P48's published prose claimed "collapsed 2 ... emitting these 5" while its own table and JSON said 1 / 4 -- and the gate signed it `verified` | `p48-novelty-check.ts` interpolated every other count but hardcoded that sentence; it described the old `/1` board and rotted under re-stamping. Tests referenced p48 zero times | Sentence now interpolates `board.summary` (+`corroboratedHosts` beside it); JSON carries the source fields; `tests/p48-copy-consistency.test.ts` pins every prose count to its data row | p48 re-run live (control PASS) says 1/4; CI fleet re-stamped it again at `44e5c5d` with the same sentence; +4 tests green | Shipped (`ad1d804`), CI-re-stamped. |
+| D2: dedup and freshness are mutually exclusive -- `anchorCoversCurrentBundle` 0/20 forever while dedup spends no second fee | Two individually-correct mechanisms each eating the other's guarantee; the docs claimed the covered-bytes property as the thing provenance needs | Capability claim WITHDRAWN from README (steady state named plainly); the verify branch that hardcoded "re-derive (timestamp moved)" + asserted "content address stable" was rewritten to name both causes and defer to the science-hash verdict; money path untouched | `tests/stats-definitions.test.ts` asserts the withdrawn strings never come back; per-card state readable where it lives | Shipped (`ad1d804`). |
+| D3: 20-vs-0 decodable only by reading DO SQL | Definitions existed only in code comments; the UI quoted numbers without their populations | `bundlesAnchored`/`ledgerAnchored` definitions added to the published payload (`stats-definitions.ts`) and rendered as tooltips on both ticker chips (payload-cached, no markup copies) | +1 test: definitions must exist AND have a consumer; single-source rule kept | Shipped (`ad1d804`). |
+| D4: `/api/state` 324 KB with 40-60% measured fetch failure for verifiers | 270 KB of findings bytes in one payload; DO serialization adds latency | New `GET /api/state/summary`: pure projection (<8 KB) with the same stats/statDefinitions + verdict/origin populations + cards-with-tx count, wired in BOTH runtimes | `tests/state-summary.test.ts` +3 (behavior, size ratio, parity); live measurement after deploy | Shipped (`ad1d804`), live check below. |
+| D5: cross-pipeline.json still unstamped; library `--allow-stale` keeps p86's block dead in CI | The second crosscheck arm never got the R1 stamp treatment | `cross_pipeline.py` gained the same EOL-mirrored `freshness_stamp`; discovered live: editing it HARD-STALE'd benchmark-vs-field (a hash input) with nothing re-firing -> `leo-vetter.yml` now watches `cross_pipeline.py` | CI arms re-stamp + rebuild on their own runners; no local Python -- said plainly | Shipped (`ad1d804`, `176dc31`), CI-verified in-flight. |
+| D6: ~70 passes, 0 new chain commitments -- "continuously producing verifiable records" lacks incremental support | Correct: dedup suppresses re-anchoring identical science by design; the phrase came from session prose, not the repo | No new wording earned; the suppression is now stated in README/CHANGELOG where the counters live | grep: repo never carried the overclaim | Acknowledged, no papering. |
+| D7: HANDOFF `Last updated: 2026-10-13` while the body cites 10-21/22; blind-toi phrasing stricter than the code | The date line was a resident claim without the git line's scope disclaimer; the README claimed a universal cap while seats.ts:165 caps only ACCEPTED | Date moved to 2026-10-22 with a what-this-line-protects note; README now says: never ACCEPTED, rejections stay rejected | `handoff-freshness` test; code-parity re-read of seats.ts | Shipped (`ad1d804`). |
+
+### Honesty note on the twelfth round
+
+Two residuals are stated, not closed. The `/api/state` DO-serialization latency still stands as an infra
+characteristic -- the summary endpoint removes the transport wall for verifiers, it does not make the full payload
+fast. And the p86 `--allow-stale` block in `freshness-regen.yml` still never hard-blocks in the automated path (the
+library keeps serving stale-flagged entries honestly, with `stale[]` visible in the index). The retracted-sentence
+class is now structurally closed for p48 (interpolation + row-pin test); the audit's lit12 scan found 13
+hardcoded-count lines overall and every survivor was checked against its source (external citations, frozen
+snapshot constants, or statistical conventions) -- only P48 had actually rotted, and the same test shape guards it
+from silently repeating. Research-only throughout: no verdict gate, anchor semantics, or money path moved;
+`discoveryClaim` false everywhere.
+

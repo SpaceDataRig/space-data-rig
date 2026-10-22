@@ -1,7 +1,7 @@
 // GOVERNANCE: every commit is co-signed, so check the commit that is HEAD rather than trust the habit.
 //
 // WHY THIS EXISTS. GOVERNANCE.md states that changes land under an explicitly-labelled automated identity and
-// that "commits are co-signed"; HANDOFF.md documents how -- author sdr-bot (Space Data Rig <bot@spacedatarig.app>)
+// that "commits are co-signed"; HANDOFF.md documents how -- author name "Space Data Rig" (bot@spacedatarig.app)
 // plus the trailer `Co-authored-by: Space Data Rig <dev@spacedatarig.app>` naming the human owner. Two commits were
 // pushed (2026-10-18, the seventh audit pass) with the trailer missing, and nothing failed: the convention lived
 // only in prose, so it depended on remembering it under a different context each time. That is the same failure mode

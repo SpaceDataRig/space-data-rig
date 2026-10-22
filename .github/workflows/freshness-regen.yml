@@ -112,7 +112,7 @@ jobs:
         # publish commit only touches reports/ and web/reports/, neither of which is a trigger path, so this job
         # cannot re-fire itself.
         run: |
-          git config user.name "sdr-bot"
+          git config user.name "Space Data Rig"
           git config user.email "bot@spacedatarig.app"
           git add reports/p48-novelty.json reports/p48-novelty.md \
                   reports/p76-multisource-novelty.json reports/p76-multisource-novelty.md \
@@ -120,7 +120,7 @@ jobs:
                   reports/p59-offtarget-subset.json reports/p59-offtarget-subset.md \
                   web/reports/ || true
           if git diff --cached --quiet; then echo "reports and index unchanged; nothing to publish"; exit 0; fi
-          git commit -m "freshness-regen: re-stamp p48/p59/p76/p92 + rebuild report library (run $GITHUB_RUN_ID, CI-measured)"
+          git commit -m "freshness-regen: re-stamp p48/p59/p76/p92 + rebuild report library (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
           published=0
           for attempt in 1 2 3 4 5; do
             git fetch origin main --quiet

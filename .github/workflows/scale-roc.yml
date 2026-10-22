@@ -54,13 +54,13 @@ jobs:
         if: always()
         run: |
           if [ -f reports/p33-scale-roc.md ]; then
-            git config user.name "sdr-bot"
+            git config user.name "Space Data Rig"
             git config user.email "bot@spacedatarig.app"
             git fetch origin main --depth=1
             git checkout -B main origin/main
             git add reports/p33-scale-roc.md reports/p33-catalog.json
             if ! git diff --cached --quiet; then
-              git commit -m "Track C: publish large-scale completeness/purity report (run $GITHUB_RUN_ID, CI-measured)"
+              git commit -m "Track C: publish large-scale completeness/purity report (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
               git push origin HEAD:main
             else
               echo "report unchanged; nothing to publish"

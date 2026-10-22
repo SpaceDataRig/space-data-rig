@@ -65,14 +65,14 @@ jobs:
         if: always()
         run: |
           if [ -f reports/crosscheck/benchmark-vs-field.md ]; then
-            git config user.name "sdr-bot"
+            git config user.name "Space Data Rig"
             git config user.email "bot@spacedatarig.app"
             for attempt in 1 2 3 4 5; do
               git fetch origin main --depth=1
               git checkout -B main origin/main
               git add reports/crosscheck/benchmark-vs-field.md reports/crosscheck/benchmark-vs-field.json
               if git diff --cached --quiet; then echo "benchmark report unchanged; nothing to publish"; break; fi
-              git commit -m "Track C: publish LEO-Vetter benchmark-vs-field report (run $GITHUB_RUN_ID, CI-measured)"
+              git commit -m "Track C: publish LEO-Vetter benchmark-vs-field report (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
               if git push origin HEAD:main; then echo "benchmark report published"; break; fi
               echo "push contention (attempt $attempt); rebasing onto latest and retrying"; sleep 5
             done

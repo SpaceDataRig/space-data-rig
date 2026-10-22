@@ -68,13 +68,13 @@ jobs:
         if: always()
         run: |
           if [ -f reports/p61-llm-hypothesis.md ]; then
-            git config user.name "sdr-bot"
+            git config user.name "Space Data Rig"
             git config user.email "bot@spacedatarig.app"
             git fetch origin main --depth=1
             git checkout -B main origin/main
             git add reports/p61-llm-hypothesis.md reports/p61-llm-hypothesis.json
             if ! git diff --cached --quiet; then
-              git commit -m "Roadmap: publish LLM-hypothesis-loop 2x2 report (run $GITHUB_RUN_ID, CI-measured)"
+              git commit -m "Roadmap: publish LLM-hypothesis-loop 2x2 report (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
               git push origin HEAD:main
             else
               echo "report unchanged; nothing to publish"

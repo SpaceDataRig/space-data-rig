@@ -20,7 +20,7 @@ Honest reading (this is the whole point): `novelLocation` is a statement about t
 Every one of these is deep (EB/blend-like ppm), single-sector (corroboratedSectors=1), and the board reports
 corroboratedHosts=0 overall -- the TESS pipeline itself flagged NO TOI within 30" of any of them,
 which is evidence AGAINST a credible planet here, not for an undiscovered one. (The board separately collapsed
-2 multi-host systematic groups BEFORE emitting these 5, so these are survivors -- but survivors of a blind
+1 multi-host systematic group(s) BEFORE emitting these 4, so these are survivors -- but survivors of a blind
 single-sector search at these depths are still dominated by false positives per our own purity measurements,
 and none of our vetting gates (P44/P45/P46) is safe to clear an individual candidate.) We therefore report
 ZERO credible novel planet candidates. This check does NOT cover ExoFOP-TESS or the peer-reviewed literature.

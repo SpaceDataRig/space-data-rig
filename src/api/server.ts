@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 
 import { RigStore } from "../core/store.ts";
 import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
+import { summarizeState } from "../core/state-summary.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -181,6 +182,28 @@ app.get("/api/state", (c) =>
     events: store.recentEvents(150),
     ai,
   }),
+);
+
+// Audit-12 D4 parity: the same aggregate-only projection the edge serves, built from the same rows. A verifier
+// pointed at either runtime gets identical populations, and neither one can fork the definitions (single source:
+// src/core/stats-definitions.ts, shared by both).
+app.get("/api/state/summary", (c) =>
+  c.json(
+    summarizeState(
+      {
+        runId: store.runId,
+        codeVersion,
+        activeRun,
+        seats: store.listSeats(),
+        findings: store.listFindings(),
+        bundles: store.listBundles(),
+        events: store.recentEvents(150),
+        stats: store.computeStats(ledgerRows()),
+        statDefinitions: PUBLIC_STAT_DEFINITIONS,
+      } as Parameters<typeof summarizeState>[0],
+      new Date().toISOString(),
+    ),
+  ),
 );
 
 app.get("/api/run/status", (c) => c.json({ activeRun }));

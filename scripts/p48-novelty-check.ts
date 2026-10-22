@@ -96,7 +96,11 @@ async function main(): Promise<void> {
     return;
   }
 
-  const board = JSON.parse(readFileSync("web/candidates.json", "utf8")) as { candidates: BoardCandidate[] };
+  const board = JSON.parse(readFileSync("web/candidates.json", "utf8")) as {
+    schema?: string;
+    summary?: { systematicCollapsed?: number; emittedCandidates?: number; corroboratedHosts?: number };
+    candidates: BoardCandidate[];
+  };
   const results = [];
   for (const c of board.candidates) {
     const cand: CandidatePos = { tic: c.tic, ra: c.ra, dec: c.dec, periodDays: c.periodDays };
@@ -114,9 +118,15 @@ async function main(): Promise<void> {
   const novelCount = results.filter((r) => r.d.novelLocation).length;
   const samePeriodCount = results.filter((r) => r.d.samePeriodAnnounced).length;
   const systematicPairs = results.filter((r) => r.c.distinctHostsSharingEphemeris > 1 || r.c.suspectedCommonSystematic).length;
+  // Audit-12 D1: the collapse count quoted in the prose below was a hardcoded constant ("collapsed 2 ... emitting
+  // these 5") and rotted when the /2 board re-measured to 1 group / 4 candidates. The freshness gate verifies
+  // bytes-against-inputs, NOT prose-against-data, so every load-bearing count in the text is interpolated from
+  // the board's own summary from here on (and pinned by tests/p48-copy-consistency.test.ts).
+  const collapsedGroups = board.summary?.systematicCollapsed ?? null;
   console.log(`\n=== P48 SUMMARY ===`);
   console.log(`  candidates: ${results.length}; at a location with NO announcement nearby: ${novelCount}; sharing a period with an announcement: ${samePeriodCount}`);
   console.log(`  candidates flagged as a shared/systematic ephemeris across neighbouring hosts: ${systematicPairs}`);
+  console.log(`  multi-host systematic groups collapsed by the board's L3 before emission: ${collapsedGroups ?? "(summary absent)"}`);
 
   const json = {
     meta: {
@@ -131,6 +141,9 @@ async function main(): Promise<void> {
     novelLocationCount: novelCount,
     samePeriodAnnouncedCount: samePeriodCount,
     systematicPairCount: systematicPairs,
+    boardSchema: board.schema ?? null,
+    boardSystematicCollapsed: collapsedGroups,
+    boardEmittedCandidates: board.summary?.emittedCandidates ?? null,
     discoveryClaim: false,
     rows: results.map((r) => ({
       tic: r.c.tic, ra: r.c.ra, dec: r.c.dec, periodDays: +r.c.periodDays.toFixed(4), depthPpm: Math.round(r.c.depthPpm),
@@ -168,9 +181,11 @@ async function main(): Promise<void> {
     "",
     "Honest reading (this is the whole point): `novelLocation` is a statement about the CATALOGS, not about nature.",
     "Every one of these is deep (EB/blend-like ppm), single-sector (corroboratedSectors=1), and the board reports",
-    `corroboratedHosts=0 overall -- the TESS pipeline itself flagged NO TOI within ${RADIUS_ARCSEC}" of any of them,`,
+    `corroboratedHosts=${board.summary?.corroboratedHosts ?? "n/a"} overall -- the TESS pipeline itself flagged NO TOI within ${RADIUS_ARCSEC}" of any of them,`,
     "which is evidence AGAINST a credible planet here, not for an undiscovered one. (The board separately collapsed",
-    "2 multi-host systematic groups BEFORE emitting these 5, so these are survivors -- but survivors of a blind",
+    (collapsedGroups === null
+      ? `no summary-level collapse count is present in this snapshot; these ${results.length} are the emitted survivors -- but survivors of a blind`
+      : `${collapsedGroups} multi-host systematic group(s) BEFORE emitting these ${results.length}, so these are survivors -- but survivors of a blind`),
     "single-sector search at these depths are still dominated by false positives per our own purity measurements,",
     "and none of our vetting gates (P44/P45/P46) is safe to clear an individual candidate.) We therefore report",
     "ZERO credible novel planet candidates. This check does NOT cover ExoFOP-TESS or the peer-reviewed literature.",

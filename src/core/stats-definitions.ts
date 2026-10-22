@@ -65,6 +65,21 @@ export const PUBLIC_STAT_DEFINITIONS = {
   blindHeld:
     "Blind rows still HELD for human follow-up -- blind candidates assessed minus those the critic rejected. This is " +
     "the number the X digest quotes for 'records N candidates', and the two are the same rule, not two rules.",
+  bundlesAnchored:
+    "Findings whose CURRENTLY PUBLISHED bundle bytes match a landed chain commitment. This is a coverage measure, " +
+    "never a total: a bundle hash folds the run timestamp, so any re-derive swaps in a new hash the chain never saw, " +
+    "and while science-hash dedup is ON (an identical-content repeat is deliberately not re-anchored, so no second " +
+    "fee is spent) the newer bytes are never freshly committed -- this can therefore sit at 0 for weeks while real " +
+    "commitments stand on mainnet. It is NOT the answer to 'how much has this rig put on chain'; that is " +
+    "ledgerAnchored. (Audit-12 named this mutual exclusion: dedup and current-byte coverage cannot both be true of " +
+    "the same science, and this project chose dedup, so this number is read as a floor, not as an achievement.)",
+  ledgerAnchored:
+    "Ledger rows recording commitments that landed (status anchored AND a signature present). A historical total: it " +
+    "survives re-derivation and dedup and is never demoted by a later attempt that failed, because a transaction on " +
+    "mainnet cannot be un-made by a newer local byte generation. It answers 'how many results has this rig put on " +
+    "chain'; whether the bytes on the site right now are each covered by one of those commitments is the separate " +
+    "(and routinely much smaller -- it can be zero while every commitment above stands) bundlesAnchored question -- " +
+    "finding cards show their own verify state precisely because a landed total says nothing about current bytes.",
 } as const;
 
 /** The shape both runtimes publish, so a surface cannot add a counter without defining what it counts. */

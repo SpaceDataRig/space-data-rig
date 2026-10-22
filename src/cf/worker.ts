@@ -32,6 +32,7 @@ import type { LlmCred } from "../ai/llm.ts";
 import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
 import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
+import { summarizeState } from "../core/state-summary.ts";
 
 export { RigStateDO, RigRunWorkflow, RateLimitDO };
 
@@ -163,6 +164,15 @@ app.get("/api/state", async (c) => {
     findings: st.findings.map(findingView),
     ai: aiDescriptor(c.env),
   });
+});
+
+// Audit-12 D4: the full payload is ~324 KB (~270 KB findings) and external verifiers measured 40-60% fetch failure
+// on it -- a summary nobody can reliably download verifies nothing. This route returns the same aggregates (stats,
+// statDefinitions, verdict/origin populations, how many CARDS currently carry a solanaTx) at a fraction of the
+// bytes; card-level detail stays at /api/findings and /api/bundles/:id/verify-onchain. Same DO state, no new logic.
+app.get("/api/state/summary", async (c) => {
+  const st: DashboardState = await rigStub(c.env).getState();
+  return c.json(summarizeState(st, new Date().toISOString()));
 });
 
 app.get("/api/findings", async (c) => {

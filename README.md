@@ -316,13 +316,20 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   hash. On-chain anchoring therefore stays an explicit, cost-capped operator decision.
 - **Two anchor counts, because they answer two questions.** The dashboard shows `sealed as published` and `chain
   commitments` side by side. The first is `stats.bundlesAnchored`: findings whose CURRENT bundle bytes still match a
-  commitment -- the property a provenance claim needs, and one that can go DOWN when the rotating survey re-measures a
-  sealed host, because a `bundleHash` folds the run timestamp and a re-derived bundle is a hash the chain never saw.
-  The second is `stats.ledgerAnchored`: ledger rows recording a commitment that landed (status `anchored` AND a
-  signature), which survives a re-derivation and answers "how many results has this rig put on chain". Production held
-  7 and 18 at the same moment; publishing one number under the other's label was the defect. A landed ledger row is
+  commitment, and one that can go DOWN when the rotating survey re-measures a sealed host, because a `bundleHash`
+  folds the run timestamp and a re-derived bundle is a hash the chain never saw. **Stated plainly (audit-12): with
+  science-hash dedup on -- an identical-content repeat is deliberately not re-anchored, so no second fee is spent --
+  the newer bytes of already-sealed science are never freshly committed, and this property CANNOT hold for those
+  rows while dedup stands. Production has measured 0 of 20 served bundles covered. We do not claim the chain
+  commitment covers the bytes you are reading now; it attests the record it sealed, and the per-finding
+  `verify-onchain` readout says exactly which of the two states a card is in.** The second is `stats.ledgerAnchored`:
+  ledger rows recording a commitment that landed (status `anchored` AND a signature), which survives a re-derivation
+  and answers "how many results has this rig put on chain". Production held 7 and 18 at one snapshot and has sat at
+  0 and 20 under dedup; publishing one number under the other's label was the defect. A landed ledger row is
   never demoted by a later attempt that failed (`mergeLedgerRow`, applied by both the Durable Object and the
   filesystem ledger), so a transient RPC error cannot destroy the evidence for a transaction still live on mainnet.
+  Both counts now carry their full definitions inside the published payload (`src/core/stats-definitions.ts`), and
+  the board renders them as tooltips on the two ticker chips -- the relationship is readable where the numbers are.
 - **A rotating survey, and honest blind candidates.** With `AUTO_RESEARCH_ROTATION=1` the autonomous run no
   longer re-runs the same brightest handful and overwrites it in place: it rotates through a broad real pool
   -- known-planet re-validation rows plus UNCONFIRMED TESS Objects of Interest -- chosen from a persisted pass
@@ -330,9 +337,10 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
   `origin`: `revalidation` (a known planet the pipeline re-derives and cross-checks) or `blind-toi` (an
   unconfirmed candidate recovered from real TESS-SPOC pixels with the TOI ephemeris withheld -- the same
   protocol as `p7:toi-survey`, which independently recovered 27/70 unconfirmed candidates at a 0.22% median
-  period error). A blind-TOI row is capped at `needs-more-data` by the critic, is never auto-anchored, and
-  reads in the UI as a gold "BLIND CANDIDATE - UNCONFIRMED" pill -- a candidate for human follow-up, never a
-  claimed discovery. The `origin` label lives only on the Finding and in DO state, never in the bundle
+  period error). A blind-TOI row is never ACCEPTED -- the critic caps an accepted verdict at `needs-more-data`, and
+  rows it rejects stay rejected (rejection is the honest outcome for noise, not something to overwrite) -- it is
+  never auto-anchored, and reads in the UI as a gold "BLIND CANDIDATE - UNCONFIRMED" pill -- a candidate for human
+  follow-up, never a claimed discovery. The `origin` label lives only on the Finding and in DO state, never in the bundle
   manifest, so it changes no `bundleHash`/`scienceHash` and touches no anchored row. A dashboard manual run
   keeps the historical deterministic brightest-top-N selection.
 - **What each public counter counts, stated where the code is read.** The rotation surfaces four numbers, and the

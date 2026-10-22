@@ -168,6 +168,25 @@ test("the definitions reach the reader from the payload, not from prose copied i
   assert.match(types, /statDefinitions: PublicStatDefinitions;/, "the payload type carries it, so a surface cannot omit it and still compile");
 });
 
+test("the two anchor counts carry their audit-12 definitions AND a consumer, or they are dead letters", () => {
+  // Audit-12 D2/D3: `bundlesAnchored` sits at 0 while `ledgerAnchored` stands at 20 because science-hash dedup
+  // deliberately never re-commits identical content -- the two mechanisms each correct, jointly eating the
+  // "the chain covers the bytes you are reading" claim. That mutual exclusion must be READABLE where the numbers
+  // are, not only in rig-state.do.ts SQL; and a definition nothing consumes is exactly the failure this module
+  // was built to prevent, so the chip wiring is asserted here, not trusted.
+  assert.ok((PUBLIC_STAT_DEFINITIONS as unknown as Record<string, string>).bundlesAnchored, "bundlesAnchored must be defined");
+  assert.ok((PUBLIC_STAT_DEFINITIONS as unknown as Record<string, string>).ledgerAnchored, "ledgerAnchored must be defined");
+  const app = read("web", "app.js");
+  assert.match(app, /statDefCache = defs/, "applyStatDefinitions caches the payload for the ticker");
+  assert.match(app, /\["published results matching their chain commitment", stats\.bundlesAnchored \?\? 0, "bundlesAnchored"\]/, "the coverage chip names its definition key");
+  assert.match(app, /\["chain commitments recorded", stats\.ledgerAnchored \?\? 0, "ledgerAnchored"\]/, "the total chip names its definition key");
+  assert.match(app, /statDefCache\[defKey\]/, "and the ticker renders the title from the cached payload, not a typed copy");
+  // D2 also killed the misattributed per-card branch: it may no longer claim a stable content address as a
+  // bundle-comparison side-effect, nor attribute a permanent dedup state to "a re-derive".
+  assert.ok(!app.includes("content address stable"), "the verify branch must not assert an unearned stability");
+  assert.ok(!/pre-dates a re-derive \(timestamp moved\)/.test(app), "the verify branch must not hardcode one cause");
+});
+
 // ---- call sites: the shared rule must actually be the one in production ----------------------
 
 test("the Durable Object counts through the shared SQL constants, not an inline copy", () => {

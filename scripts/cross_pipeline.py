@@ -29,15 +29,62 @@ the rest still runs. Honest boundary: this script measures and reports; it claim
 touches no production path.
 """
 
+import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 import numpy as np
 
 FIXTURE_DIR = os.path.join("tests", "fixtures", "spoc-curves")
 OUT_DIR = os.path.join("reports", "crosscheck")
+
+# PROVENANCE STAMP (audit-12 D5: the sister benchmark_vs_field.py got its stamp in R1, but THIS report -- the other
+# most-cited external number -- still carried no generatedAt/gitSha/inputs, so the library showed it stamped:false
+# while fresh:true). These helpers mirror the ones in benchmark_vs_field.py deliberately WITHOUT a shared module:
+# the two CI arms must not be able to fail each other through a refactor, and the duplication is three small
+# functions whose behavior is pinned by the same gate consumer on the TypeScript side.
+STAMP_INPUTS = [
+    "scripts/cross_pipeline.py",
+    os.path.join(FIXTURE_DIR, "manifest.json"),
+]
+
+
+def _normalize_eol(path):
+    """Mirror scripts/report-freshness.ts normalizeEol so the Python hash equals the gate's hash (CRLF/CR -> LF for
+    text; bytes with a NUL in the leading 8 KiB are treated as binary and returned untouched)."""
+    with open(path, "rb") as fh:
+        b = fh.read()
+    if b[:8192].find(b"\x00") >= 0:
+        return b
+    if b.find(b"\r") < 0:
+        return b
+    return b.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _sha256(path):
+    try:
+        return hashlib.sha256(_normalize_eol(path)).hexdigest()
+    except Exception:
+        return None
+
+
+def _git_sha():
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    except Exception:
+        return ""
+
+
+def freshness_stamp(input_paths):
+    return {
+        "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+        "gitSha": _git_sha(),
+        "inputs": [{"path": p, "sha256": _sha256(p)} for p in input_paths],
+    }
 
 INJ_PERIOD = 3.0          # days, same as p33/p35
 DEPTHS_PPM = [300, 500, 1000, 2000, 4000, 8000]
@@ -318,6 +365,7 @@ def main():
             "blsPeriodRangeDays": [BLS_MIN_PERIOD, BLS_MAX_PERIOD],
             "versions": versions, "wallClockSec": round(time.time() - started, 1),
             "provenance": manifest["provenance"],
+            **freshness_stamp(STAMP_INPUTS),
         },
         "summary": summary, "rows": rows,
     }

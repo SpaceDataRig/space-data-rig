@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generatedAt": "2026-10-21T07:03:11.065Z",
-    "gitSha": "6b3b158b8a45ca878fe8c7780d1f14fd0f9663b1",
+    "generatedAt": "2026-10-22T03:13:32.266Z",
+    "gitSha": "30b35cdb7016a354cb536852bb1a290c5a0b4993",
     "inputs": [
       {
         "path": "web/candidates.json",
@@ -13,7 +13,7 @@
       },
       {
         "path": "scripts/p48-novelty-check.ts",
-        "sha256": "8fc33e39c4a285ce744662ecddd310d42024d72710e7ba2777fe0711eca12a69"
+        "sha256": "41252db86ed909d50b919ae0f860974720e9934a6aec8878e90506297a398b04"
       }
     ],
     "generatedBy": "scripts/p48-novelty-check.ts",
@@ -28,6 +28,9 @@
   "novelLocationCount": 4,
   "samePeriodAnnouncedCount": 0,
   "systematicPairCount": 0,
+  "boardSchema": "sdr-candidates/2",
+  "boardSystematicCollapsed": 1,
+  "boardEmittedCandidates": 4,
   "discoveryClaim": false,
   "rows": [
     {

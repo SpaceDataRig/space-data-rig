@@ -12,10 +12,10 @@ from the committed, freshness-stamped report `reports/p75-inverted-fp.json` (git
   -> `DRY RUN (no X credentials in the environment; nothing was sent to X)`, `length=1045/25000`, English-only,
   over-claim guard passed.
 - Dispatch: `POST /actions/workflows/x-post.yml/dispatches` on `ref=main`, `inputs.text` = the bytes below,
-  `inputs.maxlen=25000` -> HTTP 204 ACCEPTED.
+  `inputs.maxlen=25000` -> HTTP `204` ACCEPTED.
 - Actions run **39713105905** (event=workflow_dispatch) -> `completed/success`.
 - Job step "Compose every reportable item in the window and post each one" -> `success`.
-- Job log line: `x:post: OK posted (id 2113101143656276029).`
+- Job log line: `x:post: OK posted (id 2113101143656276029).` -- posted id: `2113101143656276029`
 
 ## Proof links
 

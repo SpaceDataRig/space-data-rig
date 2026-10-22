@@ -1,6 +1,10 @@
 # Space Data Rig -- Full Project Handoff
 
-Last updated: 2026-10-13. Status: production live at https://spacedatarig.app.
+Last updated: 2026-10-22 (this date line means "last full re-verification sweep of this document", refreshed at
+each audit round; live counters quoted below are snapshots of that sweep and the git line names the tested
+revision -- readers should treat per-field live values as of their own `GET /api/state/summary` call, which exists
+precisely so a reader can re-check the numbers without downloading the full payload). Status: production live at
+https://spacedatarig.app.
 Repo: https://github.com/SpaceDataRig/space-data-rig (branch main).
 This document is the single entry point for anyone (human or AI agent) taking over
 the project. Read it fully before touching code, deploying, or spending money.

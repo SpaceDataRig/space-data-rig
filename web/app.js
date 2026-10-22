@@ -243,9 +243,14 @@ function surveyStatsSentence(stats) {
 // tooltip -- rather than a tooltip nobody asked the server about.
 const STAT_DEF_KEYS = ["surveyPass", "distinctHosts", "blindCandidates", "blindHeld"];
 const STAT_DEF_TARGET_IDS = ["survey-stats", "survey-head-stats"];
+// Cached so renderFeedTicker (which rebuilds the ticker innerHTML on every state event) can stamp the anchor chips
+// with the server-published definitions without re-fetching them -- the text readers see comes from the payload,
+// never from a copy typed into this file or the markup (same single-source rule as the survey tooltips).
+let statDefCache = null;
 function applyStatDefinitions(state) {
   const defs = state && state.statDefinitions;
   if (!defs) return;
+  statDefCache = defs;
   const text = STAT_DEF_KEYS.map((k) => defs[k]).filter(Boolean).join(" ");
   if (!text) return;
   // Looked up by id rather than through the module-level element consts: this runs from the initial state load,
@@ -263,8 +268,10 @@ function renderStats(stats) {
   $("#stat-rejected").textContent = stats.findingsRejected ?? 0;
   // Two anchor numbers on purpose. `bundlesAnchored` is "the bytes published now match a chain commitment";
   // `ledgerAnchored` is "commitments this rig has made, superseded ones included". They are routinely unequal
-  // (production held 7 and 18), and showing only the small one under a label that reads like a total -- which is
-  // what this tile did -- reports a falling number every time a sealed record is re-measured.
+  // (production held 7 and 18 at one snapshot, and has sat at 0 and 20 under science-hash dedup -- dedup skips
+  // re-anchoring identical content, so current bytes can be permanently un-covered while the ledger keeps growing),
+  // and showing only the small one under a label that reads like a total -- which is what this tile did -- reports
+  // a falling number every time a sealed record is re-measured. Definitions ship in the payload (stats-definitions).
   $("#stat-anchored").textContent = stats.bundlesAnchored ?? 0;
   $("#stat-commitments").textContent = stats.ledgerAnchored ?? 0;
   $("#stat-done").textContent = stats.tasksDone ?? 0;
@@ -536,8 +543,8 @@ async function adminFetch(path, opts) {
 }
 
 function applyState(s) {
+  applyStatDefinitions(s); // before renderStats: the ticker reads statDefCache for the anchor-chip tooltips
   renderStats(s.stats);
-  applyStatDefinitions(s);
   (s.findings || []).forEach((f) => findingsById.set(f.id, f));
   renderBoard();
   if (s.findings && s.findings[0]) setTarget(s.findings[0].targetId);
@@ -1116,7 +1123,12 @@ boardEl.addEventListener("click", async (e) => {
       if (!v.verifiable) { status.className = "verify-out bad"; status.textContent = "anchor exists but its memo could not be decoded"; return; }
       if (v.anchoredScienceDrift) { status.className = "verify-out bad"; status.textContent = "SCIENCE HAS MOVED: the sealed memo commits a different science hash than the site serves now"; return; }
       const sci = v.scienceCompareAvailable === false ? "science not comparable (legacy 3-field memo)" : v.scienceHashMatch ? "sealed science still matches what the site serves" : "sealed science differs";
-      const bnd = v.anchorCoversCurrentBundle ? "sealed bundle == current bundle" : "sealed bundle pre-dates a re-derive (timestamp moved); content address stable";
+      // Audit-12 D2: this branch used to attribute a non-matching bundle to a re-derive alone and assert a
+      // stable content address as a side-effect. With science-hash dedup ON that attribution was wrong and the
+      // assertion unearned: the chain sealed the FIRST record for this science and deliberately never committed
+      // the newer bytes, so the bundle can sit permanently un-covered without anything having moved. State only
+      // what this check knows; the science-hash verdict above is the load-bearing one for content identity.
+      const bnd = v.anchorCoversCurrentBundle ? "sealed bundle == current bundle" : "sealed bundle is not the bytes served now (a re-derive replaced the timestamped hash, or dedup left the newer generation uncommitted); check the science hash above";
       status.className = "verify-out ok"; status.textContent = `chain read OK: ${sci}; ${bnd}`;
     } catch (err) { status.className = "verify-out bad"; status.textContent = `on-chain verify error: ${err.message}`; }
     return;
@@ -1206,10 +1218,16 @@ function renderFeedTicker(research, stats) {
   }
   if (stats) {
     chips.push(["targets analyzed", stats.tasksDone ?? 0]);
-    chips.push(["published results matching their chain commitment", stats.bundlesAnchored ?? 0]);
-    chips.push(["chain commitments recorded", stats.ledgerAnchored ?? 0]);
+    // Audit-12 D3: the 0-vs-20 relationship between these two chips was only decodable by reading the DO's SQL. The
+    // rig now ships the definition of each count in the payload itself (src/core/stats-definitions.ts); hovering the
+    // chip states which population it counts and why a landed total does not imply current-byte coverage.
+    chips.push(["published results matching their chain commitment", stats.bundlesAnchored ?? 0, "bundlesAnchored"]);
+    chips.push(["chain commitments recorded", stats.ledgerAnchored ?? 0, "ledgerAnchored"]);
   }
-  feedTickerEl.innerHTML = chips.map(([k, v]) => `<span class="ticker-chip"><b>${esc(String(v))}</b> ${esc(k)}</span>`).join("");
+  feedTickerEl.innerHTML = chips.map(([k, v, defKey]) => {
+    const t = defKey && statDefCache && statDefCache[defKey] ? ` title="${esc(statDefCache[defKey])}"` : "";
+    return `<span class="ticker-chip"${t}><b>${esc(String(v))}</b> ${esc(k)}</span>`;
+  }).join("");
 }
 
 // next autonomous survey boundary: the edge cron runs every 15 minutes

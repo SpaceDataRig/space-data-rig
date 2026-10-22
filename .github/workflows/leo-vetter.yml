@@ -16,6 +16,10 @@ on:
     branches: [main]
     paths:
       - scripts/benchmark_vs_field.py
+      # The benchmark run imports cross_pipeline as a library AND hashes it in its own stamp inputs (audit-12 D5
+      # proved the coupling from the other side: editing cross_pipeline.py made the served benchmark-vs-field.json
+      # HARD-STALE while nothing here re-stamped it). A changed hash input must fire the arm that re-derives it.
+      - scripts/cross_pipeline.py
       - tests/fixtures/spoc-curves/**
       - .github/workflows/leo-vetter.yml
 

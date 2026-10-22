@@ -19,6 +19,10 @@ import { headlineRelabelNote, degeneracyCaveat } from "/relabel.js";
 // decimals -- P90 measured the depth estimators at a median 37% absolute error against the NASA Exoplanet Archive,
 // and the BLS period is a grid node whose spacing grows as P^2.
 import { depthCellText, periodCellText } from "/honest-precision.js";
+// v0.2 P0b: the server-side query console assembles its request through this pure builder (the SAME function
+// tests/findings-query-ui.test.ts drives offline), so the parameter names the browser sends cannot drift from what
+// src/core/finding-query.ts parses on either runtime.
+import { buildFindingsParams, findingsQueryPath, resultMeta } from "/findings-query-ui.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -60,6 +64,11 @@ const speakerHud = $("#speaker-hud");
 const findingsCountEl = $("#findings-count");
 const boardMoreEl = $("#board-more");
 const boardFilterEl = $("#board-filter");
+// v0.2 P0b query console refs (index.html #findings-query). Guarded at use sites: a page without the panel still boots.
+const fqPanelEl = $("#findings-query");
+const fqMetaEl = $("#fq-meta");
+const fqApplyEl = $("#fq-apply");
+const fqResetEl = $("#fq-reset");
 const surveyStatsEl = $("#survey-stats");
 const codeVersionEl = $("#code-version");
 const runStatusEl = $("#run-status");
@@ -348,6 +357,11 @@ function detailsHtml(f) {
     rows.push(`<div class="det-row"><span class="det-k">Injection recovery</span><span class="det-v">${pct}${trials}</span></div>`);
   }
   rows.push(`<div class="det-row"><span class="det-k">Bundle hash</span><span class="det-v"><code class="det-hash">${esc(f.bundleHash || "not sealed")}</code></span></div>`);
+  // v0.2 P1: the mission-critic's own checklist, read from the SAME sealed bundle the "Verify" button re-hashes
+  // (manifest.checks[] = {name, pass, detail}), so a reader sees WHY this verdict, not just the verdict. It is
+  // filled lazily in fillProvenance from the manifest already fetched for provenance -- no new request, no new
+  // computation, and it never re-derives or re-gates anything; it prints the numbers the critic already committed.
+  rows.push(`<div class="det-row det-evidence" data-evidence><span class="det-k">Evidence</span><span class="det-v"><span class="hint">loading each gating check from the sealed bundle&hellip;</span></span></div>`);
   rows.push(f.solanaTx
     ? `<div class="det-row"><span class="det-k">On-chain proof</span><span class="det-v"><a class="txlink det-hash" href="${esc(explorerUrl(f.solanaTx))}" target="_blank" rel="noopener">${esc(f.solanaTx)}</a></span></div>`
     : `<div class="det-row"><span class="det-k">On-chain proof</span><span class="det-v">not anchored yet &mdash; Anchor seals this bundle hash in a Solana mainnet memo</span></div>`);
@@ -367,6 +381,66 @@ function plotsHtml(id) {
   const items = [["timeseries.svg", "Light curve + transit model"], ["folded.svg", "Folded at the detected period"], ["periodogram.svg", "BLS periodogram (power vs period)"]];
   return items.map(([name, cap]) => `<figure><figcaption>${cap}</figcaption><img loading="lazy" src="/api/bundles/${encodeURIComponent(id)}/artifact/${name}" alt="${cap}" /></figure>`).join("");
 }
+
+// v0.2 P2: an INTERACTIVE phase-folded light curve drawn in the browser from the fold points that already ride
+// on each finding in /api/state (candidate.folded = {phase, flux}[]). No new request, no re-detection -- it plots
+// the very array the detector published, so a reader can hover any point for its phase/flux instead of reading a
+// static image. Oversized folds are strided to keep the DOM light; the transit dip is annotated off the published
+// depth. Rows with no fold points served (older/sealed differently) say so plainly rather than drawing a lie.
+function foldPlotHtml(f) {
+  const pts = (f.candidate && Array.isArray(f.candidate.folded)) ? f.candidate.folded : [];
+  if (pts.length < 5) return ""; // too sparse to be a real curve; the static folded.svg below still shows the sealed view
+  const W = 320, H = 150, padL = 34, padR = 8, padT = 10, padB = 22;
+  let fmin = Infinity, fmax = -Infinity;
+  for (const p of pts) { if (p.flux < fmin) fmin = p.flux; if (p.flux > fmax) fmax = p.flux; }
+  if (!Number.isFinite(fmin) || !Number.isFinite(fmax) || fmax <= fmin) { fmax = fmin + 1e-6; }
+  const span = fmax - fmin;
+  const x = (ph) => padL + ((ph + 0.5) / 1) * (W - padL - padR); // phase in [-0.5, 0.5]
+  const y = (fl) => padT + (1 - (fl - fmin) / span) * (H - padT - padB);
+  const stride = Math.max(1, Math.ceil(pts.length / 900));
+  let dots = "";
+  for (let i = 0; i < pts.length; i += stride) {
+    const p = pts[i];
+    if (!Number.isFinite(p.phase) || !Number.isFinite(p.flux)) continue;
+    dots += `<circle cx="${x(p.phase).toFixed(1)}" cy="${y(p.flux).toFixed(1)}" r="1.3" fill="#8fd0ff" opacity="0.8"><title>phase ${p.phase.toFixed(3)} cyc - flux ${p.flux.toFixed(5)}</title></circle>`;
+  }
+  const midY = y(fmin + span / 2).toFixed(1);
+  const depthFrac = f.candidate.depthFrac || 0;
+  const dipY = y(fmin + span / 2 - depthFrac).toFixed(1); // approximate transit floor at out-of-transit mid minus depth, scaled
+  return `<figure class="fold-live"><figcaption>Folded light curve (live, in-browser from the served fold &mdash; hover a point)</figcaption>`
+    + `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="phase-folded light curve for ${esc(f.targetId)}">`
+    + `<line x1="${padL}" y1="${midY}" x2="${W - padR}" y2="${midY}" stroke="#4a6a99" stroke-dasharray="3 3" stroke-width="1"/>`
+    + `<line x1="${x(0).toFixed(1)}" y1="${padT}" x2="${x(0).toFixed(1)}" y2="${H - padB}" stroke="#2b4a77" stroke-width="1"/>`
+    + (depthFrac > 0 ? `<line x1="${x(-0.06).toFixed(1)}" y1="${dipY}" x2="${x(0.06).toFixed(1)}" y2="${dipY}" stroke="#ffcf5a" stroke-width="1.4"/>` : "")
+    + `<text x="2" y="${midY}" fill="#6f89b5" font-size="8" font-family="monospace">flux</text>`
+    + `<text x="${x(-0.5).toFixed(1)}" y="${H - 8}" fill="#6f89b5" font-size="8" font-family="monospace">-0.5</text>`
+    + `<text x="${x(0).toFixed(1)}" y="${H - 8}" fill="#6f89b5" font-size="8" font-family="monospace" text-anchor="middle">0</text>`
+    + `<text x="${(W - padR).toFixed(1)}" y="${H - 8}" fill="#6f89b5" font-size="8" font-family="monospace" text-anchor="end">+0.5</text>`
+    + dots
+    + `</svg></figure>`;
+}
+
+
+// v0.2 P1: render the mission-critic's checklist straight from the sealed bundle manifest. Each check is
+// {name, pass, detail}; the same `non-gating|post-hoc` predicate bundle.ts uses to keep post-hoc checks OUT of
+// the science hash is used here to label them OUT of the gate, so the reader can tell which checks actually
+// decided the verdict from which are advisory. Nothing is recomputed or re-gated -- this prints committed numbers.
+function evidenceHtml(m) {
+  if (!m) return `<span class="hint">no sealed bundle to read from</span>`;
+  const checks = Array.isArray(m.checks) ? m.checks : [];
+  if (!checks.length) return `<span class="hint">this bundle recorded no gating checks</span>`;
+  const rows = checks.map((c) => {
+    const postHoc = /non-gating|post-hoc/i.test(c.name || "");
+    const mark = c.pass ? `<span class="ev-pass">pass</span>` : `<span class="ev-fail">fail</span>`;
+    const tag = postHoc ? `<span class="ev-tag advisory">advisory</span>` : `<span class="ev-tag gating">gating</span>`;
+    return `<div class="ev-check${postHoc ? " advisory" : ""}">${mark} ${tag} <span class="ev-name">${esc(c.name)}</span>` +
+      (c.detail ? `<span class="ev-detail">${esc(c.detail)}</span>` : "") + `</div>`;
+  }).join("");
+  const alias = m.aliasMultiple != null ? `<div class="ev-note">harmonic alias &times;${esc(String(m.aliasMultiple))} &mdash; a period that is a multiple/submultiple of a known signal</div>` : "";
+  return `<div class="ev-list">${rows}</div>` + alias +
+    `<div class="ev-note">These are the critic's own checks stored in the bundle; "Verify" re-hashes this same file, so what you see is sealed.</div>`;
+}
+
 
 // Bundles are immutable (a design goal), so records sealed before the 2026-10 honesty pass still carry their
 // stored "Confirmed: ..." headline even though that word has been retired for new cards (audit-3 defect B:
@@ -417,10 +491,17 @@ const BOARD_PREVIEW = 4;
 let boardExpanded = false;
 let boardFilter = "all"; // all | revalidation | blind-toi
 
+// v0.2 P0b: the server-query console's own view state. When `active`, renderBoard draws these rows INSTEAD of the
+// in-memory catalog -- the server already filtered/sorted/paged them, so the client must not re-slice them by the
+// origin chip or the four-card preview (that would silently drop rows the reader asked for). Rows accumulate across
+// "load more" so the reader scrolls the matched set a page at a time without ever pulling the whole catalog.
+const findingsQuery = { active: false, rows: [], matched: 0, total: 0, hasMore: false, form: null, loading: false };
+
 function sortedFindings() {
   return [...findingsById.values()].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || (b.score ?? 0) - (a.score ?? 0));
 }
 function renderBoard() {
+  if (findingsQuery.active) return renderQueryBoard();
   const all = sortedFindings();
   const list = all.filter((f) => boardFilter === "all" || originOf(f) === boardFilter);
   if (!all.length) {
@@ -442,6 +523,92 @@ function renderBoard() {
   if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) chip.classList.toggle("active", chip.dataset.filter === boardFilter);
 }
 function upsertFinding(f) { findingsById.set(f.id, f); renderBoard(); }
+
+// ---- v0.2 P0b server-side query console -------------------------------------
+// The board's default view is the live catalog held in memory; this panel asks the EDGE to filter/sort/page
+// instead (GET /api/findings -> parseFindingQuery/queryFindings, one implementation shared by Node and Worker).
+// renderQueryBoard draws exactly the rows the server returned, so origin-chip and the four-card preview do NOT
+// re-slice them. A live upsertFinding while a query is shown leaves the query rows untouched -- a query is an
+// honest point-in-time view; Reset returns to the live board. This never re-derives or re-gates anything.
+function renderQueryBoard() {
+  const rows = findingsQuery.rows;
+  boardEl.classList.remove("row-of-four");
+  boardEl.innerHTML = rows.length ? rows.map(cardHtml).join("") : `<p class="empty">No findings match this query.</p>`;
+  findingsCountEl.textContent = `${rows.length} of ${findingsQuery.matched} matched`;
+  boardMoreEl.hidden = true; // the console pages with its own Load-more, not the live in-memory More
+  if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) chip.classList.remove("active");
+  if (fqMetaEl) fqMetaEl.textContent = resultMeta({ total: findingsQuery.total, matched: findingsQuery.matched, hasMore: findingsQuery.hasMore }, rows.length);
+  const more = $("#fq-more");
+  if (more) more.hidden = !findingsQuery.hasMore;
+  fillProvenance();
+}
+
+function readQueryForm() {
+  return {
+    q: $("#fq-q")?.value, tic: $("#fq-tic")?.value, verdict: $("#fq-verdict")?.value,
+    origin: $("#fq-origin")?.value, sort: $("#fq-sort")?.value, dir: $("#fq-dir")?.value,
+    periodMin: $("#fq-period-min")?.value, periodMax: $("#fq-period-max")?.value,
+    depthMin: $("#fq-depth-min")?.value, depthMax: $("#fq-depth-max")?.value, snrMin: $("#fq-snr-min")?.value,
+  };
+}
+
+async function fetchFindingsPage(offset) {
+  if (findingsQuery.loading) return;
+  findingsQuery.loading = true;
+  if (fqApplyEl) fqApplyEl.disabled = true;
+  if (fqMetaEl) fqMetaEl.textContent = offset === 0 ? "querying the server..." : "loading the next page...";
+  try {
+    const params = buildFindingsParams(findingsQuery.form, offset);
+    const res = await fetchJSON(findingsQueryPath(params));
+    const page = res.findings || [];
+    findingsQuery.rows = offset === 0 ? page.slice() : findingsQuery.rows.concat(page);
+    findingsQuery.total = res.total ?? findingsQuery.rows.length;
+    findingsQuery.matched = res.matched ?? findingsQuery.total;
+    findingsQuery.hasMore = Boolean(res.hasMore);
+    renderBoard();
+  } catch (e) {
+    if (fqMetaEl) fqMetaEl.textContent = `query failed: ${e.message}`;
+  } finally {
+    findingsQuery.loading = false;
+    if (fqApplyEl) fqApplyEl.disabled = false;
+  }
+}
+
+async function runFindingsQuery() {
+  findingsQuery.form = readQueryForm();
+  findingsQuery.active = true;
+  findingsQuery.rows = [];
+  findingsQuery.hasMore = false;
+  await fetchFindingsPage(0);
+}
+
+function resetFindingsQuery() {
+  findingsQuery.active = false;
+  findingsQuery.rows = [];
+  findingsQuery.hasMore = false;
+  for (const id of ["fq-q", "fq-tic", "fq-verdict", "fq-origin", "fq-sort", "fq-period-min", "fq-period-max", "fq-depth-min", "fq-depth-max", "fq-snr-min"]) {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  }
+  const dirEl = $("#fq-dir");
+  if (dirEl) dirEl.value = "desc";
+  if (fqMetaEl) fqMetaEl.textContent = "";
+  boardFilter = "all";
+  boardExpanded = false;
+  renderBoard();
+}
+
+if (fqPanelEl) {
+  fqApplyEl?.addEventListener("click", () => runFindingsQuery());
+  fqResetEl?.addEventListener("click", () => resetFindingsQuery());
+  const more = $("#fq-more");
+  if (more) more.addEventListener("click", () => fetchFindingsPage(findingsQuery.rows.length));
+  // Enter in a text/number field runs the query (a search box should not need the button), but Enter inside a
+  // <select> is left to the browser so it does not fire on ordinary keyboard selection.
+  fqPanelEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.tagName !== "SELECT") { e.preventDefault(); runFindingsQuery(); }
+  });
+}
 
 // ---- provenance: show the data's origin on the run bar and on every card ----
 const NASA_TABLE_URL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?config=pscomppars";
@@ -492,6 +659,12 @@ async function fillProvenance() {
     slot.innerHTML =
       `<span class="prov-tag ${live ? "live" : "offline"}">${live ? "NASA LIVE TAP" : esc(String(dp.catalogSource || "offline"))}</span>` +
       nasaRow + lc;
+    // v0.2 P1: same manifest, no second fetch -- fill the per-card Evidence checklist rendered from checks[].
+    const evSlot = card.querySelector("[data-evidence]");
+    if (evSlot) {
+      const evVal = evSlot.querySelector(".det-v") || evSlot;
+      evVal.innerHTML = evidenceHtml(m);
+    }
   }));
 }
 
@@ -1072,7 +1245,16 @@ runBtnEl.addEventListener("click", () => {
 });
 boardMoreEl.addEventListener("click", () => { boardExpanded = !boardExpanded; renderBoard(); });
 if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) {
-  chip.addEventListener("click", () => { boardFilter = chip.dataset.filter; boardExpanded = false; renderBoard(); });
+  chip.addEventListener("click", () => {
+    // Clicking an origin chip is a return to the live in-memory view: leave server-query mode first, otherwise
+    // renderBoard's query branch would ignore the chip entirely and keep drawing the last query's rows.
+    findingsQuery.active = false;
+    findingsQuery.rows = [];
+    if (fqMetaEl) fqMetaEl.textContent = "";
+    const fqMoreEl = $("#fq-more");
+    if (fqMoreEl) fqMoreEl.hidden = true;
+    boardFilter = chip.dataset.filter; boardExpanded = false; renderBoard();
+  });
 }
 $("#ledger-refresh").addEventListener("click", loadLedger);
 
@@ -1089,8 +1271,13 @@ boardEl.addEventListener("click", async (e) => {
     const plots = card.querySelector("[data-plots]");
     const willOpen = !plots.classList.contains("open");
     plots.classList.toggle("open", willOpen);
-    if (willOpen && !plots.dataset.loaded) {
-      plots.innerHTML = plotsHtml(id);
+    // Fix (found live in browser QA): the guard was `!plots.dataset.loaded`, but the card template writes
+    // data-loaded="0" -- the STRING "0" is TRUTHY, so `!loaded` was always false and the plots NEVER filled on a
+    // real click (neither the three static SVGs nor the v0.2 P2 live fold). Compare to "1" explicitly: load once
+    // on first open, then skip (collapse/re-open does not refetch). Default stays collapsed (data-loaded="0").
+    if (willOpen && plots.dataset.loaded !== "1") {
+      const f = findingsById.get(id);
+      plots.innerHTML = (f ? foldPlotHtml(f) : "") + plotsHtml(id);
       plots.dataset.loaded = "1";
     }
     return;

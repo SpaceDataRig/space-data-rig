@@ -708,6 +708,13 @@ app.get("/app.js", (c) => serveStatic(c, "app.js"));
 app.get("/styles.css", (c) => serveStatic(c, "styles.css"));
 app.get("/space.js", (c) => serveStatic(c, "space.js"));
 app.get("/live.js", (c) => serveStatic(c, "live.js"));
+// The split browser ES modules app.js imports. The edge serves these automatically from the ./web asset
+// pipeline (assets-first); the Node server's static routes are an explicit allowlist, so each must be named here
+// too -- otherwise the local dashboard's app.js fails to load its import chain and the whole board is blank.
+// Parity per HANDOFF section 4 (a route present on one host must exist on the other).
+app.get("/relabel.js", (c) => serveStatic(c, "relabel.js"));
+app.get("/honest-precision.js", (c) => serveStatic(c, "honest-precision.js"));
+app.get("/findings-query-ui.js", (c) => serveStatic(c, "findings-query-ui.js"));
 app.get("/vendor/three.js", (c) => serveStatic(c, "vendor/three.js"));
 // Serve the remaining static dashboard assets the browser fetches, so the local Node server
 // matches what the Cloudflare worker serves from web/ as static assets (edge parity).

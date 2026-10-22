@@ -270,6 +270,57 @@
       <button class="chip" data-filter="revalidation" type="button">Known-planet re-validation</button>
       <button class="chip" data-filter="blind-toi" type="button">Blind candidates (unconfirmed)</button>
     </div>
+    <!-- v0.2 P0b: SERVER-side query console. Every control below maps to a parameter the edge/Node
+         /api/findings handler parses (src/core/finding-query.ts) -- filtering, sorting and paging happen on the
+         server, so a 100+-row catalog is queried a page at a time instead of being pulled whole and filtered in the
+         browser. This reads a projection only: it runs nothing, gates nothing, and changes no verdict. -->
+    <div class="findings-query" id="findings-query">
+      <div class="fq-row">
+        <input id="fq-q" class="fq-text" type="search" placeholder="free text: target, known planet, verdict reason" aria-label="Search findings" autocomplete="off" />
+        <input id="fq-tic" class="fq-tic" type="search" placeholder="TIC / target id" aria-label="Target id contains" autocomplete="off" />
+        <label class="fq-field"><span>verdict</span>
+          <select id="fq-verdict">
+            <option value="">any</option>
+            <option value="accepted">accepted</option>
+            <option value="rejected">rejected</option>
+            <option value="needs-more-data">needs more data</option>
+          </select>
+        </label>
+        <label class="fq-field"><span>kind</span>
+          <select id="fq-origin">
+            <option value="">any</option>
+            <option value="revalidation">known-planet re-validation</option>
+            <option value="blind-toi">blind candidate</option>
+          </select>
+        </label>
+        <label class="fq-field"><span>sort</span>
+          <select id="fq-sort">
+            <option value="">recent</option>
+            <option value="score">score</option>
+            <option value="period">period</option>
+            <option value="depth">depth</option>
+            <option value="snr">SNR</option>
+          </select>
+        </label>
+        <label class="fq-field"><span>dir</span>
+          <select id="fq-dir">
+            <option value="desc">high&rarr;low</option>
+            <option value="asc">low&rarr;high</option>
+          </select>
+        </label>
+      </div>
+      <div class="fq-row">
+        <label class="fq-num"><span>period d &ge;</span><input id="fq-period-min" type="number" step="any" min="0" placeholder="min" /></label>
+        <label class="fq-num"><span>&le;</span><input id="fq-period-max" type="number" step="any" min="0" placeholder="max" /></label>
+        <label class="fq-num"><span>depth ppm &ge;</span><input id="fq-depth-min" type="number" step="any" min="0" placeholder="min" /></label>
+        <label class="fq-num"><span>&le;</span><input id="fq-depth-max" type="number" step="any" min="0" placeholder="max" /></label>
+        <label class="fq-num"><span>SNR &ge;</span><input id="fq-snr-min" type="number" step="any" min="0" placeholder="min" /></label>
+        <button class="btn tiny" id="fq-apply" type="button">Query</button>
+        <button class="btn tiny ghost" id="fq-reset" type="button">Reset</button>
+      </div>
+      <p class="fq-meta" id="fq-meta"></p>
+      <div class="fq-foot"><button class="btn tiny ghost" id="fq-more" type="button" hidden>Load more</button></div>
+    </div>
     <div class="prov-bar" id="prov-bar" hidden></div>
     <div class="board" id="board"><p class="empty">Awaiting first light. Launch a run to watch the table deliberate.</p></div>
     <div class="board-foot"><button class="btn tiny ghost" id="board-more" hidden>More</button></div>

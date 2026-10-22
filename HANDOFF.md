@@ -620,26 +620,33 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is fc59dcc -- the twelfth-round audit batch: the p48 prose-vs-data fix with its
-  row-pin test + live re-run, the withdrawn "chain covers current bytes" claim and payload-shipped anchor definitions,
-  the new `GET /api/state/summary` projection, and the stamped `cross_pipeline.py` (all in ad1d804), then the CI fleet
-  re-stamp of p48/p59/p76/p92 + library rebuild (44e5c5d), the leo-vetter path fix for the coupling D5 exposed live
-  (176dc31), and the benchmark re-stamp publish-back (fc59dcc). CI green on ad1d804 and 176dc31; the prior seven-point
-  chain (c7f29b6 ... 14f1d15, d5dd629, d9c270f, 6b3b158) documents itself in CHANGELOG. This line is about the revision
-  measured below, not a standing claim about the tip -- `git log` is the authority there.
-- Production: wrangler version 919be633-b3c2-4d32-9156-493e45a9a230, gitSha 14f1d151e0d645d13f3aa4f677d0c88d95d173ab
-  -- re-verified live at this snapshot: `GET /health` returns exactly that sha (the twelfth-round batch deploys after
-  this commit lands; any later deploy supersedes this pair and `GET /health` stays the authority). Triggers:
+- Git: the revision this snapshot describes is 25317d5 -- the deployed HEAD of the twelfth-round batch. The code
+  fixes (the p48 prose-vs-data correction with its row-pin test + live re-run, the withdrawn "chain covers current
+  bytes" claim replaced by payload-shipped anchor definitions, the new `GET /api/state/summary` projection, and the
+  stamped `cross_pipeline.py`) landed in ad1d804; the CI fleet re-stamp of p48/p59/p76/p92 + library rebuild, the
+  leo-vetter path fix for the coupling D5 exposed live, and the benchmark re-stamp publish-back followed (44e5c5d,
+  176dc31, fc59dcc). The ledger commit then co-signed all nine report write-back workflows -- they had been landing as
+  "sdr-bot" with no trailer, so a fresh checkout whose HEAD happened to be a write-back failed the very commit-co-sign
+  gate it pulled (found live at fc59dcc) -- in e9f870e; the write-back fleet re-stamped and re-published on top
+  (2b9bf7a); and the batch closed with the library converged to that HEAD plus a rebase-retry publish on the longest
+  arm (25317d5). CI green on e9f870e and 25317d5; the prior seven-point chain (c7f29b6 ... 14f1d15, d5dd629, d9c270f,
+  6b3b158) documents itself in CHANGELOG. This line is about the revision measured below, not a standing claim about
+  the tip -- `git log` is the authority there.
+- Production: wrangler version 2cfaf03b-5854-4143-bb64-e5b040cfcc8e, gitSha 25317d530552eb7477a8bacd95f292bf78ffe085
+  -- re-verified live at this snapshot: `deploy:window` cleared on a GO (no live claimed-run) before the upload, and
+  `GET /health` returns exactly that sha. Triggers:
   schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The live `/candidates.json` continues to
-  serve schema `sdr-candidates/2` (4 rows, no baked countdown fields, every `discoveryClaim` false).
+  serve schema `sdr-candidates/2` (4 rows, no baked countdown fields, every `discoveryClaim` false), and
+  `GET /api/state/summary` now answers 200 on the edge (measured byte-for-byte in the counter bullet below).
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state`, measured 2026-10-22; from now on the lighter
-  `GET /api/state/summary` carries the same `stats`/`statDefinitions` under ~8 KB for verifiers who cannot reliably pull
-  324 KB): surveyPass 378 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53
-  assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 91. Ledger re-read: 20 rows,
+- Public counters at that same moment (`GET /api/state`, measured 2026-10-22; `GET /api/state/summary` carries the same
+  `stats`/`statDefinitions` under ~8 KB for verifiers who cannot reliably pull 324 KB -- measured live this deploy: the
+  summary is 3,876 bytes against a full `GET /api/state` of 325,362, the ~84x lighter projection the twelfth-round D4
+  asked for): surveyPass 385 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53
+  assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 100. Ledger re-read: 20 rows,
   20 anchored-with-signature, newest landed commitment 2026-10-20T23:34:40Z -- nothing has been anchored since because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
   twelfth-round audit, stated here where the counters live, not glossed. The repo report library (this batch's rebuild)

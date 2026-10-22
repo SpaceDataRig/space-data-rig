@@ -54,8 +54,20 @@
       "wotan": "imported",
       "transitleastsquares": "2.0.1"
     },
-    "wallClockSec": 3802.3,
-    "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing."
+    "wallClockSec": 5207.8,
+    "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing.",
+    "generatedAt": "2026-10-22T07:24:16.801Z",
+    "gitSha": "25317d530552eb7477a8bacd95f292bf78ffe085",
+    "inputs": [
+      {
+        "path": "scripts/cross_pipeline.py",
+        "sha256": "345e3c29c4b1a985bbe941365ce43921c4be6ad69eb5ff61c547403cef0bd376"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      }
+    ]
   },
   "summary": {
     "curves": 12,
@@ -214,7 +226,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 24.4
+      "perCurveSec": 33.2
     },
     {
       "host": "HR 858",
@@ -285,7 +297,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 3.78
+      "perCurveSec": 5.26
     },
     {
       "host": "HD 63433",
@@ -355,7 +367,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 1.0
+      "perCurveSec": 1.32
     },
     {
       "host": "HD 25463",
@@ -425,7 +437,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 908.08
+      "perCurveSec": 1253.95
     },
     {
       "host": "AU Mic",
@@ -494,7 +506,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 860.8
+      "perCurveSec": 1165.04
     },
     {
       "host": "TOI-480",
@@ -563,7 +575,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 896.05
+      "perCurveSec": 1246.84
     },
     {
       "host": "GJ 143",
@@ -632,7 +644,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 5.16
+      "perCurveSec": 6.94
     },
     {
       "host": "HD 1397",
@@ -701,7 +713,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 4.82
+      "perCurveSec": 6.73
     },
     {
       "host": "TOI-5739",
@@ -770,7 +782,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 0.85
+      "perCurveSec": 1.13
     },
     {
       "host": "KELT-11",
@@ -839,7 +851,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 0.78
+      "perCurveSec": 1.06
     },
     {
       "host": "HD 86226",
@@ -908,7 +920,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 830.03
+      "perCurveSec": 1113.74
     },
     {
       "host": "HD 207496",
@@ -977,7 +989,7 @@
         }
       },
       "injectErrors": {},
-      "perCurveSec": 264.7
+      "perCurveSec": 369.84
     }
   ]
 }

@@ -20,9 +20,9 @@
     "stellarSource": "NASA Exoplanet Archive pscomppars TAP (https://exoplanetarchive.ipac.caltech.edu/TAP/sync)",
     "fluxErrAssumption": "per-curve constant = 1.4826*MAD of the wotan-detrended flux (fixtures keep only time+flux); this only scales MES, not the shape tests",
     "provenance": "REAL public TESS-SPOC PDCSAP photometry from the public MAST S3 bucket; CC BY 4.0, cite Caldwell et al. 2020. Deterministic uniform-stride subsample; no other processing.",
-    "wallClockSec": 19.8,
-    "generatedAt": "2026-10-22T04:18:03.516Z",
-    "gitSha": "e9f870e4ad03a74f3dbc473d1dc83ba3bd96ce24",
+    "wallClockSec": 13.1,
+    "generatedAt": "2026-10-22T07:24:26.442Z",
+    "gitSha": "25317d530552eb7477a8bacd95f292bf78ffe085",
     "inputs": [
       {
         "path": "scripts/benchmark_vs_field.py",

@@ -22,7 +22,7 @@ import { depthCellText, periodCellText } from "/honest-precision.js";
 // v0.2 P0b: the server-side query console assembles its request through this pure builder (the SAME function
 // tests/findings-query-ui.test.ts drives offline), so the parameter names the browser sends cannot drift from what
 // src/core/finding-query.ts parses on either runtime.
-import { buildFindingsParams, findingsQueryPath, resultMeta } from "/findings-query-ui.js";
+import { buildFindingsParams, findingsQueryPath, resultMeta, hasConstraints, isHarmonicAlias, dedupeById } from "/findings-query-ui.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -436,7 +436,7 @@ function evidenceHtml(m) {
     return `<div class="ev-check${postHoc ? " advisory" : ""}">${mark} ${tag} <span class="ev-name">${esc(c.name)}</span>` +
       (c.detail ? `<span class="ev-detail">${esc(c.detail)}</span>` : "") + `</div>`;
   }).join("");
-  const alias = m.aliasMultiple != null ? `<div class="ev-note">harmonic alias &times;${esc(String(m.aliasMultiple))} &mdash; a period that is a multiple/submultiple of a known signal</div>` : "";
+  const alias = isHarmonicAlias(m) ? `<div class="ev-note">harmonic alias &times;${esc(String(m.aliasMultiple))} &mdash; a period that is a multiple/submultiple of a known signal</div>` : "";
   return `<div class="ev-list">${rows}</div>` + alias +
     `<div class="ev-note">These are the critic's own checks stored in the bundle; "Verify" re-hashes this same file, so what you see is sealed.</div>`;
 }
@@ -495,7 +495,7 @@ let boardFilter = "all"; // all | revalidation | blind-toi
 // in-memory catalog -- the server already filtered/sorted/paged them, so the client must not re-slice them by the
 // origin chip or the four-card preview (that would silently drop rows the reader asked for). Rows accumulate across
 // "load more" so the reader scrolls the matched set a page at a time without ever pulling the whole catalog.
-const findingsQuery = { active: false, rows: [], matched: 0, total: 0, hasMore: false, form: null, loading: false };
+const findingsQuery = { active: false, rows: [], matched: 0, total: 0, hasMore: false, form: null, loading: false, token: 0 };
 
 function sortedFindings() {
   return [...findingsById.values()].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || (b.score ?? 0) - (a.score ?? 0));
@@ -537,7 +537,11 @@ function renderQueryBoard() {
   findingsCountEl.textContent = `${rows.length} of ${findingsQuery.matched} matched`;
   boardMoreEl.hidden = true; // the console pages with its own Load-more, not the live in-memory More
   if (boardFilterEl) for (const chip of boardFilterEl.querySelectorAll("[data-filter]")) chip.classList.remove("active");
-  if (fqMetaEl) fqMetaEl.textContent = resultMeta({ total: findingsQuery.total, matched: findingsQuery.matched, hasMore: findingsQuery.hasMore }, rows.length);
+  if (fqMetaEl) fqMetaEl.textContent = resultMeta(
+    { total: findingsQuery.total, matched: findingsQuery.matched, hasMore: findingsQuery.hasMore },
+    rows.length,
+    { sort: (findingsQuery.form && findingsQuery.form.sort) || "recent", filtered: hasConstraints(findingsQuery.form) },
+  );
   const more = $("#fq-more");
   if (more) more.hidden = !findingsQuery.hasMore;
   fillProvenance();
@@ -553,23 +557,40 @@ function readQueryForm() {
 }
 
 async function fetchFindingsPage(offset) {
-  if (findingsQuery.loading) return;
+  // A fresh query (offset 0) preempts any page still in flight; "load more" (offset > 0) must not stack behind
+  // itself. audit-13 P2-3: the monotonic `token` identifies the newest request, so a response that a newer
+  // query/reset superseded while it was network-bound is DISCARDED before it can clobber the fresher view (and a
+  // failed fresh query clears the board instead of leaving the previous query's cards stranded on screen).
+  if (offset > 0 && findingsQuery.loading) return;
+  const token = ++findingsQuery.token;
   findingsQuery.loading = true;
   if (fqApplyEl) fqApplyEl.disabled = true;
   if (fqMetaEl) fqMetaEl.textContent = offset === 0 ? "querying the server..." : "loading the next page...";
   try {
     const params = buildFindingsParams(findingsQuery.form, offset);
     const res = await fetchJSON(findingsQueryPath(params));
+    if (token !== findingsQuery.token) return; // superseded mid-flight by a newer query/reset: drop this page
     const page = res.findings || [];
-    findingsQuery.rows = offset === 0 ? page.slice() : findingsQuery.rows.concat(page);
+    const combined = offset === 0 ? page : findingsQuery.rows.concat(page);
+    // audit-13 P2-6: the catalog can shift between two page requests (a run upserts a row, the sort recomputes), so
+    // the same finding may appear on consecutive pages; collapse by id, keeping the first occurrence.
+    findingsQuery.rows = dedupeById(combined);
     findingsQuery.total = res.total ?? findingsQuery.rows.length;
     findingsQuery.matched = res.matched ?? findingsQuery.total;
     findingsQuery.hasMore = Boolean(res.hasMore);
     renderBoard();
   } catch (e) {
+    if (token !== findingsQuery.token) return;
+    if (offset === 0) {
+      findingsQuery.rows = [];
+      findingsQuery.matched = 0;
+      findingsQuery.total = 0;
+      findingsQuery.hasMore = false;
+      renderBoard();
+    }
     if (fqMetaEl) fqMetaEl.textContent = `query failed: ${e.message}`;
   } finally {
-    findingsQuery.loading = false;
+    if (token === findingsQuery.token) findingsQuery.loading = false;
     if (fqApplyEl) fqApplyEl.disabled = false;
   }
 }
@@ -583,6 +604,8 @@ async function runFindingsQuery() {
 }
 
 function resetFindingsQuery() {
+  findingsQuery.token++; // audit-13 P2-3: drop any page still in flight so it cannot repopulate the board after reset
+  findingsQuery.loading = false;
   findingsQuery.active = false;
   findingsQuery.rows = [];
   findingsQuery.hasMore = false;

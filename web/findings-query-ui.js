@@ -96,19 +96,67 @@ export function hasConstraints(form) {
   return Object.keys(buildFindingsParams(form, 0)).length > 2; // > limit + offset
 }
 
-/** A plain-ASCII one-line status for the panel, built from the server's response envelope + how many rows the
- *  reader currently sees. Kept here (not in app.js) so the wording is unit-testable and identical on either
- *  runtime's data. `shown` is the cumulative rows the console has rendered so far (page 1 + any "load more").
+/**
+ * Whether a sealed bundle records a REAL harmonic-alias resolution. audit-13 (P1-1): `aliasMultiple === 1` means
+ * "the BLS period was already correct" (src/detect/pipeline.ts:18; src/critic/review.ts:270 sets the odd-even check
+ * pass from exactly this), so a card carrying x1 has NO alias to report -- and its own checks[] even say "period is
+ * clean (alias x1)". Gating the Evidence note on `!= null` used to stamp "harmonic alias x1" on the majority of
+ * clean cards, contradicting the sealed manifest right above it. This returns true only for a finite multiple that
+ * is genuinely not 1 (an alias actually resolved by the odd-even test). DOM-free and unit-tested.
+ */
+export function isHarmonicAlias(m) {
+  if (!m || m.aliasMultiple == null || m.aliasMultiple === "") return false; // no alias data at all
+  const n = Number(m.aliasMultiple);
+  return Number.isFinite(n) && n !== 1;
+}
+
+/**
+ * Collapse rows by id, keeping the FIRST occurrence. audit-13 (P2-6): paging with "load more" appends the next
+ * server slice to what is already shown; if the catalog shifts between two requests (a new run upserts a row, the
+ * sort recomputes), the same finding can appear on two pages and be rendered twice. Identity `id` is the stable key
+ * on every Finding, so de-duping here keeps the reader's list honest without touching the server's paging.
+ */
+export function dedupeById(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const seen = new Set();
+  const out = [];
+  for (const r of list) {
+    const id = r && r.id;
+    if (id != null) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+    }
+    out.push(r);
+  }
+  return out;
+}
+
+/**
+ * A plain-ASCII one-line status for the panel, built from the server's response envelope + how many rows the reader
+ * currently sees. Kept here (not in app.js) so the wording is unit-testable and identical on either runtime's data.
+ * `shown` is the cumulative rows the console has rendered so far (page 1 + any "load more").
  *
- *  The sentence always reports "server matched M of N" -- it does NOT claim "no filter" merely because a filter
- *  happened to match every row. matched===total is genuinely ambiguous (an empty query AND a filter that catches
- *  all rows both look like that), and printing "(no filter)" for the latter would tell a reader their criterion
- *  did nothing when it in fact ran and simply kept everything. Stating the two counts lets the reader judge. */
-export function resultMeta(res, shown) {
+ * audit-13 (P2-5): `opts.filtered` comes from hasConstraints(form), NOT from matched===total, so "no filter" is
+ * decided by what the reader actually typed rather than by a count that a filter matching every row also produces.
+ * audit-13 (P2-4): the "load more" tail only says "for older" under the default `recent` sort; a catalog sorted by
+ * depth/snr/TIC pages in THAT key's order, so the tail names the active sort instead of falsely implying time.
+ */
+export function resultMeta(res, shown, opts) {
+  const o = opts || {};
   const total = Number(res && res.total) || 0;
   const matched = Number(res && res.matched != null ? res.matched : total) || 0;
   const seen = Number(shown) || 0;
-  const head = `Server matched ${matched} of ${total} catalog rows`;
-  const tail = res && res.hasMore ? ` - showing ${seen}, load more for older` : ` - showing all ${seen}`;
+  const sort = o.sort || "recent";
+  const head = o.filtered
+    ? `Server matched ${matched} of ${total} catalog rows`
+    : `Full catalog: ${total} rows`;
+  let tail;
+  if (res && res.hasMore) {
+    tail = sort === "recent"
+      ? ` - showing ${seen}, load more for older`
+      : ` - showing ${seen}, load more for the next by ${sort}`;
+  } else {
+    tail = ` - all ${seen} shown`;
+  }
   return head + tail;
 }

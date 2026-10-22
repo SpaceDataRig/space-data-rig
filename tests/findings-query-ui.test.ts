@@ -15,6 +15,8 @@ import {
   findingsQueryPath,
   resultMeta,
   hasConstraints,
+  isHarmonicAlias,
+  dedupeById,
   QUERY_PAGE,
 } from "../web/findings-query-ui.js";
 import { parseFindingQuery, queryFindings } from "../src/core/finding-query.ts";
@@ -22,6 +24,7 @@ import type { Finding } from "../src/core/types.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const APP = readFileSync(resolve(root, "web", "app.js"), "utf8");
+const LIVE_MANIFESTS = JSON.parse(readFileSync(resolve(root, "tests", "fixtures", "live-manifests.json"), "utf8"));
 
 // ---- the pure builder ------------------------------------------------------
 
@@ -75,19 +78,70 @@ test("hasConstraints ignores the always-sent paging", () => {
   assert.equal(hasConstraints({ verdict: "accepted" }), true);
 });
 
-test("resultMeta states the honest scope, and the load-more cue tracks hasMore", () => {
-  // Even when a filter matched every row, the sentence reports the two counts -- it never claims "(no filter)",
-  // which would be ambiguous (an empty query and an all-matching filter both give matched===total).
+test("resultMeta: a filtered query reports matched-of-total; the cue tracks hasMore", () => {
   assert.equal(
-    resultMeta({ total: 103, matched: 103, hasMore: true }, 24),
+    resultMeta({ total: 103, matched: 103, hasMore: true }, 24, { filtered: true }),
     "Server matched 103 of 103 catalog rows - showing 24, load more for older",
   );
   assert.equal(
-    resultMeta({ total: 103, matched: 7, hasMore: false }, 7),
-    "Server matched 7 of 103 catalog rows - showing all 7",
+    resultMeta({ total: 103, matched: 7, hasMore: false }, 7, { filtered: true }),
+    "Server matched 7 of 103 catalog rows - all 7 shown",
   );
-  assert.ok(!/no filter/i.test(resultMeta({ total: 8, matched: 8, hasMore: false }, 8)), "never prints a misleading 'no filter'");
 });
+
+test("resultMeta: 'no filter' is decided by the FORM (hasConstraints), never by matched===total", () => {
+  // audit-13 P2-5: an empty query and an all-matching filter both give matched===total, so the phrase can only be
+  // trusted when it is driven by what the reader actually typed. With filtered:false it says "Full catalog";
+  // with a filter that kept every row it still says "matched ... of ...", never falsely claiming no filter ran.
+  assert.equal(resultMeta({ total: 8, matched: 8, hasMore: false }, 8, { filtered: false }), "Full catalog: 8 rows - all 8 shown");
+  const allMatch = resultMeta({ total: 8, matched: 8, hasMore: false }, 8, { filtered: true });
+  assert.match(allMatch, /matched 8 of 8/, "a filter catching every row is reported as a match, not 'no filter'");
+  assert.ok(!/no filter|full catalog/i.test(allMatch), "a filtered view must never read as unfiltered");
+});
+
+test("resultMeta: the load-more cue names the active sort, only saying 'older' under recent", () => {
+  // audit-13 P2-4: a catalog sorted by depth/snr/TIC pages in that key's order, so "load more for older" would
+  // falsely imply time ordering. The default recent sort keeps the familiar wording.
+  assert.equal(
+    resultMeta({ total: 103, matched: 103, hasMore: true }, 24, { sort: "depth", filtered: true }),
+    "Server matched 103 of 103 catalog rows - showing 24, load more for the next by depth",
+  );
+  assert.match(resultMeta({ total: 5, matched: 5, hasMore: true }, 3, { sort: "recent", filtered: true }), /load more for older$/);
+});
+
+test("isHarmonicAlias: only a resolved alias (finite multiple != 1) is an alias", () => {
+  // audit-13 P1-1: aliasMultiple===1 means "BLS period was already correct" (src/detect/pipeline.ts, review.ts
+  // odd-even pass), so x1 cards have NO alias to report and must not be stamped "harmonic alias x1".
+  assert.equal(isHarmonicAlias({ aliasMultiple: 1 }), false, "x1 = clean period, not an alias");
+  assert.equal(isHarmonicAlias({ aliasMultiple: 2 }), true, "x2 = a real resolved alias");
+  assert.equal(isHarmonicAlias({ aliasMultiple: 0.5 }), true, "a submultiple is an alias too");
+  assert.equal(isHarmonicAlias({ aliasMultiple: "3" }), true, "a numeric string is coerced");
+  assert.equal(isHarmonicAlias({}), false, "missing aliasMultiple is not an alias");
+  assert.equal(isHarmonicAlias({ aliasMultiple: null }), false);
+  assert.equal(isHarmonicAlias({ aliasMultiple: NaN }), false, "a non-finite value cannot be an alias");
+  assert.equal(isHarmonicAlias({ aliasMultiple: "abc" }), false, "a non-numeric value is not an alias");
+  assert.equal(isHarmonicAlias(null), false);
+});
+
+test("dedupeById: keeps the first occurrence per id, leaves unkeyed rows untouched", () => {
+  // audit-13 P2-6: the same finding can land on two consecutive pages when the catalog shifts between requests.
+  const rows = [{ id: "a" }, { id: "b" }, { id: "a", stale: true }, { id: "c" }, { id: "b" }];
+  assert.deepEqual(dedupeById(rows).map((r) => r.id), ["a", "b", "c"]);
+  assert.equal(dedupeById(rows)[0], rows[0], "the FIRST copy is kept, not the re-send");
+  assert.deepEqual(dedupeById([]), []);
+  assert.equal(dedupeById(undefined as unknown as unknown[]).length, 0, "a non-array degrades to empty, never throws");
+});
+
+test("LIVE DATA: the 3 real sealed manifests are clean periods, so none is a harmonic alias", () => {
+  // audit-13 P1-1, driven by production fixtures (the audit-4 lesson: prove a predicate on REAL data, not a string).
+  const bundles = LIVE_MANIFESTS.bundles as Array<{ findingId: string; manifest: { aliasMultiple: number } }>;
+  assert.ok(bundles.length >= 1, "the live fixture must carry at least one sealed bundle");
+  for (const b of bundles) {
+    assert.equal(b.manifest.aliasMultiple, 1, `${b.findingId} is stored as a clean x1 period`);
+    assert.equal(isHarmonicAlias(b.manifest), false, `${b.findingId} must NOT be flagged as a harmonic alias`);
+  }
+});
+
 
 // ---- PARITY: the builder's output is a query the server actually parses ----
 
@@ -146,6 +200,25 @@ test("app.js wires the query console into the board (imports the builder, branch
   assert.match(APP, /await fetchJSON\(findingsQueryPath\(params\)\)/, "the console must fetch the built /api/findings path");
   assert.match(APP, /buildFindingsParams\(findingsQuery\.form, offset\)/, "and page with offset through the builder");
 });
+
+// audit-13 wiring: the six fixes must be actually WIRED, not just defined in the pure module (a predicate that no
+// render path calls is the audit-4 failure mode again). Each asserts the app.js call site, not the helper body.
+test("app.js wires the audit-13 fixes: alias gating, race token, failure clear, dedupe, hasConstraints/opts", () => {
+  assert.match(APP, /import \{[^}]*\bhasConstraints\b[^}]*\bisHarmonicAlias\b[^}]*\bdedupeById\b[^}]*\} from "\/findings-query-ui\.js"/, "app.js must import the new pure predicates");
+  // P1-1: the Evidence alias note is gated on isHarmonicAlias, never the old `aliasMultiple != null` that stamped x1.
+  assert.match(APP, /const alias = isHarmonicAlias\(m\) \?/, "evidenceHtml must gate the alias note on the predicate");
+  assert.doesNotMatch(APP, /const alias = m\.aliasMultiple != null/, "the old always-stamp-x1 gate must not return");
+  // P2-3: a monotonic token discards a superseded response, and a failed fresh query clears the rows.
+  assert.match(APP, /const token = \+\+findingsQuery\.token;/, "fetchFindingsPage must mint a request token");
+  assert.match(APP, /if \(token !== findingsQuery\.token\) return;[\s\S]*?const page = res\.findings/, "a superseded page must be dropped before it mutates state");
+  assert.match(APP, /catch \(e\) \{[\s\S]*?if \(offset === 0\) \{[\s\S]*?findingsQuery\.rows = \[\];/, "a failed fresh query must clear the stranded cards");
+  // P2-6: appended pages are collapsed by id.
+  assert.match(APP, /findingsQuery\.rows = dedupeById\(combined\);/, "load-more pages must be de-duplicated by id");
+  // P2-4/P2-5: resultMeta is fed the form-derived filtered flag and the active sort, not the ambiguous count.
+  assert.match(APP, /filtered: hasConstraints\(findingsQuery\.form\)/, "resultMeta filtered flag must come from hasConstraints(form)");
+  assert.match(APP, /sort: \(findingsQuery\.form && findingsQuery\.form\.sort\) \|\| "recent"/, "resultMeta must know the active sort");
+});
+
 
 // The plots lazy-load guard, found broken in browser QA: data-loaded="0" (string) is truthy, so the old
 // `!plots.dataset.loaded` never fired and NEITHER the static SVGs NOR the v0.2 P2 live fold rendered on a real

@@ -170,8 +170,8 @@
       "jointCorroborated": false
     },
     {
-      "name": "HD 101581 c",
-      "catPeriod": 6.20401,
+      "name": "HD 101581 b",
+      "catPeriod": 4.46569,
       "nSectors": 2,
       "bestSinglePeriod": 11.083228014622575,
       "bestSingleSnr": -37.940357059374385,
@@ -183,8 +183,8 @@
       "jointCorroborated": false
     },
     {
-      "name": "HD 101581 b",
-      "catPeriod": 4.46569,
+      "name": "HD 101581 c",
+      "catPeriod": 6.20401,
       "nSectors": 2,
       "bestSinglePeriod": 11.083228014622575,
       "bestSingleSnr": -37.940357059374385,

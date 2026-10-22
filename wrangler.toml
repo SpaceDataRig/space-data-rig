@@ -94,7 +94,7 @@ crons = ["*/15 * * * *"]
 
 # ---- plain-text variables (non-secret) -------------------------------------
 [vars]
-CODE_VERSION = "space-data-rig@0.1.1"
+CODE_VERSION = "space-data-rig@0.2.0"
 # Public mainnet RPC kept in this tracked file as a safe default + fallback.
 SOLANA_RPC_FALLBACKS = "https://api.mainnet-beta.solana.com"
 DISCUSSION_MODE = "grounded"

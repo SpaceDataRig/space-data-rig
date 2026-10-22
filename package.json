@@ -1,6 +1,6 @@
 {
   "name": "space-data-rig",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "description": "Space Data Rig - an OpenRig-style multi-agent pipeline for reproducible exoplanet transit detection on public NASA/MAST data, with Solana provenance anchoring.",

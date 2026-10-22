@@ -12,8 +12,8 @@
     "measuredAt": "2026-10-20T01:48:43Z",
     "data": "FROZEN snapshot of real TESS-SPOC INVERTED light curves (flux reflected about median), all catalogued planets masked, single sector (exact ephemeris), token-free public S3 -- the live sample as measured, replayed offline",
     "note": "curves are inverted AND every catalogued planet is masked with its ground-truth ephemeris, so the strongest residual fold can only be noise/systematics -- a false-alarm sample; AR(1)-model gate FP rate vs model-free block-bootstrap FP rate on the SAME residual bumps; recovers P69 on a clean null; discoveryClaim false.",
-    "generatedAt": "2026-10-21T00:40:50.667Z",
-    "gitSha": "c7f29b67369e53858761f4d0dff77a79eb338617",
+    "generatedAt": "2026-10-22T04:17:39.800Z",
+    "gitSha": "e9f870e4ad03a74f3dbc473d1dc83ba3bd96ce24",
     "inputs": [
       {
         "path": "scripts/p75-inverted-fp.ts",

@@ -1,6 +1,6 @@
 # Space Data Rig -- Full Project Handoff
 
-Last updated: 2026-10-22 (this date line means "last full re-verification sweep of this document", refreshed at
+Last updated: 2026-10-23 (this date line means "last full re-verification sweep of this document", refreshed at
 each audit round; live counters quoted below are snapshots of that sweep and the git line names the tested
 revision -- readers should treat per-field live values as of their own `GET /api/state/summary` call, which exists
 precisely so a reader can re-check the numbers without downloading the full payload). Status: production live at
@@ -611,7 +611,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-22)
+## 13. Current state (as of 2026-10-23)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -620,47 +620,57 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is d6825a8 -- the deployed HEAD of the first coherent v0.2 "Interactive
-  Verification Console" slice. It chains: the P0 server-side findings query landed in fd3810e (src/core/finding-query.ts
-  + both-runtime `/api/findings` wiring, backward-compatible empty-query passthrough); the report library converged to
-  carry D5's stamped cross-pipeline artifact in 1e6572b; the browser console -- P0b query panel (web/findings-query-ui.js
-  pure builder + a parity test that round-trips its params through the server parser), P1 per-discriminator Evidence
-  (from the sealed manifest already cached), P2 live phase fold (with an honest fallback) -- plus a browser-QA-caught fix
-  to the Plots lazy-load guard (the `data-loaded="0"` truthy-string bug that silently blocked BOTH the static SVGs and
-  the fold on a real click) and a Node static-parity fix for the split browser modules, all landed in ef07167; and the
-  version bumped to 0.2.0 in d6825a8. The prior twelfth-round chain (25317d5 and its c7f29b6..14f1d15 / d5dd629 /
-  6b3b158 ancestry) documents itself in CHANGELOG. This line is about the revision measured below, not a standing claim
-  about the tip -- `git log` is the authority there.
-- Production: wrangler version 81d18679-6942-4345-8a6f-bb5aada9dd50, gitSha d6825a8a6f057aca8bcef2ab98c33aa8ede5d774
-  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass finished with ~565 s idle, over a 240 s
-  upload budget) before the upload, and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`.
-  Triggers: schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The v0.2 console is LIVE: cache-busted
-  `GET /api/findings?verdict=accepted&sort=depth&limit=3` served `total 103 / matched 18 / hasMore true` (server-side query on
-  the real catalog, not an in-memory slice), the `#findings-query` panel's `?snrMin=30` matched 29 of 103 and paged 24->29 on
-  "Load more", each card's Details renders the manifest's gating checks, and `web/candidates.json` still serves schema
-  `sdr-candidates/2` with every `discoveryClaim` false. P2's in-browser fold falls back to the sealed static `folded.svg`
-  because `stripFinding` deliberately keeps raw `candidate.folded` out of the payload (0 of 103 candidates carry it live) --
-  recorded as a known limit, not an overclaim. `GET /api/state/summary` answers 200 on the edge.
+- Git: the revision this snapshot describes is bb16fd7 -- the thirteenth-round hardening of the v0.2 "Interactive
+  Verification Console", stacked on the console slice that first shipped coherent at d6825a8. Round 13 turned six
+  findings against `ef07167..d6825a8`, each re-verified against the real source before being touched: the honest root
+  cause of the headline one was that the P1 Evidence note stamped "harmonic alias x1" on cards with NO alias, because
+  `aliasMultiple === 1` means "BLS period already correct" (src/detect/pipeline.ts; the odd-even PASS in
+  src/critic/review.ts is set from exactly that) -- so the honesty panel contradicted the sealed manifest line above
+  it; a new pure `isHarmonicAlias()` gates it, proven on the production fixture AND against 40 live manifests (5 real
+  x2 aliases, 35 clean x1 that are no longer mislabeled). The other five were console-robustness/wording: a monotonic
+  request `token` now preempts a stale in-flight page (a fresh query during "load more" no longer silently no-ops) and
+  a failed fresh query clears the stranded cards; `dedupeById()` collapses a finding that lands on two pages when the
+  catalog shifts; and `resultMeta` now takes `{filtered, sort}` so "no filter" is decided by `hasConstraints(form)`
+  rather than the ambiguous `matched===total`, and the load-more cue names the active sort instead of always claiming
+  "for older". All six are pinned by behaviour tests in `tests/findings-query-ui.test.ts` (now 18), not string-matches;
+  nothing on the verdict gate, bundle hash, or money path moved. The v0.2 slice itself (P0 server query `fd3810e`,
+  library convergence `1e6572b`, browser console + Plots/QA + Node static-parity `ef07167`, version bump `d6825a8`)
+  chains beneath it. This line is about the revision measured below, not a standing claim about the tip -- `git log`
+  is the authority there.
+- Production: wrangler version ef5805ac-7f0d-49e0-aba3-37b78cce38db, gitSha bb16fd7c8fafa7762fa4c83772b17e8a897f013d
+  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass `run-20261022-170048` finished
+  17:07:26Z with 287 s of idle before the 17:15 claim, over a 240 s upload budget) before the upload, and `GET /health`
+  returns exactly that sha and `codeVersion space-data-rig@0.2.0`. Triggers: schedule `*/15 * * * *`, workflow `rig-run`,
+  custom domain spacedatarig.app. The thirteenth-round fixes are LIVE and behaviorally confirmed against real production
+  bytes, not just served text: a cache-busted probe through the DEPLOYED `web/findings-query-ui.js` predicate over 40 live
+  manifests found aliasMultiple set {1, 2} -- 5 genuine x2 aliases correctly flagged, 35 clean x1 cards the old gate would
+  have falsely stamped "harmonic alias x1" now silent; the served `app.js` carries `isHarmonicAlias`/`++findingsQuery.token`
+  /`dedupeById` and NO longer contains the old `aliasMultiple != null` alias gate. The v0.2 console remains LIVE:
+  `GET /api/findings?verdict=accepted&sort=depth&limit=3` serves `total 103 / matched 18 / hasMore true`, `resultMeta`
+  renders honestly on the real 103-row catalog ("Full catalog: 103 rows ... load more for older" vs "Server matched 18 of
+  103 ... load more for the next by depth"), and `web/candidates.json` still serves schema `sdr-candidates/2` with every
+  `discoveryClaim` false. P2's in-browser fold still falls back to the sealed static `folded.svg` because `stripFinding`
+  deliberately keeps raw `candidate.folded` out of the payload (0 of 103 carry it live) -- a known limit, not an overclaim.
+  `GET /api/state/summary` answers 200 on the edge.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state`, measured 2026-10-22; `GET /api/state/summary` carries the same
-  `stats`/`statDefinitions` under ~8 KB for verifiers who cannot reliably pull 324 KB -- measured live this deploy: the
-  summary is 3,875 bytes against a full `GET /api/state` of 324,170, the ~84x lighter projection the twelfth-round D4
-  asked for): surveyPass 423 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53
-  assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 90 (a per-window bookkeeping
-  that moves between pulls; re-read it live). Ledger re-read: 20 rows,
-  20 anchored-with-signature, newest landed commitment 2026-10-20T23:34:40Z -- nothing has been anchored since because
+- Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,921 bytes against a full
+  `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
+  `stats`/`statDefinitions`): surveyPass 428 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over
+  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 80 (a
+  per-window bookkeeping that moves between pulls; re-read it live). Nothing new has been anchored since 2026-10-20 because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
   twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
   filterable server-side (`/api/findings` with a filter returns matched/hasMore, not the whole payload). The repo report
   library (converged at `1e6572b`, still serving on this deploy) reports 56 with `stale: []`, `stamped: 17`, `verified: 15`,
   `fullyVerified: 15`.
 
-- Tests: 119 files / 902 tests as this snapshot was taken (the v0.2 slice added `finding-query` +7 and `findings-query-ui`
-  +12 -- the latter a browser/server key-name parity test; `npm test` green 902/902 locally, and CI runs
-  `npm run test:coverage`, whose floors -- 90/78 -- it has been clearing at 95.97% lines / 83.02% branches as the prior
+- Tests: 119 files / 908 tests as this snapshot was taken (the thirteenth-round hardening grew `findings-query-ui` from
+  12 to 18 -- added behaviour coverage for `isHarmonicAlias`/`dedupeById`/the rewritten `resultMeta` plus a live-data
+  regression over `tests/fixtures/live-manifests.json`; the v0.2 slice's `finding-query` +7 is unchanged; `npm test` green
+  908/908 locally, and CI runs `npm run test:coverage`, whose floors -- 90/78 -- it has been clearing as the prior
   baseline; trust the run over any number written in a document, including this one).
 
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
@@ -696,6 +706,14 @@ So the defect is live again and intermittent, not dormant -- the survey is still
 against a `*/15` cron, and deploys must catch the release boundary rather than assume a per-cron idle gap. The structural
 next action named above (make WHERE the workflow stops observable before touching `STALE_RUN_MS`) still stands, now with a
 fresh reproduction to instrument against.
+
+UPDATE, measured 2026-10-23 (thirteenth-round deploy `bb16fd7`): a MILDER recurrence. The pass `run-20261022-170048`
+claimed 17:00:49Z and was still `running=true` when first probed well past the measured median full-pass span (234 s),
+but it released on its own at 17:07:26Z -- a ~397 s occupancy for the finding work, i.e. a span overrun but NOT a stall
+to the 30-minute stale takeover. `deploy:window` therefore cleared GO at 287 s of idle before the 17:15 claim and the
+upload landed inside that gap. So the defect's severity ranges from "span overrun that still releases before the
+boundary" (this pass) to "held until stale takeover, minutes-long WAIT" (10-19 and 10-22) -- intermittency confirmed,
+root cause (finish tail not reliably running) still open, and the observability-first next action stands.
 
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),

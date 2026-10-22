@@ -348,3 +348,31 @@ snapshot constants, or statistical conventions) -- only P48 had actually rotted,
 from silently repeating. Research-only throughout: no verdict gate, anchor semantics, or money path moved;
 `discoveryClaim` false everywhere.
 
+## Thirteenth-round audit response (2026-10-23, HEAD tested `bb16fd7`)
+
+The thirteenth pass targeted the v0.2 Interactive Verification Console shipped at `ef07167`..`d6825a8`. Its central
+theme: a read-only projection can still lie about the science it mirrors, and a browser view can race its own data.
+Six findings (2 correctness/honesty, 4 wording/robustness); every one was re-verified against the real source and
+production fixtures before being touched, then pinned by behaviour tests rather than string-matches.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| P1 Evidence note stamped "harmonic alias x1" on cards with no alias | `aliasMultiple === 1` means "BLS period was already correct" (`src/detect/pipeline.ts`, and `src/critic/review.ts` sets the odd-even PASS from exactly this), yet the note gated on `!= null` -- so the honesty panel contradicted the sealed manifest's own "period is clean (alias x1)" line printed right above it | New pure predicate `isHarmonicAlias()` in `web/findings-query-ui.js` returns true only for a finite multiple that is genuinely not 1; `evidenceHtml` gates on it | Behaviour tests (x1 false, x2/0.5 true, null/NaN/"abc"/absent false) + LIVE-DATA regression over `tests/fixtures/live-manifests.json`; live probe of 40 production manifests: aliasMultiple set {1,2}, 5 real aliases flagged, 35 clean cards no longer falsely stamped | Shipped (`bb16fd7`), live-verified. |
+| P1 a fresh query issued during "load more" silently no-ops, leaving the OLD result under the NEW meta | `fetchFindingsPage` had a single `loading` guard that blocked every overlapping request, so clicking Apply while a page was network-bound dropped the new query entirely | Offset-0 requests now preempt an in-flight page; a monotonic `token` identifies the newest request and DISCARDS any response a newer query/reset superseded before it can mutate state; Reset bumps the token | Structural test pins `const token = ++findingsQuery.token` + the pre-render drop `if (token !== findingsQuery.token) return;`; served `app.js` carries it | Shipped (`bb16fd7`). |
+| P2 a failed fresh query left the previous query's cards stranded on screen | The catch only rewrote the meta text; rows from the last successful page stayed rendered under an error line | On offset-0 failure the rows/matched/total/hasMore are cleared and the board re-rendered to an honest empty state before the error text | Structural test pins the clear inside the `offset === 0` branch | Shipped (`bb16fd7`). |
+| P2 "load more" could render the same finding twice | Pages are appended; if the catalog shifts between two requests (a run upserts a row, the sort recomputes) a finding lands on consecutive slices | New pure `dedupeById()` collapses appended pages by id keeping the first occurrence | Behaviour test (order + first-copy kept + non-array degrades to empty); `findingsQuery.rows = dedupeById(combined)` wired at the append site | Shipped (`bb16fd7`). |
+| P2 the panel claimed "(no filter)" whenever `matched === total` | An empty query AND an all-matching filter both give `matched===total`, so the phrase was ambiguous -- it told a reader their filter "did nothing" when it ran and kept everything | `resultMeta(res, shown, {filtered})` decides "no filter" from `hasConstraints(form)` -- what the reader typed -- never from the count; `hasConstraints` finally has a consumer | Behaviour tests: filtered view with every row matched still reads "matched 8 of 8", never "no filter"/"full catalog" | Shipped (`bb16fd7`). |
+| P2 the load-more cue always said "for older", implying time order under any sort | The tail was hardcoded; a catalog sorted by depth/snr/TIC pages in that key's order, not chronologically | The cue now names the active sort -- "load more for the next by <sort>" -- and keeps "for older" only under the default `recent` sort | Behaviour tests on both branches; live render on the 103-row catalog shows the recent and depth variants side by side | Shipped (`bb16fd7`). |
+
+### Honesty note on the thirteenth round
+
+The alias finding is not hypothetical: the live probe found 5 of the first 40 production manifests genuinely carry
+`aliasMultiple = 2` (a real odd-even-resolved alias) while 35 are clean `x1`, so the old gate mislabeled the majority
+of cards a reader actually opens. The fix was kept strictly on the read/label path -- no verdict gate, no bundle hash,
+no money path, and `isHarmonicAlias` never re-derives anything. Paging correctness (dedupe, race token) is a client
+view concern; the server's `queryFindings` was not touched, so the empty-query identity contract that
+`scripts/depth-significance-figure.ts` depends on is unchanged. Deployed at version `ef5805ac`, `/health` gitSha
+`bb16fd7`, codeVersion `space-data-rig@0.2.0`; served `app.js` no longer contains the old `aliasMultiple != null`
+gate. `npm test` 908/908 (was 902), typecheck:all clean, zero non-ASCII, zero secret hits.
+
+

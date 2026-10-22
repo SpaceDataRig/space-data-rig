@@ -620,44 +620,50 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is 25317d5 -- the deployed HEAD of the twelfth-round batch. The code
-  fixes (the p48 prose-vs-data correction with its row-pin test + live re-run, the withdrawn "chain covers current
-  bytes" claim replaced by payload-shipped anchor definitions, the new `GET /api/state/summary` projection, and the
-  stamped `cross_pipeline.py`) landed in ad1d804; the CI fleet re-stamp of p48/p59/p76/p92 + library rebuild, the
-  leo-vetter path fix for the coupling D5 exposed live, and the benchmark re-stamp publish-back followed (44e5c5d,
-  176dc31, fc59dcc). The ledger commit then co-signed all nine report write-back workflows -- they had been landing as
-  "sdr-bot" with no trailer, so a fresh checkout whose HEAD happened to be a write-back failed the very commit-co-sign
-  gate it pulled (found live at fc59dcc) -- in e9f870e; the write-back fleet re-stamped and re-published on top
-  (2b9bf7a); and the batch closed with the library converged to that HEAD plus a rebase-retry publish on the longest
-  arm (25317d5). CI green on e9f870e and 25317d5; the prior seven-point chain (c7f29b6 ... 14f1d15, d5dd629, d9c270f,
-  6b3b158) documents itself in CHANGELOG. This line is about the revision measured below, not a standing claim about
-  the tip -- `git log` is the authority there.
-- Production: wrangler version 2cfaf03b-5854-4143-bb64-e5b040cfcc8e, gitSha 25317d530552eb7477a8bacd95f292bf78ffe085
-  -- re-verified live at this snapshot: `deploy:window` cleared on a GO (no live claimed-run) before the upload, and
-  `GET /health` returns exactly that sha. Triggers:
-  schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The live `/candidates.json` continues to
-  serve schema `sdr-candidates/2` (4 rows, no baked countdown fields, every `discoveryClaim` false), and
-  `GET /api/state/summary` now answers 200 on the edge (measured byte-for-byte in the counter bullet below).
+- Git: the revision this snapshot describes is d6825a8 -- the deployed HEAD of the first coherent v0.2 "Interactive
+  Verification Console" slice. It chains: the P0 server-side findings query landed in fd3810e (src/core/finding-query.ts
+  + both-runtime `/api/findings` wiring, backward-compatible empty-query passthrough); the report library converged to
+  carry D5's stamped cross-pipeline artifact in 1e6572b; the browser console -- P0b query panel (web/findings-query-ui.js
+  pure builder + a parity test that round-trips its params through the server parser), P1 per-discriminator Evidence
+  (from the sealed manifest already cached), P2 live phase fold (with an honest fallback) -- plus a browser-QA-caught fix
+  to the Plots lazy-load guard (the `data-loaded="0"` truthy-string bug that silently blocked BOTH the static SVGs and
+  the fold on a real click) and a Node static-parity fix for the split browser modules, all landed in ef07167; and the
+  version bumped to 0.2.0 in d6825a8. The prior twelfth-round chain (25317d5 and its c7f29b6..14f1d15 / d5dd629 /
+  6b3b158 ancestry) documents itself in CHANGELOG. This line is about the revision measured below, not a standing claim
+  about the tip -- `git log` is the authority there.
+- Production: wrangler version 81d18679-6942-4345-8a6f-bb5aada9dd50, gitSha d6825a8a6f057aca8bcef2ab98c33aa8ede5d774
+  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass finished with ~565 s idle, over a 240 s
+  upload budget) before the upload, and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`.
+  Triggers: schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The v0.2 console is LIVE: cache-busted
+  `GET /api/findings?verdict=accepted&sort=depth&limit=3` served `total 103 / matched 18 / hasMore true` (server-side query on
+  the real catalog, not an in-memory slice), the `#findings-query` panel's `?snrMin=30` matched 29 of 103 and paged 24->29 on
+  "Load more", each card's Details renders the manifest's gating checks, and `web/candidates.json` still serves schema
+  `sdr-candidates/2` with every `discoveryClaim` false. P2's in-browser fold falls back to the sealed static `folded.svg`
+  because `stripFinding` deliberately keeps raw `candidate.folded` out of the payload (0 of 103 candidates carry it live) --
+  recorded as a known limit, not an overclaim. `GET /api/state/summary` answers 200 on the edge.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
-  CODE_VERSION=space-data-rig@0.1.1, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
+  CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
 - Public counters at that same moment (`GET /api/state`, measured 2026-10-22; `GET /api/state/summary` carries the same
   `stats`/`statDefinitions` under ~8 KB for verifiers who cannot reliably pull 324 KB -- measured live this deploy: the
-  summary is 3,876 bytes against a full `GET /api/state` of 325,362, the ~84x lighter projection the twelfth-round D4
-  asked for): surveyPass 385 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53
-  assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 100. Ledger re-read: 20 rows,
+  summary is 3,875 bytes against a full `GET /api/state` of 324,170, the ~84x lighter projection the twelfth-round D4
+  asked for): surveyPass 423 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over blindCandidates 53
+  assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 90 (a per-window bookkeeping
+  that moves between pulls; re-read it live). Ledger re-read: 20 rows,
   20 anchored-with-signature, newest landed commitment 2026-10-20T23:34:40Z -- nothing has been anchored since because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
-  twelfth-round audit, stated here where the counters live, not glossed. The repo report library (this batch's rebuild)
-  serves 56 reports with `stale: []`, `stamped: 16`, `verified: 14`, `fullyVerified: 14`.
+  twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
+  filterable server-side (`/api/findings` with a filter returns matched/hasMore, not the whole payload). The repo report
+  library (converged at `1e6572b`, still serving on this deploy) reports 56 with `stale: []`, `stamped: 17`, `verified: 15`,
+  `fullyVerified: 15`.
 
-- Tests: 117 files / 883 tests as this snapshot was taken (the twelfth-round batch added `p48-copy-consistency` +4 and
-  `state-summary` +3, and extended `stats-definitions` +1; `npm test` green 883/883 locally, and CI runs
+- Tests: 119 files / 902 tests as this snapshot was taken (the v0.2 slice added `finding-query` +7 and `findings-query-ui`
+  +12 -- the latter a browser/server key-name parity test; `npm test` green 902/902 locally, and CI runs
   `npm run test:coverage`, whose floors -- 90/78 -- it has been clearing at 95.97% lines / 83.02% branches as the prior
   baseline; trust the run over any number written in a document, including this one).
 
-MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- NOT REPRODUCED SINCE, NOT PROVEN FIXED (keep observing). At that snapshot
+MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover
 released it:
 
@@ -680,6 +686,16 @@ UPDATE, measured 2026-10-20: the freeze has NOT been reproduced since. `GET /api
 from 99 at the 10-19 snapshot), so the survey has been finishing and advancing continuously across roughly the last
 32 hours. That makes the defect dormant, not resolved -- no code fix landed, and the dependency is structural (the
 finish tail must actually run). The observability step above still stands as the next action if it reappears.
+
+UPDATE, measured 2026-10-22: it REAPPEARED while this v0.2 deploy was waiting on a GO window. `deploy:window` held WAIT
+for ~35 minutes across two consecutive autonomous passes that far outran the measured full-pass span (median 238 s): the
+pass claimed at 15:15:21Z was still `running=true` at 15:28Z, and the one claimed at 15:30:45Z at 15:49Z -- each finishing
+its finding work quickly (surveyPass advanced 421 -> 422 -> 423) yet holding the mutex. The GO finally cleared the instant
+the second released (previous pass finished 15:49:51Z, 565 s of idle to the 16:00 claim) and the deploy went in that window.
+So the defect is live again and intermittent, not dormant -- the survey is still effectively one pass per ~15-30 minutes
+against a `*/15` cron, and deploys must catch the release boundary rather than assume a per-cron idle gap. The structural
+next action named above (make WHERE the workflow stops observable before touching `STALE_RUN_MS`) still stands, now with a
+fresh reproduction to instrument against.
 
 - L3 (multi-host shared-ephemeris collapse) is now APPLIED in p22 by default (was flag-only): emitted candidate rows
   exclude collapsed systematics; web/candidates.json regenerated (7 independent groups -> 5 rows, 2 collapsed),

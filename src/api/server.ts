@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { RigStore } from "../core/store.ts";
 import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { summarizeState } from "../core/state-summary.ts";
+import { parseFindingQuery, queryFindings } from "../core/finding-query.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -248,7 +249,12 @@ app.get("/api/discussion/:id/receipt/verify", async (c) => {
   }
 });
 
-app.get("/api/findings", (c) => c.json({ findings: store.listFindings().map(findingView) }));
+app.get("/api/findings", (c) => {
+  const findings = store.listFindings();
+  const q = parseFindingQuery(c.req.query());
+  const r = queryFindings(findings, q);
+  return c.json({ findings: r.rows.map(findingView), query: q, total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
+});
 
 app.get("/api/findings/:id", (c) => {
   const id = safeName(c.req.param("id"));

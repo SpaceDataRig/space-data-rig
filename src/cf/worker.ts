@@ -33,6 +33,7 @@ import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
 import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
 import { summarizeState } from "../core/state-summary.ts";
+import { parseFindingQuery, queryFindings } from "../core/finding-query.ts";
 
 export { RigStateDO, RigRunWorkflow, RateLimitDO };
 
@@ -177,7 +178,9 @@ app.get("/api/state/summary", async (c) => {
 
 app.get("/api/findings", async (c) => {
   const findings: Finding[] = await rigStub(c.env).listFindingsPublic();
-  return c.json({ findings: findings.map(findingView) });
+  const q = parseFindingQuery(c.req.query());
+  const r = queryFindings(findings, q);
+  return c.json({ findings: r.rows.map(findingView), query: q, total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
 });
 
 app.get("/api/findings/:id", async (c) => {

@@ -33,7 +33,7 @@ import type { Finding } from "../core/types.ts";
 import type { SeatState } from "../core/state-types.ts";
 import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
 import { summarizeState } from "../core/state-summary.ts";
-import { parseFindingQuery, queryFindings, ignoredFindingParams } from "../core/finding-query.ts";
+import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
 
 export { RigStateDO, RigRunWorkflow, RateLimitDO };
 
@@ -182,8 +182,11 @@ app.get("/api/findings", async (c) => {
   const q = parseFindingQuery(raw);
   const r = queryFindings(findings, q);
   // audit-14 N1: echo the params we did NOT trust, so a direct URL reader is told a filter did nothing rather than
-  // silently getting the whole catalog. Rows returned are unchanged by this -- it is a transparency field only.
-  return c.json({ findings: r.rows.map(findingView), query: q, ignored: ignoredFindingParams(raw), total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
+  // silently getting the whole catalog. audit-15 T3: separately echo paging values we CLAMPED (limit=0 -> 1), which
+  // is a different act from a drop. Rows returned are unchanged by both -- these are transparency fields only.
+  const ignored = ignoredFindingParams(raw);
+  const clamped = clampedFindingParams(raw, q);
+  return c.json({ findings: r.rows.map(findingView), query: q, ignored, clamped, total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
 });
 
 app.get("/api/findings/:id", async (c) => {

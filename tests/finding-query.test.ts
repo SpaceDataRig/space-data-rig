@@ -4,7 +4,9 @@
 // engage only when a caller asks. Nothing here runs a detector or touches a verdict.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseFindingQuery, queryFindings, depthPpmOf, ignoredFindingParams, MAX_LIMIT } from "../src/core/finding-query.ts";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { parseFindingQuery, queryFindings, depthPpmOf, ignoredFindingParams, clampedFindingParams, MAX_LIMIT } from "../src/core/finding-query.ts";
 import type { Finding } from "../src/core/types.ts";
 
 function f(p: Partial<Finding> & { targetId: string; periodDays: number; depthFrac: number; snr: number }): Finding {
@@ -137,5 +139,54 @@ test("tic matches a whole numeric identifier run, never an incidental substring"
   assert.deepEqual(queryFindings(hosts, { tic: "62" }).rows.map((x) => x.id), [], "a partial digit prefix is not an identifier");
   // a spaced / alphabetic query keeps the contains behaviour (no digit-run semantics to apply)
   assert.deepEqual(queryFindings(hosts, { tic: "tic 222" }).rows.map((x) => x.id), ["h1", "h2"], "non-numeric stays case-insensitive contains");
+});
+
+// ---- audit-15 T1: the round-14 digit-run fix still split a TOI cadence suffix (.01) into a "run" -- the fixture it
+// was checked against (TOI-6265.01) only ever exercised the HOST direction. Pin BOTH directions + zero-padding. ----
+
+test("tic is the HOST number: a TESS cadence suffix is never a match, and leading zeros normalize", () => {
+  const ids: Finding[] = [
+    f({ id: "t1", targetId: "TOI-1821.01", periodDays: 1, depthFrac: 0.001, snr: 10 }),
+    f({ id: "t2", targetId: "TOI-2026.01", periodDays: 1, depthFrac: 0.001, snr: 10 }),
+    f({ id: "t3", targetId: "TOI-4641.02", periodDays: 1, depthFrac: 0.001, snr: 10 }),
+    f({ id: "t4", targetId: "TOI-858.01", periodDays: 1, depthFrac: 0.001, snr: 10 }),
+  ];
+  assert.deepEqual(queryFindings(ids, { tic: "01" }).rows.map((x) => x.id), [], "tic=01 must NOT match the .01 cadence suffix (live regression: 53/103)");
+  assert.deepEqual(queryFindings(ids, { tic: "02" }).rows.map((x) => x.id), [], "tic=02 must NOT match the .02 cadence suffix");
+  assert.deepEqual(queryFindings(ids, { tic: "1821" }).rows.map((x) => x.id), ["t1"], "the host number matches");
+  assert.deepEqual(queryFindings(ids, { tic: "0858" }).rows.map((x) => x.id), ["t4"], "zero-padded tic=0858 must find host 858 (numeric compare, live was 0)");
+});
+
+// ---- audit-15 T2/T4: `dir` is a real criterion, not an inert one ----
+
+test("dir alone engages the query (sort + page) and defaults to desc when no direction is given", () => {
+  // dir was in the parser's vocabulary but absent from queryFindings' `active` set, so `?dir=asc` alone dumped the
+  // whole catalog UNSORTED with `ignored:[]` -- the exact silent no-op N1 was meant to end, on a VALID value.
+  const asc = queryFindings(rows, { dir: "asc" });
+  assert.deepEqual(asc.rows.map((x) => x.id), ["d", "a", "c", "b"], "dir=asc engages the default recent sort ASCENDING (d 01-02 .. b 01-09)");
+  assert.deepEqual(ignoredFindingParams({ dir: "asc" }), [], "a valid dir is not ignored -- now it genuinely has effect");
+  // T4: the collapsed ternary keeps the DESC default when NO direction is supplied
+  assert.deepEqual(queryFindings(rows, { sort: "recent" }).rows.map((x) => x.id), ["b", "c", "a", "d"], "default recent DESC, newest first -- unchanged");
+});
+
+// ---- audit-15 T3: a CLAMPED paging value is echoed, distinct from a DROPPED one ----
+
+test("clampedFindingParams reports a bounded paging value without conflating it with an ignored drop", () => {
+  assert.deepEqual(clampedFindingParams({ limit: "0" }, parseFindingQuery({ limit: "0" })), ["limit"], "limit=0 -> 1 is a clamp and must be said");
+  assert.deepEqual(clampedFindingParams({ limit: "-5" }, parseFindingQuery({ limit: "-5" })), ["limit"], "negative floored to 1");
+  assert.deepEqual(clampedFindingParams({ limit: "99999" }, parseFindingQuery({ limit: "99999" })), ["limit"], "over MAX_LIMIT is clamped");
+  assert.deepEqual(clampedFindingParams({ offset: "-3" }, parseFindingQuery({ offset: "-3" })), ["offset"], "negative offset floored to 0");
+  assert.deepEqual(clampedFindingParams({ limit: "24" }, parseFindingQuery({ limit: "24" })), [], "in-band limit is untouched");
+  assert.deepEqual(clampedFindingParams({ limit: "many" }, parseFindingQuery({ limit: "many" })), [], "non-numeric is DROPPED -> ignored's job, not clamped's");
+});
+
+test("audit-15: BOTH /api/findings handlers echo ignored AND clamped (edge + Node parity)", () => {
+  const worker = readFileSync(resolve(process.cwd(), "src", "cf", "worker.ts"), "utf8");
+  const node = readFileSync(resolve(process.cwd(), "src", "api", "server.ts"), "utf8");
+  for (const [name, src] of [["worker.ts", worker], ["server.ts", node]] as const) {
+    assert.match(src, /ignoredFindingParams\(raw\)/, `${name} computes the ignored echo`);
+    assert.match(src, /clampedFindingParams\(raw, q\)/, `${name} computes the clamped echo`);
+    assert.match(src, /ignored, clamped/, `${name} places both in the response`);
+  }
 });
 

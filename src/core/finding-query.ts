@@ -111,18 +111,53 @@ export function ignoredFindingParams(raw: Record<string, string | undefined>): s
 }
 
 /**
- * audit-14 N2: the `tic` parameter promises an identifier, so a purely numeric query matches a WHOLE digit run of
- * the target id exactly -- not a loose substring, which made `tic=858` also hit every host whose id merely CONTAINED
- * 858 (8581, S8581x). A query that carries any non-digit (e.g. "toi", "wasp", or a spaced "tic 222") keeps the
- * case-insensitive contains behaviour, because there is no digit-run semantics to apply. The free-text `q` remains
- * the deliberate contains-everything tool; `tic` is now precise where precision is promised.
+ * audit-15 T3: parseFindingQuery CLAMPS paging into a safe band (limit into [1, MAX_LIMIT], offset to >= 0) rather
+ * than dropping it -- `limit=0` gets one row, not zero and not an error. That is a different act from the N1 drop (the
+ * criterion IS applied, just at a bounded value), but a verifier reading the URL still deserves to learn their literal
+ * value was moved. This reports paging keys whose FINITE supplied value the parser altered, complementing
+ * ignoredFindingParams (which reports keys whose value failed validation outright); the handlers echo both.
+ */
+export function clampedFindingParams(raw: Record<string, string | undefined>, q: FindingQuery): string[] {
+  const notes: string[] = [];
+  const present = (v: string | undefined): boolean => v != null && v.trim() !== "";
+  if (present(raw.limit)) {
+    const n = num(raw.limit);
+    if (n !== undefined && q.limit !== undefined && n !== q.limit) notes.push("limit");
+  }
+  if (present(raw.offset)) {
+    const n = num(raw.offset);
+    if (n !== undefined && q.offset !== undefined && n !== q.offset) notes.push("offset");
+  }
+  return notes;
+}
+
+/**
+ * audit-14 N2 / audit-15 T1: `tic` promises an IDENTIFIER, so a purely numeric query must equal a whole identifier
+ * number of the target -- never a loose substring, and never an incidental digit. The audit-15 catch was that my own
+ * round-14 fix still split `/\d+/g` on real TESS ids of the form `TOI-<n>.<cadence>`: the dot made the CADENCE suffix
+ * `.01` its own "digit run", so `tic=01` swept in all 53 `.01` objects and zero-padded `tic=0858` (a real HR 858)
+ * matched none. Two changes close it: (1) drop the `.cadence` suffix before extracting runs, so only the host number
+ * is comparable; (2) compare NUMERICALLY (leading zeros normalized), so `0858` == `858`. A query carrying any
+ * non-digit keeps the case-insensitive contains behaviour (there is no digit-run semantics to apply), and the
+ * free-text `q` stays the deliberate loose-contains tool.
  */
 function targetMatchesTic(targetIdLower: string, ticLower: string): boolean {
   if (/^\d+$/.test(ticLower)) {
-    const digitRuns: string[] = targetIdLower.match(/\d+/g) ?? [];
-    return digitRuns.includes(ticLower);
+    const want = String(Number(ticLower));
+    return identifierRuns(targetIdLower).map((r) => String(Number(r))).includes(want);
   }
   return targetIdLower.includes(ticLower);
+}
+
+/**
+ * The host identifier's numeric components, EXCLUDING a TESS cadence suffix. `TOI-1821.01` yields ["1821"] (not
+ * ["1821","01"]); `tic 222`, `s2221`, `hr 858` keep every digit run. The substitution is deliberately narrow -- only
+ * the `<toi-number>.<cadence>` form has a suffix to drop -- so it never mangles hyphen/word-separated ids where each
+ * number is genuinely part of the name (e.g. `HAT-P-11`).
+ */
+function identifierRuns(targetIdLower: string): string[] {
+  const withoutCadence = targetIdLower.replace(/(toi-\d+)\.\d+/g, "$1");
+  return withoutCadence.match(/\d+/g) ?? [];
 }
 
 function matches(f: Finding, q: FindingQuery): boolean {
@@ -179,10 +214,13 @@ export interface FindingQueryResult {
  */
 export function queryFindings(findings: Finding[], q: FindingQuery): FindingQueryResult {
   const total = findings.length;
+  // audit-15 T2: `dir` was in the parser's vocabulary but MISSING from this active-set, so `?dir=asc` alone fell to
+  // the inactive branch -- returned the whole catalog unsorted with `ignored:[]`, the exact "gave a criterion, nothing
+  // happened" hole N1 was meant to close, re-hitting the ~120 KB transport wall the summary endpoint exists to dodge.
   const active =
     q.verdict !== undefined || q.origin !== undefined || q.tic !== undefined || q.q !== undefined ||
     q.periodMin !== undefined || q.periodMax !== undefined || q.depthMinPpm !== undefined ||
-    q.depthMaxPpm !== undefined || q.snrMin !== undefined || q.sort !== undefined ||
+    q.depthMaxPpm !== undefined || q.snrMin !== undefined || q.sort !== undefined || q.dir !== undefined ||
     q.limit !== undefined || q.offset !== undefined;
 
   if (!active) {
@@ -191,7 +229,10 @@ export function queryFindings(findings: Finding[], q: FindingQuery): FindingQuer
 
   let out = findings.filter((f) => matches(f, q));
   const sortKey: FindingSort = q.sort ?? "recent";
-  const dir = q.dir ?? (sortKey === "recent" ? "desc" : "desc"); // most results are wanted "highest/newest first"
+  // audit-15 T4: this read as a per-sort-key rule (`sortKey === "recent" ? "desc" : "desc"`) but both arms were
+  // identical -- a constant in a ternary's clothes. No sort key here wants an ASC default (newest / highest-first is
+  // the wanted reading), so it is stated plainly as one. The caller's explicit `dir` still overrides it.
+  const dir = q.dir ?? "desc";
   out = out.slice().sort((a, b) => {
     const av = sortValue(a, sortKey);
     const bv = sortValue(b, sortKey);

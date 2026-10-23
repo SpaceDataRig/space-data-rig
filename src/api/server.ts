@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 import { RigStore } from "../core/store.ts";
 import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { summarizeState } from "../core/state-summary.ts";
-import { parseFindingQuery, queryFindings, ignoredFindingParams } from "../core/finding-query.ts";
+import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
 import { serializeByKey } from "../core/inFlightLock.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
@@ -255,8 +255,11 @@ app.get("/api/findings", (c) => {
   const raw = c.req.query();
   const q = parseFindingQuery(raw);
   const r = queryFindings(findings, q);
-  // audit-14 N1: parity with the edge -- echo the params that were supplied but not trusted (transparency only).
-  return c.json({ findings: r.rows.map(findingView), query: q, ignored: ignoredFindingParams(raw), total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
+  // audit-14 N1 / audit-15 T3: parity with the edge -- echo params supplied but not trusted (ignored) and paging
+  // values clamped into the safe band (limit=0 -> 1). Transparency only; the rows returned are unchanged by either.
+  const ignored = ignoredFindingParams(raw);
+  const clamped = clampedFindingParams(raw, q);
+  return c.json({ findings: r.rows.map(findingView), query: q, ignored, clamped, total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
 });
 
 app.get("/api/findings/:id", (c) => {

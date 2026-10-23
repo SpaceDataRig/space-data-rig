@@ -620,10 +620,16 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is c70593e -- the sixteenth-round RECORD/ACCOUNTING disclosure layer (signal-identity
-  kernel, label-conflict fields, honest host counting), stacked on the fifteenth-round query hardening `bf12a62`, the
-  fourteenth-round interface hardening `8dd1748`, the thirteenth-round console hardening `bb16fd7`, and the console slice that
-  first shipped coherent at `d6825a8`. Round 16 confirmed all four Round-15 fixes LIVE by the auditor's own hand, then moved
+- Git: the revision this snapshot describes is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
+  (decode TOI candidate numbers `.01` -> b so the label-conflict predicate sees the whole catalog instead of 27.2% of it, keep
+  binary star-component letters in `hostKeyOf`, publish a `designatorKind` to disambiguate a null designator, render the conflict
+  on the board card, and prove served == kernel with an offline wiring test), stacked on the sixteenth-round RECORD/ACCOUNTING
+  disclosure layer `c70593e` (signal-identity kernel, label-conflict fields, honest host counting), the fifteenth-round query
+  hardening `bf12a62`, the fourteenth-round interface hardening `8dd1748`, the thirteenth-round console hardening `bb16fd7`, and
+  the console slice that first shipped coherent at `d6825a8`. Round 17 is read-side only, exactly like round 16: no stored row,
+  manifest byte, `bundleHash` or `scienceHash` moved, and the two things that could change the evaluation (a mint-time suppression
+  guard, a seat-identity-free content address) stay calibration-gated -- see the seventeenth-round bullet below. Round 16 confirmed
+  all four Round-15 fixes LIVE by the auditor's own hand, then moved
   BELOW the interface into the bookkeeping: one physical candidate is minted as one record PER TOI-table seat label, a row's
   label can contradict its OWN `crossmatch.knownPlanetName`, and the contradiction was already paid for and frozen into
   immutable chain commitments. We re-measured every figure off production before touching code (103 rows = 91 signals = 90 host
@@ -632,25 +638,30 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 0ea4089b-dd49-4c93-b185-4260fd215158, gitSha c70593e75d1a96ba3a6afb79cb3d401472829e9e
-  (it replaced 281de4e3-40a1-426e-a068-23e5187237db / `bf12a62`) -- re-verified live at this snapshot: `deploy:window`
-  cleared GO (previous pass `run-20261023-060140` finished 06:17:12Z with 120 s+ of idle before the 06:30 claim, over
-  the 120 s budget) before the upload, and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`.
-  Triggers: schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The sixteenth-round disclosure
-  layer is LIVE and behaviourally confirmed against real production rows (all 17 assertions in the post-deploy probe
-  passed): every one of the 103 served findings carries `requestedDesignator` + `labelConflictsWithKnown`, the flag is
-  set on exactly 5 rows (HD 110067 b, HD 25463 c, HR 858 d, HR 858 c, HD 260655 c) of which 3 are accepted -- the three
-  the auditor named; `GET /api/state/summary` now reports `distinctHosts: 90` with `distinctRecords: 103` (was 103 under
-  the host label) and the served `statDefinitions.distinctRecords` runs 418 characters; `?tic=01` still matches 0 and
-  `?tic=0858` matches all 3 HR 858 seat rows, now through the SHARED `hostKeyOf` rather than a TOI-only pattern; and
-  `verify-onchain` on `F-HD-260655-c` returns `labelMatchesKnownPlanet: false` with requested `c` / detected `b` while its
-  on-chain memo `bundleHash` (`ead90579...`) and `ledgerScienceHash` (`d00fe82d...`) read byte-equal to the committed ledger
-  fixture -- the disclosure added no hash input. The same response reports `anchoredScienceDrift: true` for the CURRENT
-  bundle hash: a pre-existing re-derivation state the endpoint has always published honestly (README "bundleHash drifts
-  by design"), NOT introduced here -- no file under `src/bundle/`, `src/solana/`, `src/candidate/dedup.ts` or the mint
-  path (`src/cf/workflow.ts`, `src/seats/seats.ts`) is in the deployed commit. The served `findings-query-ui.js` (10,506 B)
-  and `app.js` (115,710 B, changed this round by a comment only) remain BYTE-IDENTICAL to the committed files after newline
-  normalisation. The v0.2 console stays LIVE:
+- Production: wrangler version 2327eda2-7043-42f3-9485-72fa3bf309ce, gitSha 336840b1bc5463641a1db1fc2c5d74785fe68128
+  (it replaced 0ea4089b-dd49-4c93-b185-4260fd215158 / `c70593e`) -- re-verified live at this snapshot: `deploy:window`
+  cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span
+  overrun, the intermittent defect recorded below), leaving 269 s of idle before the 09:30 claim -- over the 120 s budget
+  -- and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`. Triggers: schedule `*/15 * * * *`,
+  workflow `rig-run`, custom domain spacedatarig.app. The seventeenth-round read-side hardening is LIVE and behaviourally
+  confirmed against real production rows (all 23 assertions in the post-deploy probe passed): every one of the 103 served
+  findings carries the five disclosure fields (`requestedDesignator` + `requestedDesignatorKind` + `detectedDesignator` +
+  `detectedDesignatorKind` + `labelConflictsWithKnown`), and the flag is now set on exactly 7 rows -- the round-16 five
+  (HD 110067 b, HD 25463 c, HR 858 d, HR 858 c, HD 260655 c) PLUS `TOI-6054.02` and `TOI-4443 c`, which the letter-only
+  predicate had dropped and which the candidate-number decode recovered (both `needs-more-data`, neither anchored); the
+  served flag equals BOTH our kernel recompute AND an independent neutral comparator with 0 mismatch on all 103 rows;
+  `requestedDesignatorKind` spans `{candidate-number: 58, planet-letter: 41, none: 4}`; `GET /api/state/summary` still
+  reports `distinctHosts: 90` with `distinctRecords: 103` (the `hostKeyOf` star-component fix is LATENT -- today's catalog
+  carries only A components, so 90 is unchanged and a neutral component-preserving recomputation agrees with 0 cross-star
+  collisions); and `verify-onchain` on `F-HD-260655-c` returns `labelMatchesKnownPlanet: false` with requested `c` /
+  detected `b` while its on-chain memo `bundleHash` and `ledgerScienceHash` (`d00fe82d...`) read byte-equal to the committed
+  ledger fixture (`ledgerBundleMatch: true`) -- the hardening added no hash input. The same response reports
+  `anchoredScienceDrift: true` for the CURRENT bundle hash: a pre-existing re-derivation state the endpoint has always
+  published honestly (README "bundleHash drifts by design"), NOT introduced here -- no file under `src/bundle/`,
+  `src/solana/`, `src/candidate/dedup.ts` or the mint path (`src/cf/workflow.ts`, `src/seats/seats.ts`) is in the deployed
+  commit. The served `app.js` (118,857 B raw / 117,070 B after newline normalisation) is BYTE-IDENTICAL to the committed
+  file and now renders the `labelConflictNote` on a conflicting card (reading the SERVED flag, not re-decoding it in the
+  browser); `findings-query-ui.js` was not touched this round. The v0.2 console stays LIVE:
   `GET /api/findings?verdict=accepted&sort=depth&limit=3` serves `total 103 / matched 18 / hasMore true`,
   `web/candidates.json` serves schema `sdr-candidates/2` with every `discoveryClaim` false, and `GET /api/state/summary`
   answers 200 on the edge.
@@ -660,9 +671,9 @@ authority; they are deliberately not restated here.
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
 - Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,876 bytes against a full
   `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
-  `stats`/`statDefinitions`): surveyPass 476 CLAIMED, distinctHosts 90 host STARS (audit-16 re-based from the old label
+  `stats`/`statDefinitions`): surveyPass 485 CLAIMED, distinctHosts 90 host STARS (audit-16 re-based from the old label
   count, which read 103; the raw-label count is now the separate distinctRecords 103), blindHeld 29 over
-  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 91 (a
+  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 94 (a
   per-window bookkeeping that moves between pulls; re-read it live). Nothing new has been anchored since 2026-10-20 because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
   twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
@@ -672,18 +683,26 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 122 files / 937 tests as this snapshot was taken (the sixteenth round added `tests/signal-identity.test.ts` -- the
+- Tests: 122 files / 940 tests as this snapshot was taken (the seventeenth round added no new FILE but +3 assertions to the
+  two files round-16 introduced: `tests/signal-identity.test.ts` gained a `candidateNumberToLetter` block, a
+  `designatorKindOf` block, the binary-star `hostKeyOf` cases, and a STRUCTURAL wiring test proving BOTH `findingView`s serve
+  the disclosure from ONE kernel call and the board reads the served flag without re-decoding it; and it FLIPPED the two
+  expectations round-16 had frozen on the blind spot -- `labelDesignatorOf("TOI-2016.01")` now asserts `=== "b"` (was
+  `=== null`) and `tests/live-catalog-accounting.test.ts` now asserts `conflicts.length === 7` (was 5), so the gate encodes
+  the decoded truth instead of defending the miss. Round-16 had added `tests/signal-identity.test.ts` -- the
   pure kernel pinned on hand-built edges -- and `tests/live-catalog-accounting.test.ts`, which drives the PRODUCTION
   functions over the captured served bytes and pins 103 rows / 91 signals / 90 hosts / 12 duplicate rows, accepted 18 ->
-  15/15, the 5 label conflicts with the 3 accepted named, ledger 20 -> 17, the trio's three distinct science hashes, and
-  `computeStats` reading 90/103; the round-15 echo "parity" source-regex test was renamed a STRUCTURAL wiring check; the
+  15/15, the label conflicts (now 7, of which 3 accepted) by name, ledger 20 -> 17, the trio's three distinct science hashes,
+  and `computeStats` reading 90/103; the round-15 echo "parity" source-regex test was renamed a STRUCTURAL wiring check; the
   fifteenth round had earlier grown `tests/finding-query.test.ts`
   with the T1 cadence + zero-pad behaviour in BOTH directions, the T2 `dir`-active sort, the T3 `clamped` echo, the T4 DESC
-  default and an edge+Node echo-parity assertion; `npm test` 937 pass / 0 fail on this full-history Windows checkout).
-  CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads 910 pass /
-  8 skip / 3 env-fail -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`
+  default and an edge+Node echo-parity assertion; `npm test` 940 pass / 0 fail on this full-history Windows checkout).
+  CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads 929 pass /
+  8 skip / 3 env-fail (the auditor measured 926 / 8 / 3 on the round-16 tarball; this round's +3 are pure/offline so they
+  pass there too) -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`
   ancestry checks needing full history -- so a bare "N/N" misleads; CI checks out with full history + runs the FITS prefetch
-  and is green on `bf12a62`, as it runs `npm run test:coverage` whose 90/78 floors it clears; trust the run over any number
+  and is green on `336840b`, as it runs `npm run test:coverage` whose 90/78 floors it clears (this snapshot: all-files
+  96.09 / 83.43 / 91.49, `signal-identity.ts` 100 / 94.87 / 100); trust the run over any number
   written in a document, including this one).
 
 - Sixteenth-round audit (2026-10-23) moved from the interface to the RECORD/ACCOUNTING layer, and its numbers were
@@ -711,6 +730,41 @@ authority; they are deliberately not restated here.
   note and a re-anchor policy agreed BEFORE hashing; verify-onchain already reports both hash lineages honestly beside
   the new `labelMatchesKnownPlanet`. The audit's own ranking says the evaluation only changes with FEWER duplicate
   rows minted, which is exactly why these two sit behind a calibration gate rather than behind a flag day.
+
+- Seventeenth-round audit (2026-10-23) accepted the sixteenth round's bookkeeping as fixed (host count 90 with both counts
+  published, `.01` terminology corrected, our own numbers committed back as the regression baseline rather than argued) and
+  then found that the newly written decision kernel could only SEE 27.2% of the catalog: `labelDesignatorOf` /
+  `knownDesignatorOf` returned `null` on a `.NN` candidate number, so `labelConflict` needed BOTH sides to be a trailing planet
+  letter -- reachable on 28/103 rows, `requestedDesignator` null on 62, and 5 conflicts flagged where a decode-aware comparator
+  (`.01` -> b, `.02` -> c, star component kept) flags 7. The two dropped rows (`TOI-6054.02`'s label vs its own `.01`
+  crossmatch; `TOI-4443 c`'s label vs its own `.01` crossmatch) are both `needs-more-data` and NEITHER is anchored, so this was
+  a disclosure-coverage and GATE-DIRECTION defect, not dirty data hidden on the chain -- and the gate had FROZEN the blind spot
+  as the passing answer (`signal-identity.test.ts` asserted `labelDesignatorOf("TOI-2016.01") === null`,
+  `live-catalog-accounting.test.ts` asserted `conflicts.length === 5`), so the commit that corrected the predicate would have
+  reddened CI. This is the lesson recorded here: a fix that also hardens the WRONG expectation into a gate is worse than no fix,
+  because it turns the next correction into a regression. WHAT SHIPPED is read-side only, none of it touching a hash input: a
+  pure `candidateNumberToLetter()` (`.01` -> b ... `.25` -> z, `>= 26` -> null) wired into both designator readers with BOTH
+  frozen expectations FLIPPED to the decoded truth (`=== "b"`, `=== 7`); a `designatorKindOf()` publishing
+  `requestedDesignatorKind` / `detectedDesignatorKind` (`planet-letter` / `candidate-number` / `none`) so a null designator is
+  no longer ambiguous (Legacy 4); `hostKeyOf` fixed to strip a trailing single letter ONLY when a planet designator still
+  follows it, so a binary star's component letter survives (`HD 202772 A b` -> `hd 202772 a`) -- LATENT, since today's catalog
+  carries only A components and live `distinctHosts` stays exactly 90 (a neutral component-preserving recomputation agrees, 0
+  cross-star collisions); the conflict rendered on the board card (`web/app.js` `labelConflictNote`, reading the SERVED flag,
+  never re-decoding in the browser) so a human sees what the API returns (Legacy 1); an offline STRUCTURAL wiring test proving
+  served == kernel BY CONSTRUCTION, chosen over a risky fixture re-capture that would drift the 103/91/90 hard counts against a
+  production re-minting every 15 min (Legacy 2); and a CI `node --check web/*.js` syntax gate, since `web/` sat outside `lint`
+  and both tsconfigs (Legacy 3b). TWO things were deliberately NOT changed and are stated plainly: `freshness-regen.yml`'s
+  unconditional `--allow-stale` is INTENTIONAL (one offline upstream must not block publishing the other three reports --
+  Legacy 3a), and a daily-capture HARD-FAIL on any fixture/production `(targetId, verdict, ppm)` divergence was DEFERRED because
+  production legally re-mints every 15 min, so a hard count-diff gate would cry wolf on growth and scheduled workflows here are
+  fragile (the X-post lesson -- Legacy 5). No stored row, manifest byte, `bundleHash` or `scienceHash` moved; no money path was
+  touched; `ledgerAnchored` stays exactly 20 and blind-toi accepted stays 0. The SAME two calibration-gated research decisions
+  from round-16 remain the only things that can move the evaluation, and neither was touched this round: (1) the mint-time
+  duplicate-suppression guard (behind a measured false-merge rate) and (2) the seat-identity-free `scienceProjection`
+  re-derivation (behind a re-anchor policy agreed BEFORE hashing). Deployed at version `2327eda2` (`gitSha 336840b`) in an idle
+  GO window and re-measured live: all 23 post-deploy assertions passed, including 7 flagged rows (served == kernel == an
+  independent neutral comparator, 0 mismatch on all 103 rows) and `verify-onchain` on `F-HD-260655-c` still
+  `labelMatchesKnownPlanet: false` with its `ledgerScienceHash` byte-equal to the committed fixture.
 
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover

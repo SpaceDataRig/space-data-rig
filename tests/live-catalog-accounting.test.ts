@@ -5,8 +5,9 @@
 // RigStore.computeStats) over the FULL catalog and ledger captured from spacedatarig.app by
 // scripts/capture-served-catalog.ts, and pins the exact population the auditor recomputed:
 //   103 rows -> 91 recovered signals -> 90 host stars; 12 duplicate rows; accepted 18 rows -> 15 signals / 15 stars;
-//   5 label-vs-own-crossmatch contradictions of which 3 are accepted; ledger 20 commitments -> 17 signals, with the
-//   HR 858 trio carrying THREE different scienceHashes (the duplication is baked into the content address today).
+//   7 label-vs-own-crossmatch contradictions of which 3 are accepted (audit-17: the predicate now decodes TOI candidate
+//   numbers, so TOI-6054.02 and TOI-4443 c join the 5 the letter-only round-16 rule could see); ledger 20 commitments
+//   -> 17 signals, with the HR 858 trio carrying THREE different scienceHashes (duplication baked into the address).
 // Re-run the capture with `npm run fixtures:capture-catalog`; if the live rig mints new rows, update the expected
 // counts HERE -- a silent mismatch failing CI is the point, not a surprise for the next auditor.
 import { test } from "node:test";
@@ -60,15 +61,37 @@ test("accepted findings: 18 rows fold to 15 signals over 15 distinct stars", () 
 
 test("label-vs-own-crossmatch contradictions exist in the served bytes and labelConflict names exactly them (D1 disclosure predicate)", () => {
   const conflicts = rows.filter((f) => labelConflict(f.targetId, f.crossmatch).conflict);
-  assert.equal(conflicts.length, 5);
+  // audit-17 defect 1: was 5 under the letter-only rule; decoding TOI candidate numbers (.01 -> b) catches two more
+  // live rows whose own crossmatch disagrees with their label. Both are needs-more-data and neither is anchored, so
+  // the widened predicate touches NO verdict and NO chain commitment -- it only discloses more of what is already there.
+  assert.equal(conflicts.length, 7);
   assert.equal(conflicts.filter((f) => f.verdict === "accepted").length, 3, "three contradicting labels are ACCEPTED rows");
   // the accepted trio the auditor quoted verbatim from the live catalog:
   const named = conflicts.filter((f) => f.verdict === "accepted").map((f) => `${f.targetId}<-${f.crossmatch?.knownPlanetName}`).sort();
   assert.deepEqual(named, ["HD 260655 c<-HD 260655 b", "HR 858 c<-HR 858 b", "HR 858 d<-HR 858 b"]);
+  // pin the FULL seven so a future narrowing that drops one is caught, not silently re-blessed:
+  const all = conflicts.map((f) => `${f.targetId}<-${f.crossmatch?.knownPlanetName}`).sort();
+  assert.deepEqual(all, [
+    "HD 110067 b<-HD 110067 c",
+    "HD 25463 c<-HD 25463 b",
+    "HD 260655 c<-HD 260655 b",
+    "HR 858 c<-HR 858 b",
+    "HR 858 d<-HR 858 b",
+    "TOI-4443 c<-TOI-4443.01",
+    "TOI-6054.02<-TOI-6054.01",
+  ]);
+  // the two rows the round-16 predicate missed, and the safety pin that they are off the money path:
+  const anchoredIds = new Set(ledgerFx.ledger.map((r) => r.findingId));
+  const newlyCaught = conflicts.filter((f) => f.targetId === "TOI-6054.02" || f.targetId === "TOI-4443 c");
+  assert.equal(newlyCaught.length, 2, "decoding candidate numbers catches exactly TOI-6054.02 and TOI-4443 c");
+  for (const f of newlyCaught) {
+    assert.equal(f.verdict, "needs-more-data", "a newly-caught conflict is needs-more-data, never accepted");
+    assert.ok(!anchoredIds.has(f.id), `${f.id} is not one of the 20 chain commitments -> the wider predicate moved no anchor`);
+  }
   for (const f of conflicts) {
     const lc = labelConflict(f.targetId, f.crossmatch);
     assert.notEqual(lc.requested, lc.detected);
-    assert.equal(hostKeyOf(f.targetId), hostKeyOf(f.crossmatch?.knownPlanetName ?? ""), "a conflict is same-star different-letter, by construction");
+    assert.equal(hostKeyOf(f.targetId), hostKeyOf(f.crossmatch?.knownPlanetName ?? ""), "a conflict is same-star different-designator, by construction");
   }
 });
 

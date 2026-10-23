@@ -32,6 +32,14 @@ jobs:
       - name: Lint (blocking on errors)
         run: npm run lint
 
+      # audit-17 Legacy 3: web/*.js is browser ESM that sits OUTSIDE both tsc targets (the Node target includes
+      # src+scripts, the worker target src/cf) and outside eslint (which runs src tests scripts). A parse error in the
+      # board code would therefore ship with nothing catching it, so gate it with node --check -- the same ESM parser
+      # the module graph relies on. Style is deliberately NOT linted here (legacy browser code); this catches only
+      # syntax failures, so it cannot cry wolf on formatting.
+      - name: Web syntax gate (browser ESM not covered by tsc or eslint)
+        run: for f in web/*.js; do node --check "$f" || exit 1; done
+
       # audit-6 P2: the real-MAST-FITS gates (tests/mast*, six tests) skip when out/probe-*.fits are absent,
       # and out/ is gitignored, so on a fresh checkout they never ran. Prefetch the same public products
       # through the production fetch code so those gates execute here; a hard download failure exits 1.

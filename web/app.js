@@ -451,12 +451,28 @@ function evidenceHtml(m) {
 // boundary matched ZERO live cards (all four legacy cards were created ON the policy date) and a string-match
 // test could not see it. Only fires for a pre-policy card whose stored text still says "confirm".
 
+// audit-17 Legacy 1: the label-vs-own-crossmatch contradiction is served machine-readably on every finding
+// (labelConflictsWithKnown + requested/detected designator + kinds, all computed by the shared kernel
+// src/core/signal-identity.ts, riding /api/state through findingView). Print it on the card so a HUMAN reader sees the
+// same fact the API exposes: a card titled "HR 858 d" whose own NASA cross-match says "HR 858 b" must not read as a
+// clean "RECOVERED". This renders served fields only -- the decode/conflict rule is NOT reimplemented in the browser,
+// so it cannot fork from the kernel.
+function labelConflictNote(f) {
+  if (!f.labelConflictsWithKnown) return "";
+  const req = String(f.requestedDesignator || "?").toUpperCase();
+  const det = String(f.detectedDesignator || "?").toUpperCase();
+  const reqKind = f.requestedDesignatorKind === "candidate-number" ? " (decoded from its TOI candidate number)" : "";
+  const known = f.crossmatch && f.crossmatch.knownPlanetName ? ` "${f.crossmatch.knownPlanetName}"` : " its cross-match";
+  return `Label claims planet ${req}${reqKind}, but this row's own NASA cross-match matches${known} (planet ${det}) -- the seat label disagrees with its own evidence.`;
+}
+
 function cardHtml(f) {
   const badge = BADGE[f.verdict] || BADGE.rejected;
   const pill = ORIGIN_PILL[originOf(f)];
   const headline = f.narration?.headline || f.verdictReason || "Finding";
   const relabel = headlineRelabelNote(f);
   const degen = degeneracyCaveat(f);
+  const conflict = labelConflictNote(f);
   const explainer = f.narration?.explainer || "";
   const score = f.score != null ? `<span class="score">${f.score}/100</span>` : "";
   const chain = f.solanaTx
@@ -467,6 +483,7 @@ function cardHtml(f) {
     <div class="headline">${esc(headline)}</div>
     ${relabel ? `<div class="relabel-note">${esc(relabel)}</div>` : ""}
     ${degen ? `<div class="relabel-note">${esc(degen)}</div>` : ""}
+    ${conflict ? `<div class="relabel-note label-conflict-note">${esc(conflict)}</div>` : ""}
     <div class="metrics">${metricsHtml(f)}</div>
     ${explainer ? `<div class="explainer-text">${esc(explainer)}</div>` : ""}
     <div class="prov"><span><b>bundle</b> ${esc(shortHash(f.bundleHash))}</span>${chain}</div>

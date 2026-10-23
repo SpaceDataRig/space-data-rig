@@ -132,6 +132,13 @@ function findingView(f: Finding) {
     ...f,
     depthPpm: Math.round(f.candidate.depthFrac * 1e6),
     requestedDesignator: lc.requested,
+    // audit-17 Legacy 4: null used to mean both "no claim" and "an undecoded candidate number"; the kind says which,
+    // so a reader is not left guessing over the 62 served rows that carry no trailing planet letter.
+    requestedDesignatorKind: lc.requestedKind,
+    // audit-17 Legacy 1: the detected side is served too, so the board card can print "label claims X, evidence
+    // matches Y" WITHOUT re-decoding the designator in the browser (the rule stays single-sourced in the kernel).
+    detectedDesignator: lc.detected,
+    detectedDesignatorKind: lc.detectedKind,
     labelConflictsWithKnown: lc.conflict,
   };
 }
@@ -327,7 +334,7 @@ app.get("/api/bundles/:id/verify-onchain", async (c) => {
     // from manifest bytes, added to no hash -- the contradiction becomes filterable at the exact place an external
     // verifier already comes to check provenance.
     const lc = labelConflict(manifest.targetId, manifest.crossmatch as { knownPlanetName?: string } | undefined);
-    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, detectedDesignator: lc.detected, ...cmp });
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, requestedDesignatorKind: lc.requestedKind, detectedDesignator: lc.detected, detectedDesignatorKind: lc.detectedKind, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

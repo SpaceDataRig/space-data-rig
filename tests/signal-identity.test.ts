@@ -4,7 +4,9 @@
 // silently covers part of the set).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hostKeyOf, labelDesignatorOf, knownDesignatorOf, signalKeyOf, labelConflict, groupBySignal } from "../src/core/signal-identity.ts";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { hostKeyOf, labelDesignatorOf, knownDesignatorOf, signalKeyOf, labelConflict, groupBySignal, candidateNumberToLetter, designatorKindOf } from "../src/core/signal-identity.ts";
 
 test("hostKeyOf reduces every naming scheme to the STAR, stripping candidate numbers AND designators", () => {
   assert.equal(hostKeyOf("HR 858 d"), "hr 858");
@@ -15,22 +17,60 @@ test("hostKeyOf reduces every naming scheme to the STAR, stripping candidate num
   assert.equal(hostKeyOf("HAT-P-11"), "hat-p-11", "hyphenated names keep their digits -- the 11 is part of the star name here");
   assert.equal(hostKeyOf("tic 2228"), "tic 2228");
   assert.equal(hostKeyOf("HD 260655 b"), "hd 260655");
+  // audit-17 defect 2: a stellar COMPONENT letter is part of the star's identity, not a planet designator, so it is
+  // KEPT -- the two components of a binary are different stars and must never share a host key.
+  assert.equal(hostKeyOf("HD 202772 A b"), "hd 202772 a", "only the planet letter is stripped; the component survives");
+  assert.equal(hostKeyOf("HD 202772 B b"), "hd 202772 b");
+  assert.notEqual(hostKeyOf("HD 202772 A b"), hostKeyOf("HD 202772 B b"), "binary components A and B are distinct hosts");
+  assert.equal(hostKeyOf("DS Tuc A b"), "ds tuc a");
   // the D1 pairs reduce to ONE key:
   assert.equal(hostKeyOf("TOI-4443.01"), hostKeyOf("TOI-4443 c"), "the two label FORMS of one seat collapse to one host");
 });
 
 test("designator extraction reads the requested letter from a label and the detected letter from a crossmatch", () => {
   assert.equal(labelDesignatorOf("HR 858 d"), "d");
-  assert.equal(labelDesignatorOf("TOI-2016.01"), null, "a candidate NUMBER is not a planet letter -- no claim to compare");
+  // audit-17 defect 1: a candidate NUMBER is a decodable claim, not "no claim". Refusing to decode it is what let
+  // TOI-6054.02 (whose own crossmatch says TOI-6054.01) sail through as labelConflictsWithKnown:false.
+  assert.equal(labelDesignatorOf("TOI-2016.01"), "b", "candidate .01 decodes to planet b by the ExoFOP convention");
+  assert.equal(labelDesignatorOf("TOI-6054.02"), "c", "candidate .02 decodes to planet c");
   assert.equal(knownDesignatorOf("HD 260655 b"), "b");
+  assert.equal(knownDesignatorOf("TOI-4443.01"), "b", "the detected side decodes candidate numbers on the same rule");
 });
 
-test("labelConflict flags exactly the D1 self-contradiction: same star, different planet letter", () => {
+test("candidateNumberToLetter maps the ExoFOP index and refuses to invent a letter past z", () => {
+  assert.equal(candidateNumberToLetter("01"), "b");
+  assert.equal(candidateNumberToLetter("02"), "c");
+  assert.equal(candidateNumberToLetter("25"), "z");
+  assert.equal(candidateNumberToLetter("26"), null, "no single-letter planet designator exists beyond z -> undecodable, not a wrong letter");
+  assert.equal(candidateNumberToLetter("00"), null, "candidate indices are 1-based");
+});
+
+test("designatorKindOf separates a literal letter, a decoded candidate number, and no claim at all (Legacy 4)", () => {
+  assert.equal(designatorKindOf("HR 858 d"), "planet-letter");
+  assert.equal(designatorKindOf("TOI-2016.01"), "candidate-number");
+  assert.equal(designatorKindOf("TIC 2228"), "none");
+  // the ambiguity the audit named: a null requestedDesignator now says WHY via the kind.
+  assert.equal(labelDesignatorOf("TIC 2228"), null);
+  assert.equal(designatorKindOf("TIC 2228"), "none", "null + kind 'none' = genuinely no claim, distinct from a decoded number");
+});
+
+test("labelConflict flags exactly the D1 self-contradiction: same star, different planet designator", () => {
   const conflict = labelConflict("HR 858 d", { matchedKnownPlanet: true, knownPlanetName: "HR 858 b" });
   assert.equal(conflict.conflict, true, "a card titled d whose own crossmatch says b is a contradiction");
   assert.deepEqual([conflict.requested, conflict.detected], ["d", "b"]);
+  assert.deepEqual([conflict.requestedKind, conflict.detectedKind], ["planet-letter", "planet-letter"]);
   assert.equal(labelConflict("HR 858 b", { matchedKnownPlanet: true, knownPlanetName: "HR 858 b" }).conflict, false, "agreement is not a conflict");
-  assert.equal(labelConflict("TOI-2016.01", { matchedKnownPlanet: true, knownPlanetName: "TOI-2016 b" }).conflict, false, "no letter on the label -> no claimed disagreement");
+  // audit-17 defect 1: a candidate NUMBER now decodes, so these two live rows are caught instead of sailing through.
+  const c1 = labelConflict("TOI-6054.02", { matchedKnownPlanet: true, knownPlanetName: "TOI-6054.01" });
+  assert.equal(c1.conflict, true, "label claims candidate .02 (=c) but its own crossmatch says .01 (=b)");
+  assert.deepEqual([c1.requested, c1.detected, c1.requestedKind, c1.detectedKind], ["c", "b", "candidate-number", "candidate-number"]);
+  const c2 = labelConflict("TOI-4443 c", { matchedKnownPlanet: true, knownPlanetName: "TOI-4443.01" });
+  assert.equal(c2.conflict, true, "label claims planet c but its own crossmatch says candidate .01 (=b)");
+  assert.deepEqual([c2.requested, c2.detected, c2.requestedKind, c2.detectedKind], ["c", "b", "planet-letter", "candidate-number"]);
+  assert.equal(labelConflict("TOI-2016.01", { matchedKnownPlanet: true, knownPlanetName: "TOI-2016 b" }).conflict, false, ".01 decodes to b, which AGREES with the crossmatched b -> no conflict");
+  // audit-17 defect 2: two different stars of a binary are NOT a self-contradiction, even with different letters.
+  assert.equal(labelConflict("HD 202772 A c", { matchedKnownPlanet: true, knownPlanetName: "HD 202772 B b" }).conflict, false, "component A and component B are different stars -> not same-host");
+  assert.equal(labelConflict("DS Tuc A b", { matchedKnownPlanet: true, knownPlanetName: "DS Tuc B c" }).conflict, false);
   assert.equal(labelConflict("WASP-12 b", { matchedKnownPlanet: true, knownPlanetName: "KEPLER-12 b" }).conflict, false, "different stars: crossmatch noise, not a same-host label conflict");
   assert.equal(labelConflict("HR 858 d", undefined).conflict, false, "no crossmatch at all -> nothing to contradict");
 });
@@ -54,3 +94,31 @@ test("groupBySignal collapses the duplicate-label rows and leaves unique signals
   assert.equal(groups.length, 2, "three seat labels over one recovered signal collapse to one group");
   assert.equal(groups.find((g) => g.length === 3)?.[0].targetId, "HR 858 b", "the first-minted label leads the group");
 });
+
+// audit-17 Legacy 2 -- the committed fixture (tests/fixtures/live-catalog.json) was captured BEFORE the disclosure
+// fields existed, so it cannot compare the kernel's verdict to the value a handler actually SERVES; without a guard,
+// "the projection drifted from the kernel" would pass CI silently -- the exact blind spot the seventeenth audit named.
+// Both handlers serve `labelConflictsWithKnown: lc.conflict` from a SINGLE labelConflict(f.targetId, f.crossmatch)
+// call, so served == kernel BY CONSTRUCTION; this asserts that construction holds on BOTH runtimes (a handler that
+// dropped a field, or re-decoded a designator itself, would fork the rule and fail here). The deployed bytes are then
+// re-checked against the same kernel live (HANDOFF verify step), so this offline gate and the live probe bracket the
+// served value from both sides -- no fixture re-capture needed to catch a wiring/served divergence.
+test("audit-17 wiring (structural): BOTH findingViews serve all five disclosure fields from ONE kernel call, and the board renders the served flag without re-decoding", () => {
+  const worker = readFileSync(resolve(process.cwd(), "src", "cf", "worker.ts"), "utf8");
+  const node = readFileSync(resolve(process.cwd(), "src", "api", "server.ts"), "utf8");
+  for (const [name, src] of [["worker.ts", worker], ["server.ts", node]] as const) {
+    assert.match(src, /labelConflict\(f\.targetId, f\.crossmatch\)/, `${name} derives the disclosure from the shared kernel, once`);
+    assert.match(src, /requestedDesignator: lc\.requested/, `${name} serves requestedDesignator from the kernel result`);
+    assert.match(src, /requestedDesignatorKind: lc\.requestedKind/, `${name} serves requestedDesignatorKind (Legacy 4 disambiguation)`);
+    assert.match(src, /detectedDesignator: lc\.detected/, `${name} serves detectedDesignator`);
+    assert.match(src, /detectedDesignatorKind: lc\.detectedKind/, `${name} serves detectedDesignatorKind`);
+    assert.match(src, /labelConflictsWithKnown: lc\.conflict/, `${name} serves the flag AS lc.conflict -- served == kernel by construction`);
+  }
+  // Legacy 1 wiring: the board RENDERS the served flag and must NOT reimplement the decode/conflict rule in the browser,
+  // so the card can never fork from the API it mirrors.
+  const app = readFileSync(resolve(process.cwd(), "web", "app.js"), "utf8");
+  assert.match(app, /if \(!f\.labelConflictsWithKnown\) return "";/, "the card gates on the SERVED conflict flag");
+  assert.match(app, /label-conflict-note/, "the card prints the conflict where a human reader sees it");
+  assert.doesNotMatch(app, /candidateNumberToLetter/, "the browser must NOT reimplement the candidate-number decode; it reads the served designator");
+});
+

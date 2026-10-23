@@ -77,8 +77,11 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
 - **Records and commitments are MINTED PER SEAT LABEL, not per physical candidate.** The workflow names one
   finding per TOI-table row (`metaFor` reads `pl_name`, `src/cf/workflow.ts`), so a host with two candidate rows
   can hold two records of one recovered signal, and the label can disagree with the row's own crossmatch
-  ("HR 858 d" whose body says `knownPlanetName: "HR 858 b"`). Measured on the live catalog at publication of this
-  text: **103 published rows = 91 recovered signals over 90 host stars** (12 pure duplicate rows; `accepted`
+  ("HR 858 d" whose body says `knownPlanetName: "HR 858 b"`). Measured on the live catalog snapshot committed at
+  `tests/fixtures/live-catalog.json` (captured 2026-10-23T05:42Z; `tests/live-catalog-accounting.test.ts` pins every
+  number below to that snapshot, and `npm run fixtures:capture-catalog` re-measures it against live -- the counts are
+  as-of that capture, not a live promise): **103 published rows = 91 recovered signals over 90 host stars** (12 pure
+  duplicate rows; `accepted`
   18 rows = 15 signals / 15 stars), and the chain's **20 commitments cover only 17 candidates** -- duplicate
   seats were paid for. Duplicate seats of one candidate also carry *different* `scienceHash`es today, because
   per-seat ephemeris/confidence fields ride in the projection; collapsing them is a re-derivation of anchored
@@ -86,9 +89,19 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
   silently. The correct merge exists (`src/candidate/dedup.ts::collapseCoincident`, ephemeris-linked, flags a
   cross-host shared ephemeris as one systematic rather than N planets) but is **offline-only** -- zero production
   callers, used by research scripts p19/p22. So: the board does not merge, and the chain pays per label. What
-  this pass DID change is disclosure: the served views now carry the contradiction as machine-readable data
-  (`requestedDesignator` / `labelConflictsWithKnown` on every finding, `labelMatchesKnownPlanet` on
-  `verify-onchain` -- response projections only, no stored row, manifest byte or hash touched), the accounting
+  these passes DID change is disclosure: the served views carry the contradiction as machine-readable data
+  (`requestedDesignator` / `requestedDesignatorKind` / `detectedDesignator` / `labelConflictsWithKnown` on every
+  finding, `labelMatchesKnownPlanet` on `verify-onchain` -- response projections only, no stored row, manifest byte or
+  hash touched), and the board card prints it in plain words ("label claims planet D, its own NASA cross-match matches
+  HR 858 b") so a human reader sees the same fact the API exposes. audit-17 widened the predicate two ways, both
+  read-side and neither touching a verdict or a hash: a trailing TOI candidate number is now DECODED by the ExoFOP
+  convention (`.01` -> `b`) instead of reading as "no claim", which lifts the contradiction count on the served catalog
+  from 5 to **7** (the two added rows, TOI-6054.02 and TOI-4443 c, are both `needs-more-data` and neither is one of the
+  20 anchored commitments); and `hostKeyOf` now keeps a stellar COMPONENT letter ("HD 202772 A b" -> `hd 202772 a`), so
+  the two stars of a binary can never be falsely merged into one host or flagged as self-contradictory (distinctHosts is
+  unchanged at 90 on the live catalog, which carries no B-component row yet -- the fix closes a latent trap, not a live
+  miscount). `requestedDesignatorKind` disambiguates a null `requestedDesignator` ("no claim at all" versus "a candidate
+  number"). The accounting
   is gated on captured production bytes (`tests/live-catalog-accounting.test.ts`), and the shared predicates
   live in `src/core/signal-identity.ts`.
 - **Local verify and chain verify are two endpoints, kept apart.** `/api/bundles/:id/verify` recomputes the

@@ -77,7 +77,7 @@ function findingView(f: Finding) {
   // audit-16 D1 (edge mirror of the Node server): machine-readable label-conflict disclosure on the read
   // projection ONLY -- the stored row, the bundle manifest and both hashes are untouched.
   const lc = labelConflict(f.targetId, f.crossmatch);
-  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6), requestedDesignator: lc.requested, labelConflictsWithKnown: lc.conflict };
+  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6), requestedDesignator: lc.requested, requestedDesignatorKind: lc.requestedKind, detectedDesignator: lc.detected, detectedDesignatorKind: lc.detectedKind, labelConflictsWithKnown: lc.conflict };
 }
 
 // Honest descriptor of the discussion engine, built from env bindings only.
@@ -393,7 +393,7 @@ app.get("/api/bundles/:id/verify-onchain", async (c) => {
     // manifest bytes, added to NO hash. The contradiction an external verifier would otherwise have to spot by eye
     // in the manifest becomes a first-class field on the provenance endpoint they already trust.
     const lc = labelConflict(manifest.targetId, manifest.crossmatch as { knownPlanetName?: string } | undefined);
-    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, detectedDesignator: lc.detected, ...cmp });
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, requestedDesignatorKind: lc.requestedKind, detectedDesignator: lc.detected, detectedDesignatorKind: lc.detectedKind, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

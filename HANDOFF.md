@@ -620,34 +620,37 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is bf12a62 -- the fifteenth-round hardening of the v0.2 query surface,
-  stacked on the fourteenth-round interface hardening `8dd1748`, the thirteenth-round console hardening `bb16fd7`, and
-  the console slice that first shipped coherent at `d6825a8`. Round 15 confirmed five of Round 14's six fixes LIVE on
-  production and saw the auditor WITHDRAW its own N5 latency claim, then caught that our OWN round-14 `tic` fix had
-  opened a larger hole: real target ids are `TOI-<host>.<cadence>`, so splitting `/\d+/g` treated the cadence suffix
-  `.01` as a legal digit run -- `?tic=01` matched 53/103 and zero-padded `?tic=0858` matched 0. A narrow
-  `identifierRuns()` now strips the `<toi-number>.<cadence>` suffix before extracting runs (hyphen/word ids like
-  `HAT-P-11` untouched) and a purely numeric tic compares NUMERICALLY so leading zeros collapse. Three other
-  interface-honesty gaps closed: `dir` alone was valid-but-inert (`?dir=asc` fell to the inactive branch and dumped the
-  whole unsorted catalog with `ignored:[]` -- the exact thing N1 exists to end) and is now an active sort criterion; a
-  CLAMPED paging value (`limit=0` -> 1) is echoed honestly by a new pure `clampedFindingParams()` (clamp != drop); and a
-  dead ternary (`sortKey === "recent" ? "desc" : "desc"`) collapsed to a real default. All four are pinned by behaviour
-  tests INCLUDING both directions, the half the round-14 fixture never exercised. Nothing on the verdict gate, bundle
-  hash or anchor semantics moved. This line is about the revision measured below, not a standing claim about the tip --
+- Git: the revision this snapshot describes is c70593e -- the sixteenth-round RECORD/ACCOUNTING disclosure layer (signal-identity
+  kernel, label-conflict fields, honest host counting), stacked on the fifteenth-round query hardening `bf12a62`, the
+  fourteenth-round interface hardening `8dd1748`, the thirteenth-round console hardening `bb16fd7`, and the console slice that
+  first shipped coherent at `d6825a8`. Round 16 confirmed all four Round-15 fixes LIVE by the auditor's own hand, then moved
+  BELOW the interface into the bookkeeping: one physical candidate is minted as one record PER TOI-table seat label, a row's
+  label can contradict its OWN `crossmatch.knownPlanetName`, and the contradiction was already paid for and frozen into
+  immutable chain commitments. We re-measured every figure off production before touching code (103 rows = 91 signals = 90 host
+  stars, 12 duplicate rows; accepted 18 -> 15/15; 5 label conflicts of which 3 accepted; ledger 20 -> 17; the HR 858 trio's
+  three distinct `scienceHash`es). What SHIPPED is disclosure + counting only (response projections + read-path); the mint-time
+  suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
+  sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 281de4e3-40a1-426e-a068-23e5187237db, gitSha bf12a6218ea916671d9eabe87cb6414c909b29d8
-  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass `run-20261023-041518` finished
-  04:21:39Z with 316 s of idle before the 04:30 claim, over the 120 s budget) before the upload, and `GET /health`
-  returns exactly that sha and `codeVersion space-data-rig@0.2.0`. Triggers: schedule `*/15 * * * *`, workflow `rig-run`,
-  custom domain spacedatarig.app. The fifteenth-round fixes are LIVE and behaviourally confirmed against real production
-  data: on the real row `TOI-1684.01`, cache-busted `GET /api/findings?tic=01` now returns 0 (was 53/103 -- the cadence
-  suffix is no longer an identifier), `?tic=1684` returns it, and `?tic=01684` returns it too (numeric zero-padding);
-  `?dir=asc` ALONE is now active -- sorted oldest->newest, paged at the default limit 100 with `hasMore` (was an unsorted
-  103-row dump); `?limit=0` returns one row with `clamped:["limit"]` and `?limit=99999` applies 500 with `clamped:["limit"]`
-  while `?limit=24` clamps nothing; N1 still holds (`verdict=notavalue` -> `ignored:["verdict"]`, `clamped:[]`). N5 was
-  WITHDRAWN by the auditor -- `getState()` does strictly more than the paginated read on the same DO stub, so no query
-  pushdown was made. The served `findings-query-ui.js` (10,506 B) and `app.js` (115,608 B) remain BYTE-IDENTICAL to the
-  committed files (web/ was untouched this round). The v0.2 console stays LIVE:
+- Production: wrangler version 0ea4089b-dd49-4c93-b185-4260fd215158, gitSha c70593e75d1a96ba3a6afb79cb3d401472829e9e
+  (it replaced 281de4e3-40a1-426e-a068-23e5187237db / `bf12a62`) -- re-verified live at this snapshot: `deploy:window`
+  cleared GO (previous pass `run-20261023-060140` finished 06:17:12Z with 120 s+ of idle before the 06:30 claim, over
+  the 120 s budget) before the upload, and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`.
+  Triggers: schedule `*/15 * * * *`, workflow `rig-run`, custom domain spacedatarig.app. The sixteenth-round disclosure
+  layer is LIVE and behaviourally confirmed against real production rows (all 17 assertions in the post-deploy probe
+  passed): every one of the 103 served findings carries `requestedDesignator` + `labelConflictsWithKnown`, the flag is
+  set on exactly 5 rows (HD 110067 b, HD 25463 c, HR 858 d, HR 858 c, HD 260655 c) of which 3 are accepted -- the three
+  the auditor named; `GET /api/state/summary` now reports `distinctHosts: 90` with `distinctRecords: 103` (was 103 under
+  the host label) and the served `statDefinitions.distinctRecords` runs 418 characters; `?tic=01` still matches 0 and
+  `?tic=0858` matches all 3 HR 858 seat rows, now through the SHARED `hostKeyOf` rather than a TOI-only pattern; and
+  `verify-onchain` on `F-HD-260655-c` returns `labelMatchesKnownPlanet: false` with requested `c` / detected `b` while its
+  on-chain memo `bundleHash` (`ead90579...`) and `ledgerScienceHash` (`d00fe82d...`) read byte-equal to the committed ledger
+  fixture -- the disclosure added no hash input. The same response reports `anchoredScienceDrift: true` for the CURRENT
+  bundle hash: a pre-existing re-derivation state the endpoint has always published honestly (README "bundleHash drifts
+  by design"), NOT introduced here -- no file under `src/bundle/`, `src/solana/`, `src/candidate/dedup.ts` or the mint
+  path (`src/cf/workflow.ts`, `src/seats/seats.ts`) is in the deployed commit. The served `findings-query-ui.js` (10,506 B)
+  and `app.js` (115,710 B, changed this round by a comment only) remain BYTE-IDENTICAL to the committed files after newline
+  normalisation. The v0.2 console stays LIVE:
   `GET /api/findings?verdict=accepted&sort=depth&limit=3` serves `total 103 / matched 18 / hasMore true`,
   `web/candidates.json` serves schema `sdr-candidates/2` with every `discoveryClaim` false, and `GET /api/state/summary`
   answers 200 on the edge.
@@ -657,8 +660,9 @@ authority; they are deliberately not restated here.
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
 - Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,876 bytes against a full
   `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
-  `stats`/`statDefinitions`): surveyPass 468 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over
-  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 93 (a
+  `stats`/`statDefinitions`): surveyPass 476 CLAIMED, distinctHosts 90 host STARS (audit-16 re-based from the old label
+  count, which read 103; the raw-label count is now the separate distinctRecords 103), blindHeld 29 over
+  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 91 (a
   per-window bookkeeping that moves between pulls; re-read it live). Nothing new has been anchored since 2026-10-20 because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
   twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
@@ -668,9 +672,14 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 120 files / 925 tests as this snapshot was taken (the fifteenth-round hardening grew `tests/finding-query.test.ts`
+- Tests: 122 files / 937 tests as this snapshot was taken (the sixteenth round added `tests/signal-identity.test.ts` -- the
+  pure kernel pinned on hand-built edges -- and `tests/live-catalog-accounting.test.ts`, which drives the PRODUCTION
+  functions over the captured served bytes and pins 103 rows / 91 signals / 90 hosts / 12 duplicate rows, accepted 18 ->
+  15/15, the 5 label conflicts with the 3 accepted named, ledger 20 -> 17, the trio's three distinct science hashes, and
+  `computeStats` reading 90/103; the round-15 echo "parity" source-regex test was renamed a STRUCTURAL wiring check; the
+  fifteenth round had earlier grown `tests/finding-query.test.ts`
   with the T1 cadence + zero-pad behaviour in BOTH directions, the T2 `dir`-active sort, the T3 `clamped` echo, the T4 DESC
-  default and an edge+Node echo-parity assertion; `npm test` 925 pass / 0 fail on this full-history Windows checkout).
+  default and an edge+Node echo-parity assertion; `npm test` 937 pass / 0 fail on this full-history Windows checkout).
   CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads 910 pass /
   8 skip / 3 env-fail -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`
   ancestry checks needing full history -- so a bare "N/N" misleads; CI checks out with full history + runs the FITS prefetch

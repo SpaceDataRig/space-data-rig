@@ -443,4 +443,55 @@ true content address once `targetId`/cadence labels are removed -- are a researc
 recorded here as open, not closed. Deployed at version `281de4e3`, `/health` gitSha `bf12a62`, `npm test` 925 pass / 0 fail
 locally (was 921; +4), typecheck:all clean, eslint --max-warnings 0, zero non-ASCII, zero secret hits.
 
+## Sixteenth-round audit response (2026-10-23, HEAD tested `bf12a62` by the auditor; our response at `c70593e`)
+
+The sixteenth pass confirmed all four fifteenth-round fixes LIVE by the auditor's own hand, then moved below the interface,
+and its framing was accepted without argument: *"this is not sandpaper, it is bookkeeping."* One physical candidate is
+recorded once PER TOI-TABLE PLANET ROW, the row's label can contradict its own evidence fields, and the contradiction was
+already paid for and frozen into immutable chain commitments. We re-ran every number from `GET /api/findings?limit=500` +
+`GET /api/ledger` BEFORE touching code and reproduced the audit exactly: 103 rows = 91 recovered signals over 90 host stars
+(11 signals under >= 2 ids, 12 pure duplicate rows), accepted 18 rows = 15 signals / 15 stars, 5 label-vs-own-crossmatch
+contradictions of which 3 are accepted, ledger 20 commitments covering 17 candidates, and the three HR 858 rows carrying
+three different `scienceHash`es (`4ec80a3a...` / `66a8db3f...` / `e154b8b1...`).
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| D1: a row's LABEL comes from its task seat, not from the planet it verified; 7 of 103 rows disagree with their own `crossmatch.knownPlanetName`, 3 accepted | `metaFor()` mints `findingId` from `pl_name` (one TOI row = one candidate planet) and `seats.ts` writes `lc.targetId` onto the Finding; no field separates "which planet we asked to verify" from "which planet the crossmatch found" -- grep finds no `requestedPlanet` anywhere | a shared pure kernel `src/core/signal-identity.ts` (`hostKeyOf`/`signalKeyOf`/`labelConflict`/`groupBySignal`); the served finding view (edge + Node) now carries `requestedDesignator` + `labelConflictsWithKnown` -- a response projection, so NO stored row, manifest byte or hash moves | live catalog: exactly 5 rows flagged (HD 110067 b, HD 25463 c, HR 858 d/c, HD 260655 c), the 3 accepted named by the auditor among them | LIVE at `c70593e`: all 103 served rows carry `requestedDesignator` + `labelConflictsWithKnown`; flag count is exactly 5, 3 accepted = HR 858 d/c + HD 260655 c | Shipped + live-verified. |
+| D2: the chain pays per label -- 20 commitments for 17 candidates (HR 858 x3, HD 260655 x2); the contradiction is inside the SEALED manifest bytes | true, and structurally un-dedupable today: the three HR 858 `scienceHash`es differ because per-seat `ephemeris`/`recoveryConfidence` ride in the projection (the audit's "hash contains targetId/findingId" was corrected by the round-5 rewrite -- the leak moved, it did not vanish) | `verify-onchain` service-layer response adds `labelMatchesKnownPlanet` + `requestedDesignator` + `detectedDesignator`, computed from the sealed manifest, added to NO hash -- the self-contradiction becomes machine-readable at the endpoint an external verifier already trusts | on `F-HD-260655-c`: `labelMatchesKnownPlanet:false`, c-vs-b; the FEE-COVERED bytes must be provably unmoved | LIVE: `labelMatchesKnownPlanet:false`, requested `c` / detected `b`; the on-chain memo `bundleHash` (`ead90579...`) and `ledgerScienceHash` (`d00fe82d...`) both EQUAL the committed ledger fixture and `ledgerBundleMatch:true` -- the disclosure added no hash input. `currentBundleHash`/`currentScienceHash` differ from the anchored pair by the PRE-EXISTING, endpoint-reported `anchoredScienceDrift:true` (the bundle was re-derived after sealing, README "bundleHash drifts by design"); `src/bundle/bundle.ts`, `src/solana/*` and the mint path are byte-for-byte ABSENT from commit `c70593e`, so this round could not have moved them | Shipped + live-verified. |
+| D3: the correct merge exists but never stands in front of minting (`collapseCoincident` has zero production callers; only p19/p22 research scripts + its own test) | confirmed by grep, exactly as the auditor described -- "mechanism exists, never fires," the most expensive instance of audit-4's anti-pattern yet | split deliberately: the READ half ships now (kernel + disclosure + figures); the WRITE half (mint-time suppression) is NOT wired, because suppressing a record changes which findings exist and therefore what gets anchored -- money-path semantics ship only after a measured false-merge rate (red line 3). README Capability boundaries now states it plainly: the board does not merge, the chain pays per label, measured 20 -> 17 | HANDOFF next-step names the calibration that must precede the guard; tests pin the kernel's behaviour on real rows so the guard, when calibrated, has its merge rule already pinned | Disclosed + documented; guard deliberately gated, NOT shipped. |
+| D4: the evidence sat in our own fixture (16 rows, 12 hosts) and passed two rounds testing only one direction | same meta-defect as rounds 14/15: synthetic-only gates | the FULL served catalog + ledger captured as committed fixtures (`live-catalog.json` 103 rows, `live-ledger.json` 20 rows) + `tests/live-catalog-accounting.test.ts` drives the PRODUCTION functions over them: 103/91/90/12, accepted 18->15/15, the 5+3 conflicts by name, ledger 20->17, the trio's three distinct hashes, `tic=01` -> 0 on real rows, per-host tic hit-set == all rows of that star; `computeStats` on the fixture reads 90/103 | `npm test` 937 pass / 0 fail locally (was 925; +12 across two new files) | Shipped. |
+| Secondary #1: `distinctHosts` counted label strings while every definition/README/board line read it as hosts (103 vs true 90) | `COUNT(DISTINCT json_extract($.targetId))` is a label count wearing a host label -- against our own "state the measure" rule | `distinctHosts` re-based to host STARS via the shared `hostKeyOf` (DO: JS pass, SQLite has no regex; Node mirror matches); raw-label count published separately as `distinctRecords`; both definitions rewritten; README paragraph + app.js comment synced; the board sentence "hosts with recorded results" is now literally true | fixture test pins 90/103 on real rows | LIVE: `GET /api/state/summary` reads `distinctHosts:90`, `distinctRecords:103`, and the served `statDefinitions.distinctRecords` definition (418 chars) is present on the summary projection -- the tile the auditor saw inflated to 103 now reports the 90 host stars the board sentence claims | Shipped + live-verified. |
+| Secondary #2/#3: `.01` mislabelled "cadence suffix"; narrow `/(toi-\d+)\.\d+/` safe only while every dotted id is hyphenated TOI style | `toiArchive.ts` says `toidisplay`/`ctoi_alias` -- a candidate PLANET number, an identifier; and our own round-15 regex re-leaks on any future `TIC 1234567.01` / `TOI 1234.01` | comments corrected in-place; `identifierRuns()` now reduces through `hostKeyOf` for ANY naming scheme, so tic identification cannot drift from what distinctHosts counts | live-catalog test asserts the host-hit-set invariant on all 103 real rows (58 dotted), both directions | Shipped. |
+| Secondary #4: `dir=asc` truncates at the default limit 100 (behaviour correct, new semantics undisclosed) | true | README HTTP-API row now documents it: ascending over the whole catalog asks `limit=500`; `hasMore` discloses truncation | doc-only | Shipped. |
+| Secondary #5: the round-15 "parity" test is a source regex, the very pattern N4 was criticised for | fair hit | renamed to `audit-15 wiring (structural)` with a comment saying what it checks (handler WIRING; the logic itself is behaviourally tested in shared `src/core`) and what it does not | test title + comment | Shipped. |
+
+### Honesty note on the sixteenth round
+
+The headline this time is ours in a deeper sense than round 15's: the disclosure layer was the easy half, and we have said so
+in those words -- a card titled "HR 858 d" whose own body says "HR 858 b" was ALREADY visible to any reader (the verifiability
+promise worked); what failed was the bookkeeping upstream of the promise. We also corrected one detail of the audit's own
+mechanism claim, in our favour only on the surface: `scienceHash` no longer contains `targetId`/`findingId` (removed in the
+round-5 re-derivation), yet the trio still hashes three ways -- per-seat SCIENCE fields leak the seat identity instead, which
+is why any re-derivation is a measured design decision and not a field deletion. The five on-chain labels cannot be reworded
+(red line 3 accepted as the cost, as the auditor framed it); `bundleHash`, `scienceHash`, verdicts and the money path are byte-
+for-byte untouched by this response -- `verify-onchain` re-checks its two hashes against the sealed ledger fixture in CI and
+live. Nothing was anchored this round; `ledgerAnchored` stays exactly 20, blind-toi accepted stays 0, `discoveryClaim` false.
+What could change the evaluation -- fewer duplicate rows minted (the guard, behind calibration), a seat-identity-free content
+address, and the mixed-source ceiling -- remains open, and we agree with the auditor's ranking: the priority is 12 fewer rows,
+not one more disclosure.
+
+DEPLOYED AND RE-MEASURED LIVE. The disclosure layer is version `0ea4089b-dd49-4c93-b185-4260fd215158`, `/health` gitSha
+`c70593e` (deployed in an idle GO window: the previous pass `run-20261023-060140` finished 06:17:12Z with >=120 s of margin
+before the 06:30 claim). A cache-busted read of production confirmed, on REAL rows and not just fixtures: all 103 served
+findings carry `requestedDesignator` + `labelConflictsWithKnown` with exactly 5 flagged and 3 accepted (HR 858 d/c, HD 260655
+c); `distinctHosts` now reads **90** (host stars) with `distinctRecords` **103** and its served definition (418 chars);
+`tic=01` -> 0 and `tic=0858` -> 3 on live data; `verify-onchain` on `F-HD-260655-c` returns `labelMatchesKnownPlanet:false`
+(c vs b) with the on-chain memo `bundleHash` and `ledgerScienceHash` byte-equal to the committed ledger fixture. The endpoint
+separately reports `anchoredScienceDrift:true` for the CURRENT bundle hash -- a pre-existing re-derivation state (README
+"bundleHash drifts by design"), not something this round introduced: no file under `src/bundle/`, `src/solana/`, the mint
+path (`workflow.ts`/`seats.ts`) or `dedup.ts` is in the deployed commit. The served `app.js` (115,710 B normalised) and
+`findings-query-ui.js` (10,506 B) remain byte-identical to the committed files. `npm test` 937 pass / 0 fail locally (was 925;
++12), typecheck:all clean, eslint --max-warnings 0, zero non-ASCII, zero secret hits. No new commitment: `ledgerAnchored` 20.
+
+
 

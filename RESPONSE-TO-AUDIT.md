@@ -375,4 +375,37 @@ view concern; the server's `queryFindings` was not touched, so the empty-query i
 `bb16fd7`, codeVersion `space-data-rig@0.2.0`; served `app.js` no longer contains the old `aliasMultiple != null`
 gate. `npm test` 908/908 (was 902), typecheck:all clean, zero non-ASCII, zero secret hits.
 
+## Fourteenth-round audit response (2026-10-23, HEAD tested `8dd1748`)
+
+The fourteenth pass re-tested the twelfth round's seven residuals (six closed, one honestly acknowledged), corrected the
+auditor's OWN twelfth-round failure-rate attribution (the 40-60% fetch loss was large-payload x their slow link, not a DO
+wedge -- the summary endpoint they credit was still the right response), and then raised six new findings N1-N6 on the
+shipped v0.2 interface layer (`ef5805ac` / `bb16fd7`). The defect class had moved from the data layer to the interface
+layer. Each was re-verified against the real source and live production data before being touched; four are fixed with
+behaviour tests, one as an additive honesty signal, one rebutted with evidence rather than changed.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| N1: an unknown-but-supplied enum (`?verdict=typo`) was silently dropped -- a direct URL reader got the whole catalog with no trace their filter did nothing, and the echoed `query` object omitted the parameter entirely | `parseFindingQuery` drops bad values BY DESIGN (the empty-query identity invariant -- a typo must not 500), but nothing reported WHAT it dropped | New pure `ignoredFindingParams()` in `src/core/finding-query.ts` mirrors the exact drop rules; both `/api/findings` handlers (edge + Node) now echo `ignored:[...]` | LIVE: `?verdict/origin/sort/dir/limit=<garbage>` each echo `ignored:["<name>"]` and `matched=103=total` is unchanged; behaviour tests pin every drop rule | Shipped (`8dd1748`), live-verified. |
+| N2: `tic` promised an identifier but did a blind substring -- `tic=858` swept in any id containing `858` (8581, S8581) | `!targetId.toLowerCase().includes(q.tic)` treats a numeric identifier as a loose substring | A purely numeric `tic` must now equal a whole digit RUN of the target id; alphabetic/spaced queries keep the contains behaviour; the free-text `q` stays the loose-contains tool | LIVE on real row `TOI-1487.01` (run `1487`): `tic=148` matched 0 (the old code swept this row in), `tic=1487` matched 1 exactly; behaviour tests | Shipped (`8dd1748`), live-verified. |
+| N3 (money path): the burn-signature replay guard was checked MANY `await`s before it was written, with the on-chain anchor in between -- two concurrent same-signature commissions could both pass and both spend SOL | `observeCommission` had no per-signature serialisation, while `anchorFinding` had long used `anchorInFlight` keyed by findingId | Both runtimes serialise by signature: the DO gains `commissionInFlight` keyed by `burnSig` mirroring `anchorInFlight` (released in a `finally`); the Node route chains through a new pure `serializeByKey` (`src/core/inFlightLock.ts`) | Behaviour test drives REAL concurrency: two same-key calls -> exactly ONE spend, results `['commissioned','already-used']`; distinct keys run parallel; a rejection releases the key. NOT live-fired (it spends real SOL) -- proven by the algorithm test + deployed-commit identity | Shipped (`8dd1748`). No verdict/bundleHash moved. |
+| N4 (gates): the race/merge/failure browser logic was proven by regex-matching `app.js` source -- exactly the audit-4 anti-pattern the same test file criticises | The pure helpers had escaped string-matching, but the two state mutations (race token, failure clear) were still asserted against source text | The logic moved into pure `applyFindingsPage` / `applyFailedPage` in `web/findings-query-ui.js`, driven by real response envelopes in tests; `app.js` keeps only the genuinely browser-timing token guard, asserted as wiring | Behaviour tests on the reducers; served `findings-query-ui.js` (10,506 B) is BYTE-IDENTICAL to the repo and contains both functions | Shipped (`8dd1748`), live-verified. |
+| N6: 39/56 unstamped reports still read as plain `fresh` in the published index | p86 counted `stamped`/`verified` but left `fresh: !stale`, which reads "not known stale" as "verified current" | `unattested: total - stamped` is now a first-class published number (index regenerated: 39 unattested); `--allow-stale` stays and is stated plainly -- one offline upstream must not block publishing the rest | A freshness test pins `unattested`; the `fresh` boolean was deliberately NOT flipped (that would mislabel an unattested report as out-of-date) | Shipped (`8dd1748`). Additive honesty, not suppression. |
+| N5 (rebutted): the claim that `/api/findings` is the SLOWER path because it does a full SQLite read while summary uses cached state is inverted | The DO `getState()` behind the fast summary ALSO calls `listFindings()` plus bundles+events+computeStats -- both read the same rows; the latency delta is transport + DO turn-serialization behind an in-flight pass, the infra characteristic already recorded under audit-12 D4 | No change; no risky SQL pushdown was made to chase a mis-attributed cost | Source read: `rig-state.do.ts` `getState()` -> `findings: this.listFindings()` | Acknowledged with evidence, not code. |
+
+### Honesty note on the fourteenth round
+
+N3 is the one finding on the money path, so it was handled with the most care and the least theater: the fix only
+prevents a double payment -- it moves no verdict gate, no bundle hash, no anchor semantics -- and it is NOT claimed as
+"live-verified" because verifying it would require spending real SOL. It is proven by a concurrency behaviour test that
+drives two genuinely parallel same-signature calls and observes exactly one spend, plus the deployed-commit identity. N5
+is stated as a rebuttal, not a fix: the auditor's own D4 self-correction (volume x link, not a DO wedge) is consistent
+with the code fact that `getState()` reads the same findings rows the paginated endpoint does, so no speculative query
+pushdown was made. The served `app.js` (115,608 B) and `findings-query-ui.js` (10,506 B) are byte-for-byte the committed
+files after EOL normalisation, so "the behaviour you can poke live is the behaviour in the tests" holds for N1/N2/N4.
+Deployed at version `995b627a`, `/health` gitSha `8dd1748`, codeVersion `space-data-rig@0.2.0` (a hardening of the v0.2
+line, not a version bump -- the same shape as `bb16fd7`). Research posture unchanged: still zero new objects, every card
+`discoveryClaim` false. `npm test` 921/921 (was 908), typecheck:all clean, eslint --max-warnings 0, zero non-ASCII, zero
+secret hits.
+
 

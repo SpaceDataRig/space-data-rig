@@ -620,58 +620,64 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is bb16fd7 -- the thirteenth-round hardening of the v0.2 "Interactive
-  Verification Console", stacked on the console slice that first shipped coherent at d6825a8. Round 13 turned six
-  findings against `ef07167..d6825a8`, each re-verified against the real source before being touched: the honest root
-  cause of the headline one was that the P1 Evidence note stamped "harmonic alias x1" on cards with NO alias, because
-  `aliasMultiple === 1` means "BLS period already correct" (src/detect/pipeline.ts; the odd-even PASS in
-  src/critic/review.ts is set from exactly that) -- so the honesty panel contradicted the sealed manifest line above
-  it; a new pure `isHarmonicAlias()` gates it, proven on the production fixture AND against 40 live manifests (5 real
-  x2 aliases, 35 clean x1 that are no longer mislabeled). The other five were console-robustness/wording: a monotonic
-  request `token` now preempts a stale in-flight page (a fresh query during "load more" no longer silently no-ops) and
-  a failed fresh query clears the stranded cards; `dedupeById()` collapses a finding that lands on two pages when the
-  catalog shifts; and `resultMeta` now takes `{filtered, sort}` so "no filter" is decided by `hasConstraints(form)`
-  rather than the ambiguous `matched===total`, and the load-more cue names the active sort instead of always claiming
-  "for older". All six are pinned by behaviour tests in `tests/findings-query-ui.test.ts` (now 18), not string-matches;
-  nothing on the verdict gate, bundle hash, or money path moved. The v0.2 slice itself (P0 server query `fd3810e`,
-  library convergence `1e6572b`, browser console + Plots/QA + Node static-parity `ef07167`, version bump `d6825a8`)
-  chains beneath it. This line is about the revision measured below, not a standing claim about the tip -- `git log`
-  is the authority there.
-- Production: wrangler version ef5805ac-7f0d-49e0-aba3-37b78cce38db, gitSha bb16fd7c8fafa7762fa4c83772b17e8a897f013d
-  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass `run-20261022-170048` finished
-  17:07:26Z with 287 s of idle before the 17:15 claim, over a 240 s upload budget) before the upload, and `GET /health`
+- Git: the revision this snapshot describes is 8dd1748 -- the fourteenth-round hardening of the v0.2 "Interactive
+  Verification Console" interface layer, stacked on the thirteenth-round console hardening `bb16fd7`, itself stacked on
+  the console slice that first shipped coherent at `d6825a8`. Round 14 turned six findings (N1-N6) raised against the
+  SHIPPED v0.2 surface, each re-verified against the real source and live production data before being touched: N1 -- an
+  unknown-but-supplied query enum (`?verdict=typo`) was silently dropped, so a direct URL reader got the whole catalog
+  with no trace their filter did nothing; a new pure `ignoredFindingParams()` now echoes `ignored:[...]` on both
+  runtimes. N2 -- `tic` promised an identifier but did a blind substring; a purely numeric tic must now equal a whole
+  digit RUN of the target id. N3 (money path) -- the named-observation burn replay guard is checked many `await`s before
+  it is written, so two same-signature commissions could both spend SOL; both runtimes now serialise by signature (the DO
+  gains `commissionInFlight` mirroring the established `anchorInFlight`, the Node a new pure `serializeByKey` in
+  src/core/inFlightLock.ts), the concurrency behaviour-tested to exactly one spend. N4 -- the browser race/merge/failure
+  logic moved out of string-matched app.js into pure `applyFindingsPage`/`applyFailedPage` reducers. N6 -- `unattested`
+  is now a first-class published count in the report library. N5 (that the paginated endpoint is the SLOWER path) was
+  rebutted with source evidence, not changed -- the DO `getState()` behind the fast summary already reads the same
+  findings rows. Nothing on the verdict gate, bundle hash, or anchor semantics moved. The thirteenth-round
+  alias-gate/race-token/dedupe/resultMeta hardening (`bb16fd7`, live-probed over 40 manifests: 5 real x2 aliases, 35
+  clean x1 no longer mislabeled) and the v0.2 slice itself (P0 server query `fd3810e`, library convergence `1e6572b`,
+  browser console + Node static-parity `ef07167`, version bump `d6825a8`) chain beneath it. This line is about the
+  revision measured below, not a standing claim about the tip -- `git log` is the authority there.
+- Production: wrangler version 995b627a-c6d5-40b3-b2fd-b0d084b0f8c7, gitSha 8dd1748e3dadfd8f000594a653629d7c5af34bd0
+  -- re-verified live at this snapshot: `deploy:window` cleared GO (previous pass `run-20261023-014518` finished
+  01:54:46Z with 198 s of idle before the 02:00 claim, over the 120 s budget) before the upload, and `GET /health`
   returns exactly that sha and `codeVersion space-data-rig@0.2.0`. Triggers: schedule `*/15 * * * *`, workflow `rig-run`,
-  custom domain spacedatarig.app. The thirteenth-round fixes are LIVE and behaviorally confirmed against real production
-  bytes, not just served text: a cache-busted probe through the DEPLOYED `web/findings-query-ui.js` predicate over 40 live
-  manifests found aliasMultiple set {1, 2} -- 5 genuine x2 aliases correctly flagged, 35 clean x1 cards the old gate would
-  have falsely stamped "harmonic alias x1" now silent; the served `app.js` carries `isHarmonicAlias`/`++findingsQuery.token`
-  /`dedupeById` and NO longer contains the old `aliasMultiple != null` alias gate. The v0.2 console remains LIVE:
+  custom domain spacedatarig.app. The fourteenth-round fixes are LIVE and behaviourally confirmed against real production
+  data, not just served text: cache-busted `GET /api/findings?verdict=notavalue` (and the origin/sort/dir/limit variants)
+  each echo `ignored:["<name>"]` with `matched=103=total` unchanged (N1), and on the live 103-row catalog `tic=148`
+  returns 0 rows while `tic=1487` returns the single real row `TOI-1487.01` (N2 precision -- the old substring matched
+  that row under `148`); the served `findings-query-ui.js` (10,506 B) and `app.js` (115,608 B) are BYTE-IDENTICAL to the
+  committed files after EOL normalisation and carry the new `applyFindingsPage`/`applyFailedPage` reducers (N4). N3 is
+  deployed but deliberately NOT live-fired -- verifying it would spend real SOL -- it is proven by the concurrency
+  behaviour test plus this commit's identity. The v0.2 console remains LIVE:
   `GET /api/findings?verdict=accepted&sort=depth&limit=3` serves `total 103 / matched 18 / hasMore true`, `resultMeta`
-  renders honestly on the real 103-row catalog ("Full catalog: 103 rows ... load more for older" vs "Server matched 18 of
-  103 ... load more for the next by depth"), and `web/candidates.json` still serves schema `sdr-candidates/2` with every
-  `discoveryClaim` false. P2's in-browser fold still falls back to the sealed static `folded.svg` because `stripFinding`
-  deliberately keeps raw `candidate.folded` out of the payload (0 of 103 carry it live) -- a known limit, not an overclaim.
-  `GET /api/state/summary` answers 200 on the edge.
+  renders honestly on the real 103-row catalog, and `web/candidates.json` still serves schema `sdr-candidates/2` with
+  every `discoveryClaim` false. P2's in-browser fold still falls back to the sealed static `folded.svg` because
+  `stripFinding` deliberately keeps raw `candidate.folded` out of the payload (0 of 103 carry it live) -- a known limit,
+  not an overclaim. `GET /api/state/summary` answers 200 on the edge.
 - Switches live, read off the deploy's own binding list: AUTO_RESEARCH=1, AUTO_RESEARCH_TARGETS=8,
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,921 bytes against a full
+- Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,876 bytes against a full
   `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
-  `stats`/`statDefinitions`): surveyPass 428 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over
-  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 80 (a
+  `stats`/`statDefinitions`): surveyPass 461 CLAIMED, distinctHosts 103 hosts with a recorded result, blindHeld 29 over
+  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 85 (a
   per-window bookkeeping that moves between pulls; re-read it live). Nothing new has been anchored since 2026-10-20 because
   science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
   twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
-  filterable server-side (`/api/findings` with a filter returns matched/hasMore, not the whole payload). The repo report
-  library (converged at `1e6572b`, still serving on this deploy) reports 56 with `stale: []`, `stamped: 17`, `verified: 15`,
-  `fullyVerified: 15`.
+  filterable server-side (`/api/findings` with a filter returns matched/hasMore, and since `8dd1748` an unknown-but-supplied
+  filter also returns `ignored:[...]`). The repo report library (converged at `1e6572b`, still serving on this deploy)
+  reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
+  `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 119 files / 908 tests as this snapshot was taken (the thirteenth-round hardening grew `findings-query-ui` from
-  12 to 18 -- added behaviour coverage for `isHarmonicAlias`/`dedupeById`/the rewritten `resultMeta` plus a live-data
-  regression over `tests/fixtures/live-manifests.json`; the v0.2 slice's `finding-query` +7 is unchanged; `npm test` green
-  908/908 locally, and CI runs `npm run test:coverage`, whose floors -- 90/78 -- it has been clearing as the prior
-  baseline; trust the run over any number written in a document, including this one).
+- Tests: 120 files / 921 tests as this snapshot was taken (the fourteenth-round hardening added
+  `tests/in-flight-lock.test.ts` for the money-path serialiser, grew `finding-query` with the N1 `ignored` echo and the
+  N2 `tic`-precision behaviour, converted the `findings-query-ui` race/failure string-matches into
+  `applyFindingsPage`/`applyFailedPage` behaviour tests, and pinned N6's `unattested` in `report-freshness`; `npm test`
+  green 921/921 locally and CI green on `8dd1748`, and CI runs `npm run test:coverage`, whose floors -- 90/78 -- it has
+  been clearing as the prior baseline; trust the run over any number written in a document, including this one).
 
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover

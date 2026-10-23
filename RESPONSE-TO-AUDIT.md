@@ -587,4 +587,34 @@ things that move it, still calibration-gated, still untouched. No verdict gate, 
 this round; `ledgerAnchored` stays exactly 20, blind-toi accepted stays 0, every `discoveryClaim` false.
 
 
+## Nineteenth-round audit response (2026-10-23, self-audit of the round-18 guard hardening on top of `0c7245f` -- scripts/tests only, no Worker deploy)
+
+The nineteenth pass turned the round-18 lesson back on round-18. Round-18 added a fourth public net (coverage/capability) and
+widened the money rule from an enum toward a rule, and its own note warned that "an over-refusing guard is its own failure". This
+pass first re-derived the reach figures to confirm no regression, then probed the two freshly-changed nets specifically for that
+over-refusal failure mode -- and found it twice. Both are fixed by NARROWING; every CATCH round-18 added is kept and pinned, so
+tightening one edge of a guard does not silently re-open the hole it was built to close.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| Regression check (did the round-18 hardening move any reach figure?) | -- | re-derived the whole reach/conflict/host/accepted set off the committed fixture through the kernel | reachable 34/103 (33.0%), ceiling 38, no-comparison 65, `requestedDesignator` non-null 99/103, `requestedDesignatorKind {candidate-number:58, planet-letter:41, none:4}`, conflicts 7 (`TOI-6054.02`, `HD 25463 c`, `HR 858 d`, `HR 858 c`, `HD 110067 b`, `TOI-4443 c`, `HD 260655 c`), distinct hosts 90, distinct signals 91, accepted 18 / with-origin 17 / blind-toi-accepted 0 -- ALL byte-identical to round-18 | No regression. |
+| F1 (over-refusal, heaviest): the round-18 money widening refused honest methods + astronomy prose | round-18 added a bare `\bburn\w*\b` and a bare `\bsol\b`; measured FALSE hits on `MCMC burn-in` / `CCD burn-in` / `a burn-in period` (a methods staple) and `Sol` / `per sol` / `the Sun (Sol)` (the Sun, a Martian day) | NARROWED, not reverted: `burn` now `\bburn(?:ed\|ing\|s)?\b(?!-)` (a hyphenated compound is not a token burn); `sol` now requires a VALUE context -- `\d+(?:\.\d+)? sol` or `sol token\|coin\|price\|balance` | all 10 currency probes (`$SDR`/`burn`/`burned`/`fee`/`spend`/`lamports`/`rent`/`payout`/`wallet`/`seed phrase`) still REFUSE, each `/wallet\/spend/i`; `burn-in`/`Sol`/`per sol`/`feedback`/`coffee`/`solution`/`parent`/`costly` now clean; pinned by 2 new tests | Fixed (narrowed); CATCHES kept. |
+| F1 residual (accepted, pinned): a citation surname still trips the money rule | `Burns 2019` matches the `burn` stem | NOT loosened -- a surname is rare in feed prose and refusing it is the safe direction for a MONEY guard; recorded as a deliberate residual rather than chased | `FEED_SPEND_WORDS.test("Burns 2019") === true`, asserted in the same test that pins the token-burn forms | Documented residual, by design. |
+| F2 (over-refusal): the round-18 coverage net refused TRUE processing statements | `COVERAGE_TOTALITY` fired on a coverage verb + a universal with ANY object, so `reads the whole light curve` / `scans every sector` / `covers the full sector` (honest aperture prose, not reach claims) were blocked | NARROWED: the verb+totality alternative now requires the totality to govern a REACH noun (`catalog(ue)`/`dataset`/`row`/`finding`/`record`); the `whole/entire/complete/full catalog\|dataset` idiom and the denominator gate are UNCHANGED | all 6 catalog-reach catches still REFUSE (`reads the whole catalog`, `sees all rows`, `covers every finding`, `spans the entire dataset`, `decodes the complete catalog`, the shipped round-17 sentence); light-curve/sector prose now passes; pinned by 1 new test | Fixed (narrowed); CATCHES kept. |
+| F3 (documented hole, unchanged): a denominator-bearing false totality is not caught | any `N of M` / `N%` in the sentence passes the denominator gate, so `reach went from 28 of 103 to all 103` slips through | NOT guessed at -- a regex cannot reliably separate a false "to all N" from a true "across all N rows"; the form that actually SHIPPED (bare "reads the whole catalog") IS caught | the two ADV probes still read `got=0` and stay labelled a documented limit in-source and here | Disclosed, not silently widened. |
+
+### Honesty note on the nineteenth round
+
+This round is a guard-tuning round, and the honest framing is that round-18 -- in the same act of widening the money rule and adding
+a coverage net -- introduced two over-refusals that its own note had named as a failure mode. Finding them from the outside and
+narrowing them is the work; the discipline that makes it safe is that every narrowing is paired with a re-proof that the CATCHES
+survive (10 money probes, 6 coverage catches, all still refused), because a guard loosened to stop a false positive must not quietly
+re-open the true positive it was built for. No number moved (reach re-derived byte-identical), no deploy, no stored row, no hash, no
+verdict gate, no anchor semantic and no money path touched; `ledgerAnchored` stays exactly 20, blind-toi accepted stays 0, every
+`discoveryClaim` false. Suite 950 -> 953 pass / 0 fail (+3 regression tests), `typecheck:all` and `eslint --max-warnings 0` clean,
+`node --check web/*.js` clean, zero non-ASCII, zero secret hits, and the send+archive+composer paths still share ONE
+`FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. The two things that actually move the evaluation -- a mint-time
+duplicate-suppression guard and a seat-identity-free content address -- remain calibration-gated and untouched again.
+
+
 

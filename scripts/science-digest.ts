@@ -661,7 +661,13 @@ export function overclaimViolations(text: string): string[] {
 // this evening / in recent), so there is one time rule, not two. The asymmetry that once let a time-worded post
 // go out that the archive would then have rejected can no longer arise on any of the three paths.
 export const FEED_TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday|last night|this morning|this evening|in recent)\b/i;
-export const FEED_SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\w|\bburn\w*\b|\bfees?\b|\bspend\w*\b|\bspent\b|\blamports?\b|\brent\b|\bpayouts?\b/i;
+// Round-19 narrowing (audit of the round-18 widening): the bare \bburn\w*\b and \bsol\b terms over-refused honest
+// technical prose -- "MCMC burn-in" / "CCD burn-in" (a methods staple) and "Sol" / "sol" (the Sun, a Martian day)
+// all measured as false hits, and over-refusal is its own failure. burn now matches only the token-burn forms and
+// not a hyphenated compound; sol now requires a value context (a quantity, or token/coin/price/balance). Residual,
+// accepted: a citation surname ("Burns 2019") still hits; that is rare in feed prose and safer to refuse than to
+// loosen the money rule for.
+export const FEED_SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\b\d+(?:\.\d+)?\s*sol\b|\bsol\s*(?:token|coin|price|balance)\b|\$\w|\bburn(?:ed|ing|s)?\b(?!-)|\bfees?\b|\bspend\w*\b|\bspent\b|\blamports?\b|\brent\b|\bpayouts?\b/i;
 
 /** Human-readable feed red-line violations: relative time windows and wallet / key / spend wording. */
 export function feedRedlineViolations(text: string): string[] {
@@ -693,8 +699,13 @@ export function feedRedlineViolations(text: string): string[] {
 // "went from 28 of 103 to all 103" construction is NOT caught; distinguishing a false "to all N" from a true
 // "across all N rows" is not something a regex can do reliably, and the form that actually shipped was the bare
 // "reads the whole catalog", which this does catch.
+// Round-19 narrowing: the verb+totality alternative used to fire on ANY object ("reads the whole light curve",
+// "scans every sector"), refusing TRUE processing statements that are not reach claims at all. It now requires the
+// totality to govern a REACH noun (catalog/dataset/row/finding/record), so honest light-curve/sector prose passes
+// while the catalog-reach over-claim ("reads the whole catalog", "sees all rows") is still refused. The denominator
+// gate below is unchanged, so the residual "went from N of M to all M" hole stays documented rather than guessed at.
 const COVERAGE_TOTALITY =
-  /\b(reads?|sees?|covers?|spans?|decodes?|scans?|reaches?)\b[^.!?]*\b(whole|entire|full|complete|all|every)\b|\b(whole|entire|complete|full)\s+(catalog|dataset)\b/i;
+  /\b(reads?|sees?|covers?|spans?|decodes?|scans?|reaches?)\b[^.!?]*\b(whole|entire|full|complete|all|every)\b[^.!?]*\b(catalog(?:ue)?|datasets?|rows?|findings?|records?)\b|\b(whole|entire|complete|full)\s+(catalog|dataset)\b/i;
 const COVERAGE_DENOM = /\b\d+\s*(?:of|\/)\s*\d+\b|\b\d+(?:\.\d+)?\s*%/;
 
 /** Coverage / capability totality claims that carry no denominator in the same sentence (the round-17 class). */

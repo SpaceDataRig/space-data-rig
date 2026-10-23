@@ -809,6 +809,33 @@ authority; they are deliberately not restated here.
   mint-time duplicate-suppression guard and a seat-identity-free content address -- remain the only things that move the
   evaluation, and neither was touched again this round.
 
+- Nineteenth-round audit (2026-10-23) turned the round-18 lesson back on round-18. Round-18 had added a FOURTH public net
+  (coverage/capability) and widened the money rule from an enum toward a rule, and its own note warned that "an over-refusing
+  guard is its own failure"; this pass re-derived the reach figures first (reachable 34/103 = 33.0%, ceiling 38, no-comparison 65,
+  `requestedDesignator` non-null 99/103, kinds `{candidate-number:58, planet-letter:41, none:4}`, conflicts 7, hosts 90, signals
+  91, accepted 18 / with-origin 17 / blind-toi-accepted 0 -- ALL byte-identical to round-18, so no regression), then probed the two
+  freshly-changed nets for exactly that over-refusal failure and FOUND IT TWICE. (1) The money widening had added a bare
+  `\bburn\w*\b` and a bare `\bsol\b`, which measured as FALSE hits on honest prose -- `MCMC burn-in` / `CCD burn-in` / `a burn-in
+  period` (a methods staple) and `Sol` / `per sol` / `the Sun (Sol)` (the Sun, a Martian day). (2) The coverage net's verb+totality
+  alternative fired on ANY object, so it refused TRUE processing statements that are not reach claims at all -- `reads the whole
+  light curve` / `scans every sector` / `covers the full sector`. BOTH fixed by NARROWING in `scripts/science-digest.ts` (scripts/tests
+  only, NO Worker deploy, no served-bundle change): `burn` is now `\bburn(?:ed|ing|s)?\b(?!-)` (a hyphenated compound is not a token
+  burn), `sol` now needs a VALUE context (`\d+(?:\.\d+)? sol` or `sol token|coin|price|balance`), and the coverage totality now must
+  govern a REACH noun (`catalog(ue)`/`dataset`/`row`/`finding`/`record`). The discipline that makes a narrowing safe is that every
+  one is paired with a re-proof the CATCHES survive: all 10 currency probes (`$SDR`/`burn`/`burned`/`fee`/`spend`/`lamports`/`rent`/
+  `payout`/`wallet`/`seed phrase`) still REFUSE each `/wallet\/spend/i`, and all 6 catalog-reach catches (`reads the whole catalog`,
+  `sees all rows`, `covers every finding`, `spans the entire dataset`, `decodes the complete catalog`, the shipped round-17 sentence)
+  still REFUSE. TWO things are stated plainly rather than chased: the citation surname `Burns 2019` still trips the money rule --
+  rare in feed prose and safer to refuse than to loosen a MONEY guard for, so PINNED as a deliberate residual; and the
+  denominator-bearing false totality (`reach went from 28 of 103 to all 103`) still slips the coverage net, because a regex cannot
+  reliably separate a false "to all N" from a true "across all N rows" and the form that actually SHIPPED (bare "reads the whole
+  catalog") IS caught -- left a DOCUMENTED limit, not guessed at. Suite 950 -> 953 pass / 0 fail (+3 regression tests in
+  `post-x-text-guard.test.ts`); `typecheck:all` + `eslint --max-warnings 0` + `node --check web/*.js` (6/6) clean, zero non-ASCII,
+  zero secret hits, and send+archive+composer still share ONE `FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. No
+  stored row, manifest byte, `bundleHash`, `scienceHash`, verdict gate, anchor semantic or money path moved; `ledgerAnchored` stays
+  exactly 20, blind-toi accepted 0, every `discoveryClaim` false. The SAME two calibration-gated research decisions remain the only
+  things that move the evaluation, and neither was touched again this round.
+
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover
 released it:

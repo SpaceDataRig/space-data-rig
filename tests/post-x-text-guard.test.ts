@@ -130,3 +130,35 @@ test("the coverage net does NOT over-refuse honest quantifier prose (no coverage
   assert.equal(r.status, 0, `honest quantifier prose must stay postable, stderr: ${r.stderr}`);
   assert.match(r.stdout, /DRY RUN/, "and reaches the DRY RUN");
 });
+
+// ---- round-19 audit: the round-18 nets must not over-refuse honest technical prose ---------------------------
+// Measured false hits BEFORE the round-19 narrowing: "MCMC burn-in" / "CCD burn-in" (a methods staple) and
+// "Sol" / "sol" (the Sun, a Martian day) tripped FEED_SPEND_WORDS, and true processing totalities ("reads the
+// whole light curve", "scans every sector") tripped the coverage net even though they are not reach claims at
+// all. Over-refusal silently blocks honest posts, so both directions are pinned clean here. The one accepted
+// residual (a citation surname, "Burns 2019") is pinned as a DELIBERATE catch: loosening the money rule for it
+// must be a decision, not a drift.
+test("the spend rule does NOT over-refuse methods / astronomy prose (burn-in, Sol, sol)", () => {
+  for (const frag of ["MCMC burn-in", "CCD burn-in", "a burn-in period", "the Sun (Sol)", "per sol"]) {
+    const text = `A status line about the rig long enough to be a real post. It mentions ${frag} only.`;
+    assert.ok(!FEED_SPEND_WORDS.test(text), `must not trip spend: ${frag}`);
+    const r = send(text);
+    assert.equal(r.status, 0, `honest technical prose must stay postable, stderr: ${r.stderr}`);
+  }
+});
+
+test("the spend rule still catches the token-burn forms, and the surname residual stays a deliberate catch", () => {
+  assert.ok(FEED_SPEND_WORDS.test("we burn the mint token"), "burn");
+  assert.ok(FEED_SPEND_WORDS.test("the burned tokens"), "burned");
+  assert.ok(FEED_SPEND_WORDS.test("burning supply"), "burning");
+  assert.ok(FEED_SPEND_WORDS.test("Burns 2019"), "documented residual: citation surname still refused by design");
+});
+
+test("the coverage net does NOT over-refuse true processing totalities (light curve / sector)", () => {
+  for (const frag of ["reads the whole light curve", "scans every sector", "covers the full sector"]) {
+    const text = `A status line about the rig long enough to be a real post. The aperture ${frag}.`;
+    assert.deepEqual(feedCoverageViolations(text), [], `must not trip coverage: ${frag}`);
+    const r = send(text);
+    assert.equal(r.status, 0, `true processing prose must stay postable, stderr: ${r.stderr}`);
+  }
+});

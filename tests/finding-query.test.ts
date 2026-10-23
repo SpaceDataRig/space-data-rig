@@ -180,7 +180,11 @@ test("clampedFindingParams reports a bounded paging value without conflating it 
   assert.deepEqual(clampedFindingParams({ limit: "many" }, parseFindingQuery({ limit: "many" })), [], "non-numeric is DROPPED -> ignored's job, not clamped's");
 });
 
-test("audit-15: BOTH /api/findings handlers echo ignored AND clamped (edge + Node parity)", () => {
+// audit-16 secondary #5 names this for what it is: a STRUCTURAL wiring check, not a behavioural parity test. The
+// echo LOGIC lives in the shared src/core (ignored/clampedFindingParams) and is behaviourally tested above; what can
+// diverge per surface is only whether a handler WIRES the shared result into its response, which is what this asserts.
+// (Both handlers are then exercised END-TO-END against the deployed edge by the live verification step, not here.)
+test("audit-15 wiring (structural): BOTH /api/findings handlers echo ignored AND clamped", () => {
   const worker = readFileSync(resolve(process.cwd(), "src", "cf", "worker.ts"), "utf8");
   const node = readFileSync(resolve(process.cwd(), "src", "api", "server.ts"), "utf8");
   for (const [name, src] of [["worker.ts", worker], ["server.ts", node]] as const) {

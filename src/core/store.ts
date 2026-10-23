@@ -15,6 +15,7 @@ import { dirname } from "node:path";
 import type { Finding, RigEvent, SeatName, Task } from "./types.ts";
 import { anchorStampIsValid, indexLedgerByFinding, isCommittedLedgerRow, type LedgerRowLike } from "./anchor-verify.ts";
 import { isBlindCandidate, isHeldBlindCandidate } from "./stats-definitions.ts";
+import { hostKeyOf } from "./signal-identity.ts";
 import {
   SEAT_ORDER,
   type BundleRecord,
@@ -256,7 +257,11 @@ export class RigStore {
       // recorded results, blind rows assessed, and the blind rows still held for follow-up -- see
       // src/core/stats-definitions.ts for what each population excludes.
       surveyPass: 0,
-      distinctHosts: new Set(findings.map((f) => f.targetId)).size,
+      // audit-16 secondary #1: distinctHosts counts HOST STARS (planet designators and TOI candidate numbers
+      // stripped via the shared hostKeyOf), NOT raw label strings -- the old rule read "103 hosts" where 103 seat
+      // labels collapse to 90 stars. distinctRecords keeps the raw-label count so both readings are published.
+      distinctHosts: new Set(findings.map((f) => hostKeyOf(f.targetId))).size,
+      distinctRecords: new Set(findings.map((f) => f.targetId)).size,
       blindCandidates: findings.filter(isBlindCandidate).length,
       blindHeld: findings.filter(isHeldBlindCandidate).length,
     };

@@ -59,11 +59,20 @@ export interface RigStats {
    */
   surveyPass: number;
   /**
-   * Distinct hosts among RECORDED RESULTS of any verdict -- accepted, watchlist and rejected alike. Not the
-   * number of targets analysed (that is `tasksDone`): it grows only when a look becomes a row.
+   * Distinct HOST STARS among RECORDED RESULTS of any verdict -- accepted, watchlist and rejected alike, with the
+   * planet designator / TOI candidate number stripped first (src/core/signal-identity.ts hostKeyOf). Audit-16: this
+   * used to count RAW LABELS, so a star recorded under three seat labels was counted as three "hosts" (103 labels vs
+   * 90 stars measured live); the raw-label reading is now the separate distinctRecords counter. Not the number of
+   * targets analysed (that is `tasksDone`): it grows only when a look becomes a row.
    * (audit-7: the board called this "distinct targets", which read as survey breadth.)
    */
   distinctHosts: number;
+  /**
+   * Distinct recorded TARGET LABELS (raw targetId strings, designators and TOI candidate numbers included) -- the
+   * number the distinctHosts counter used to report before audit-16 split the two populations. One host recorded
+   * under two seat labels counts twice here and once in distinctHosts.
+   */
+  distinctRecords: number;
   /** Blind TOI rows ASSESSED: every blind recovery, including ones the critic later rejected. Never anchored. */
   blindCandidates: number;
   /**

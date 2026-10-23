@@ -3,7 +3,7 @@
  *
  * WHY. Until now the only way to read the catalog was `GET /api/state` (~324 KB, every finding card) and
  * `GET /api/findings` (every card, no filter). The browser then filtered in memory. That is fine at a dozen rows
- * and wrong at a hundred-plus (distinctHosts 103 and climbing): a reader who wants "the blind candidates between
+ * and wrong at a hundred-plus (distinctRecords 103 rows over 90 host stars and climbing): a reader who wants "the blind candidates between
  * 800 and 2000 ppm with P under 3 d" had to download the whole catalog to answer it, and the transport wall the
  * twelfth-round audit measured (40-60% fetch failure on the big payload) is exactly what a query endpoint exists to
  * avoid. This is a pure projection over rows that already exist -- it runs nothing, gates nothing, and touches no
@@ -22,6 +22,7 @@
  * deliberately absent here rather than silently faked -- see P1, which surfaces the manifest checks per card.
  */
 import type { Finding } from "./types.ts";
+import { hostKeyOf } from "./signal-identity.ts";
 
 export type FindingSort = "recent" | "score" | "period" | "depth" | "snr";
 
@@ -134,12 +135,14 @@ export function clampedFindingParams(raw: Record<string, string | undefined>, q:
 /**
  * audit-14 N2 / audit-15 T1: `tic` promises an IDENTIFIER, so a purely numeric query must equal a whole identifier
  * number of the target -- never a loose substring, and never an incidental digit. The audit-15 catch was that my own
- * round-14 fix still split `/\d+/g` on real TESS ids of the form `TOI-<n>.<cadence>`: the dot made the CADENCE suffix
- * `.01` its own "digit run", so `tic=01` swept in all 53 `.01` objects and zero-padded `tic=0858` (a real HR 858)
- * matched none. Two changes close it: (1) drop the `.cadence` suffix before extracting runs, so only the host number
+ * round-14 fix still split digit runs on real TESS ids of the form `TOI-<n>.<candidate>`: the dot made the
+ * CANDIDATE-PLANET NUMBER `.01` its own "digit run", so `tic=01` swept in all 53 `.01` objects and zero-padded `tic=0858` (a real HR 858)
+ * matched none. Two changes close it: (1) drop the candidate-number suffix before extracting runs, so only the host number
  * is comparable; (2) compare NUMERICALLY (leading zeros normalized), so `0858` == `858`. A query carrying any
  * non-digit keeps the case-insensitive contains behaviour (there is no digit-run semantics to apply), and the
- * free-text `q` stays the deliberate loose-contains tool.
+ * free-text `q` stays the deliberate loose-contains tool. AUDIT-16 terminology note: `.01` is the ExoFOP
+ * `ctoi_alias` CANDIDATE index (`toidisplay`, src/data/toiArchive.ts:11-12) -- an identifier naming WHICH candidate of
+ * the host, not "cadence" and not noise; it is stripped here only so host-level lookup is unaffected.
  */
 function targetMatchesTic(targetIdLower: string, ticLower: string): boolean {
   if (/^\d+$/.test(ticLower)) {
@@ -150,14 +153,15 @@ function targetMatchesTic(targetIdLower: string, ticLower: string): boolean {
 }
 
 /**
- * The host identifier's numeric components, EXCLUDING a TESS cadence suffix. `TOI-1821.01` yields ["1821"] (not
- * ["1821","01"]); `tic 222`, `s2221`, `hr 858` keep every digit run. The substitution is deliberately narrow -- only
- * the `<toi-number>.<cadence>` form has a suffix to drop -- so it never mangles hyphen/word-separated ids where each
- * number is genuinely part of the name (e.g. `HAT-P-11`).
+ * The host identifier's numeric components via the SHARED hostKeyOf reduction (audit-16: this replaces the round-15
+ * narrow /(toi-\d+)\.\d+/ substitution, which was safe only while every dotted label happened to be hyphenated TOI
+ * style -- a future "TIC 1234567.01" or "TOI 1234.01" would have re-leaked its candidate number with nothing in CI
+ * catching it). hostKeyOf strips a trailing candidate number and/or planet designator for ANY naming scheme, so
+ * digit-run identification here cannot drift from what distinctHosts counts. Hyphen/word ids keep their digits
+ * (HAT-P-11 -> ["11"]).
  */
 function identifierRuns(targetIdLower: string): string[] {
-  const withoutCadence = targetIdLower.replace(/(toi-\d+)\.\d+/g, "$1");
-  return withoutCadence.match(/\d+/g) ?? [];
+  return hostKeyOf(targetIdLower).match(/\d+/g) ?? [];
 }
 
 function matches(f: Finding, q: FindingQuery): boolean {

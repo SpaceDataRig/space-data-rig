@@ -677,6 +677,32 @@ authority; they are deliberately not restated here.
   and is green on `bf12a62`, as it runs `npm run test:coverage` whose 90/78 floors it clears; trust the run over any number
   written in a document, including this one).
 
+- Sixteenth-round audit (2026-10-23) moved from the interface to the RECORD/ACCOUNTING layer, and its numbers were
+  re-measured by us off production before any code moved: the 103 published rows are 91 recovered signals over 90 host
+  stars (12 pure duplicate rows; accepted 18 -> 15/15), 5 rows carry a label that contradicts their OWN
+  `crossmatch.knownPlanetName` (3 accepted: HR 858 d/c vs b, HD 260655 c vs b), and the 20 chain commitments cover only
+  17 candidates -- one physical candidate was paid for up to three times, and the HR 858 trio's three `scienceHash`es
+  differ, so no hash-level dedup can fire structurally today. WHAT SHIPPED is disclosure and counting only, all of it
+  response-projection or read-path: `src/core/signal-identity.ts` as the single shared predicate source
+  (`hostKeyOf`/`signalKeyOf`/`labelConflict`/`groupBySignal`), `requestedDesignator`/`labelConflictsWithKnown` on every
+  served finding, `labelMatchesKnownPlanet` on `verify-onchain`, `distinctHosts` re-based to host STARS (90) with
+  `distinctRecords` (103) beside it, the `.01` terminology corrected (ExoFOP candidate planet number, not "cadence"),
+  `identifierRuns` routed through `hostKeyOf` (the narrow TOI-only regex is gone), and the accounting pinned on captured
+  served bytes (`tests/fixtures/live-catalog.json`/`live-ledger.json` + `tests/live-catalog-accounting.test.ts`,
+  re-capture via `npm run fixtures:capture-catalog`). No stored row, manifest byte, `bundleHash` or `scienceHash` moved;
+  no money path was touched. CALIBRATION-GATED NEXT STEPS (red line 3 -- measure before gate; these change which
+  records EXIST and therefore what gets anchored, so they are research decisions, not edits waiting to be typed):
+  (1) a MINT-TIME suppression guard -- before `recordFinding`/auto-anchor, check `signalKeyOf` against existing rows
+  and refuse (or flag) a second record of one signal; it must first be calibrated by measuring the false-merge rate on
+  real data (what share of same-(host, period@1e-9, ppm, snr@1e-6) pairs are genuinely different planets -- the
+  `collapseCoincident` cross-host-shared-ephemeris rule is the cautionary precedent that a "coincident" signature can
+  be systematic, not planetary). (2) a `scienceProjection` re-derivation that removes the seat-identity leakage
+  (per-seat `ephemeris`/`recoveryConfidence`/`aliasMultiple` ride in today's hash, which is why one candidate hashes
+  three ways) -- but that CHANGES anchored semantics for existing commitments, so it needs its own measured design
+  note and a re-anchor policy agreed BEFORE hashing; verify-onchain already reports both hash lineages honestly beside
+  the new `labelMatchesKnownPlanet`. The audit's own ranking says the evaluation only changes with FEWER duplicate
+  rows minted, which is exactly why these two sit behind a calibration gate rather than behind a flag day.
+
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover
 released it:

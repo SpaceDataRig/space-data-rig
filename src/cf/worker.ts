@@ -34,6 +34,7 @@ import type { SeatState } from "../core/state-types.ts";
 import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
 import { summarizeState } from "../core/state-summary.ts";
 import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
+import { labelConflict } from "../core/signal-identity.ts";
 
 export { RigStateDO, RigRunWorkflow, RateLimitDO };
 
@@ -73,7 +74,10 @@ function safeName(s: string): string {
 
 /** A finding plus the derived depth the board renders directly (parity with Node). */
 function findingView(f: Finding) {
-  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6) };
+  // audit-16 D1 (edge mirror of the Node server): machine-readable label-conflict disclosure on the read
+  // projection ONLY -- the stored row, the bundle manifest and both hashes are untouched.
+  const lc = labelConflict(f.targetId, f.crossmatch);
+  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6), requestedDesignator: lc.requested, labelConflictsWithKnown: lc.conflict };
 }
 
 // Honest descriptor of the discussion engine, built from env bindings only.
@@ -385,7 +389,11 @@ app.get("/api/bundles/:id/verify-onchain", async (c) => {
     const fetchImpl: MemoFetch = (url, init) => fetch(url, init);
     const read = await readChainMemo({ endpoints, signature: entry.signature, fetchImpl });
     const cmp = compareAnchor(read, { findingId: id, ledgerBundleHash: entry.bundleHash, currentBundleHash, currentScienceHash });
-    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, ...cmp });
+    // audit-16 D2 (edge mirror): surface the requested-vs-detected label conflict machine-readably from the sealed
+    // manifest bytes, added to NO hash. The contradiction an external verifier would otherwise have to spot by eye
+    // in the manifest becomes a first-class field on the provenance endpoint they already trust.
+    const lc = labelConflict(manifest.targetId, manifest.crossmatch as { knownPlanetName?: string } | undefined);
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, detectedDesignator: lc.detected, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

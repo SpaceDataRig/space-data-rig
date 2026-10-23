@@ -105,6 +105,7 @@
     "p9:decode-memo": "tsx scripts/anchor-memo-decode.ts",
     "p8:live-probe": "tsx scripts/p8-live-probe.ts",
     "fixtures:capture": "tsx scripts/capture-live-fixtures.ts",
+        "fixtures:capture-catalog": "tsx scripts/capture-served-catalog.ts",
     "fixtures:capture-blind": "tsx scripts/capture-blind-fixtures.ts",
         "fixtures:capture-gaia": "tsx scripts/capture-gaia-rv-fixtures.ts",
     "ci:probe-fits": "tsx scripts/ci-fetch-probe-fits.ts",

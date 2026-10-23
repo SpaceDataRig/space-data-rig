@@ -57,8 +57,16 @@ export const PUBLIC_STAT_DEFINITIONS = {
     "so a pass that hangs after claiming still counts and is never counted twice -- that advance-at-claim rule is what " +
     "unfroze the 22-hour stall, and it means this number is not a promise that all those passes finished.",
   distinctHosts:
-    "Distinct hosts among RECORDED RESULTS (any verdict, accepted, watchlist or rejected). It is not the number of " +
-    "targets analysed -- that is the 'targets' tile -- so it grows only when a pass turns a look into a row.",
+    "Distinct HOST STARS among RECORDED RESULTS (any verdict, accepted, watchlist or rejected), with each target's " +
+    "planet designator / TOI candidate number stripped first (src/core/signal-identity.ts). Audit-16: this used to " +
+    "count RAW LABELS, so one star recorded under several seat labels (HR 858 b/c/d, TOI-2016.01/.02) read as several " +
+    "hosts -- live it inflated 90 stars to 103; the raw-label reading is now the separate distinctRecords counter. It " +
+    "is still not the number of targets analysed (that is the 'targets' tile): it grows only when a look becomes a row.",
+  distinctRecords:
+    "Distinct recorded TARGET LABELS (raw targetId strings, planet designators and TOI candidate numbers included). " +
+    "This is the count distinctHosts reported before audit-16 split host stars from labels; a star re-detected under " +
+    "two seat labels counts twice here and once in distinctHosts, so the gap between the two is exactly the duplicate-" +
+    "label rows the board still carries (measured live: 103 labels over 90 host stars).",
   blindCandidates:
     "Blind TOI rows assessed: every result the detector recovered BLIND on real photometry, including the ones the " +
     "critic later rejected as noise. Never anchored, never a claim.",

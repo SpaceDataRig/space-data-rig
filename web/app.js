@@ -237,8 +237,9 @@ function chairSays(text) {
 // One sentence builder for the survey line, so the two places that render it cannot drift into saying different
 // things about the same three numbers. The wording is pinned against src/core/stats-definitions.ts by
 // tests/stats-definitions.test.ts -- each phrase names the population the query counts, not a looser reading of it:
-// surveyPass counts CLAIMED passes (a hung pass still counts), distinctHosts counts hosts with a RECORDED RESULT
-// (not targets analysed -- that is the targets tile), and the blind pair is held-for-follow-up over assessed.
+// surveyPass counts CLAIMED passes (a hung pass still counts), distinctHosts counts host STARS with a RECORDED
+// RESULT (audit-16: seat labels reduce via the shared hostKeyOf, so one star under two labels counts once --
+// distinctRecords carries the raw-label count), and the blind pair is held-for-follow-up over assessed.
 function surveyStatsSentence(stats) {
   return `survey pass ${stats.surveyPass ?? 0} claimed - ${stats.distinctHosts ?? 0} hosts with recorded results - `
     + `${stats.blindHeld ?? 0}/${stats.blindCandidates ?? 0} blind candidates held/assessed (unconfirmed)`;

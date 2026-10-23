@@ -21,6 +21,7 @@ import { DurableObject } from "cloudflare:workers";
 import type { Finding, RigEvent, SeatName, Task } from "../core/types.ts";
 import { anchorStampIsValid, LEDGER_COMMITTED_SQL, mergeLedgerRow } from "../core/anchor-verify.ts";
 import { BLIND_CANDIDATE_SQL, BLIND_HELD_SQL, PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
+import { hostKeyOf } from "../core/signal-identity.ts";
 import {
   SEAT_ORDER,
   defaultSeats,
@@ -283,11 +284,19 @@ export class RigStateDO extends DurableObject<Env> {
       // audit-5 rotation/breadth counters, each now labelled by what its query actually counts
       // (src/core/stats-definitions.ts, checked against the Node mirror by tests/stats-definitions.test.ts):
       // surveyPass is the CLAIMED-pass cursor (advanced in startRunIfIdle, at the claim, NOT here -- a pass that
-      // hangs after claiming still counts, which is what unfroze the survey); distinctHosts is hosts among recorded
-      // results of any verdict, not targets analysed; blindCandidates/blindHeld are blind rows assessed vs still
-      // held for follow-up, so a critic-rejected dip cannot inflate the number the feed quotes.
+      // hangs after claiming still counts, which is what unfroze the survey); blindCandidates/blindHeld are blind
+      // rows assessed vs still held for follow-up, so a critic-rejected dip cannot inflate the number the feed
+      // quotes. audit-16: distinctHosts counts HOST STARS (designator / TOI candidate number stripped by the
+      // shared hostKeyOf -- SQLite has no regex, so this is a JS pass over the same rows), and the raw-label count
+      // it used to report is published beside it as distinctRecords, so neither reading is silently lost.
       surveyPass: Number(this.getMeta("surveyPass") ?? "0") || 0,
-      distinctHosts: scalar(`SELECT COUNT(DISTINCT json_extract(data,'$.targetId')) AS n FROM findings`),
+      distinctHosts: new Set(
+        this
+          .all<{ t: string | null }>(`SELECT json_extract(data,'$.targetId') AS t FROM findings`)
+          .map((r) => (r.t == null ? "" : hostKeyOf(r.t)))
+          .filter((s) => s !== ""),
+      ).size,
+      distinctRecords: scalar(`SELECT COUNT(DISTINCT json_extract(data,'$.targetId')) AS n FROM findings`),
       blindCandidates: scalar(`SELECT COUNT(*) AS n FROM findings WHERE ${BLIND_CANDIDATE_SQL}`),
       blindHeld: scalar(`SELECT COUNT(*) AS n FROM findings WHERE ${BLIND_HELD_SQL}`),
     };

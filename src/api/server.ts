@@ -25,6 +25,7 @@ import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { summarizeState } from "../core/state-summary.ts";
 import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
 import { serializeByKey } from "../core/inFlightLock.ts";
+import { labelConflict } from "../core/signal-identity.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -122,7 +123,17 @@ function clampFloat(v: unknown, min: number, max: number, def: number): number {
 
 /** A finding plus a couple of derived fields the board renders directly. */
 function findingView(f: Finding) {
-  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6) };
+  // audit-16 D1: a machine-readable disclosure that the LABEL's requested planet disagrees with this finding's OWN
+  // crossmatched detected planet (a card titled "HR 858 d" whose body cross-matches "HR 858 b"). Read-only projection:
+  // it adds NO key the bundle manifest or either hash folds, so every stored row and every on-chain commitment is
+  // untouched -- this is the "externalise the known defect so a reader sees it" layer the fifteenth/sixteenth audit asked for.
+  const lc = labelConflict(f.targetId, f.crossmatch);
+  return {
+    ...f,
+    depthPpm: Math.round(f.candidate.depthFrac * 1e6),
+    requestedDesignator: lc.requested,
+    labelConflictsWithKnown: lc.conflict,
+  };
 }
 
 const MIME: Record<string, string> = {
@@ -311,7 +322,12 @@ app.get("/api/bundles/:id/verify-onchain", async (c) => {
     const fetchImpl: MemoFetch = (url, init) => fetch(url, init);
     const read = await readChainMemo({ endpoints, signature: entry.signature, fetchImpl });
     const cmp = compareAnchor(read, { findingId: id, ledgerBundleHash: entry.bundleHash, currentBundleHash, currentScienceHash });
-    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, ...cmp });
+    // audit-16 D2: the sealed manifest carries BOTH the requested label (targetId) and the detected planet
+    // (crossmatch.knownPlanetName); when they disagree, say so machine-readably in the SERVICE response. Computed
+    // from manifest bytes, added to no hash -- the contradiction becomes filterable at the exact place an external
+    // verifier already comes to check provenance.
+    const lc = labelConflict(manifest.targetId, manifest.crossmatch as { knownPlanetName?: string } | undefined);
+    return c.json({ findingId: id, anchored: true, signature: entry.signature, explorerUrl: explorerUrl(entry.signature), ledgerScienceHash: entry.scienceHash, currentBundleHash, currentScienceHash, labelMatchesKnownPlanet: !lc.conflict, requestedDesignator: lc.requested, detectedDesignator: lc.detected, ...cmp });
   } catch (e) {
     return c.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

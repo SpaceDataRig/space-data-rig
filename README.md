@@ -74,6 +74,23 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
 - **The token is not part of the science.** The $SDR named-observation payment layer is an isolated
   commercialisation experiment; no verdict, `bundleHash`, `scienceHash`, or discovery claim reads from
   it. It is listed here so its presence is not mistaken for a scientific credential.
+- **Records and commitments are MINTED PER SEAT LABEL, not per physical candidate.** The workflow names one
+  finding per TOI-table row (`metaFor` reads `pl_name`, `src/cf/workflow.ts`), so a host with two candidate rows
+  can hold two records of one recovered signal, and the label can disagree with the row's own crossmatch
+  ("HR 858 d" whose body says `knownPlanetName: "HR 858 b"`). Measured on the live catalog at publication of this
+  text: **103 published rows = 91 recovered signals over 90 host stars** (12 pure duplicate rows; `accepted`
+  18 rows = 15 signals / 15 stars), and the chain's **20 commitments cover only 17 candidates** -- duplicate
+  seats were paid for. Duplicate seats of one candidate also carry *different* `scienceHash`es today, because
+  per-seat ephemeris/confidence fields ride in the projection; collapsing them is a re-derivation of anchored
+  semantics and is deliberately gated behind measuring false-merge on real data (HANDOFF next-steps), not done
+  silently. The correct merge exists (`src/candidate/dedup.ts::collapseCoincident`, ephemeris-linked, flags a
+  cross-host shared ephemeris as one systematic rather than N planets) but is **offline-only** -- zero production
+  callers, used by research scripts p19/p22. So: the board does not merge, and the chain pays per label. What
+  this pass DID change is disclosure: the served views now carry the contradiction as machine-readable data
+  (`requestedDesignator` / `labelConflictsWithKnown` on every finding, `labelMatchesKnownPlanet` on
+  `verify-onchain` -- response projections only, no stored row, manifest byte or hash touched), the accounting
+  is gated on captured production bytes (`tests/live-catalog-accounting.test.ts`), and the shared predicates
+  live in `src/core/signal-identity.ts`.
 - **Local verify and chain verify are two endpoints, kept apart.** `/api/bundles/:id/verify` recomputes the
   served manifest hash and compares it to a served `HASH.txt`, then re-hashes each artifact from the store:
   that proves the store was not edited after sealing, but does **not** read Solana.
@@ -346,8 +363,11 @@ mainnet at a cost bounded to 100 memos/day (about 0.0005 SOL/day). Set `AUTO_ANC
 - **What each public counter counts, stated where the code is read.** The rotation surfaces four numbers, and the
   honest reading of each is now written in `src/core/stats-definitions.ts` and rendered on the board: `surveyPass` is
   passes CLAIMED, not completed (the cursor advances when a run takes the slot, so a pass that hangs still counts once
-  and never twice); `distinctHosts` is distinct hosts among RECORDED results of any verdict, not targets analysed
-  (that is the separate `targets` tile); and the blind figure is a pair -- `blindHeld`/`blindCandidates` -- held for
+  and never twice); `distinctHosts` counts host STARS among RECORDED results of any verdict -- seat labels reduced
+  by the shared `hostKeyOf` (a trailing planet designator and/or TOI candidate number stripped), so one star under
+  two seat labels counts ONCE (audit-16: the old rule counted distinct LABELS, reading 103 where 90 stars live) --
+  `distinctRecords` publishes the raw-label count beside it, and neither is targets analysed (that is the separate
+  `targets` tile); and the blind figure is a pair -- `blindHeld`/`blindCandidates` -- held for
   human follow-up over rows assessed, because a critic-rejected dip is noise the pipeline cleared, not a lead. The X
   digest and the dashboard now share `isHeldBlindCandidate`, so the phrase "blind candidate" cannot be counted two
   ways on two surfaces (an earlier board showed 47 where the feed's honest figure was 26, 21 of them rejected).
@@ -1116,7 +1136,7 @@ Base URL `http://127.0.0.1:8787` (override with `PORT` / `HOST`).
 | GET | `/health` | liveness/readiness probe (used by docker-compose + rig.yaml) |
 | GET | `/api/state` | full dashboard payload: stats, seats, findings, bundles, events |
 | GET | `/api/run/status` | current/last run state (Node) |
-| GET | `/api/findings` | all findings (newest first) |
+| GET | `/api/findings` | all findings (newest first); accepts the v0.2 query (`verdict`, `origin`, `tic`, `q`, `periodMin/Max`, `depthMin/Max`, `snrMin`, `sort`, `dir`, `limit`, `offset`) -- a valid `dir=asc` engages the default sort but still pages at `limit` (default 100, max 500), so ascending over the whole catalog asks `limit=500`; `hasMore` discloses the truncation, and criteria that were dropped or bounded come back as `ignored`/`clamped` |
 | GET | `/api/findings/:id` | one finding |
 | GET | `/api/bundles` | bundle records |
 | GET | `/api/bundles/:id/manifest` | the reproducible bundle manifest JSON |

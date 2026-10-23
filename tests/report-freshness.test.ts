@@ -224,7 +224,7 @@ test("verified never exceeds stamped, and no report is verified while stale", as
   const { readFileSync, existsSync } = await import("node:fs");
   if (!existsSync("web/reports/index.json")) return;
   const idx = JSON.parse(readFileSync("web/reports/index.json", "utf8")) as {
-    freshness?: { stamped?: number; verified?: number; fullyVerified?: number; total?: number; stale?: string[] };
+    freshness?: { stamped?: number; verified?: number; fullyVerified?: number; unattested?: number; total?: number; stale?: string[] };
     reports?: { id: string; stamped?: boolean; verified?: boolean; fresh?: boolean; rehashed?: number; reproducible?: number; unverifiableInputs?: number; untrackedInputs?: number }[];
   };
   const rs = idx.reports ?? [];
@@ -248,6 +248,10 @@ test("verified never exceeds stamped, and no report is verified while stale", as
   assert.equal(f.fullyVerified, rs.filter((r) => r.verified && (r.unverifiableInputs ?? 0) === 0 && (r.untrackedInputs ?? 0) === 0).length, "fullyVerified must equal the entries whose every recorded input was tracked, present and matching");
   assert.equal(f.verified, rs.filter((r) => r.verified).length, "aggregate verified must equal the per-entry count");
   assert.equal(f.total, rs.length, "freshness.total must equal the number of report entries");
+  // audit-14 N6: the unattested mass is a first-class number, not inferred -- a `fresh:true` with no stamp is
+  // "not known stale", never "verified current", and the index must expose how many reports are in that state.
+  assert.equal(f.unattested, (f.total ?? 0) - (f.stamped ?? 0), "freshness.unattested must equal total minus stamped");
+  assert.equal(f.unattested, rs.filter((r) => !r.stamped).length, "aggregate unattested must equal the per-entry unstamped count");
 });
 
 test("a verified report whose inputs are all present claims no partial note", () => {

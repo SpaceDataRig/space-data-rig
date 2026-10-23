@@ -23,7 +23,8 @@ import { fileURLToPath } from "node:url";
 import { RigStore } from "../core/store.ts";
 import { PUBLIC_STAT_DEFINITIONS } from "../core/stats-definitions.ts";
 import { summarizeState } from "../core/state-summary.ts";
-import { parseFindingQuery, queryFindings } from "../core/finding-query.ts";
+import { parseFindingQuery, queryFindings, ignoredFindingParams } from "../core/finding-query.ts";
+import { serializeByKey } from "../core/inFlightLock.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -251,9 +252,11 @@ app.get("/api/discussion/:id/receipt/verify", async (c) => {
 
 app.get("/api/findings", (c) => {
   const findings = store.listFindings();
-  const q = parseFindingQuery(c.req.query());
+  const raw = c.req.query();
+  const q = parseFindingQuery(raw);
   const r = queryFindings(findings, q);
-  return c.json({ findings: r.rows.map(findingView), query: q, total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
+  // audit-14 N1: parity with the edge -- echo the params that were supplied but not trusted (transparency only).
+  return c.json({ findings: r.rows.map(findingView), query: q, ignored: ignoredFindingParams(raw), total: r.total, matched: r.matched, limit: r.limit, offset: r.offset, hasMore: r.hasMore });
 });
 
 app.get("/api/findings/:id", (c) => {
@@ -348,6 +351,13 @@ app.post("/api/observe", async (c) => {
 const b64Decode = (s: string): unknown => JSON.parse(Buffer.from(s, "base64").toString("utf8"));
 const b64Encode = (o: unknown): string => Buffer.from(JSON.stringify(o)).toString("base64");
 
+// audit-14 N3 (Node parity with the DO's commissionInFlight): serialise commissions carrying the SAME burn signature.
+// The by-sig replay guard and its write sit either side of the on-chain anchor awaits, so two concurrent same-
+// signature requests could both pass the guard and both spend SOL. serializeByKey (src/core/inFlightLock.ts, tested
+// offline) makes a duplicate wait for the first to settle, then re-run its OWN critical section -- by-sig is now
+// written, so it honestly returns the 402 "already used". A Response body is single-use, so we chain, never share.
+const commissionTail = new Map<string, Promise<void>>();
+
 // Commission a NAMED OBSERVATION. x402 handshake identical in shape to the edge: unpaid -> 402 + X-PAYMENT-REQUIRED
 // (burn exactly 10,000 $SDR); with X-PAYMENT (a burn tx SIGNATURE) the burn is re-read FROM THE CHAIN and verified
 // (never trusting the client), the SAME deterministic search runs, and the envelope hash anchors on mainnet under
@@ -388,6 +398,8 @@ app.post("/api/observe/commission", async (c) => {
   const envelopeHash = out.envelopeHash;
   const burnSig = out.paymentSignature;
 
+  // audit-14 N3: the whole spend-critical section runs under the per-signature lock (serializeByKey).
+  return await serializeByKey(commissionTail, burnSig, async () => {
   // replay guard: one 10,000 $SDR burn commissions exactly one observation.
   if (await artifacts.exists(`observations/by-sig/${burnSig}.json`)) {
     return c.json({ error: "payment already used: each 10,000 $SDR burn commissions exactly one observation" }, 402);
@@ -465,6 +477,7 @@ app.post("/api/observe/commission", async (c) => {
 
   const receipt = buildPaymentResponse(burnSig, explorerUrl(burnSig), new Date().toISOString());
   return c.json({ record: finalRecord, memo, envelopeHash, anchored, dryRun, capReached, signature, slot, explorerUrl: anchorExplorer, science: out.science }, 200, { "X-PAYMENT-RESPONSE": b64Encode(receipt) });
+  });
 });
 
 // Independently verify a sealed named observation from its envelope hash (?hash=) or the burn signature that

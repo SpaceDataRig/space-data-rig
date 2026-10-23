@@ -87,6 +87,44 @@ export function parseFindingQuery(raw: Record<string, string | undefined>): Find
   return q;
 }
 
+/**
+ * audit-14 N1: which supplied query parameters were PRESENT (non-empty) but NOT applied because their value failed
+ * validation. parseFindingQuery deliberately drops a bad value rather than throwing (the empty-query identity
+ * invariant must hold, and a typo should not 500 the endpoint), but a silent drop is a different kind of dishonesty
+ * to an external verifier reading the URL directly: `?verdict=accesped` looked like a filter and returned the whole
+ * catalog with no trace. This mirrors the EXACT drop rules of parseFindingQuery -- the same vocabularies and the same
+ * `num()` finite test -- so a key reported here is one that genuinely did nothing. The handlers echo it in the
+ * response (`ignored: [...]`) so a caller learns their criterion was not trusted, without the endpoint changing which
+ * rows it returns.
+ */
+export function ignoredFindingParams(raw: Record<string, string | undefined>): string[] {
+  const ignored: string[] = [];
+  const present = (v: string | undefined): boolean => v != null && v.trim() !== "";
+  if (present(raw.verdict) && !VERDICTS.has(raw.verdict as string)) ignored.push("verdict");
+  if (present(raw.origin) && !ORIGINS.has(raw.origin as string)) ignored.push("origin");
+  if (present(raw.sort) && !SORTS.has(raw.sort as string)) ignored.push("sort");
+  if (present(raw.dir) && raw.dir !== "asc" && raw.dir !== "desc") ignored.push("dir");
+  for (const k of ["periodMin", "periodMax", "depthMin", "depthMax", "snrMin", "limit", "offset"]) {
+    if (present(raw[k]) && num(raw[k]) === undefined) ignored.push(k);
+  }
+  return ignored;
+}
+
+/**
+ * audit-14 N2: the `tic` parameter promises an identifier, so a purely numeric query matches a WHOLE digit run of
+ * the target id exactly -- not a loose substring, which made `tic=858` also hit every host whose id merely CONTAINED
+ * 858 (8581, S8581x). A query that carries any non-digit (e.g. "toi", "wasp", or a spaced "tic 222") keeps the
+ * case-insensitive contains behaviour, because there is no digit-run semantics to apply. The free-text `q` remains
+ * the deliberate contains-everything tool; `tic` is now precise where precision is promised.
+ */
+function targetMatchesTic(targetIdLower: string, ticLower: string): boolean {
+  if (/^\d+$/.test(ticLower)) {
+    const digitRuns: string[] = targetIdLower.match(/\d+/g) ?? [];
+    return digitRuns.includes(ticLower);
+  }
+  return targetIdLower.includes(ticLower);
+}
+
 function matches(f: Finding, q: FindingQuery): boolean {
   if (q.verdict && f.verdict !== q.verdict) return false;
   if (q.origin) {
@@ -94,7 +132,8 @@ function matches(f: Finding, q: FindingQuery): boolean {
     const eff: Finding["origin"] = f.origin ?? "revalidation";
     if (eff !== q.origin) return false;
   }
-  if (q.tic && !f.targetId.toLowerCase().includes(q.tic)) return false;
+  if (q.tic !== undefined && !targetMatchesTic(f.targetId.toLowerCase(), q.tic)) return false;
+
   if (q.q) {
     const hay = [
       f.targetId,

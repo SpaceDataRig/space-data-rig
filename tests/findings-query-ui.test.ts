@@ -17,6 +17,8 @@ import {
   hasConstraints,
   isHarmonicAlias,
   dedupeById,
+  applyFindingsPage,
+  applyFailedPage,
   QUERY_PAGE,
 } from "../web/findings-query-ui.js";
 import { parseFindingQuery, queryFindings } from "../src/core/finding-query.ts";
@@ -201,19 +203,56 @@ test("app.js wires the query console into the board (imports the builder, branch
   assert.match(APP, /buildFindingsParams\(findingsQuery\.form, offset\)/, "and page with offset through the builder");
 });
 
-// audit-13 wiring: the six fixes must be actually WIRED, not just defined in the pure module (a predicate that no
-// render path calls is the audit-4 failure mode again). Each asserts the app.js call site, not the helper body.
-test("app.js wires the audit-13 fixes: alias gating, race token, failure clear, dedupe, hasConstraints/opts", () => {
-  assert.match(APP, /import \{[^}]*\bhasConstraints\b[^}]*\bisHarmonicAlias\b[^}]*\bdedupeById\b[^}]*\} from "\/findings-query-ui\.js"/, "app.js must import the new pure predicates");
+// ---- audit-14 N4: the console's state transitions are BEHAVIOUR-tested, not string-matched ----
+// audit-13 proved the race/merge/clear logic by regex-matching app.js source -- the audit-4 anti-pattern this
+// module's own header forbids. That logic now lives in the pure applyFindingsPage / applyFailedPage, so these tests
+// feed REAL response envelopes and assert the resulting rows/counts. A response that would mis-merge, double a row,
+// or strand stale cards after a failure now fails offline, on the exact function the browser runs.
+
+test("applyFindingsPage: a fresh query (offset 0) REPLACES the rows, taking counts from the server envelope", () => {
+  const state = { rows: [{ id: "old" }] };
+  const res = { findings: [{ id: "a" }, { id: "b" }], total: 103, matched: 7, hasMore: true };
+  assert.deepEqual(applyFindingsPage(state, res, 0), { rows: [{ id: "a" }, { id: "b" }], total: 103, matched: 7, hasMore: true });
+});
+
+test("applyFindingsPage: 'load more' (offset > 0) APPENDS and de-duplicates a row the catalog shifted onto both pages", () => {
+  const state = { rows: [{ id: "a" }, { id: "b" }] };
+  const res = { findings: [{ id: "b", stale: true }, { id: "c" }], total: 103, matched: 3, hasMore: false };
+  const next = applyFindingsPage(state, res, 2);
+  assert.deepEqual(next.rows.map((r) => r.id), ["a", "b", "c"], "the b from the first page is kept, the re-sent b dropped");
+  assert.equal(next.rows[1], state.rows[1], "the FIRST occurrence survives, not the duplicate");
+  assert.equal(next.matched, 3);
+  assert.equal(next.hasMore, false);
+});
+
+test("applyFindingsPage: absent or dirty counts fall back to what the rows actually show, never to a lie", () => {
+  const next = applyFindingsPage({ rows: [] }, { findings: [{ id: "x" }, { id: "y" }] }, 0);
+  assert.equal(next.total, 2, "no res.total => the rows seen");
+  assert.equal(next.matched, 2, "no res.matched => the total");
+  assert.equal(next.hasMore, false, "absent hasMore reads false");
+});
+
+test("applyFailedPage: a dead FRESH query clears to an honest empty state; a dead load-more keeps what is on screen", () => {
+  const shown = { rows: [{ id: "a" }, { id: "b" }], total: 103, matched: 40, hasMore: true };
+  assert.deepEqual(applyFailedPage(shown, 0), { rows: [], total: 0, matched: 0, hasMore: false }, "fresh failure clears");
+  assert.deepEqual(applyFailedPage(shown, 2), shown, "a failed next-page must NOT discard rows the reader already saw");
+});
+
+// ---- wiring: the browser must actually CALL those tested functions (glue a behaviour test cannot reach) ----
+
+// audit-13/14 wiring: the fixes must be WIRED into app.js, not just defined in the pure module. The merge/clear
+// LOGIC is behaviour-tested above; here we only assert the call sites and the one genuinely browser-timing guard
+// (the monotonic token), which cannot be extracted into a pure function.
+test("app.js wires the console fixes: alias gating, race token, the tested reducers, hasConstraints/opts", () => {
+  assert.match(APP, /import \{[^}]*\bhasConstraints\b[^}]*\bisHarmonicAlias\b[^}]*\bapplyFindingsPage\b[^}]*\bapplyFailedPage\b[^}]*\} from "\/findings-query-ui\.js"/, "app.js must import the pure predicates and reducers");
   // P1-1: the Evidence alias note is gated on isHarmonicAlias, never the old `aliasMultiple != null` that stamped x1.
   assert.match(APP, /const alias = isHarmonicAlias\(m\) \?/, "evidenceHtml must gate the alias note on the predicate");
   assert.doesNotMatch(APP, /const alias = m\.aliasMultiple != null/, "the old always-stamp-x1 gate must not return");
-  // P2-3: a monotonic token discards a superseded response, and a failed fresh query clears the rows.
+  // P2-3: a monotonic token identifies the newest request; a superseded page is dropped before the reducer mutates.
   assert.match(APP, /const token = \+\+findingsQuery\.token;/, "fetchFindingsPage must mint a request token");
-  assert.match(APP, /if \(token !== findingsQuery\.token\) return;[\s\S]*?const page = res\.findings/, "a superseded page must be dropped before it mutates state");
-  assert.match(APP, /catch \(e\) \{[\s\S]*?if \(offset === 0\) \{[\s\S]*?findingsQuery\.rows = \[\];/, "a failed fresh query must clear the stranded cards");
-  // P2-6: appended pages are collapsed by id.
-  assert.match(APP, /findingsQuery\.rows = dedupeById\(combined\);/, "load-more pages must be de-duplicated by id");
+  assert.match(APP, /if \(token !== findingsQuery\.token\) return;[\s\S]*?applyFindingsPage\(findingsQuery, res, offset\)/, "a stale response must be dropped before the merge reducer runs");
+  // P2-3 failure path now delegates the clear/keep decision to the behaviour-tested reducer.
+  assert.match(APP, /applyFailedPage\(findingsQuery, offset\)/, "the failure path must call the tested reducer, not inline logic");
   // P2-4/P2-5: resultMeta is fed the form-derived filtered flag and the active sort, not the ambiguous count.
   assert.match(APP, /filtered: hasConstraints\(findingsQuery\.form\)/, "resultMeta filtered flag must come from hasConstraints(form)");
   assert.match(APP, /sort: \(findingsQuery\.form && findingsQuery\.form\.sort\) \|\| "recent"/, "resultMeta must know the active sort");

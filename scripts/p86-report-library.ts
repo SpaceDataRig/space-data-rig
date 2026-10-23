@@ -249,6 +249,11 @@ function main(): void {
       stamped: stampedCount,
       verified: verifiedCount,
       fullyVerified: fullCount,
+      // audit-14 N6: make the unaudited mass a first-class number instead of something inferred by subtracting
+      // `stamped` from `total`. A report with no stamp still reads `fresh: true` because the gate cannot detect
+      // staleness in something it has no checksum to re-hash -- that is "not known stale", NOT "verified current".
+      // `unattested` names how many reports are in that state, so the aggregate can never be read as "all fresh".
+      unattested: reports.length - stampedCount,
       total: reports.length,
       stale: staleIds,
     },

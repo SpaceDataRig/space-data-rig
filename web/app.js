@@ -22,7 +22,7 @@ import { depthCellText, periodCellText } from "/honest-precision.js";
 // v0.2 P0b: the server-side query console assembles its request through this pure builder (the SAME function
 // tests/findings-query-ui.test.ts drives offline), so the parameter names the browser sends cannot drift from what
 // src/core/finding-query.ts parses on either runtime.
-import { buildFindingsParams, findingsQueryPath, resultMeta, hasConstraints, isHarmonicAlias, dedupeById } from "/findings-query-ui.js";
+import { buildFindingsParams, findingsQueryPath, resultMeta, hasConstraints, isHarmonicAlias, applyFindingsPage, applyFailedPage } from "/findings-query-ui.js";
 
 const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -570,24 +570,18 @@ async function fetchFindingsPage(offset) {
     const params = buildFindingsParams(findingsQuery.form, offset);
     const res = await fetchJSON(findingsQueryPath(params));
     if (token !== findingsQuery.token) return; // superseded mid-flight by a newer query/reset: drop this page
-    const page = res.findings || [];
-    const combined = offset === 0 ? page : findingsQuery.rows.concat(page);
-    // audit-13 P2-6: the catalog can shift between two page requests (a run upserts a row, the sort recomputes), so
-    // the same finding may appear on consecutive pages; collapse by id, keeping the first occurrence.
-    findingsQuery.rows = dedupeById(combined);
-    findingsQuery.total = res.total ?? findingsQuery.rows.length;
-    findingsQuery.matched = res.matched ?? findingsQuery.total;
-    findingsQuery.hasMore = Boolean(res.hasMore);
+    // audit-14 N4: the merge (replace vs append + de-dup by id + honest counts) is the pure applyFindingsPage the
+    // offline tests drive -- not inline logic proven by string-match. The token guard above is the only browser-timing
+    // concern left here; everything the reader sees as a result is decided by a function under test.
+    Object.assign(findingsQuery, applyFindingsPage(findingsQuery, res, offset));
     renderBoard();
   } catch (e) {
     if (token !== findingsQuery.token) return;
-    if (offset === 0) {
-      findingsQuery.rows = [];
-      findingsQuery.matched = 0;
-      findingsQuery.total = 0;
-      findingsQuery.hasMore = false;
-      renderBoard();
-    }
+    // audit-14 N4: same extraction for the failure path -- a dead fresh query clears, a dead load-more keeps what
+    // is on screen, both decided by the pure applyFailedPage rather than inline app.js logic.
+    const changed = offset === 0;
+    Object.assign(findingsQuery, applyFailedPage(findingsQuery, offset));
+    if (changed) renderBoard();
     if (fqMetaEl) fqMetaEl.textContent = `query failed: ${e.message}`;
   } finally {
     if (token === findingsQuery.token) findingsQuery.loading = false;

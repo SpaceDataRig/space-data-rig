@@ -132,6 +132,45 @@ export function dedupeById(rows) {
 }
 
 /**
+ * audit-14 N4: the WHOLE page-merge decision, as a pure function the console calls and the tests drive. audit-13
+ * shipped this logic inline in app.js and proved it only by regex-matching the source string -- the very audit-4
+ * failure mode the header of this module warns about ("a browser behaviour proven by string-matching app.js can
+ * ship wrong on real data"). It belongs here so tests can feed REAL response envelopes and assert the resulting
+ * rows/counts, on the exact function the browser runs. Given the current view state, the incoming page's `res` and
+ * the offset it was requested at, it returns the next { rows, total, matched, hasMore }: a fresh query (offset 0)
+ * REPLACES the rows, "load more" APPENDS, and either way the merged set is de-duplicated by id. Absent/dirty counts
+ * fall back to what the rows actually show, never to a lie.
+ */
+export function applyFindingsPage(state, res, offset) {
+  const r = res || {};
+  const page = Array.isArray(r.findings) ? r.findings : [];
+  const base = state && Array.isArray(state.rows) ? state.rows : [];
+  const rows = dedupeById(offset === 0 ? page : base.concat(page));
+  const totalN = Number(r.total);
+  const matchedN = Number(r.matched);
+  const total = Number.isFinite(totalN) ? totalN : rows.length;
+  const matched = r.matched != null && Number.isFinite(matchedN) ? matchedN : total;
+  return { rows, total, matched, hasMore: Boolean(r.hasMore) };
+}
+
+/**
+ * audit-14 N4: the failure transition, also pure and testable. A failed FRESH query (offset 0) must clear the board
+ * to an honest empty state -- leaving the previous query's cards stranded under an error line is the audit-13 P2 fix
+ * that was, until now, only string-asserted. A failed "load more" (offset > 0) must NOT throw away rows the reader
+ * already saw; it keeps them and preserves the prior counts. Returns the next state slice (rows/total/matched/hasMore).
+ */
+export function applyFailedPage(state, offset) {
+  if (offset === 0) return { rows: [], total: 0, matched: 0, hasMore: false };
+  const s = state || {};
+  return {
+    rows: Array.isArray(s.rows) ? s.rows : [],
+    total: Number(s.total) || 0,
+    matched: Number(s.matched) || 0,
+    hasMore: Boolean(s.hasMore),
+  };
+}
+
+/**
  * A plain-ASCII one-line status for the panel, built from the server's response envelope + how many rows the reader
  * currently sees. Kept here (not in app.js) so the wording is unit-testable and identical on either runtime's data.
  * `shown` is the cumulative rows the console has rendered so far (page 1 + any "load more").

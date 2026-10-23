@@ -70,6 +70,28 @@ type AnchorFindingResult = {
   deduplicated?: boolean; dedupOf?: { findingId: string; signature: string };
 };
 
+// Outcome of an observeCommission call (HTTP-mapped by the Worker route). Extracted as a named type so the
+// per-signature in-flight lock (audit-14 N3) can serialise concurrent same-burn calls onto the same result, exactly
+// as AnchorFindingResult does for anchors. Shape is unchanged from the previous inline method return type.
+type ObserveCommissionResult = {
+  ok: boolean;
+  status: number;
+  error?: string;
+  errors?: string[];
+  record?: ObservationRecord;
+  memo?: string;
+  envelopeHash?: string;
+  paymentSignature?: string;
+  anchored?: boolean;
+  alreadyAnchored?: boolean;
+  dryRun?: boolean;
+  capReached?: boolean;
+  signature?: string;
+  slot?: number;
+  explorerUrl?: string;
+  science?: ObserveScience;
+};
+
 export class RigStateDO extends DurableObject<Env> {
   private artifacts!: R2ArtifactStore;
   // audit-10 #7: per-finding in-flight anchors. A Durable Object serves requests CONCURRENTLY, and the
@@ -78,6 +100,14 @@ export class RigStateDO extends DurableObject<Env> {
   // chained through this map so a concurrent same-finding call reuses the in-flight outcome instead of
   // starting a second spend. Cleared in a finally; only guards the real (non-dryRun) spend path.
   private readonly anchorInFlight = new Map<string, Promise<AnchorFindingResult>>();
+
+  // audit-14 N3: the SAME intra-flight race exists on the NAMED-OBSERVATION money path. observeCommission checks the
+  // burn replay guard (artifacts.exists on observations/by-sig/<sig>) and only WRITES it (markBurnUsed) after the
+  // on-chain anchor -- many awaits that yield the DO turn apart -- so two concurrent requests carrying ONE burn
+  // signature could both pass the guard and both anchor, spending the operator's SOL twice. Keyed by burn signature,
+  // mirroring anchorInFlight: a second same-signature call awaits the first's outcome. The by-sig/envelopeHash guards
+  // stay as the cross-invocation (already-completed) idempotency; this closes only the simultaneous race.
+  private readonly commissionInFlight = new Map<string, Promise<ObserveCommissionResult>>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -807,24 +837,7 @@ export class RigStateDO extends DurableObject<Env> {
     sector: number | null;
     dedication: string;
     xPaymentB64?: string | null;
-  }): Promise<{
-    ok: boolean;
-    status: number;
-    error?: string;
-    errors?: string[];
-    record?: ObservationRecord;
-    memo?: string;
-    envelopeHash?: string;
-    paymentSignature?: string;
-    anchored?: boolean;
-    alreadyAnchored?: boolean;
-    dryRun?: boolean;
-    capReached?: boolean;
-    signature?: string;
-    slot?: number;
-    explorerUrl?: string;
-    science?: ObserveScience;
-  }> {
+  }): Promise<ObserveCommissionResult> {
     // 1) decode the x402 payment envelope (base64 JSON) if present; absence => "payment required" from the layer below.
     let payment: unknown = null;
     if (input.xPaymentB64) {
@@ -844,6 +857,13 @@ export class RigStateDO extends DurableObject<Env> {
     const envelopeHash = out.envelopeHash;
     const burnSig = out.paymentSignature;
 
+    // audit-14 N3: serialise concurrent commissions of the SAME burn signature (see commissionInFlight). The replay
+    // guard's exists() check below and its markBurnUsed() write are separated by the on-chain anchoring awaits, so a
+    // second same-signature request could pass the guard before the first has spent -- paying SOL twice. A duplicate
+    // call awaits the first's in-flight outcome; the by-sig/envelopeHash guards stay as cross-invocation idempotency.
+    const inFlight = this.commissionInFlight.get(burnSig);
+    if (inFlight) return await inFlight;
+    const runCommission = async (): Promise<ObserveCommissionResult> => {
     // 3) replay guard: one 10,000 $SDR burn commissions exactly one observation.
     if (await this.artifacts.exists(`observations/by-sig/${burnSig}.json`)) {
       await this.emitEvent("reporter", "warn", `Observation commission REJECTED: burn ${burnSig.slice(0, 16)}... already spent.`);
@@ -939,6 +959,15 @@ export class RigStateDO extends DurableObject<Env> {
     );
 
     return { ok: true, status: 200, record: finalRecord, memo, envelopeHash, paymentSignature: burnSig, anchored, dryRun, capReached, signature, slot, explorerUrl: anchorExplorer, science: out.science };
+    };
+
+    const p = runCommission();
+    this.commissionInFlight.set(burnSig, p);
+    try {
+      return await p;
+    } finally {
+      if (this.commissionInFlight.get(burnSig) === p) this.commissionInFlight.delete(burnSig);
+    }
   }
 
   /** Record that a burn signature has been spent, so it can never commission a second observation. */

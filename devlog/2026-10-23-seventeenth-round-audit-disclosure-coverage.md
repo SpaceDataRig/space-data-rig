@@ -6,6 +6,33 @@ the measurable deltas and states the standing limits honestly. The round's lesso
 direction: a fix that also hardens the wrong expectation into a gate is worse than no fix,
 because it makes the next correction look like a regression.
 
+## Round-18 correction note (reach over-claim + violation-post disposal)
+
+TWO corrections an eighteenth-round audit found in this entry, recorded here because the pushed bytes in the fenced
+block at the bottom are IMMUTABLE and must never be re-stamped -- an archive that drifts from the feed is worse than no
+archive at all:
+
+1. REACH OVER-CLAIMED. The "Measured deltas" line below ("went from readable on 28 of 103 rows (27.2%) to all 103") and
+   the fenced pushed text ("the predicate now decodes a candidate number ... so it reads the whole catalog", posted id
+   2113577794491896133) conflated PARSER coverage with PREDICATE reach. The verifiable framing, re-measured on the
+   committed fixture AND live production: designator parsing DOES cover 103 of 103 rows (requestedDesignatorKind spans
+   candidate-number 58 / planet-letter 41 / none 4, and requestedDesignator is non-null on 99 of 103 -- the 4 unnamed
+   rows GJ 1214 / HAT-P-11 / HD 189733 / WASP-121 are correctly none), but the label-conflict predicate can only FIRE on
+   34 of 103 rows (33.0%) -- the rows whose label AND whose NASA cross-match name both decode to a designator. The
+   ceiling is 38 (the rows carrying a crossmatch.knownPlanetName at all); the other 65 rows have no comparison name to
+   contradict, so the predicate cannot fire on them no matter how the label reads. Reach went 27.2% -> 33.0%, NOT
+   27.2% -> 100%. A round-18 correction post owns this on the same public feed; the fenced bytes here are annotated, not
+   altered, and a fourth send-time net (feedCoverageViolations) now refuses a coverage/capability totality claim that
+   carries no denominator, so this class of over-claim cannot be posted again.
+
+2. VIOLATION POST DISPOSED (the line the audit found missing). The superseded first attempt recorded under "Dispatch
+   evidence" below (run 39937991755, posted id 2113575468452454508, which carried the forbidden time-window token) is
+   hereby marked SUPERSEDED-BY posted id 2113577794491896133 and annotated by the round-18 correction post. It is
+   RECORDED, not deleted: this repo has no DELETE /2/tweets/:id path and we do not silently erase our own public error --
+   the corrected post plus this ledger line ARE the disposal. If the operator wants it removed rather than annotated,
+   that is a stated one-line follow-up, not an assumption baked into the record. The send-time time-word guard that would
+   have blocked that token is live since round-17 (commit ee72057), so the class cannot recur.
+
 ## Dispatch evidence
 
 - Dispatch accepted: HTTP `204` (POST .../workflows/x-post.yml/dispatches ref=main, inputs.text=<these bytes>, inputs.maxlen=25000).
@@ -24,7 +51,7 @@ because it makes the next correction look like a regression.
 
 ## Measured deltas (live, from a fetch after deploy -- out/verify17.ts, 23 assertions, all passing)
 
-- Predicate reach: the label-conflict check went from readable on 28 of 103 rows (27.2%) to all 103; requestedDesignator is no longer null on those 62 rows -- the designator kinds now span candidate-number 58, planet-letter 41, none 4.
+- Predicate reach: the label-conflict check went from readable on 28 of 103 rows (27.2%) to all 103; requestedDesignator is no longer null on those 62 rows -- the designator kinds now span candidate-number 58, planet-letter 41, none 4. [ROUND-18 CORRECTION: "to all 103" was an over-claim -- that is PARSER coverage (the designator kinds do span 103/103), but the label-conflict PREDICATE can only FIRE on 34 of 103 rows (33.0%), ceiling 38, because 65 rows carry no NASA comparison name to contradict; see the correction note at the top.]
 - Conflicts: 5 -> 7. The two recovered rows are TOI-6054.02 (self-label .02, crossmatch TOI-6054.01) and TOI-4443 c (self-label c, crossmatch TOI-4443.01); both are needs-more-data and neither is in the 20 anchored ledger rows, so no on-chain promise changed.
 - Parity: the served flag equals our kernel recompute and an independent neutral comparator with zero mismatch across all 103 rows, on both the Node server and the edge worker.
 - Host key: now keeps the binary component letter; this is latent, not a corrected count -- the catalog currently holds only A components, so distinctHosts stays exactly 90 over 103 records, and a neutral component-preserving recompute agrees with zero cross-star collisions.

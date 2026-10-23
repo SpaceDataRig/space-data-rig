@@ -621,7 +621,10 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: the revision this snapshot describes is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
-  (decode TOI candidate numbers `.01` -> b so the label-conflict predicate sees the whole catalog instead of 27.2% of it, keep
+  (decode TOI candidate numbers `.01` -> b so designator parsing covers 103 of 103 rows and the label-conflict predicate can FIRE
+  on the 34 of 103 rows (33.0%, up from 27.2%) whose label AND NASA cross-match name both decode to a designator -- the other 65
+  rows carry no comparison name to contradict, so round-17's public "sees the whole catalog" was an over-claim corrected in round
+  18 (see the eighteenth-round bullet below) -- keep
   binary star-component letters in `hostKeyOf`, publish a `designatorKind` to disambiguate a null designator, render the conflict
   on the board card, and prove served == kernel with an offline wiring test), stacked on the sixteenth-round RECORD/ACCOUNTING
   disclosure layer `c70593e` (signal-identity kernel, label-conflict fields, honest host counting), the fifteenth-round query
@@ -765,6 +768,46 @@ authority; they are deliberately not restated here.
   GO window and re-measured live: all 23 post-deploy assertions passed, including 7 flagged rows (served == kernel == an
   independent neutral comparator, 0 mismatch on all 103 rows) and `verify-onchain` on `F-HD-260655-c` still
   `labelMatchesKnownPlanet: false` with its `ledgerScienceHash` byte-equal to the committed fixture.
+
+- Eighteenth-round audit (2026-10-23) re-derived the round-17 Defect-1 fix from THREE independent angles at once -- our kernel,
+  `/api/findings`, `/api/state`, plus a neutral comparator that knows no ExoFOP convention beyond `.NN` -- with ZERO mismatch
+  (`.01 -> b` live, conflicts exactly 7 on all three, the gate direction corrected in the SAME commit as the kernel, and the
+  wiring + `node --check` gates proven live by injecting an ESM syntax error and watching exit 1). It then caught the first
+  PUBLIC-number miss in sixteen rounds, and it is ours: the round-17 post (id `2113577794491896133`) said the predicate "reads
+  the whole catalog" and the devlog header said reach went "to all 103", conflating PARSER coverage with PREDICATE reach.
+  Designator parsing genuinely spans 103/103 and `requestedDesignator` is non-null on 99/103 (4 unnamed rows correctly `none`),
+  but `labelConflict` can only FIRE where BOTH sides decode a designator AND the row carries a NASA `crossmatch.knownPlanetName`
+  to contradict -- re-measured on the committed fixture AND live, that is 34 of 103 rows (33.0%), ceiling 38 (the rows with a
+  comparison name), 65 rows with nothing to contradict. So 27.2% -> 33.0%, NOT -> 100%. WHAT SHIPPED is guard hardening + docs
+  with NO Worker deploy (scripts/tests/docs only; `src/core/signal-identity.ts` changed by a DOC-COMMENT alone, compiling to
+  byte-identical runtime, so the served bundle is unchanged): (1) a FOURTH public net `feedCoverageViolations()` on the send path
+  (`scripts/post-x-text.ts`) that refuses a coverage/capability totality claim carrying no denominator -- the class ALL THREE
+  prior nets (over-claim / time / money) missed, and the sentence this repo writes most; deliberately narrow, so an honest "every
+  candidate is UNCONFIRMED" still passes (an over-refusing guard is its own failure); (2) `FEED_SPEND_WORDS` widened from a
+  word-list toward a rule (`\$\w`, burn, fee, spend, lamports, rent, payout) after 8 of 19 probes evaded the old enum -- `$SDR`,
+  burn/burned, fee, spend, lamports, rent, payout, this system's own currency vocabulary; (3) the THIRD, wider time-word copy in
+  `tests/science-digest.test.ts` DELETED so send + archive + composer share ONE `FEED_TIME_WORDS`/`FEED_SPEND_WORDS` (the extra
+  phrases folded into the single exec-layer rule), closing the mismatch that ran in the direction which had let the round-17
+  violation through; (4) the `hostKeyOf` COMPONENT ASYMMETRY -- a label carrying a stellar component the crossmatch name lacks
+  ("HD 202772 A c" vs known "HD 202772 b") yields different host keys, SUPPRESSING a real conflict AND blocking the `signalKeyOf`
+  merge -- DOCUMENTED as a cost in the `labelConflict` comment and PINNED by a positive test, NOT code-fixed (0 live rows carry
+  it, so a fix is a verified no-op, and the false-merge it prevents is the worse failure; any future mint guard deduping on
+  `signalKeyOf` must confront it). TWO forensic caveats recorded, neither a code change: the "18 accepted are all revalidations"
+  claim is positively provable on 17/18 -- `F-WASP-121-b` predates the origin projection and carries neither `origin` nor
+  `recoveryTrials`, so its status is INFERRED from the `seats.ts:165` blind-toi cap (an accepted row can never be blind-toi) plus
+  its own `crossmatch.knownPlanetName === "WASP-121 b"`, red line 2 still holding at blind-toi accepted 0; and the `hashScience`
+  leak is LAYERED, not closed -- the CURRENT code collapses the HR-858 trio to ONE hash `f6eb9cc6ac17` (distinct 1/3, green in
+  `live-data-regression.test.ts`), but the ANCHORED trio on `/api/ledger` stays three DISTINCT pre-audit-4 hashes
+  (`4ec80a3a32`/`e154b8b1a7`/`66a8db3f1c`, 4-field memos sealed on-chain, immutable), so as a dedup key against the STORED ledger
+  it remains separated (`findAnchoredScience` matches stored values, not a recompute); reconciling storage to code would
+  RE-ANCHOR three immutable commitments = a second fee = the money path = calibration-gated, untouched. The round-17 violation
+  post (id `2113575468452454508`, carried "today's") is now marked superseded-by id `2113577794491896133` with a disposal line in
+  its devlog header -- RECORDED, not deleted (no `DELETE /2/tweets` path exists here and we do not silently erase our own error).
+  Suite 944 -> 950 pass / 0 fail locally (+6: the 8-probe spend test, three coverage-net tests, two hostKey-asymmetry tests);
+  `typecheck:all` + `eslint --max-warnings 0` clean. No stored row, manifest byte, `bundleHash`, `scienceHash`, verdict gate,
+  anchor semantic or money path moved; `ledgerAnchored` stays exactly 20. The SAME two calibration-gated research decisions -- a
+  mint-time duplicate-suppression guard and a seat-identity-free content address -- remain the only things that move the
+  evaluation, and neither was touched again this round.
 
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover

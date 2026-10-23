@@ -27,9 +27,19 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release ${TAG} already exists -- skipping creation."
           else
+            mkdir -p out
+            # GitHub rejects a release body over ~125k characters with HTTP 422, and the full
+            # CHANGELOG.md has grown past that. Ship only the most recent version blocks that fit,
+            # cutting ONLY at a "### " heading boundary so no entry is sliced mid-sentence; the
+            # complete history always stays in the repo's CHANGELOG.md.
+            awk '
+              /^### / { if (block && total > 100000) exit; block = 1 }
+              { print; total += length($0) + 1 }
+            ' CHANGELOG.md > out/release-notes.md
+            printf '\n_The full history lives in CHANGELOG.md in the repository._\n' >> out/release-notes.md
             gh release create "$TAG" \
               --title "Space Data Rig ${TAG}" \
-              --notes-file CHANGELOG.md \
+              --notes-file out/release-notes.md \
               --latest
             echo "Created release ${TAG}."
           fi

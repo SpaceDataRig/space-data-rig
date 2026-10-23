@@ -645,6 +645,27 @@ export function overclaimViolations(text: string): string[] {
   return hits;
 }
 
+// ---- Feed red lines shared by the send guard and the archive guard (devlog/README.md) --------------
+// The public feed has no dated context and never talks money, so a relative time word ("today", "this week",
+// ...) reads as a claim about a window nobody can see, and any wallet / key / spend wording is out of scope.
+// These two regexes are the SINGLE SOURCE OF TRUTH for that rule: scripts/post-x-text.ts refuses to SEND text
+// that trips them, and tests/devlog-archive.test.ts refuses to ARCHIVE text that trips them. Defining them here
+// rather than in both places is what makes the two guards the same predicate by construction -- the asymmetry
+// that once let a time-worded post go out that the archive would then have rejected can no longer arise.
+export const FEED_TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i;
+export const FEED_SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i;
+
+/** Human-readable feed red-line violations: relative time windows and wallet / key / spend wording. */
+export function feedRedlineViolations(text: string): string[] {
+  const s = String(text ?? "");
+  const hits: string[] = [];
+  const tw = s.match(new RegExp(FEED_TIME_WORDS.source, "gi"));
+  if (tw && tw.length) hits.push(`time-implying word(s): ${[...new Set(tw.map((w) => w.toLowerCase()))].join(", ")}`);
+  const sw = s.match(new RegExp(FEED_SPEND_WORDS.source, "gi"));
+  if (sw && sw.length) hits.push(`wallet/spend wording: ${[...new Set(sw.map((w) => w.toLowerCase()))].join(", ")}`);
+  return hits;
+}
+
 // ---- I/O (kept out of the pure composer above) --------------------------------
 
 function arg(name: string, dflt = ""): string {

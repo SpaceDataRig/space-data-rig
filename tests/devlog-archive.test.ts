@@ -12,7 +12,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { overclaimViolations } from "../scripts/science-digest.ts";
+import { overclaimViolations, FEED_TIME_WORDS as TIME_WORDS, FEED_SPEND_WORDS as SPEND_WORDS } from "../scripts/science-digest.ts";
 
 const SCRIPT = new URL("../scripts/devlog-archive.ts", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const HERE = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -103,10 +103,9 @@ test("missing arguments and an empty text are refused rather than archiving noth
 
 // ---- the entries already in the repository --------------------------------------------------------
 // Whatever was archived must satisfy the same red lines the send path enforces. This is the check that keeps
-// devlog/ honest as it grows: an entry whose text could never have been posted is a fabricated record.
-
-const TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i;
-const SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i;
+// devlog/ honest as it grows: an entry whose text could never have been posted is a fabricated record. The two
+// red-line regexes are IMPORTED from science-digest.ts -- the very predicate post-x-text.ts guards the send with
+// -- so the archive guard and the send guard are the same rule by construction and can never drift apart.
 
 const FENCE = "```";
 const HEADING = "## Text as pushed";

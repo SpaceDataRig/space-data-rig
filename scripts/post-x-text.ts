@@ -20,7 +20,7 @@
 
 import { readFileSync } from "node:fs";
 import { createHmac, randomBytes } from "node:crypto";
-import { overclaimViolations } from "./science-digest.ts";
+import { overclaimViolations, feedRedlineViolations } from "./science-digest.ts";
 
 function penv(): Record<string, string | undefined> {
   const g = globalThis as { process?: { env?: Record<string, string | undefined> } };
@@ -87,6 +87,20 @@ if (process.exitCode !== 1) {
   if (over.length) {
     console.error(`x:post: REFUSED -- final text contains ${over.length} affirmative over-claim(s); policy is no discovery/confirmation wording:`);
     for (const h of over) console.error(`  - ${h}`);
+    process.exitCode = 1;
+  }
+}
+
+// Feed red-line net (devlog/README.md): the feed has no dated context and never talks money, so refuse a relative
+// time word ("today", "this week", ...) or any wallet / key / spend wording. tests/devlog-archive.test.ts already
+// refuses to ARCHIVE such text; this closes the asymmetry by refusing to SEND it, using the SAME shared predicate
+// (feedRedlineViolations from science-digest.ts), so no post can go out that the archive would then reject. Hard
+// stop even in a manual dispatch -- that is the whole point of a send-time guard.
+if (process.exitCode !== 1) {
+  const feed = feedRedlineViolations(text);
+  if (feed.length) {
+    console.error("x:post: REFUSED -- final text trips the feed red lines (no dated context, no money wording):");
+    for (const h of feed) console.error(`  - ${h}`);
     process.exitCode = 1;
   }
 }

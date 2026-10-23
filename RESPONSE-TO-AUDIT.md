@@ -408,4 +408,39 @@ line, not a version bump -- the same shape as `bb16fd7`). Research posture uncha
 `discoveryClaim` false. `npm test` 921/921 (was 908), typecheck:all clean, eslint --max-warnings 0, zero non-ASCII, zero
 secret hits.
 
+## Fifteenth-round audit response (2026-10-23, HEAD tested `bf12a62`, deployed)
+
+The fifteenth pass independently re-measured every fourteenth-round fix on production (the auditor re-tested by hand,
+not from our docs) and closed five of six -- including N1's `ignored` echo, N3's race lock (line-by-line), N4's served-bytes
+identity and N6's `unattested`. It then WITHDREW its own prior N5 latency claim, agreeing with our evidence. The new theme
+was uncomfortable and correct: the round-14 `tic` precision fix had opened a LARGER hole, and our own test fixture was what
+hid it. Four new findings T1-T4; all were re-verified against the source before touching, each pinned by behaviour tests,
+and all four confirmed live.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| T1 (regression WE introduced): `tic=01` matched 53/103, `tic=0858` (a real HR 858) matched 0 | round-14 `targetMatchesTic` split on `/\d+/g`, and real target ids are `TOI-<host>.<cadence>` -- so the CADENCE suffix `.01` became a legal "digit run". The audit-14 fixture (`TOI-6265.01`) and that round's live probe both exercised ONLY the host direction; the same row passed under our noses twice | a narrow `identifierRuns()` strips the `<toi-number>.<cadence>` suffix before extracting runs (hyphen/word ids like `HAT-P-11` untouched), and a purely numeric tic now compares NUMERICALLY so leading zeros normalize (`0858` == `858`) | LIVE at `bf12a62` on real row `TOI-1684.01`: `tic=01` matched 0 (was 53/103), `tic=1684` matched 1, `tic=01684` matched 1; behaviour tests pin BOTH directions + zero-pad | Shipped + live-verified. |
+| T2: `dir` alone was a valid-but-inert criterion | `parseFindingQuery` accepts `dir`, but `queryFindings`' active-set omitted it, so `?dir=asc` alone fell to the INACTIVE branch -- returned the whole catalog unsorted with `ignored:[]`, the exact "gave a criterion, nothing happened" N1 was meant to end, and re-hit the transport wall the summary endpoint dodges | `dir` now counts as active and genuinely sorts; a valid `dir` still never appears in `ignored` | LIVE: `?dir=asc` returns sorted oldest->newest with the default limit 100 + `hasMore` (was an unsorted 103-row dump); `?dir=up` still `ignored:["dir"]` | Shipped + live-verified. |
+| T3: `?limit=0` silently became 1 | clamping into `[1, MAX_LIMIT]` is a different act from dropping an invalid value, but it was not echoed -- "I said 0, you gave 1" deserves a trace for a URL reader | new pure `clampedFindingParams()` reports paging keys whose FINITE value the parser moved; both handlers echo `clamped:[...]` alongside `ignored:[...]` (the two sets are disjoint) | LIVE: `?limit=0` -> 1 row + `clamped:["limit"]`; `?limit=99999` -> applied 500 + `clamped`; `?limit=24` -> `clamped:[]` | Shipped + live-verified. |
+| T4: a dead ternary | `const dir = q.dir ?? (sortKey === "recent" ? "desc" : "desc")` -- both arms identical, a constant dressed as a per-sort-key rule | collapsed to `q.dir ?? "desc"`; behaviour unchanged (default newest/highest-first) | behaviour test: no-dir defaults recent DESC | Shipped. |
+| N5 (WITHDRAWN by the auditor) | their round-14 claim that `/api/findings` is the slower path was wrong: `getState()` does strictly MORE than `listFindingsPublic()` (seats + bundles + events + stats) and both land on the same DO stub; four interleaved probes found no systematic gap | no code -- our "rebutted, not changed" conclusion held; the auditor also localised their own transport issue (`/api/ledger` 45 s raw vs 1.45 s with `--compressed` = their link, not the DO) | the auditor's own 4 paired summary/findings timings | Withdrawn by the auditor; no action. |
+
+### Honesty note on the fifteenth round
+
+The headline defect was OUR OWN: the round-14 `tic` fix was correct against the substring case it was written for but
+blind to the TESS cadence suffix, and the fixture meant to guard it (`TOI-6265.01`) only ever tested the host direction --
+the recurring "a gate covers part of the set" lesson, this time on our own patch. The fix is deliberately narrow (only the
+`<toi-number>.<cadence>` form is touched) so hyphen/word ids keep their digit semantics, and the comparison is numeric so
+zero-padding collapses. A **test-count correction** is owed to the auditor: we wrote `921/921`, but on a `.git`-less,
+FITS-un-prefetched tarball that same suite is 910 pass / 8 skip / 3 env-fail (the `git merge-base` ancestry checks + the
+`existsSync("out/probe-*.fits")` guards); CI reports success because it checks out with full history and runs the FITS
+prefetch. Henceforth the ledgers say "N pass / 0 fail locally" and name the skip/env dependency rather than a bare
+"N/N". Red lines hold: blind-toi accepted is still 0 (the verdict caps at needs-more-data), the 18 accepted are all
+revalidations, and `ledgerAnchored` is still exactly 20 with nothing new since 2026-10-20 (dedup spends no second fee).
+T1-T4 moved only the read/query surface -- no verdict gate, bundle hash, anchor semantics or money path. The two things the
+auditor says can actually change the evaluation -- lifting the mixed-source 0/56 pixel ceiling, and making `scienceHash` a
+true content address once `targetId`/cadence labels are removed -- are a research programme, not interface work, and are
+recorded here as open, not closed. Deployed at version `281de4e3`, `/health` gitSha `bf12a62`, `npm test` 925 pass / 0 fail
+locally (was 921; +4), typecheck:all clean, eslint --max-warnings 0, zero non-ASCII, zero secret hits.
+
 

@@ -95,6 +95,46 @@ test("groupBySignal collapses the duplicate-label rows and leaves unique signals
   assert.equal(groups.find((g) => g.length === 3)?.[0].targetId, "HR 858 b", "the first-minted label leads the group");
 });
 
+// ---- round-18 audit defect 4/5: the COST of keeping the component letter, pinned as a positive test ----------
+// audit-17 defect 2 made hostKeyOf keep a stellar component ("HD 202772 A b" -> "hd 202772 a") so the two stars of
+// a binary can never be falsely merged. That benefit has a price the round-17 note claimed but never tested, and
+// the audit is right that an unpriced trade is a latent bug: the strip is UNCONDITIONAL (it removes one trailing
+// letter whether or not a planet designator follows), and same-host is decided by string equality of the two keys.
+// So when the LABEL carries a component but the crossmatched name does NOT, the two host keys differ and a real
+// designator disagreement is SUPPRESSED -- and signalKeyOf, keyed on the same host, will not merge the two either.
+// These assertions pin that behaviour EXACTLY as measured on the live catalog before pinning, so it is a known,
+// tested trade rather than a surprise, and so any future change to it -- e.g. the deferred mint guard reusing
+// signalKey -- has to confront it deliberately. It is LATENT, not live: the served catalog holds 0 bare-component
+// labels and 0 asymmetric-component rows (measured), so no served count changes today; the code is intentionally NOT
+// altered (a no-op on live data is not worth a deploy), only documented and tested.
+test("hostKeyOf strips a trailing letter UNCONDITIONALLY, so a BARE component loses it (the documented cost)", () => {
+  assert.equal(hostKeyOf("HD 202772 A b"), "hd 202772 a", "component KEPT when a planet letter follows it");
+  assert.equal(hostKeyOf("HD 202772 A"), "hd 202772", "BARE component: the A is stripped (prose says 'kept'; code strips one trailing letter)");
+  assert.equal(hostKeyOf("HD 202772 A"), hostKeyOf("HD 202772 B"), "so two BARE components collide -- latent, 0 live rows carry a bare component");
+});
+
+test("component asymmetry SUPPRESSES a real label conflict and blocks the signal merge (cost of the component-preserving key)", () => {
+  // The label says component A, planet c; the crossmatched known name says planet b with NO component. The designators
+  // genuinely differ (c vs b), yet conflict is false purely because the host keys differ ("hd 202772 a" vs "hd 202772").
+  const asym = labelConflict("HD 202772 A c", { matchedKnownPlanet: true, knownPlanetName: "HD 202772 b" });
+  assert.equal(asym.conflict, false, "SUPPRESSED: sameHost is false because only one side carries the component letter");
+  assert.deepEqual([asym.requested, asym.detected], ["c", "b"], "the designators still disagree -- the suppression is in sameHost, not in the decode");
+  assert.notEqual(hostKeyOf("HD 202772 A c"), hostKeyOf("HD 202772 b"), "hd 202772 a != hd 202772");
+  // The same host key feeds signalKeyOf, so the two rows are NOT merged despite identical period/depth/snr.
+  assert.notEqual(
+    signalKeyOf("HD 202772 A c", 3.5, 500e-6, 12),
+    signalKeyOf("HD 202772 b", 3.5, 500e-6, 12),
+    "NOT merged: if a future mint guard dedups on signalKey, this asymmetry would let a duplicate through -- pinned so it is a decision, not an accident",
+  );
+  // Control: when BOTH sides carry the same component, the conflict IS caught -- the suppression is asymmetric, not a
+  // blanket disable, which is exactly why the asymmetric case above is the dangerous one.
+  assert.equal(
+    labelConflict("HD 202772 A c", { matchedKnownPlanet: true, knownPlanetName: "HD 202772 A b" }).conflict,
+    true,
+    "same component on both sides -> same host -> c vs b IS flagged",
+  );
+});
+
 // audit-17 Legacy 2 -- the committed fixture (tests/fixtures/live-catalog.json) was captured BEFORE the disclosure
 // fields existed, so it cannot compare the kernel's verdict to the value a handler actually SERVES; without a guard,
 // "the projection drifted from the kernel" would pass CI silently -- the exact blind spot the seventeenth audit named.

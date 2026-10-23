@@ -113,6 +113,16 @@ interface CrossmatchLike {
  * component-preserving hostKeyOf, so two different stars of a binary are never called a self-contradiction. The
  * requested/detected KIND is returned alongside so the disclosure can say whether a designator was a literal letter or
  * a decoded candidate number.
+ *
+ * COST of that benefit (round-18 audit; pinned by tests/signal-identity.test.ts, not left as prose): same-host is a
+ * string equality of the two component-preserving keys, so a label that carries a stellar component the crossmatched
+ * name lacks ("HD 202772 A c" vs known "HD 202772 b") yields DIFFERENT host keys ("hd 202772 a" vs "hd 202772") and a
+ * genuine designator disagreement (c vs b) is SUPPRESSED -- conflict false -- and signalKeyOf, keyed on the same host,
+ * will not merge the pair either. That is the deliberate price of never falsely merging a binary's two stars. It is
+ * LATENT, not live: the served catalog holds 0 bare-component labels and 0 asymmetric-component rows (measured on the
+ * live catalog before pinning), so no served count changes today. It is documented and tested rather than "fixed"
+ * because the change would be a no-op on live data and the false-merge it prevents is the worse failure -- but any
+ * future mint guard that dedups on signalKeyOf must confront this asymmetry deliberately, or it becomes a duplicate.
  */
 export function labelConflict(
   targetId: string,

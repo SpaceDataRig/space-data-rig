@@ -28,7 +28,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { composeDigest, DEV_BULLETS_MAX } from "../scripts/science-digest.ts";
-import { overclaimViolations, BUILD_NOTE_HEADLINES, rejectedDevSubjects } from "../scripts/science-digest.ts";
+import { overclaimViolations, BUILD_NOTE_HEADLINES, rejectedDevSubjects, FEED_TIME_WORDS, FEED_SPEND_WORDS } from "../scripts/science-digest.ts";
 import { isBuildNoteText } from "../scripts/x-last-post.ts";
 import type { DigestFinding, DigestInput, DigestLedgerEntry, DigestResearch } from "../scripts/science-digest.ts";
 
@@ -82,14 +82,18 @@ const RICH_RESEARCH: DigestResearch = {
   blindTest: { recall: 0.7692307692307693, precision: 0.3333333333333333 },
 };
 
-// The post red lines every composed line must satisfy.
-const TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday|last night|this morning|this evening|in recent)\b/i;
+// The post red lines every composed line must satisfy. The time / spend regexes are IMPORTED from the single
+// source of truth in science-digest.ts -- the very predicates post-x-text.ts refuses to SEND on and
+// tests/devlog-archive.test.ts refuses to ARCHIVE on -- so this composer test can no longer carry a divergent
+// local copy. Round-18 audit item 2: the wider third TIME_WORDS list that used to live here (last night / this
+// morning / this evening / in recent) is gone; those phrases were folded into the shared FEED_TIME_WORDS, and the
+// narrow inline spend regex was replaced by the widened shared FEED_SPEND_WORDS, so all three guards are one rule.
 function assertTweetSafe(text: string): void {
   assert.ok(text.length > 0, "expected a non-empty line");
   assert.ok(text.length <= 25000, `must fit X's 25,000-char long-post ceiling, got ${text.length}`);
   assert.ok(!/[^\x00-\x7F]/.test(text), "must be pure ASCII (post-x-text.ts refuses non-ASCII)");
-  assert.ok(!TIME_WORDS.test(text), `must not imply a time window: ${text}`);
-  assert.ok(!/wallet|private key|seed phrase|sol\b|\$\d|usd|cost/i.test(text), "must never mention wallet/key/cost");
+  assert.ok(!FEED_TIME_WORDS.test(text), `must not imply a time window: ${text}`);
+  assert.ok(!FEED_SPEND_WORDS.test(text), "must never mention wallet/key/spend wording");
 }
 
 test("nothing new in the window composes no tweet (empty string -> the workflow posts nothing)", () => {

@@ -20,7 +20,7 @@
 
 import { readFileSync } from "node:fs";
 import { createHmac, randomBytes } from "node:crypto";
-import { overclaimViolations, feedRedlineViolations } from "./science-digest.ts";
+import { overclaimViolations, feedRedlineViolations, feedCoverageViolations } from "./science-digest.ts";
 
 function penv(): Record<string, string | undefined> {
   const g = globalThis as { process?: { env?: Record<string, string | undefined> } };
@@ -101,6 +101,22 @@ if (process.exitCode !== 1) {
   if (feed.length) {
     console.error("x:post: REFUSED -- final text trips the feed red lines (no dated context, no money wording):");
     for (const h of feed) console.error(`  - ${h}`);
+    process.exitCode = 1;
+  }
+}
+
+// Coverage / capability net (round-18 audit item 1): the money, time and over-claim nets above ALL missed the
+// round-17 public over-claim -- "the predicate now decodes a candidate number ... so it reads the whole catalog"
+// -- because that is a CAPABILITY / COVERAGE claim, not a money / time / discovery claim, and it is the class of
+// sentence this project writes most often. Refuse a coverage totality assertion ("reads the whole catalog", "sees
+// all rows") whose sentence carries no denominator, so a reach / capability claim must state its basis to be
+// postable ("can fire on 34 of 103 rows", "33.0%"). Same shared predicate as the composer, hard stop even in a
+// manual dispatch -- that is the whole point of a send-time guard.
+if (process.exitCode !== 1) {
+  const cov = feedCoverageViolations(text);
+  if (cov.length) {
+    console.error("x:post: REFUSED -- final text makes a coverage/capability claim with no denominator (state the basis, e.g. '34 of 103 rows' or '33.0%'):");
+    for (const h of cov) console.error(`  - ${h}`);
     process.exitCode = 1;
   }
 }

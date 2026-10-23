@@ -402,8 +402,10 @@ function classifySubject(raw: string): { text: string; reason: string } {
     .replace(/[^\x00-\x7F]/g, "")
     .trim();
   if (!s) return { text: "", reason: "empty" };
-  if (/wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i.test(s)) return { text: "", reason: "spend/key wording" };
-  if (/\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i.test(s)) return { text: "", reason: "time-implying wording" };
+  // Same shared predicates the send guard and the archive guard use (single source of truth), so a subject the
+  // composer keeps can never build a note that post-x-text.ts then refuses -- which would stall the whole batch.
+  if (FEED_SPEND_WORDS.test(s)) return { text: "", reason: "spend/key wording" };
+  if (FEED_TIME_WORDS.test(s)) return { text: "", reason: "time-implying wording" };
   const capped = s.length > 140 ? `${s.slice(0, 137).trimEnd()}...` : s;
   const over = overclaimViolations(capped);
   if (over.length > 0) return { text: "", reason: `over-claim wording (${over[0].split(" :: ")[0]})` };
@@ -645,15 +647,21 @@ export function overclaimViolations(text: string): string[] {
   return hits;
 }
 
-// ---- Feed red lines shared by the send guard and the archive guard (devlog/README.md) --------------
+// ---- Feed red lines shared by the send guard, the archive guard, and the composer's subject-drop ----------
 // The public feed has no dated context and never talks money, so a relative time word ("today", "this week",
 // ...) reads as a claim about a window nobody can see, and any wallet / key / spend wording is out of scope.
-// These two regexes are the SINGLE SOURCE OF TRUTH for that rule: scripts/post-x-text.ts refuses to SEND text
-// that trips them, and tests/devlog-archive.test.ts refuses to ARCHIVE text that trips them. Defining them here
-// rather than in both places is what makes the two guards the same predicate by construction -- the asymmetry
-// that once let a time-worded post go out that the archive would then have rejected can no longer arise.
-export const FEED_TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i;
-export const FEED_SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i;
+// These two regexes are the SINGLE SOURCE OF TRUTH for that rule and are referenced from THREE places, so all
+// three are the same predicate by construction and cannot drift: scripts/post-x-text.ts refuses to SEND text
+// that trips them, tests/devlog-archive.test.ts refuses to ARCHIVE text that trips them, and classifySubject
+// (above) drops a commit subject that trips them so the composer can never build a note the sender would refuse.
+// Round-18 widening (audit item 2): FEED_SPEND_WORDS was a narrow word-list ("wallet|cost|usd|sol|$<digit>")
+// that let the project's OWN currency vocabulary through -- $SDR, burn, fee, spend, lamports, rent, payout were
+// all measurable misses. It is now a rule that names that vocabulary explicitly. FEED_TIME_WORDS gains the four
+// relative-day phrases the composer test had been carrying as a wider local copy (last night / this morning /
+// this evening / in recent), so there is one time rule, not two. The asymmetry that once let a time-worded post
+// go out that the archive would then have rejected can no longer arise on any of the three paths.
+export const FEED_TIME_WORDS = /\b(this week|last week|next week|recently|overnight|today|tonight|yesterday|last night|this morning|this evening|in recent)\b/i;
+export const FEED_SPEND_WORDS = /wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\w|\bburn\w*\b|\bfees?\b|\bspend\w*\b|\bspent\b|\blamports?\b|\brent\b|\bpayouts?\b/i;
 
 /** Human-readable feed red-line violations: relative time windows and wallet / key / spend wording. */
 export function feedRedlineViolations(text: string): string[] {
@@ -664,6 +672,42 @@ export function feedRedlineViolations(text: string): string[] {
   const sw = s.match(new RegExp(FEED_SPEND_WORDS.source, "gi"));
   if (sw && sw.length) hits.push(`wallet/spend wording: ${[...new Set(sw.map((w) => w.toLowerCase()))].join(", ")}`);
   return hits;
+}
+
+// ---- Coverage / capability over-claim net (round-18 audit item 1) ---------------------------------
+// The money, time and discovery nets above all missed the round-17 public over-claim -- "the predicate now
+// decodes a candidate number ... so it reads the whole catalog" -- because that is a CAPABILITY / COVERAGE
+// claim, not a money / time / discovery claim. It is the class of sentence this project writes most often
+// ("our check can now do X"), so guarding it is structural, not a missing word. A totality word ("whole",
+// "all", "every", ...) attached to a coverage noun or verb is honest ONLY when the same sentence carries its
+// denominator ("34 of 103", "33.0%"); with no denominator it silently asserts the predicate sees everything,
+// which is exactly what "reads the whole catalog" did (the reachable figure was 34 of 103, 33.0%). This net
+// refuses a coverage totality assertion whose sentence has no denominator. It is a SEND-side net only: the
+// archived devlog entries predate it and must never be re-struck to satisfy a later rule.
+//
+// Deliberately narrow, because over-refusal is its own failure: a totality counts ONLY when a COVERAGE VERB
+// (reads / covers / sees / spans / decodes / scans / reaches) governs it, or in the exact idiom "the whole /
+// entire / complete / full catalog|dataset". A bare quantifier ("every candidate is UNCONFIRMED", "all 72 are
+// rows written before the guard") is honest prose and must pass -- measured, those were the false positives a
+// quantifier-only rule produced. Known limit: a sentence carrying ANY "N of M"/"N%" denominator passes, so a
+// "went from 28 of 103 to all 103" construction is NOT caught; distinguishing a false "to all N" from a true
+// "across all N rows" is not something a regex can do reliably, and the form that actually shipped was the bare
+// "reads the whole catalog", which this does catch.
+const COVERAGE_TOTALITY =
+  /\b(reads?|sees?|covers?|spans?|decodes?|scans?|reaches?)\b[^.!?]*\b(whole|entire|full|complete|all|every)\b|\b(whole|entire|complete|full)\s+(catalog|dataset)\b/i;
+const COVERAGE_DENOM = /\b\d+\s*(?:of|\/)\s*\d+\b|\b\d+(?:\.\d+)?\s*%/;
+
+/** Coverage / capability totality claims that carry no denominator in the same sentence (the round-17 class). */
+export function feedCoverageViolations(text: string): string[] {
+  const out: string[] = [];
+  for (const rawLine of String(text ?? "").split(/\n+/)) {
+    for (const sent of rawLine.split(/(?<=[.!?])\s+/)) {
+      if (!/\S/.test(sent)) continue;
+      if (COVERAGE_TOTALITY.test(sent) && !COVERAGE_DENOM.test(sent))
+        out.push(`coverage/reach totality claim with no denominator: "${sent.trim().slice(0, 80)}"`);
+    }
+  }
+  return out;
 }
 
 // ---- I/O (kept out of the pure composer above) --------------------------------

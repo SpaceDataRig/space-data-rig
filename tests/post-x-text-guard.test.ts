@@ -3,10 +3,14 @@
 // nothing is sent. These cases pin the send-time feed red-line guard that closes the asymmetry with
 // tests/devlog-archive.test.ts: text the archive would reject (a relative time word, or wallet / spend wording)
 // must never be postable in the first place, and a clean text must still reach the DRY RUN rather than be
-// over-refused. Both guards import the SAME predicate from science-digest.ts, so they cannot disagree.
+// over-refused. Both guards import the SAME predicate from science-digest.ts, so they cannot disagree. Round-18
+// adds two nets the money/time/discovery guards all missed: the widened FEED_SPEND_WORDS (the project's own
+// currency vocabulary -- $SDR / burn / fee / spend / lamports / rent / payout) and a coverage/capability net that
+// refuses a totality claim ("reads the whole catalog") unless its sentence carries a denominator ("34 of 103").
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { FEED_TIME_WORDS, FEED_SPEND_WORDS, feedCoverageViolations, overclaimViolations } from "../scripts/science-digest.ts";
 
 const SCRIPT = new URL("../scripts/post-x-text.ts", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const HERE = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -27,9 +31,14 @@ function send(text: string): { status: number; stderr: string; stdout: string } 
   }
 }
 
+// CLEAN must survive ALL FOUR send-time nets (ASCII/length, over-claim, feed red lines, coverage). It states a
+// coverage figure WITH its denominator, because the round-18 coverage net refuses a totality claim that lacks one.
+// The round-17 fixture said "reads all 103 catalog rows" -- which is exactly the over-claim the new net catches --
+// so CLEAN now reads "covers 103 of 103 rows ... can fire on 34 of 103 rows (33.0%)": a real, verifiable basis.
 const CLEAN =
-  "Seventeenth-round audit of the rig: the disclosure predicate now reads all 103 catalog rows, " +
-  "and the label-conflict count moved from 5 to 7 with no anchored ledger row changed.";
+  "Eighteenth-round audit of the rig: designator parsing covers 103 of 103 catalog rows, while the " +
+  "label-conflict predicate can fire on 34 of 103 rows (33.0%), and the conflict count moved from 5 to 7 " +
+  "with no anchored ledger row changed.";
 
 test("the send guard REFUSES a relative time word -- the same red line the archive enforces", () => {
   const r = send(
@@ -57,9 +66,67 @@ test("a clean text is NOT refused -- it reaches the DRY RUN and nothing is sent"
   assert.match(r.stdout, /DRY RUN/, "and report the DRY RUN");
 });
 
-test("guard the guard: the clean fixture trips no time, spend, or over-claim red line", () => {
-  // If CLEAN ever tripped a red line, the DRY RUN case above would be asserting the wrong thing.
-  assert.ok(!/\b(this week|last week|next week|recently|overnight|today|tonight|yesterday)\b/i.test(CLEAN), "no time word");
-  assert.ok(!/wallet|private key|secret key|seed phrase|\bcost\b|\busd\b|\bsol\b|\$\d/i.test(CLEAN), "no spend word");
-  assert.ok(!/\b(discover\w*|confirm\w*|first|novel|unprecedented|landmark|historic)\b/i.test(CLEAN), "no over-claim stem");
+test("guard the guard: the clean fixture trips no time, spend, coverage, or over-claim red line", () => {
+  // If CLEAN ever tripped a red line, the DRY RUN case above would be asserting the wrong thing. Uses the SAME
+  // shared predicates the sender uses, so this check cannot drift from the guard it is checking.
+  assert.ok(!FEED_TIME_WORDS.test(CLEAN), "no time word");
+  assert.ok(!FEED_SPEND_WORDS.test(CLEAN), "no spend word");
+  assert.deepEqual(feedCoverageViolations(CLEAN), [], "no un-denominated coverage/reach claim");
+  assert.deepEqual(overclaimViolations(CLEAN), [], "no over-claim stem");
+});
+
+// ---- round-18 audit item 2: FEED_SPEND_WORDS is a rule, not a narrow word-list ------------------------------
+// The old word-list (wallet|private key|secret key|seed phrase|cost|usd|sol|$<digit>) let the project's OWN
+// currency vocabulary through -- 8 of 19 auditor probes were measurable misses. Every probe below must now be
+// REFUSED at send, and named as a wallet/spend hit rather than refused for some unrelated reason.
+test("the send guard REFUSES the project's own currency vocabulary ($SDR / burn / fee / spend / lamports / rent / payout)", () => {
+  const probes = [
+    "A status line about the rig long enough to be a real post. The $SDR balance is unchanged.",
+    "A status line about the rig long enough to be a real post. We burn the mint token each pass.",
+    "A status line about the rig long enough to be a real post. The burned tokens are logged.",
+    "A status line about the rig long enough to be a real post. A small fee anchors the batch.",
+    "A status line about the rig long enough to be a real post. The spend per pass stayed at zero.",
+    "A status line about the rig long enough to be a real post. Lamports are reserved for anchoring.",
+    "A status line about the rig long enough to be a real post. Rent is exempt on the account.",
+    "A status line about the rig long enough to be a real post. The payout address is untouched.",
+  ];
+  for (const p of probes) {
+    const r = send(p);
+    assert.equal(r.status, 1, `must REFUSE: ${p}`);
+    assert.match(r.stderr, /REFUSED/, `must say REFUSED: ${p}`);
+    assert.match(r.stderr, /wallet\/spend/i, `must name the wallet/spend reason: ${p}`);
+  }
+});
+
+// ---- round-18 audit item 1: a coverage/capability net the money/time/discovery nets all missed ----------------
+// "the predicate ... reads the whole catalog" is a CAPABILITY claim, not a money/time/discovery claim, so it passed
+// all three old nets. The new net refuses a coverage totality with no denominator, and passes the same claim once
+// it states its basis -- which is the correction the round-17 public post needed.
+test("the send guard REFUSES a coverage totality claim with no denominator (the round-17 'reads the whole catalog')", () => {
+  const r = send(
+    "A status line about the rig long enough to be a real post. The predicate now decodes a candidate " +
+      "number to its planet letter, so it reads the whole catalog.",
+  );
+  assert.equal(r.status, 1, "an un-denominated 'reads the whole catalog' must exit non-zero");
+  assert.match(r.stderr, /REFUSED/, "and say REFUSED");
+  assert.match(r.stderr, /coverage|denominator/i, "and name the coverage reason");
+});
+
+test("the send guard PASSES the same coverage claim once it carries its denominator", () => {
+  const r = send(
+    "A status line about the rig long enough to be a real post. Designator parsing covers 103 of 103 rows, " +
+      "and the conflict predicate can fire on 34 of 103 rows (33.0%).",
+  );
+  assert.equal(r.status, 0, `a denominator-bearing coverage claim is postable, stderr: ${r.stderr}`);
+  assert.match(r.stdout, /DRY RUN/, "and reaches the DRY RUN");
+});
+
+test("the coverage net does NOT over-refuse honest quantifier prose (no coverage verb, no totality idiom)", () => {
+  // Over-refusal is its own failure: these are honest sentences a quantifier-only rule would have wrongly blocked.
+  const r = send(
+    "A status line about the rig long enough to be a real post. Every candidate it produces is UNCONFIRMED, " +
+      "and all 72 re-checked rows kept their prior verdict.",
+  );
+  assert.equal(r.status, 0, `honest quantifier prose must stay postable, stderr: ${r.stderr}`);
+  assert.match(r.stdout, /DRY RUN/, "and reaches the DRY RUN");
 });

@@ -25,8 +25,11 @@ and nothing on-chain moved (anchored ledger still 20, blind-toi accepted still 0
   overstated its reach about threefold. The corrected, re-measured figure is 34 of 103 rows (33.0%).
 - Round-17 first-attempt post id `2113575468452454508` tripped the send guard on a relative-time word and was
   re-posted as `2113577794491896133`; the first attempt is recorded here as SUPERSEDED-BY `2113577794491896133`.
-  It is recorded, not deleted: scripts/post-x-text.ts has a POST path only, no DELETE, so removal is an
-  operator action, not something this repo can do from CI.
+  It is recorded, not deleted. ROUND-20 CORRECTION -- the reason is a POLICY choice, not a platform limit: the X API
+  v2 DOES expose `DELETE /2/tweets/:id`; `scripts/post-x-text.ts` simply implements a POST path only, and this repo
+  deliberately does not add a delete path (immutable-archive discipline: record + annotate, never silently erase our
+  own public error). So removal is possible in principle and would be a stated operator decision, not an external
+  constraint the repo cannot meet. The earlier "not something this repo can do" wording conflated the two.
 
 ## Proof links
 

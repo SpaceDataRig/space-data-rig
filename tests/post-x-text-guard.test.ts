@@ -162,3 +162,53 @@ test("the coverage net does NOT over-refuse true processing totalities (light cu
     assert.equal(r.status, 0, `true processing prose must stay postable, stderr: ${r.stderr}`);
   }
 });
+
+// ---- round-20 audit item 4: the coverage net was a phrase matcher, so the plainest rephrasings escaped it -------
+// The auditor's 25-sample probe found 3 of the simplest rewrites walk straight through a phrase-shaped net:
+// "reads the catalog in full" (totality AFTER the noun), "parses the entire input" (a verb + a reach-noun the old
+// lists lacked), and "handles everything" (a bare totality object). The verb list now gains parses/handles/processes,
+// the reach-noun list gains input, a postpositive branch catches "...catalog IN FULL", and a bare-object branch
+// catches "...EVERYTHING". As with every round-19 narrowing, the widening is paired with a re-proof that the PRIOR
+// catches still refuse -- tightening one edge must not quietly re-open another.
+test("the coverage net REFUSES the three escaped rephrasings, and every prior catalog catch survives the widening", () => {
+  const newEscapes = ["reads the catalog in full", "parses the entire input", "handles everything"];
+  const priorCatches = ["reads the whole catalog", "sees all rows", "covers every finding", "spans the entire dataset", "decodes the complete catalog"];
+  for (const frag of [...newEscapes, ...priorCatches]) {
+    const text = `A status line about the rig long enough to be a real post. The predicate now ${frag}.`;
+    assert.ok(feedCoverageViolations(text).length > 0, `must trip coverage: ${frag}`);
+    const r = send(text);
+    assert.equal(r.status, 1, `must REFUSE at send: ${frag}`);
+    assert.match(r.stderr, /coverage|denominator/i, `must name the coverage reason: ${frag}`);
+  }
+});
+
+// The round-19 F3 hole (a denominator-bearing false totality) is NARROWED for the exact form that shipped: a
+// transition that names the FULL count as reached carries the OLD value as its denominator, so it must be refused
+// even though the denominator gate would otherwise wave it through.
+test("the coverage net REFUSES a '...from N of M to all M' transition despite its (contrastive) denominator", () => {
+  const text = "A status line about the rig long enough to be a real post. Reach went from 28 of 103 to all 103 rows.";
+  assert.ok(feedCoverageViolations(text).length > 0, "the contrastive 'to all M' must trip coverage");
+  const r = send(text);
+  assert.equal(r.status, 1, "must REFUSE at send");
+  assert.match(r.stderr, /coverage|denominator/i, "must name the coverage reason");
+});
+
+test("the round-20 coverage widening does NOT over-refuse honest transitions or non-reach 'in full' prose", () => {
+  // Over-refusal is its own failure (the round-19 lesson). Each of these is honest and must stay postable: a
+  // partial->partial transition, a percentage transition, a postpositive "in full" whose noun is NOT a reach noun,
+  // an "in full" with no coverage verb, and the round-19 light-curve control.
+  const honest = [
+    "reach moved from 28 of 103 to 34 of 103 rows",
+    "reach moved from 27.2% to 33.0%",
+    "it reads the light curve in full",
+    "the manifest is reproduced in full below",
+    "it reads the whole light curve once",
+  ];
+  for (const frag of honest) {
+    const text = `A status line about the rig long enough to be a real post. Note that ${frag}.`;
+    assert.deepEqual(feedCoverageViolations(text), [], `must NOT trip coverage: ${frag}`);
+    const r = send(text);
+    assert.equal(r.status, 0, `honest prose must stay postable: ${frag} -- stderr ${r.stderr}`);
+  }
+});
+

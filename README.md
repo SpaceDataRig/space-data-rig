@@ -83,9 +83,15 @@ What the current architecture *cannot* do -- stated as design limits, not backlo
   as-of that capture, not a live promise): **103 published rows = 91 recovered signals over 90 host stars** (12 pure
   duplicate rows; `accepted`
   18 rows = 15 signals / 15 stars), and the chain's **20 commitments cover only 17 candidates** -- duplicate
-  seats were paid for. Duplicate seats of one candidate also carry *different* `scienceHash`es today, because
-  per-seat ephemeris/confidence fields ride in the projection; collapsing them is a re-derivation of anchored
-  semantics and is deliberately gated behind measuring false-merge on real data (HANDOFF next-steps), not done
+  seats were paid for. That `20` is the CAPTURE count, not a live promise: `/api/state` `ledgerAnchored` re-measured
+  **23** at 2026-10-24T07:02Z (three new real-fee anchors landed 2026-10-23 evening), and it moves as the rig anchors,
+  so re-measure rather than trust any frozen number here. The `scienceHash` of duplicate seats is LAYERED, and the
+  earlier "they differ because per-seat fields ride in the projection" wording is corrected: the current
+  `scienceProjection` (`src/bundle/bundle.ts`) no longer carries `targetId`/`findingId`, so all three HR 858 seats
+  RECOMPUTE to ONE `currentScienceHash` (measured `4ec80a3a32...` across b/c/d at 2026-10-24T07:02Z) and same-content
+  dedup fires (no second fee). What stays distinct is the trio's STORED, sealed `ledgerScienceHash`es -- three immutable
+  values anchored under an older projection. Re-anchoring them to the collapsed address would spend a second fee on an
+  immutable commitment, so it is deliberately calibration-gated (HANDOFF next-steps), not done
   silently. The correct merge exists (`src/candidate/dedup.ts::collapseCoincident`, ephemeris-linked, flags a
   cross-host shared ephemeris as one systematic rather than N planets) but is **offline-only** -- zero production
   callers, used by research scripts p19/p22. So: the board does not merge, and the chain pays per label. What

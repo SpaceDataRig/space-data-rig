@@ -692,21 +692,42 @@ export function feedRedlineViolations(text: string): string[] {
 // archived devlog entries predate it and must never be re-struck to satisfy a later rule.
 //
 // Deliberately narrow, because over-refusal is its own failure: a totality counts ONLY when a COVERAGE VERB
-// (reads / covers / sees / spans / decodes / scans / reaches) governs it, or in the exact idiom "the whole /
-// entire / complete / full catalog|dataset". A bare quantifier ("every candidate is UNCONFIRMED", "all 72 are
-// rows written before the guard") is honest prose and must pass -- measured, those were the false positives a
-// quantifier-only rule produced. Known limit: a sentence carrying ANY "N of M"/"N%" denominator passes, so a
-// "went from 28 of 103 to all 103" construction is NOT caught; distinguishing a false "to all N" from a true
-// "across all N rows" is not something a regex can do reliably, and the form that actually shipped was the bare
-// "reads the whole catalog", which this does catch.
+// (reads / sees / covers / spans / decodes / scans / reaches / parses / handles / processes) governs it, or in the
+// exact idiom "the whole / entire / complete / full catalog|dataset". A bare quantifier ("every candidate is
+// UNCONFIRMED", "all 72 are rows written before the guard") is honest prose and must pass -- measured, those were
+// the false positives a quantifier-only rule produced.
 // Round-19 narrowing: the verb+totality alternative used to fire on ANY object ("reads the whole light curve",
-// "scans every sector"), refusing TRUE processing statements that are not reach claims at all. It now requires the
-// totality to govern a REACH noun (catalog/dataset/row/finding/record), so honest light-curve/sector prose passes
-// while the catalog-reach over-claim ("reads the whole catalog", "sees all rows") is still refused. The denominator
-// gate below is unchanged, so the residual "went from N of M to all M" hole stays documented rather than guessed at.
-const COVERAGE_TOTALITY =
-  /\b(reads?|sees?|covers?|spans?|decodes?|scans?|reaches?)\b[^.!?]*\b(whole|entire|full|complete|all|every)\b[^.!?]*\b(catalog(?:ue)?|datasets?|rows?|findings?|records?)\b|\b(whole|entire|complete|full)\s+(catalog|dataset)\b/i;
+// "scans every sector"), refusing TRUE processing statements that are not reach claims at all. It still requires the
+// totality to govern a REACH noun (catalog/dataset/row/finding/record/input), so honest light-curve/sector prose
+// passes while the catalog-reach over-claim ("reads the whole catalog", "sees all rows") is refused.
+// Round-20 widening (the auditor's three plainest rephrasings all escaped a phrase-shaped net): the verb list gains
+// parses/handles/processes and the reach-noun list gains input; a POSTPOSITIVE branch catches "reads the catalog IN
+// FULL" (the totality AFTER the noun); and a bare-object branch catches "handles EVERYTHING". The round-19 F3 hole is
+// NARROWED, not left open: COVERAGE_CONTRASTIVE now catches the exact shipped form "went from 28 of 103 TO ALL 103"
+// (a transition that claims the FULL count as reached) EVEN THOUGH it carries a denominator, because that denominator
+// is the OLD value, not the basis for the totality. Residual, documented not guessed: a totality sitting in the same
+// sentence as an UNRELATED denominator that is NOT the "from N of M to all M" form ("reaches all 103 rows, 34 of 103
+// in conflict") still passes -- full semantic co-reference between a denominator and the capability it is meant to
+// justify is not something a regex does reliably.
+const COV_VERB = String.raw`\b(reads?|sees?|covers?|spans?|decodes?|scans?|reaches?|parses?|handles?|processes?)\b`;
+const COV_NOUN = String.raw`\b(catalog(?:ue)?|datasets?|rows?|findings?|records?|inputs?)\b`;
+const COV_UNIV = String.raw`\b(whole|entire|full|complete|all|every)\b`;
+const COVERAGE_TOTALITY = new RegExp(
+  // (a) verb ... universal ... reach-noun      -- "reads the whole catalog", "parses the entire input"
+  `${COV_VERB}[^.!?]*${COV_UNIV}[^.!?]*${COV_NOUN}` +
+  // (b) verb ... reach-noun ... postpositive   -- "reads the catalog in full"
+  `|${COV_VERB}[^.!?]*${COV_NOUN}[^.!?]*` + String.raw`\b(in full|in (?:its|their) entirety|in whole)\b` +
+  // (c) verb ... bare totality object          -- "handles everything"
+  `|${COV_VERB}[^.!?]*` + String.raw`\b(everything|all of it|every last (?:row|record|finding|one)|the lot)\b` +
+  // (d) the standalone idiom                   -- "the whole catalog"
+  `|` + String.raw`\b(whole|entire|complete|full)\s+(catalog|dataset)\b`,
+  "i",
+);
 const COVERAGE_DENOM = /\b\d+\s*(?:of|\/)\s*\d+\b|\b\d+(?:\.\d+)?\s*%/;
+// A transition that names the FULL count as the reached total, carrying only the OLD value as its denominator. This
+// is checked WITHOUT the denominator gate (the gate is exactly what let it through before).
+const COVERAGE_CONTRASTIVE =
+  /\bfrom\b[^.!?]*\b\d+\s*(?:of|\/)\s*\d+\b[^.!?]*\bto\s+(?:all|every|the\s+(?:whole|entire|full|complete))\b/i;
 
 /** Coverage / capability totality claims that carry no denominator in the same sentence (the round-17 class). */
 export function feedCoverageViolations(text: string): string[] {
@@ -714,8 +735,14 @@ export function feedCoverageViolations(text: string): string[] {
   for (const rawLine of String(text ?? "").split(/\n+/)) {
     for (const sent of rawLine.split(/(?<=[.!?])\s+/)) {
       if (!/\S/.test(sent)) continue;
-      if (COVERAGE_TOTALITY.test(sent) && !COVERAGE_DENOM.test(sent))
-        out.push(`coverage/reach totality claim with no denominator: "${sent.trim().slice(0, 80)}"`);
+      const clip = sent.trim().slice(0, 80);
+      // A contrastive "from N of M to all M" claims the FULL count as reached even though its sentence carries a
+      // denominator (the OLD value), so it is refused REGARDLESS of the denominator gate -- the round-19 F3 hole,
+      // now closed for the exact form that shipped rather than left to a regex that cannot solve co-reference.
+      if (COVERAGE_CONTRASTIVE.test(sent))
+        out.push(`coverage/reach transition claims the full count as reached ("...to all/every N"): "${clip}"`);
+      else if (COVERAGE_TOTALITY.test(sent) && !COVERAGE_DENOM.test(sent))
+        out.push(`coverage/reach totality claim with no denominator: "${clip}"`);
     }
   }
   return out;

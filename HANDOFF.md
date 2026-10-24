@@ -611,7 +611,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-23)
+## 13. Current state (as of 2026-10-24)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -620,7 +620,9 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: the revision this snapshot describes is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
+- Git: rounds 18/19/20 shipped scripts/tests/docs ONLY (no Worker redeploy) stacked on the deployed 336840b; the tip when
+  this snapshot was re-measured (2026-10-24T08:04Z) was 2ebcd59 (the round-19 devlog archive), and the round-20 correction
+  is the commit carrying this refreshed section. The revision PRODUCTION still runs is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
   (decode TOI candidate numbers `.01` -> b so designator parsing covers 103 of 103 rows and the label-conflict predicate can FIRE
   on the 34 of 103 rows (33.0%, up from 27.2%) whose label AND NASA cross-match name both decode to a designator -- the other 65
   rows carry no comparison name to contradict, so round-17's public "sees the whole catalog" was an over-claim corrected in round
@@ -642,7 +644,10 @@ authority; they are deliberately not restated here.
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
 - Production: wrangler version 2327eda2-7043-42f3-9485-72fa3bf309ce, gitSha 336840b1bc5463641a1db1fc2c5d74785fe68128
-  (it replaced 0ea4089b-dd49-4c93-b185-4260fd215158 / `c70593e`) -- re-verified live at this snapshot: `deploy:window`
+  (it replaced 0ea4089b-dd49-4c93-b185-4260fd215158 / `c70593e`) -- UNCHANGED at this snapshot because rounds 18/19/20
+  redeployed nothing; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
+  kinds `{58,41,none:4}`) and live has since drifted to 104 records / 91 hosts (re-measured 2026-10-24T08:04Z) as the rig
+  keeps minting -- a dated proof, not a live promise. Re-verified live at the round-17 snapshot: `deploy:window`
   cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span
   overrun, the intermittent defect recorded below), leaving 269 s of idle before the 09:30 claim -- over the 120 s budget
   -- and `GET /health` returns exactly that sha and `codeVersion space-data-rig@0.2.0`. Triggers: schedule `*/15 * * * *`,
@@ -672,21 +677,29 @@ authority; they are deliberately not restated here.
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters at that same moment (`GET /api/state/summary`, re-read live 2026-10-23 at ~3,876 bytes against a full
+- Public counters, re-read live 2026-10-24T08:04Z (`GET /api/state/summary` at ~3,876 bytes against a full
   `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
-  `stats`/`statDefinitions`): surveyPass 485 CLAIMED, distinctHosts 90 host STARS (audit-16 re-based from the old label
-  count, which read 103; the raw-label count is now the separate distinctRecords 103), blindHeld 29 over
-  blindCandidates 53 assessed, bundlesAnchored 0 published-bytes, ledgerAnchored 20 chain commitments, tasksDone 94 (a
-  per-window bookkeeping that moves between pulls; re-read it live). Nothing new has been anchored since 2026-10-20 because
-  science-hash dedup (correctly, to spend no second fee) finds every repeat already sealed; that is D2/D6 of the
-  twelfth-round audit, stated here where the counters live, not glossed. The v0.2 P0 query makes the 103-row catalog
+  `stats`/`statDefinitions`): surveyPass 565 CLAIMED, distinctHosts 91 host STARS (audit-16 re-based from the old label
+  count; the raw-label count is the separate distinctRecords 104 -- the rig has minted one more record + host since the
+  round-17 snapshot's 103/90), blindHeld 29 over blindCandidates 53 assessed, bundlesAnchored 0 published-bytes,
+  ledgerAnchored 23 chain commitments, tasksDone 97 (a per-window bookkeeping that moves between pulls; re-read it live).
+  ROUND-20 CORRECTION -- the round-17..19 snapshots said "nothing new anchored since 2026-10-20"; that was true when
+  written and is now SUPERSEDED: three new real-fee anchors landed 2026-10-23 evening (F-AU-Mic-b 15:56:01Z, F-TOI-480-b
+  16:02:26Z, F-HD-110067-b 18:03:39Z, each with a real mainnet `signature` + `slot`), moving ledgerAnchored 20 -> 23.
+  Science-hash dedup still spends no SECOND fee on identical content -- proven live 2026-10-24T01:31:18Z (`Skipped anchor
+  for F-HD-260655-c: identical science already anchored as F-HD-260655-b`, then `Auto-anchor ... spent=false`), which is
+  the withdrawal of the round-4 "dedup is dead code" claim. F-HD-110067-b is BOTH anchored AND `labelConflictsWithKnown:true`
+  today -- the live proof for the round-21 anchor-gate work (Defect 2 in the twentieth-round bullet). The v0.2 P0 query
+  makes the 104-row catalog
   filterable server-side (`/api/findings` with a filter returns matched/hasMore; since `8dd1748` an unknown-but-supplied
   filter also returns `ignored:[...]`, and since `bf12a62` a clamped paging value returns `clamped:[...]` and a numeric
   `tic` matches the host number only, not a TESS cadence suffix). The repo report library (converged at `1e6572b`, still serving on this deploy)
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 122 files / 940 tests as this snapshot was taken (the seventeenth round added no new FILE but +3 assertions to the
+- Tests: 122 files / 956 tests as this snapshot was re-taken 2026-10-24 (rounds 18/19/20 added guard + accounting
+  assertions to EXISTING files, no new file -- round-20 +3 to `tests/post-x-text-guard.test.ts` for the coverage-net
+  escapes/contrastive, rounds 18/19 the money-narrowing + coverage catches; the seventeenth round added no new FILE but +3 assertions to the
   two files round-16 introduced: `tests/signal-identity.test.ts` gained a `candidateNumberToLetter` block, a
   `designatorKindOf` block, the binary-star `hostKeyOf` cases, and a STRUCTURAL wiring test proving BOTH `findingView`s serve
   the disclosure from ONE kernel call and the board reads the served flag without re-decoding it; and it FLIPPED the two
@@ -699,10 +712,10 @@ authority; they are deliberately not restated here.
   and `computeStats` reading 90/103; the round-15 echo "parity" source-regex test was renamed a STRUCTURAL wiring check; the
   fifteenth round had earlier grown `tests/finding-query.test.ts`
   with the T1 cadence + zero-pad behaviour in BOTH directions, the T2 `dir`-active sort, the T3 `clamped` echo, the T4 DESC
-  default and an edge+Node echo-parity assertion; `npm test` 940 pass / 0 fail on this full-history Windows checkout).
-  CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads 929 pass /
-  8 skip / 3 env-fail (the auditor measured 926 / 8 / 3 on the round-16 tarball; this round's +3 are pure/offline so they
-  pass there too) -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`
+  default and an edge+Node echo-parity assertion; `npm test` 956 pass / 0 fail on this full-history Windows checkout).
+  CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads ~945 pass /
+  8 skip / 3 env-fail (the round-20 auditor measured 942 / 3 / 8 on the round-19 `2ebcd59` tarball at 953 total; round-20's
+  +3 are pure/offline so they pass there too, giving 945) -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`
   ancestry checks needing full history -- so a bare "N/N" misleads; CI checks out with full history + runs the FITS prefetch
   and is green on `336840b`, as it runs `npm run test:coverage` whose 90/78 floors it clears (this snapshot: all-files
   96.09 / 83.43 / 91.49, `signal-identity.ts` 100 / 94.87 / 100); trust the run over any number
@@ -761,7 +774,7 @@ authority; they are deliberately not restated here.
   Legacy 3a), and a daily-capture HARD-FAIL on any fixture/production `(targetId, verdict, ppm)` divergence was DEFERRED because
   production legally re-mints every 15 min, so a hard count-diff gate would cry wolf on growth and scheduled workflows here are
   fragile (the X-post lesson -- Legacy 5). No stored row, manifest byte, `bundleHash` or `scienceHash` moved; no money path was
-  touched; `ledgerAnchored` stays exactly 20 and blind-toi accepted stays 0. The SAME two calibration-gated research decisions
+  touched; `ledgerAnchored` stays exactly 20 [ROUND-20: aged -- live re-measured 23 @ 2026-10-24T07:02Z] and blind-toi accepted stays 0. The SAME two calibration-gated research decisions
   from round-16 remain the only things that can move the evaluation, and neither was touched this round: (1) the mint-time
   duplicate-suppression guard (behind a measured false-merge rate) and (2) the seat-identity-free `scienceProjection`
   re-derivation (behind a re-anchor policy agreed BEFORE hashing). Deployed at version `2327eda2` (`gitSha 336840b`) in an idle
@@ -802,10 +815,11 @@ authority; they are deliberately not restated here.
   it remains separated (`findAnchoredScience` matches stored values, not a recompute); reconciling storage to code would
   RE-ANCHOR three immutable commitments = a second fee = the money path = calibration-gated, untouched. The round-17 violation
   post (id `2113575468452454508`, carried "today's") is now marked superseded-by id `2113577794491896133` with a disposal line in
-  its devlog header -- RECORDED, not deleted (no `DELETE /2/tweets` path exists here and we do not silently erase our own error).
+  its devlog header -- RECORDED, not deleted [ROUND-20: the X API v2 DOES expose `DELETE /2/tweets/:id`; not
+  implementing a delete path is this repo's immutable-archive POLICY, not a platform limit -- see the twentieth-round bullet].
   Suite 944 -> 950 pass / 0 fail locally (+6: the 8-probe spend test, three coverage-net tests, two hostKey-asymmetry tests);
   `typecheck:all` + `eslint --max-warnings 0` clean. No stored row, manifest byte, `bundleHash`, `scienceHash`, verdict gate,
-  anchor semantic or money path moved; `ledgerAnchored` stays exactly 20. The SAME two calibration-gated research decisions -- a
+  anchor semantic or money path moved; `ledgerAnchored` stays exactly 20 [ROUND-20: aged -- live re-measured 23 @ 2026-10-24T07:02Z]. The SAME two calibration-gated research decisions -- a
   mint-time duplicate-suppression guard and a seat-identity-free content address -- remain the only things that move the
   evaluation, and neither was touched again this round.
 
@@ -833,8 +847,59 @@ authority; they are deliberately not restated here.
   `post-x-text-guard.test.ts`); `typecheck:all` + `eslint --max-warnings 0` + `node --check web/*.js` (6/6) clean, zero non-ASCII,
   zero secret hits, and send+archive+composer still share ONE `FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. No
   stored row, manifest byte, `bundleHash`, `scienceHash`, verdict gate, anchor semantic or money path moved; `ledgerAnchored` stays
-  exactly 20, blind-toi accepted 0, every `discoveryClaim` false. The SAME two calibration-gated research decisions remain the only
+  exactly 20 [ROUND-20: aged -- live re-measured 23 @ 2026-10-24T07:02Z], blind-toi accepted 0, every `discoveryClaim` false. The SAME two calibration-gated research decisions remain the only
   things that move the evaluation, and neither was touched again this round.
+
+- Twentieth-round audit (2026-10-24, external, re-measured live at 07:02Z on `2ebcd59`; scripts/tests/docs only, NO Worker
+  deploy). The auditor OPENED by withdrawing two of its OWN older claims, which we re-confirmed first-hand rather than on trust:
+  (a) "a planet label leaks into the `scienceHash` content address" is FALSE now -- `scienceProjection` (`src/bundle/bundle.ts`)
+  carries no `targetId`/`findingId`, so HR 858 b/c/d all recompute to ONE `currentScienceHash` `4ec80a3a32...` (HD 260655 b/c to
+  `400a5557ce9c`) and the three DISTINCT `/api/ledger` hashes are SEALED history under an older projection; (b) "`scienceHash` dedup
+  is dead code" is FALSE now -- the 2026-10-24T01:31:18Z stream shows `Skipped anchor for F-HD-260655-c: identical science already
+  anchored as F-HD-260655-b -- no new fee spent` then `Auto-anchor ... spent=false` (correct idempotence). Ledger field note so it
+  is not repeated: rows carry `signature`/`slot`/`memo`, NOT `solanaTx`; all 23 have a real mainnet signature + slot.
+  - FIXED this round (Defect 1, the headline): `/api/state` `ledgerAnchored` re-measured **23** (three new real-fee anchors
+    2026-10-23 evening -- F-AU-Mic-b 15:56:01Z, F-TOI-480-b 16:02:26Z slot 460503654, F-HD-110067-b 18:03:39Z), yet 18 places still
+    said 20 AND `tests/live-catalog-accounting.test.ts:89` had named "the wider predicate moved no anchor" an INVARIANT sourced from
+    a FROZEN fixture -- falsified in production, because F-HD-110067-b is BOTH anchored AND `labelConflictsWithKnown:true` today, and
+    CI stayed green because it reads the fixture. The test's ASSERTIONS are unchanged (the fixture really is 20 rows / 3 distinct
+    stored hashes); its header + messages are RE-SCOPED to CAPTURE-not-live-invariant (7/7 pass). A CENTRAL CORRECTION (CHANGELOG
+    round-20 section, README:85, RESPONSE:442) supersedes every prior "exactly 20" as a live figure; short markers annotate the
+    present-tense instances. This is the round-17 lesson ("a frozen wrong expectation as a gate is worse than no fix") recurring on
+    the MONEY path, except the wrong expectation came from a production MOVE, not a predicate blind spot.
+  - FIXED this round (Defect 4): the coverage net was still a phrase-matcher (3 of 25 samples escaped: `reads the catalog in full`,
+    `parses the entire input`, `handles everything`). `scripts/science-digest.ts` recomposed `COVERAGE_TOTALITY` from shared
+    fragments (verbs +parses/handles/processes, nouns +input; postpositive + bare-object + standalone branches) and added
+    `COVERAGE_CONTRASTIVE` (the `from N of M to all M` form, checked WITHOUT the denom gate). +3 tests, `post-x-text-guard.test.ts`
+    14/14. RESIDUAL documented: a totality beside an UNRELATED denominator still passes (regex cannot do semantic co-reference).
+  - FIXED this round (Defect 6): "recorded, not deleted" was written as an external limit; X API v2 DOES expose
+    `DELETE /2/tweets/:id` and this repo simply does not implement it (immutable-archive POLICY). Corrected the round-18 devlog META
+    (outside the immutable fence) + the HANDOFF line to say POLICY, not platform limit.
+  - Discipline adopted (Defect 7): the round-18 correction post's "re-tested on live production" aged within hours (103 -> 104 served
+    rows, ceiling 38 -> 39, none 4 -> 5, so reach 34/104 = **32.7%**; numerator 34 + conflicts 7 held, the DENOMINATOR moved). Pushed
+    bytes are immutable and NOT re-stamped; every future figure states "as of the capture <UTC>" in the body, never open-ended "on
+    live production".
+  - ROUND-21 STAGED WORK (Defects 2/3/5 -- MEASURED, need a Worker change, deliberately NOT touched this round so there is no
+    "changed but not shipped" gap):
+    * Defect 2 (anchor gate blind): `src/cf/rig-state.do.ts:630-725` `anchorFinding` gates only on `bundleHash`-exists +
+      `scienceHash`-idempotence -- NOT `verdict`, NOT `labelConflictsWithKnown`, NOT tier. The auto path (`src/cf/workflow.ts:628`)
+      requires `verdict==="accepted"`, but a row NEW in content AND `labelConflictsWithKnown:true` would auto-spend a permanent
+      commitment with no gate between. MINIMAL FIX: in the new-spend branch of `anchorFinding`, refuse (or require human confirm) when
+      `labelConflictsWithKnown===true`; add a READ-ONLY aggregate endpoint. Measured 23 anchored by today's state: 5 needs-more-data,
+      1 rejected (F-HD-63433-d), 4 conflicting, 3 stand-in, 0/23 `bundleHash`-match (designed; disclosed per-card in `web/app.js`).
+    * Defect 3 (tier is prose): `src/data/dataTier.ts::isRealPhotometry` has ONE consumer (`src/reporter/narrate.ts:111` headline
+      prefix), no gate, and NO served tier field (all 20 served fields enumerated, none a tier). 4 stand-in rows; GJ 1214 b +
+      HD 189733 b are `accepted` AND on-chain, and their `verdictReason` ("...on evidence alone, without using any truth period")
+      CONTRADICTS their headline (`[stand-in synthetic curve]`) + README:187 ("by construction, not evidence of a find"). FIX: a served
+      `tier` field + an aggregate stand-in/on-chain disclosure.
+    * Defect 5 (unverifiable on-chain ids): F-AU-Mic-b, F-HD-63433-d (`det=null`), F-GJ-1214-b, F-HAT-P-11-b, F-HD-189733-b
+      (`req=null`) -- the label-conflict predicate structurally cannot run on any of the five. Same root as Defect 2; the aggregate
+      endpoint should name them.
+  - Close: Suite 953 -> 956 pass / 0 fail locally (+3); on a `.git`-less, FITS-un-prefetched tarball the auditor read 942 pass /
+    3 env-fail / 8 skip (the known ancestry + `out/probe-*.fits` guards), CI green. `typecheck:all` + `eslint --max-warnings 0` +
+    `node --check web/*.js` (6/6) clean, zero non-ASCII, zero secret hits. No stored row, manifest byte, `bundleHash`, `scienceHash`,
+    verdict gate or anchor semantic moved. `ledgerAnchored` **23** as-of 2026-10-24T07:02Z (NOT a frozen 20), blind-toi accepted 0,
+    every `discoveryClaim` false.
 
 MUTEX-FINISH DEFECT OBSERVED 2026-10-19 -- REAPPEARED 2026-10-22, STILL NOT PROVEN FIXED (keep observing). At that snapshot
 two consecutive autonomous passes finished their work and then held the run mutex until the 30-minute stale takeover

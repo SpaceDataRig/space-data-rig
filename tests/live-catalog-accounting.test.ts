@@ -7,9 +7,21 @@
 //   103 rows -> 91 recovered signals -> 90 host stars; 12 duplicate rows; accepted 18 rows -> 15 signals / 15 stars;
 //   7 label-vs-own-crossmatch contradictions of which 3 are accepted (audit-17: the predicate now decodes TOI candidate
 //   numbers, so TOI-6054.02 and TOI-4443 c join the 5 the letter-only round-16 rule could see); ledger 20 commitments
-//   -> 17 signals, with the HR 858 trio carrying THREE different scienceHashes (duplication baked into the address).
+//   -> 17 signals. ROUND-20 CORRECTION -- this fixture is a FROZEN capture, NOT a live invariant: every count below is
+//   as-of the 2026-10-23T05:42Z snapshot. Live has since MOVED. At 2026-10-24T07:02Z /api/state reports ledgerAnchored
+//   23 (three new real-fee anchors on 2026-10-23 evening: F-AU-Mic-b 15:56Z, F-TOI-480-b 16:02Z, F-HD-110067-b 18:03Z)
+//   over 104 served rows, and F-HD-110067-b is BOTH anchored AND labelConflictsWithKnown:true today -- so the "moved no
+//   anchor" note at the conflict test below is a CAPTURE fact, not a production guarantee. That gap is round-20 defect
+//   #2: anchorFinding (src/cf/rig-state.do.ts) gates on bundleHash-exists + scienceHash-idempotence only, never on the
+//   verdict or the conflict flag, so CI reading this fixture stays green while production anchors a conflicting row.
+//   ALSO RETRACTED here: the HR 858 trio's THREE distinct scienceHashes are the STORED, sealed values from an older
+//   projection (immutable on-chain history) -- the CURRENT scienceProjection no longer carries targetId/findingId, so
+//   all three recompute to ONE currentScienceHash (4ec80a3a32... at 2026-10-24T07:02Z) and same-content dedup DOES fire
+//   (proven by the 2026-10-24T01:31Z "identical science already anchored" skip, no second fee spent).
 // Re-run the capture with `npm run fixtures:capture-catalog`; if the live rig mints new rows, update the expected
-// counts HERE -- a silent mismatch failing CI is the point, not a surprise for the next auditor.
+// counts HERE -- a silent mismatch failing CI is the point, not a surprise for the next auditor. Do NOT read the frozen
+// counts as live truth: they pin the capture so a projection regression goes red; the live counter is re-measured every
+// round (see RESPONSE-TO-AUDIT.md round-20 and the read-only out/probe20*.ts re-measure).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -86,7 +98,7 @@ test("label-vs-own-crossmatch contradictions exist in the served bytes and label
   assert.equal(newlyCaught.length, 2, "decoding candidate numbers catches exactly TOI-6054.02 and TOI-4443 c");
   for (const f of newlyCaught) {
     assert.equal(f.verdict, "needs-more-data", "a newly-caught conflict is needs-more-data, never accepted");
-    assert.ok(!anchoredIds.has(f.id), `${f.id} is not one of the 20 chain commitments -> the wider predicate moved no anchor`);
+    assert.ok(!anchoredIds.has(f.id), `${f.id} is not anchored IN THE 2026-10-23 CAPTURE fixture -> the wider predicate moved no anchor AT CAPTURE. NOT a live invariant: a conflicting row the ORIGINAL letter rule already saw (F-HD-110067-b) WAS anchored live 2026-10-23T18:03Z and is needs-more-data + labelConflictsWithKnown:true today -- round-20 defect #2`);
   }
   for (const f of conflicts) {
     const lc = labelConflict(f.targetId, f.crossmatch);
@@ -95,17 +107,17 @@ test("label-vs-own-crossmatch contradictions exist in the served bytes and label
   }
 });
 
-test("the chain paid 20 fees for 17 signals, and the HR 858 trio's three scienceHashes differ -- duplication reaches the content address (D2 population)", () => {
+test("the CAPTURE ledger holds 20 fees for 17 signals, and the HR 858 trio's three STORED scienceHashes differ (frozen history, not today's collapsed projection)", () => {
   const ledger = ledgerFx.ledger;
-  assert.equal(ledger.length, 20);
+  assert.equal(ledger.length, 20, "the live-ledger.json CAPTURE (2026-10-23T05:42Z) holds 20; live /api/state was 23 at 2026-10-24T07:02Z -- re-measure, do not read 20 as live truth");
   assert.ok(ledger.every((r) => r.status === "anchored"));
   const byId = new Map(rows.map((f) => [f.id, f]));
   assert.ok(ledger.every((r) => byId.has(r.findingId)), "every commitment joins to a catalog row");
   const signals = new Set(ledger.map((r) => { const f = byId.get(r.findingId)!; return signalKeyOf(f.targetId, f.candidate.periodDays, f.candidate.depthFrac, f.candidate.snr); }));
-  assert.equal(signals.size, 17, "20 commitments cover 17 physical candidates (HR 858 x3, HD 260655 x2)");
+  assert.equal(signals.size, 17, "the 20 CAPTURE commitments cover 17 physical candidates (HR 858 x3, HD 260655 x2)");
   const hr = ledger.filter((r) => r.findingId.startsWith("F-HR-858-"));
   assert.equal(hr.length, 3);
-  assert.equal(new Set(hr.map((r) => r.scienceHash)).size, 3, "today one candidate carries THREE distinct science hashes -- the dedup cannot fire structurally until the projection is recalibrated (HANDOFF next-step)");
+  assert.equal(new Set(hr.map((r) => r.scienceHash)).size, 3, "the trio's THREE STORED scienceHashes are sealed history from an older projection (immutable on-chain). RETRACTED round-20: the CURRENT projection drops targetId/findingId, so all three recompute to ONE currentScienceHash (4ec80a3a32..., 2026-10-24T07:02Z) and same-content dedup DOES fire -- 2026-10-24T01:31Z skip, no second fee");
 });
 
 test("tic queries on the SERVED catalog: no candidate-number leak, and host-level lookup returns ALL of a star's rows (D4's missing direction)", () => {

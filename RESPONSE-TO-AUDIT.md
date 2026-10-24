@@ -439,7 +439,7 @@ prefetch. Henceforth the ledgers say "N pass / 0 fail locally" and name the skip
 revalidations (round-18 caveat: 17 of the 18 carry `origin:"revalidation"` as positive proof; the 18th, `F-WASP-121-b`, was minted
 before the origin projection existed and carries NEITHER `origin` NOR `recoveryTrials`, so its revalidation status is INFERRED from
 the `seats.ts:165` blind-toi cap -- an accepted row can never be blind-toi -- plus its own `crossmatch.knownPlanetName`, not read
-off a positive label; see the eighteenth-round section), and `ledgerAnchored` is still exactly 20 with nothing new since 2026-10-20 (dedup spends no second fee).
+off a positive label; see the eighteenth-round section), and `ledgerAnchored` is still exactly 20 with nothing new since 2026-10-20 (dedup spends no second fee). **[ROUND-20 CORRECTION: this aged. Live `ledgerAnchored` re-measured 23 at 2026-10-24T07:02Z -- three NEW-content findings were anchored 2026-10-23 evening (F-AU-Mic-b 15:56Z, F-TOI-480-b 16:02Z, F-HD-110067-b 18:03Z, each a real signature+slot), so "nothing new since 2026-10-20" is no longer true. The "dedup spends no second fee" half is now PROVEN, not just asserted: the 2026-10-24T01:31Z event skipped F-HD-260655-c as "identical science already anchored as F-HD-260655-b". See the twentieth-round section.]**
 T1-T4 moved only the read/query surface -- no verdict gate, bundle hash, anchor semantics or money path. The two things the
 auditor says can actually change the evaluation -- lifting the mixed-source 0/56 pixel ceiling, and making `scienceHash` a
 true content address once `targetId`/cadence labels are removed -- are a research programme, not interface work, and are
@@ -584,7 +584,7 @@ not, and re-anchoring three immutable commitments to make the storage match the 
 calibration gate. The score movement (6.9 -> 7.3 overall, bookkeeping 6.0 -> 7.5, honesty 9.2 -> 9.5) is accepted as directional;
 the ceiling is unchanged and we agree why -- fewer duplicate rows minted and a seat-identity-free content address are still the two
 things that move it, still calibration-gated, still untouched. No verdict gate, bundle hash, anchor semantics or money path moved
-this round; `ledgerAnchored` stays exactly 20, blind-toi accepted stays 0, every `discoveryClaim` false.
+this round; `ledgerAnchored` stays exactly 20 [ROUND-20: aged -- live re-measured 23 @ 2026-10-24T07:02Z; see the twentieth-round section], blind-toi accepted stays 0, every `discoveryClaim` false.
 
 
 ## Nineteenth-round audit response (2026-10-23, self-audit of the round-18 guard hardening on top of `0c7245f` -- scripts/tests only, no Worker deploy)
@@ -610,11 +610,59 @@ a coverage net -- introduced two over-refusals that its own note had named as a 
 narrowing them is the work; the discipline that makes it safe is that every narrowing is paired with a re-proof that the CATCHES
 survive (10 money probes, 6 coverage catches, all still refused), because a guard loosened to stop a false positive must not quietly
 re-open the true positive it was built for. No number moved (reach re-derived byte-identical), no deploy, no stored row, no hash, no
-verdict gate, no anchor semantic and no money path touched; `ledgerAnchored` stays exactly 20, blind-toi accepted stays 0, every
+verdict gate, no anchor semantic and no money path touched; `ledgerAnchored` stays exactly 20 [ROUND-20: aged -- live re-measured 23 @ 2026-10-24T07:02Z; see the twentieth-round section], blind-toi accepted stays 0, every
 `discoveryClaim` false. Suite 950 -> 953 pass / 0 fail (+3 regression tests), `typecheck:all` and `eslint --max-warnings 0` clean,
 `node --check web/*.js` clean, zero non-ASCII, zero secret hits, and the send+archive+composer paths still share ONE
 `FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. The two things that actually move the evaluation -- a mint-time
 duplicate-suppression guard and a seat-identity-free content address -- remain calibration-gated and untouched again.
+
+
+## Twentieth-round audit response (2026-10-24, external audit re-measured live at 07:02Z on top of `2ebcd59` -- scripts/tests/docs only, no Worker deploy)
+
+The twentieth pass did something we should copy: it OPENED by withdrawing two of its OWN older claims (rounds 4-14) because the
+code and the chain no longer support them, then confirmed every round-17/18/19 fix recomputes, then raised seven new findings.
+We re-derived all of it first-hand at 2026-10-24T07:02Z (`/api/state`, `/api/ledger`, per-row `verify-onchain`, the committed
+kernel over `tests/fixtures/live-catalog.json`, plus scratch live probes) rather than trust either side's prior number. The
+auditor's one-line verdict is fair and we adopt it: "the sending side's honesty is now engineered; the on-chain-commitment side's
+is not yet." This round ships the four findings that are scripts/tests/docs-only (1, 4, 6, 7) and MEASURES + stages the three
+that need a Worker change (2, 3, 5) for round-21 -- deliberately NOT touching `src/` this round, so there is no "changed but not
+shipped" gap.
+
+| Concern | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| WITHDRAWAL A (auditor retracted, we re-confirmed): "a planet label leaks into the `scienceHash` content address" | `scienceProjection` (`src/bundle/bundle.ts`) no longer carries `targetId`/`findingId`; the round-4..14 claim predates that change | nothing to fix -- the projection is already seat-identity-free; we re-confirmed it live and corrected README:85's stale "they differ because per-seat fields ride in the projection" wording | HR 858 b/c/d all recompute to ONE `currentScienceHash` `4ec80a3a32...` (HD 260655 b/c to `400a5557ce9c`); the THREE distinct `/api/ledger` hashes are SEALED history under an older projection (`anchoredScienceDrift:true`) | Withdrawn + re-confirmed first-hand. |
+| WITHDRAWAL B (auditor retracted, we re-confirmed): "`scienceHash` dedup is dead code in production" | dedup now fires as a correct idempotent self-match, not dead code | nothing to fix; re-confirmed from the event stream | 2026-10-24T01:31:18Z: `Skipped anchor for F-HD-260655-c: identical science (content hash) already anchored as F-HD-260655-b -- no new fee spent`, then `Auto-anchor F-HD-260655-c: mode=live spent=false` | Withdrawn + re-confirmed first-hand. |
+| Defect 1 (heaviest): the ledger aged 20 -> 23 and a test froze BOTH the number AND a now-false invariant | the count aged (3 new real-fee anchors 2026-10-23 evening) and `tests/live-catalog-accounting.test.ts:89` named "the wider predicate moved no anchor" an INVARIANT while sourcing the anchor set from a FROZEN fixture | CENTRAL CORRECTION (this file, CHANGELOG, README:85, HANDOFF) + short markers on the present-tense instances (RESPONSE 442/587/613, HANDOFF 764/808/836, CHANGELOG round-19 close); test RE-SCOPED to CAPTURE-not-live-invariant, assertions UNCHANGED, header + messages carry the double state and both withdrawals | live `ledgerAnchored` **23** @ 07:02Z: F-AU-Mic-b 15:56:01Z, F-TOI-480-b 16:02:26Z (slot 460503654), F-HD-110067-b 18:03:39Z, all with a real `signature`+`slot`; F-HD-110067-b is BOTH anchored AND `labelConflictsWithKnown:true` today; fixture still 20 rows / 3 distinct stored hashes; `live-catalog-accounting.test.ts` 7/7 pass | Fixed (docs + test re-scoped). The anchor-gate ROOT is Defect 2, staged round-21. |
+| Defect 2: the anchor gate is decoupled from the board | `anchorFinding` (`src/cf/rig-state.do.ts:630-725`) checks only `bundleHash`-exists + `scienceHash`-idempotence -- NOT `verdict`, NOT `labelConflictsWithKnown`, NOT the tier; the auto path (`src/cf/workflow.ts:628`) requires `verdict==="accepted"` but a later pass can downgrade | MEASURED + documented; MINIMAL FIX staged round-21: refuse (or human-confirm) `labelConflictsWithKnown===true` in the new-spend branch + a READ-ONLY aggregate endpoint | 23 anchored by today's served state: 5 needs-more-data, 1 rejected (F-HD-63433-d), 4 `labelConflictsWithKnown:true`, 3 stand-in, 0/23 `bundleHash`-match (a designed consequence of a timestamped commitment, disclosed per-card in `web/app.js`); F-HD-110067-b is the live double-state proof | Confirmed; deploy-gated round-21 (no `src/` change this round). |
+| Defect 3: the data tier is prose, not data | `isRealPhotometry` (`src/data/dataTier.ts`) has exactly ONE consumer (`src/reporter/narrate.ts:111`, a headline prefix) -- no verdict gate, no anchor gate, no served tier field | MEASURED + documented; FIX staged round-21: a served `tier` field + an aggregate stand-in/on-chain disclosure | 20 served fields enumerated, none a tier; 4 stand-in rows, of which GJ 1214 b + HD 189733 b are `accepted` AND on-chain, and their `verdictReason` ("...on evidence alone, without using any truth period") CONTRADICTS their own headline (`[stand-in synthetic curve]`) and README:187 ("by construction, not evidence of a find") | Confirmed; deploy-gated round-21. |
+| Defect 4: the coverage net was still a phrase-matcher | `COVERAGE_TOTALITY` was phrase-shaped and `COVERAGE_DENOM` passed ANY denominator, so 3 of 25 samples escaped by plain rewording | recomposed `COVERAGE_TOTALITY` from shared fragments (verbs +parses/handles/processes, nouns +input; postpositive + bare-object + standalone branches) and added `COVERAGE_CONTRASTIVE` (the `from N of M to all M` form, checked WITHOUT the denom gate) in `scripts/science-digest.ts` | the 3 escapes (`reads the catalog in full`, `parses the entire input`, `handles everything`) + 5 prior catches all REFUSE, the contrastive form REFUSES, 5 honest controls pass; `post-x-text-guard.test.ts` 14/14 | Fixed. RESIDUAL documented: a totality beside an UNRELATED denominator (not the from-to-all form) still passes -- regex cannot do semantic co-reference. |
+| Defect 5: five on-chain ids assert a letter the predicate cannot verify | same structural root as Defect 2 -- `labelConflict` needs BOTH sides to decode; these five have `detectedDesignator` null OR `requestedDesignator` null | MEASURED + documented; staged round-21 with Defect 2 (the aggregate endpoint names them) | F-AU-Mic-b, F-HD-63433-d (a letter in the label, no crossmatch name -> `det=null`); F-GJ-1214-b, F-HAT-P-11-b, F-HD-189733-b (a bare star name as the label -> `req=null`, comparison name carries the letter) | Confirmed; deploy-gated round-21. |
+| Defect 6: "recorded, not deleted" was stated as an external limit | `post-x-text.ts` implements a POST path only; the absence of a DELETE path was written as if the platform forbade removal | corrected the round-18 devlog META (OUTSIDE the immutable pushed fence) and the HANDOFF line to say POLICY, not platform limit | X API v2 DOES expose `DELETE /2/tweets/:id`; this repo deliberately does not implement it (immutable-archive: record + annotate, never erase our own public error); the discipline itself is unchanged and endorsed | Fixed (wording). |
+| Defect 7: the round-18 correction post's "re-tested on live production" aged within hours | an immutable post stated live figures with no as-of stamp | discipline adopted: every figure states "as of the capture <UTC>" in the body, never an open-ended "on live production"; the pushed post is NOT re-stamped (immutable) | the post's 103/99/34/ceiling 38/none 4 was true when sent; live now 104/99/34/ceiling 39/none 5 -> reach 34/104 = **32.7%**; numerator (34) and conflicts (7) held, the DENOMINATOR moved | Discipline adopted; posted bytes immutable and endorsed. |
+
+### Honesty note on the twentieth round
+
+The uncomfortable finding is Defect 1's second half, and the auditor framed it exactly right: this is our own round-17 lesson --
+"freezing a wrong expectation as a gate is worse than not fixing it" -- recurring on the MONEY path for the first time. The twist
+is that the wrong expectation did not come from a predicate blind spot (round-17's failure) but from a production MOVE: the rig
+anchored three more findings, and a test that had named "moved no anchor" an invariant kept reading a frozen fixture, so CI stayed
+green while live diverged. A green suite that cannot see the thing it claims to guarantee is worse than no suite, because it is
+trusted. We re-scoped that test to say plainly that it pins a CAPTURE, not a live promise, and left its assertions untouched (the
+fixture really is 20 rows). The deeper fix -- making `anchorFinding` look at the conflict flag and the tier before it spends, and
+publishing an aggregate "N of your anchored rows are now needs-more-data / rejected / conflicting / synthetic" -- is a Worker
+change, so it is measured and staged for round-21 rather than half-shipped now.
+
+We also take the two withdrawals seriously as a mirror: both were OUR defects that a later code change (dropping `targetId` from
+the projection) and a later live event (the 01:31Z idempotent skip) had already resolved, and we had not gone back to close them
+out publicly. The auditor did. The self-inflicted `solanaTx` note is recorded too, because it cuts the other way -- the three new
+anchors are real, signed, permanent, which makes Defect 2 more serious, not less: the gate that should have screened one of them
+(F-HD-110067-b, conflicting) does not exist yet.
+
+No verdict gate, bundle hash, anchor semantic or money path moved this round; `ledgerAnchored` re-measured **23** as-of
+2026-10-24T07:02Z (not a frozen 20), blind-toi accepted stays 0, every `discoveryClaim` false. Suite 953 -> 956 pass / 0 fail
+(+3 regression tests), `typecheck:all` + `eslint --max-warnings 0` + `node --check web/*.js` (6/6) clean, zero non-ASCII, zero
+secret hits, send+archive+composer still share ONE `FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. The anchor-gate /
+tier / aggregate-disclosure work and the two standing calibration-gated research decisions are the round-21 programme.
 
 
 

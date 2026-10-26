@@ -60,6 +60,15 @@ name: x-post (half-hourly English science digest)
 #    redundant backup tick exits after a clone and two cheap HTTPS reads, and the full history is load-bearing
 #    for the research.json milestone gate and for build-note windows whose cursor is older than a shallow
 #    clone would reach.
+#  - ROUND-24 AUDIT OF THAT GATE (measured, not assumed): over the first 10 live runs after it shipped it skipped
+#    NOTHING -- every run proceeded, two of them composing an empty window. The cause was the hint, not the
+#    predicate: the cached cursors recorded only what a run READ, never what it POSTED, so the hint always lagged
+#    one full cadence and the pre-flight kept seeing "new content" the previous run had just announced. The hint
+#    is now advanced from the run's own snapshot instant (bounded back, and left empty whenever the cursor could
+#    not be read), the empty-window boundary was widened to match the composer's inclusive `>=`, a cursor dated
+#    ahead of the clock is treated as untrusted, and an override run can no longer overwrite a good hint with an
+#    empty one. All of it is conservative in the same direction: each change can only ever make the gate PROCEED
+#    more often, never skip a post it would otherwise have made.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
 
@@ -197,6 +206,11 @@ jobs:
           MAX_POSTS_PER_RUN: "25"
           # Pause between posts so a large backlog cannot trip X's own rate limit mid-run.
           POST_DELAY_S: "5"
+          # Round-24 F3: how far BACK the cursor hint written for the next pre-flight is pulled from this run's
+          # snapshot instant. The snapshot is by construction older than every post this run makes, so the margin
+          # only has to absorb clock granularity; 30s is ~10x the observed fetch-to-post gap and still 60x shorter
+          # than the 30-minute cadence the stale hint used to waste.
+          CURSOR_HINT_BACKOFF_S: "30"
           # Minutes the dev window reaches back PAST its cursor. Commits landing while a run is in flight would
           # otherwise fall behind the new cursor and never be reported; composeDigest de-duplicates against the
           # subjects already on the feed, so the overlap cannot repeat a bullet.
@@ -311,6 +325,13 @@ jobs:
           RESEARCH_UPDATED=0
           if [ "$RESEARCH_COMMITS" -gt 0 ]; then RESEARCH_UPDATED=1; fi
           echo "research.json commits in window: $RESEARCH_COMMITS (researchUpdated=$RESEARCH_UPDATED)"
+
+          # Round-24 F3: stamp the instant BEFORE this run's first rig snapshot. Everything the tiers can report
+          # is timestamped at or before the fetch that feeds them, so this is the newest point the NEXT window may
+          # start from without risking a drop -- and it is provably never newer than a post this run makes. The
+          # hint written at the end of this step is derived from it, which is what stops the pre-flight from
+          # re-proceeding for a whole cadence on content this run already announced.
+          FETCH_EPOCH="$(date -u +%s)"
 
           # ---- Compose EVERY tier independently. No tier suppresses another, and the filename order IS the post
           # order. Each invocation asks for ONE tier (--only) and writes its own file; an empty file means that tier
@@ -429,6 +450,28 @@ jobs:
             echo "posted $SENT item(s) this run"
           fi
 
+          # ---- Round-24 F3: advance the pre-flight hint to THIS run's snapshot, not to what it read. ----
+          # The hint used to hold only the cursors read off the feed at the START of the run, so it lagged every
+          # post the run itself made by a full cadence. Measured over the 10 live runs after the gate shipped:
+          # 0 skipped, and two of them paid for a full compose pass on content the previous run had just
+          # announced. A field is left EMPTY whenever this run could not read that cursor -- an unverified
+          # cursor must keep the next pre-flight conservative, because advancing a hint nobody observed is the
+          # one way this cache could ever suppress a post.
+          HINT_EPOCH=$(( FETCH_EPOCH - ${CURSOR_HINT_BACKOFF_S:-30} ))
+          hint_for() {
+            local read_iso="$1" e
+            if [ -z "$read_iso" ]; then printf ''; return; fi
+            e="$(date -u -d "$read_iso" +%s 2>/dev/null || echo 0)"
+            if [ -z "$e" ] || [ "$e" -eq 0 ]; then printf ''; return; fi
+            if [ "$e" -lt "$HINT_EPOCH" ]; then e="$HINT_EPOCH"; fi
+            date -u -d "@$e" +%Y-%m-%dT%H:%M:%SZ
+          }
+          HINT_POST="$(hint_for "$LAST_POST_ISO")"
+          HINT_SCIENCE="$(hint_for "$LAST_SCIENCE_ISO")"
+          HINT_NOTE="$(hint_for "$LAST_BUILD_NOTE_ISO")"
+          printf '%s\n' "{\"last_post\":\"${HINT_POST}\",\"last_science\":\"${HINT_SCIENCE}\",\"last_build_note\":\"${HINT_NOTE}\"}" > out/x-cursors.json || true
+          echo "pre-flight hint for the next run: post=${HINT_POST:-none} science=${HINT_SCIENCE:-none} note=${HINT_NOTE:-none} (snapshot $(date -u -d "@$FETCH_EPOCH" +%Y-%m-%dT%H:%M:%SZ), backed off ${CURSOR_HINT_BACKOFF_S:-30}s)"
+
       - name: Save node_modules for the next run
         if: steps.preflight.outputs.skip != '1' && steps.nm.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -436,8 +479,18 @@ jobs:
           path: node_modules
           key: nm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Save feed cursors for the next pre-flight
+      # Round-24 F5: the hint exists only on the compose path -- a manual text override and the dry_heartbeat
+      # verification path both exit before it is ever written. Saving an absent path produces an EMPTY cache entry
+      # that then shadows the last good hint (restore-keys match the newest entry), throwing the gate away for the
+      # next run. So the save is gated on the file actually being there.
+      - name: Check the cursor hint exists
+        id: hintfile
         if: always() && steps.preflight.outputs.skip != '1'
+        run: |
+          if [ -s out/x-cursors.json ]; then echo "present=1" >> "$GITHUB_OUTPUT"; else echo "present=0" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Save feed cursors for the next pre-flight
+        if: always() && steps.preflight.outputs.skip != '1' && steps.hintfile.outputs.present == '1'
         uses: actions/cache/save@v4
         with:
           path: out/x-cursors.json

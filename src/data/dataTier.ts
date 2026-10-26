@@ -17,6 +17,27 @@ export function isRealPhotometry(source: string | undefined): boolean {
   return /real photometry/i.test(source ?? "");
 }
 
+/** The two served tier values (round-21 audit defect 3: the tier must be DATA, not prose). */
+export const DATA_TIER_REAL = "real-photometry";
+export const DATA_TIER_STANDIN = "stand-in-synthetic";
+
+/** The tier of a light curve, from its source string via the single canonical discriminator. */
+export function dataTierOfSource(source: string | undefined): string {
+  return isRealPhotometry(source) ? DATA_TIER_REAL : DATA_TIER_STANDIN;
+}
+
+/**
+ * Decode the tier back out of a narrated headline. narrateFinding prefixes EVERY headline with exactly
+ * one of the two tags, chosen by isRealPhotometry(source), so reading the tag off a STORED headline is a
+ * lossless tier read for rows that predate any stored tier field -- which is every row already served.
+ * A headline with neither tag (should not happen) reads as stand-in: the conservative, honest default.
+ */
+export function dataTierOfHeadline(headline: string | undefined): string {
+  const h = headline ?? "";
+  if (/real TESS photometry/i.test(h)) return DATA_TIER_REAL;
+  return DATA_TIER_STANDIN;
+}
+
 /** NASA Exoplanet Archive `pscomppars` columns the fetch actually requests. Every field the row
  *  mapping/filter reads must appear here, or the value silently comes back undefined. */
 export const PSOMPPARS_COLUMNS = [

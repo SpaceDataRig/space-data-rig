@@ -556,6 +556,8 @@ export class RigRunWorkflow extends WorkflowEntrypoint<Env, RunParams> {
           recoveryGating: env.RECOVERY_GATING === "1",
           vetting,
           origin: meta.origin,
+          // round-21 defect 3: let the critic word a stand-in cross-match as by-construction, not evidence.
+          lightCurveSource: fr.lc.source,
         });
         await putJson(store, `${key}/review.json`, { review } satisfies ReviewRecord);
         await stub.markSeatProcessed("mission-critic");

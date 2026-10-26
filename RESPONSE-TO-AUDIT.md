@@ -664,5 +664,41 @@ No verdict gate, bundle hash, anchor semantic or money path moved this round; `l
 secret hits, send+archive+composer still share ONE `FEED_TIME_WORDS`/`FEED_SPEND_WORDS`/`feedCoverageViolations`. The anchor-gate /
 tier / aggregate-disclosure work and the two standing calibration-gated research decisions are the round-21 programme.
 
+## Twenty-first-round audit response (2026-10-26, SELF-audit implementing the three round-20 deploy-gated defects; live re-measured at 01:05Z on top of `32c59d2`)
+
+Round-21 has no external auditor: it is the scheduled self-audit pass that ships exactly what round-20 measured and staged --
+Defects 2 (the anchor gate never looks at the board), 3 (the data tier is prose, not data) and 5 (five on-chain ids assert a
+letter the predicate structurally cannot verify) -- the three findings that needed a `src/` runtime change and were therefore
+deliberately NOT half-shipped last round. Discipline unchanged: measure first (2026-10-26T01:05Z, `/api/state` + `/api/ledger` +
+`/api/findings`; ledger **23** over **104** rows, no new anchor since 2026-10-24; of the 23 commitments 5 needs-more-data /
+1 rejected / 4 conflicting / 3 stand-in / 0 `bundleHash`-match / 5 unverifiable-letter; red lines held: blind-toi accepted 0,
+every `discoveryClaim` false), then fix, then pin with tests, then gate.
+
+| Concern (round-20 defect) | Honest root cause | What was done | Verification | Status |
+|---|---|---|---|---|
+| Defect 2: `anchorFinding` gates on `bundleHash`-exists + `scienceHash`-idempotence only -- never the verdict, the conflict flag or the tier, so a NEW permanent commitment could freeze a row the board no longer stands behind (F-HD-110067-b live proof: anchored AND `labelConflictsWithKnown:true`) | the gate was written for idempotence, not for judgement-coupling; the auto path checks `accepted` at anchor TIME but a later pass can downgrade, and the manual/auto spend branch re-checked nothing | a spend gate on BOTH runtimes (`src/cf/rig-state.do.ts` + Node `POST /api/anchor/:id`): immediately before the fee, re-read the CURRENT kernel state and refuse **409** + a `reporter` warn event when `verdict !== "accepted"` OR `labelConflict(...).conflict` -- placed AFTER the two no-spend guards so replays/re-stamps of anchored rows are untouched, and reversible (flag clears or verdict recovers -> anchorable again) | structural wiring test pins the gate text, the 409 and the after-idempotency ORDER on both runtimes (the DO itself cannot be imported under Node -- `cloudflare:workers`); already-anchored conflicting rows stay on-chain (immutable history) and move to the disclosure half below | FIXED (ships with this round's deploy). |
+| Defect 2 disclosure half: the drift between the chain set and the board was only visible row-by-row -- an external reader had to join `/api/ledger` to `/api/findings` by hand | no aggregate existed | new pure `src/core/anchor-health.ts` (`anchorHealth(ledger, rows, asOf)`) + read-only `GET /api/anchor-health` on BOTH runtimes, driven by the SAME helper the tests drive; per-row report names every drifted commitment | measured on the capture then pinned: 20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict / 3 stand-in / 4 unverifiable / 0 missing; live @01:05Z: 23 / 0 / 5 / 1 / 4 / 3 / 5 / 0 | FIXED. |
+| Defect 3: the data tier is prose, not data -- `isRealPhotometry` had exactly one consumer (a headline prefix), no served field; and two ACCEPTED stand-in rows (F-GJ-1214-b, F-HD-189733-b) carry a sealed `verdictReason` ("...on evidence alone, without using any truth period") that contradicts their own `[stand-in synthetic curve]` headline and README's "by construction, not evidence" | stored rows predate any tier field, and the critic had no notion of the curve's provenance when wording an accept | (a) `dataTier` served on every row of BOTH `findingView`s, decoded losslessly from the narrate headline tag (`dataTierOfHeadline`), so all 104 stored rows carry it with no re-run and no stored-row edit; conservative stand-in default on an untagged headline. (b) `reviewCandidate` takes `standInCurve?` threaded from the light-curve SOURCE via `critique` (both callers pass it); a stand-in `directMatch` accept is now worded "by construction and is NOT independent evidence of a recovery" | tier round-trip test through both narrate tags; capture 99 real / 4 stand-in; wording test: stand-in reason carries the by-construction clause, the evidence clause is GONE, score/checks untouched, and the real-photometry reason is byte-identical (so no hash input moves); the two SEALED reasons stay as they are -- immutable history, disclosed via `dataTier`+`anchor-health` instead of rewritten | FIXED for served data + all NEW rows; sealed bytes honestly left alone. |
+| Defect 5: five anchored ids (F-AU-Mic-b, F-GJ-1214-b, F-HAT-P-11-b, F-HD-189733-b, F-HD-63433-d) assert a planet letter `labelConflict` structurally never checks -- `conflict:false` there means "nothing to compare", not "letters agree" | the predicate needs BOTH sides to decode a designator; a null side silently read as no-conflict | `labelConflict` returns a three-state `status` (`conflict` / `clear` / `unverifiable`), served as `labelConflictStatus` on both projections and counted in the aggregate -- the blind spot is now first-class data a reader can act on | `conflict===true` exactly iff `status==="conflict"` (every prior pin holds); capture population `{unverifiable:69, conflict:7, clear:27}` over 103 rows; 4 of the 5 named ids are in the capture's unverifiable set (F-AU-Mic-b anchored after it) and live 23 shows all 5 | FIXED (disclosure; the letters themselves are immutable on-chain claims). |
+
+### Honesty note on the twenty-first round
+
+Two things this round deliberately does NOT claim. First, the spend gate does not repair history: the 4 conflicting and 5
+unverifiable-letter commitments already on-chain stay there -- a chain that could be edited would not be worth anchoring to --
+so the fix is "no NEW contradiction gets bought" plus an aggregate that names every existing one, in that order. Second, the
+served `dataTier` is decoded from the headline tag, not from a stored provenance field: that is lossless for every row the
+narrator produced (it prefixes EVERY headline with exactly one tag) but it is a decode, and the test pins the round-trip so a
+future narrator wording change cannot silently re-tier the board. The gate itself is the first round-20..21 change that touches
+the money path since the round-4 ledger fixes; it narrows spending (refuses strictly more than before), never widens it, and
+the two no-spend idempotence guards run before it, so no replay path can double-charge.
+
+Close: suite 956 -> **965** pass / 0 fail (+9 in the new `tests/anchor-health.test.ts`, every live count measured with the
+production helpers over the committed fixtures BEFORE being pinned), `typecheck:all` 0, `eslint --max-warnings 0` clean, zero
+non-ASCII, zero secret hits. No stored row, manifest byte, `bundleHash` or `scienceHash` moved; `ledgerAnchored` **23** as-of
+2026-10-26T01:05Z, blind-toi accepted 0, every `discoveryClaim` false. Deploy + live verification of `GET /api/anchor-health`
+and the 409 refusal follow the commit; the two standing calibration-gated research decisions (mint-time suppression, seat-free
+content address) remain unchanged.
+
+
 
 

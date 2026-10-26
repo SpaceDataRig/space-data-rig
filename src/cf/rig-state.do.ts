@@ -50,6 +50,7 @@ import {
   keypairFromSecretJson,
   type AnchorCoreResult,
 } from "../solana/anchor-core.ts";
+import { labelConflict } from "../core/signal-identity.ts";
 import { commissionObservation, type ObserveScience } from "../observe/observeApi.ts";
 import { resolveAnchorDailyCap } from "../observe/paymentPolicy.ts";
 import { txGetterFor } from "../observe/connection.ts";
@@ -700,6 +701,22 @@ export class RigStateDO extends DurableObject<Env> {
           `Skipped anchor for ${findingId}: identical science (content hash) already anchored as ${dupe.findingId} -- no new fee spent.`,
         );
         return { ok: true, memo, httpStatus: 200, alreadyAnchored: true, deduplicated: true, dedupOf: { findingId: dupe.findingId, signature: dupe.signature ?? "" } };
+      }
+
+      // Round-21 audit defect 2 (spend gate): a NEW mainnet commitment must not freeze a row the rig's
+      // OWN CURRENT judgement does not stand behind. The two guards above replay already-anchored rows
+      // and byte-identical science WITHOUT spending, so this gate weighs only NEW spends: refuse a row
+      // that is not currently accepted, or that the label-conflict predicate flags, so a downgraded
+      // verdict or a disputed planet letter cannot buy a permanent on-chain promise. (Production had
+      // exactly this: rows anchored while accepted, later downgraded or flagged, commitments immutable.)
+      // Clearing the flag / restoring the verdict re-enables anchoring; nothing already on-chain moves.
+      const lcNow = labelConflict(f.targetId, f.crossmatch);
+      if (f.verdict !== "accepted" || lcNow.conflict) {
+        const why = lcNow.conflict
+          ? "labelConflictsWithKnown is true (the label's planet letter disputes the cross-matched one)"
+          : `current verdict is "${f.verdict}", not accepted`;
+        await this.emitEvent("reporter", "warn", `Refused anchor for ${findingId}: ${why} -- no fee spent (round-21 anchor gate).`);
+        return { ok: false, memo, httpStatus: 409, error: `anchor refused: ${why}; resolve it before committing a new on-chain promise` };
       }
 
       const endpoints = endpointList(undefined, this.env.SOLANA_RPC, this.env.SOLANA_RPC_FALLBACKS);

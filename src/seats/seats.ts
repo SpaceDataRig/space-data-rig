@@ -18,6 +18,7 @@ import {
 import { reviewCandidate, type ReviewResult, type ReviewVetting } from "../critic/review.ts";
 import { mainSequenceMassFromRadius } from "../sim/transitModel.ts";
 import { narrateFinding } from "../reporter/narrate.ts";
+import { isRealPhotometry } from "../data/dataTier.ts";
 import { foldedPlotSVG, periodogramSVG, timeSeriesPlotSVG } from "../detect/svgPlot.ts";
 import {
   canonicalJson,
@@ -142,10 +143,16 @@ export interface CritiqueInput {
    * review is byte-for-byte unchanged.
    */
   origin?: "revalidation" | "blind-toi";
+  /**
+   * Round-21 audit defect 3: the light-curve source string, so the critic can tell a synthetic stand-in
+   * from real photometry and word an accepted cross-match honestly (by construction, not evidence).
+   * Absent => the review is byte-for-byte unchanged (every caller before round 21).
+   */
+  lightCurveSource?: string;
 }
 
 /** mission-critic: defensible verdict + per-check results + composite score. */
-export function critique({ detection, catalog, hostName, catalogSource, hostCatalog, confidence, truthPeriodDays, truthSource, recoveryGating, vetting, origin }: CritiqueInput): ReviewResult {
+export function critique({ detection, catalog, hostName, catalogSource, hostCatalog, confidence, truthPeriodDays, truthSource, recoveryGating, vetting, origin, lightCurveSource }: CritiqueInput): ReviewResult {
   const review = reviewCandidate({
     candidate: detection.candidate,
     aliasMultiple: detection.aliasMultiple,
@@ -158,6 +165,8 @@ export function critique({ detection, catalog, hostName, catalogSource, hostCata
     truthSource,
     recoveryGating,
     vetting,
+    // Only set when a source string was supplied; undefined keeps prior callers byte-identical.
+    standInCurve: lightCurveSource == null ? undefined : !isRealPhotometry(lightCurveSource),
     minSnr: 7,
   });
   // Hard honesty ceiling for unconfirmed TOI candidates: a blind recovery on a host NOT in the confirmed

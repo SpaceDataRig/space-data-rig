@@ -611,7 +611,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-24)
+## 13. Current state (as of 2026-10-26)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -620,9 +620,11 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: rounds 18/19/20 shipped scripts/tests/docs ONLY (no Worker redeploy) stacked on the deployed 336840b; the tip when
-  this snapshot was re-measured (2026-10-24T08:04Z) was 2ebcd59 (the round-19 devlog archive), and the round-20 correction
-  is the commit carrying this refreshed section. The revision PRODUCTION still runs is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
+- Git: round-21 (2026-10-26) ships the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
+  commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two
+  no-spend idempotence guards), the read-only `GET /api/anchor-health` aggregate (pure `src/core/anchor-health.ts`), the
+  served `dataTier` + `labelConflictStatus` projection fields, and the stand-in-aware critic wording -- stacked on the
+  round-20 tip 32c59d2 (which, like rounds 18/19/20 before it, was scripts/tests/docs only and redeployed nothing). The revision PRODUCTION still runs is 336840b -- the seventeenth-round READ-SIDE hardening of the disclosure kernel
   (decode TOI candidate numbers `.01` -> b so designator parsing covers 103 of 103 rows and the label-conflict predicate can FIRE
   on the 34 of 103 rows (33.0%, up from 27.2%) whose label AND NASA cross-match name both decode to a designator -- the other 65
   rows carry no comparison name to contradict, so round-17's public "sees the whole catalog" was an over-claim corrected in round
@@ -645,7 +647,9 @@ authority; they are deliberately not restated here.
   `git log` is the authority there.
 - Production: wrangler version 2327eda2-7043-42f3-9485-72fa3bf309ce, gitSha 336840b1bc5463641a1db1fc2c5d74785fe68128
   (it replaced 0ea4089b-dd49-4c93-b185-4260fd215158 / `c70593e`) -- UNCHANGED at this snapshot because rounds 18/19/20
-  redeployed nothing; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
+  redeployed nothing; the round-21 Worker change (anchor spend gate + `GET /api/anchor-health` + served
+  `dataTier`/`labelConflictStatus`) deploys AFTER the round-21 commit, and the new version/`gitSha` pair is recorded here
+  and in the round-21 close note once `GET /health` confirms it; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
   kinds `{58,41,none:4}`) and live has since drifted to 104 records / 91 hosts (re-measured 2026-10-24T08:04Z) as the rig
   keeps minting -- a dated proof, not a live promise. Re-verified live at the round-17 snapshot: `deploy:window`
   cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span
@@ -677,12 +681,12 @@ authority; they are deliberately not restated here.
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters, re-read live 2026-10-24T08:04Z (`GET /api/state/summary` at ~3,876 bytes against a full
-  `GET /api/state` near 324 KB -- the ~84x lighter projection the twelfth-round D4 asked for, carrying the same
-  `stats`/`statDefinitions`): surveyPass 565 CLAIMED, distinctHosts 91 host STARS (audit-16 re-based from the old label
-  count; the raw-label count is the separate distinctRecords 104 -- the rig has minted one more record + host since the
-  round-17 snapshot's 103/90), blindHeld 29 over blindCandidates 53 assessed, bundlesAnchored 0 published-bytes,
-  ledgerAnchored 23 chain commitments, tasksDone 97 (a per-window bookkeeping that moves between pulls; re-read it live).
+- Public counters, re-read live 2026-10-26T01:44Z (`GET /api/state/summary`; the ~84x lighter projection the twelfth-round
+  D4 asked for, carrying the same `stats`/`statDefinitions`): surveyPass 710 CLAIMED, distinctHosts 91 host STARS (audit-16
+  re-based from the old label count; the raw-label count is the separate distinctRecords 104), blindHeld 29 over
+  blindCandidates 53 assessed, findingsAccepted 18 / findingsRejected 30 / findingsReview 56, bundlesAnchored 0
+  published-bytes, ledgerAnchored 23 chain commitments (UNCHANGED since 2026-10-23 evening -- two days with no new anchor),
+  tasksDone 92 with tasksQueued 6 and tasksFailed 11 (a per-window bookkeeping that moves between pulls; re-read it live).
   ROUND-20 CORRECTION -- the round-17..19 snapshots said "nothing new anchored since 2026-10-20"; that was true when
   written and is now SUPERSEDED: three new real-fee anchors landed 2026-10-23 evening (F-AU-Mic-b 15:56:01Z, F-TOI-480-b
   16:02:26Z, F-HD-110067-b 18:03:39Z, each with a real mainnet `signature` + `slot`), moving ledgerAnchored 20 -> 23.
@@ -697,7 +701,13 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 122 files / 956 tests as this snapshot was re-taken 2026-10-24 (rounds 18/19/20 added guard + accounting
+- Tests: 123 files / 965 tests as this snapshot was re-taken 2026-10-26 (round-21 added ONE new file,
+  `tests/anchor-health.test.ts` (+9): the pure aggregate pinned on hand-built rows, then MEASURED with the production
+  helpers over the captured live fixtures before being pinned (20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict /
+  3 stand-in / 4 unverifiable-letter / 0 missing), the three-state `labelConflict.status`, the tier round-trip through
+  both narrate tags, the stand-in wording (by-construction clause in, evidence clause out, score/checks untouched,
+  real-photometry reason byte-identical), and structural wiring for the spend gate + both served fields + both
+  `/api/anchor-health` routes on both runtimes; rounds 18/19/20 before it added guard + accounting
   assertions to EXISTING files, no new file -- round-20 +3 to `tests/post-x-text-guard.test.ts` for the coverage-net
   escapes/contrastive, rounds 18/19 the money-narrowing + coverage catches; the seventeenth round added no new FILE but +3 assertions to the
   two files round-16 introduced: `tests/signal-identity.test.ts` gained a `candidateNumberToLetter` block, a
@@ -712,7 +722,7 @@ authority; they are deliberately not restated here.
   and `computeStats` reading 90/103; the round-15 echo "parity" source-regex test was renamed a STRUCTURAL wiring check; the
   fifteenth round had earlier grown `tests/finding-query.test.ts`
   with the T1 cadence + zero-pad behaviour in BOTH directions, the T2 `dir`-active sort, the T3 `clamped` echo, the T4 DESC
-  default and an edge+Node echo-parity assertion; `npm test` 956 pass / 0 fail on this full-history Windows checkout).
+  default and an edge+Node echo-parity assertion; `npm test` 965 pass / 0 fail on this full-history Windows checkout).
   CAVEAT the fifteenth audit rightly flagged: on a `.git`-less, FITS-un-prefetched tarball the SAME suite reads ~945 pass /
   8 skip / 3 env-fail (the round-20 auditor measured 942 / 3 / 8 on the round-19 `2ebcd59` tarball at 953 total; round-20's
   +3 are pure/offline so they pass there too, giving 945) -- the skips are the `existsSync("out/probe-*.fits")` MAST gates, the 3 fails are `git merge-base`

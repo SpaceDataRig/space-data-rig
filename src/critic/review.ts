@@ -57,6 +57,13 @@ export interface ReviewInput {
   /** what the reference period is: an injection or a catalog value (real photometry). */
   truthSource?: "injected" | "catalog";
   /**
+   * Round-21 audit defect 3: true when the light curve under review is a synthetic stand-in rather than
+   * real photometry. A stand-in is generated AT the catalog period, so a cross-match at that period is by
+   * CONSTRUCTION and must not be worded as independent evidence. Real-photometry reviews leave this unset
+   * and their reasons stay byte-for-byte as before.
+   */
+  standInCurve?: boolean;
+  /**
    * Known reference period. In the DEFAULT blind mode this is used ONLY as a post-hoc,
    * non-gating, non-scoring cross-check (recorded in `checks` for transparency). It gates the
    * verdict only when `recoveryGating` is explicitly true.
@@ -376,8 +383,15 @@ export function reviewCandidate(input: ReviewInput): ReviewResult {
     } else if (directMatch) {
       // Evidence-strong AND it independently cross-matches a catalog planet at its fundamental
       // period -> a genuine blind recovery (no truth period was consulted to reach this verdict).
+      // Round-21 defect 3: on a synthetic stand-in curve the cross-match at the catalog period is by
+      // CONSTRUCTION (the curve was generated there), so wording it as independent evidence would
+      // contradict the row's own stand-in headline -- and that contradiction was sealed on-chain for two
+      // accepted rows. Keep the real-photometry wording byte-identical; only stand-in rows change.
+      const evCore = `${degenerateSig ? "significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%)`;
       verdict = "accepted";
-      reason = `Blind recovery: ${degenerateSig ? "significant but DEGENERATE transit (SNR/depth-significance/search-edge flagged in the checks; physical consistency is not asserted)" : "significant, physically-consistent transit"} (SNR ${c.snr.toFixed(0)}, recovery ${((conf ?? 0) * 100).toFixed(0)}%) independently cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period on evidence alone, without using any truth period.`;
+      reason = input.standInCurve
+        ? `Stand-in curve: ${evCore} cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period, but the light curve is a synthetic stand-in generated at the catalog period, so this match is by construction and is NOT independent evidence of a recovery.`
+        : `Blind recovery: ${evCore} independently cross-matches ${cm.knownPlanetName} (P=${cm.knownPeriodDays?.toFixed(3)}d) at its fundamental period on evidence alone, without using any truth period.`;
     } else if (cm.matchedKnownPlanet) {
       // Matched ONLY via a harmonic (x2, x3, x1/2 ...): a probable alias of a known planet, not a
       // clean recovery. Never accepted/anchored -- flagged for follow-up.

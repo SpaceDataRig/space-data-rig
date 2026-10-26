@@ -127,13 +127,21 @@ interface CrossmatchLike {
 export function labelConflict(
   targetId: string,
   crossmatch?: CrossmatchLike,
-): { conflict: boolean; requested: string | null; detected: string | null; requestedKind: DesignatorKind; detectedKind: DesignatorKind } {
+): { conflict: boolean; status: "conflict" | "clear" | "unverifiable"; requested: string | null; detected: string | null; requestedKind: DesignatorKind; detectedKind: DesignatorKind } {
   const req = labelDesignatorOf(targetId);
   const known = crossmatch?.knownPlanetName;
   const det = known ? knownDesignatorOf(known) : null;
   const sameHost = !!known && hostKeyOf(known) === hostKeyOf(targetId);
+  const conflict = sameHost && req != null && det != null && req !== det;
   return {
-    conflict: sameHost && req != null && det != null && req !== det,
+    conflict,
+    // Round-21 audit defect 5: the predicate can only judge when BOTH sides carry a planet letter. When
+    // either side is null (a bare star label, or a label letter with no cross-matched name) `conflict`
+    // is false NOT because the letters agree but because there is nothing to compare -- five anchored
+    // identifiers assert a letter this predicate structurally never checks. Say so explicitly instead of
+    // silently returning false, so the limitation is first-class data a reader (and the anchor-health
+    // aggregate) can act on.
+    status: req == null || det == null ? "unverifiable" : conflict ? "conflict" : "clear",
     requested: req,
     detected: det,
     requestedKind: designatorKindOf(targetId),

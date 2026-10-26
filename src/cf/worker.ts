@@ -35,6 +35,8 @@ import type { DashboardState, LedgerEntry } from "../core/state-types.ts";
 import { summarizeState } from "../core/state-summary.ts";
 import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
 import { labelConflict } from "../core/signal-identity.ts";
+import { dataTierOfHeadline } from "../data/dataTier.ts";
+import { anchorHealth } from "../core/anchor-health.ts";
 
 export { RigStateDO, RigRunWorkflow, RateLimitDO };
 
@@ -77,7 +79,7 @@ function findingView(f: Finding) {
   // audit-16 D1 (edge mirror of the Node server): machine-readable label-conflict disclosure on the read
   // projection ONLY -- the stored row, the bundle manifest and both hashes are untouched.
   const lc = labelConflict(f.targetId, f.crossmatch);
-  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6), requestedDesignator: lc.requested, requestedDesignatorKind: lc.requestedKind, detectedDesignator: lc.detected, detectedDesignatorKind: lc.detectedKind, labelConflictsWithKnown: lc.conflict };
+  return { ...f, depthPpm: Math.round(f.candidate.depthFrac * 1e6), requestedDesignator: lc.requested, requestedDesignatorKind: lc.requestedKind, detectedDesignator: lc.detected, detectedDesignatorKind: lc.detectedKind, labelConflictsWithKnown: lc.conflict, labelConflictStatus: lc.status, dataTier: dataTierOfHeadline(f.narration?.headline) };
 }
 
 // Honest descriptor of the discussion engine, built from env bindings only.
@@ -203,6 +205,17 @@ app.get("/api/findings/:id", async (c) => {
 app.get("/api/ledger", async (c) => {
   const ledger: LedgerEntry[] = await rigStub(c.env).listLedger();
   return c.json({ ledger });
+});
+
+// Round-21 audit defect 2: the aggregate the board never showed -- how many ON-CHAIN commitments no
+// longer match the row's CURRENT judgement (downgraded verdict, label conflict, stand-in curve, or a
+// planet letter the conflict predicate structurally cannot verify). Read-only; joins the ledger to the
+// served rows through the same pure helper the Node parity route and the tests use.
+app.get("/api/anchor-health", async (c) => {
+  const stub = rigStub(c.env);
+  const ledger: LedgerEntry[] = await stub.listLedger();
+  const findings: Finding[] = await stub.listFindingsPublic();
+  return c.json(anchorHealth(ledger, findings.map(findingView), new Date().toISOString()));
 });
 
 // Name an Observation: run the SAME blind, deterministic pipeline on a user-chosen star and return the real,

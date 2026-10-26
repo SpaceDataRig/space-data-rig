@@ -529,6 +529,8 @@ export class Orchestrator {
       // the benchmark self-test that anchors the verdict on the known period.
       recoveryGating: this.recoveryGating,
       vetting,
+      // round-21 defect 3: let the critic word a stand-in cross-match as by-construction, not evidence.
+      lightCurveSource: ctx.lc?.source,
     });
     ctx.review = review;
 

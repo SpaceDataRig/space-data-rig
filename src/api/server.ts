@@ -26,6 +26,8 @@ import { summarizeState } from "../core/state-summary.ts";
 import { parseFindingQuery, queryFindings, ignoredFindingParams, clampedFindingParams } from "../core/finding-query.ts";
 import { serializeByKey } from "../core/inFlightLock.ts";
 import { labelConflict } from "../core/signal-identity.ts";
+import { dataTierOfHeadline } from "../data/dataTier.ts";
+import { anchorHealth } from "../core/anchor-health.ts";
 import { Orchestrator, type OrchestratorOptions } from "../orchestrator/pipeline.ts";
 import { getFallbackCatalog } from "../data/exoplanetArchive.ts";
 import { seatRole } from "../reporter/narrate.ts";
@@ -140,6 +142,9 @@ function findingView(f: Finding) {
     detectedDesignator: lc.detected,
     detectedDesignatorKind: lc.detectedKind,
     labelConflictsWithKnown: lc.conflict,
+    labelConflictStatus: lc.status,
+    // round-21 defect 3: the tier as DATA on the read projection (parity with the edge mirror).
+    dataTier: dataTierOfHeadline(f.narration?.headline),
   };
 }
 
@@ -352,6 +357,12 @@ app.get("/api/bundles/:id/artifact/:name", async (c) => {
 
 // On-chain provenance ledger (works even when every RPC is unreachable).
 app.get("/api/ledger", (c) => c.json({ ledger: readLedger(LEDGER_PATH) }));
+
+// Round-21 audit defect 2 (parity with the edge): the aggregate of how many on-chain commitments no
+// longer match the row's CURRENT judgement. Read-only; same pure helper the edge route and tests use.
+app.get("/api/anchor-health", (c) =>
+  c.json(anchorHealth(readLedger(LEDGER_PATH), store.listFindings().map(findingView), new Date().toISOString())),
+);
 
 // Name an Observation (parity with the edge /api/observe): run the same blind, deterministic pipeline on a
 // user-chosen star and return the real result + sealed envelope + the sdr:observe:1 memo that WOULD anchor.
@@ -656,6 +667,20 @@ app.post("/api/anchor/:id", async (c) => {
       store.save(STATE_PATH, ledgerRows());
     }
     return c.json({ ok: true, memo: prior.memo, signature: prior.signature, slot: prior.slot, explorerUrl: prior.explorerUrl, alreadyAnchored: true });
+  }
+
+  // Round-21 audit defect 2 (spend gate, Node parity with the edge DO): a NEW mainnet
+  // commitment must not freeze a row the rig's OWN CURRENT judgement does not stand
+  // behind. Sits AFTER the no-spend idempotency guard, so already-anchored rows still
+  // replay/re-stamp untouched; if the flag clears or the verdict recovers, the row
+  // becomes anchorable again.
+  const lcNow = labelConflict(f.targetId, f.crossmatch);
+  if (f.verdict !== "accepted" || lcNow.conflict) {
+    const why = lcNow.conflict
+      ? "labelConflictsWithKnown is true (the label's planet letter disputes the cross-matched one)"
+      : `current verdict is "${f.verdict}", not accepted`;
+    store.emitEvent("reporter", "warn", `Refused anchor for ${f.id}: ${why} -- no fee spent (round-21 anchor gate).`);
+    return c.json({ error: `anchor refused: ${why}; resolve it before committing a new on-chain promise` }, 409);
   }
 
   store.emitEvent("reporter", "info", `Anchoring ${f.id} on Solana mainnet${dryRun ? " (dry-run)" : ""}...`);

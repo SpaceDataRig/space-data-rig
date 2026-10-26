@@ -1162,6 +1162,7 @@ Base URL `http://127.0.0.1:8787` (override with `PORT` / `HOST`).
 | GET | `/api/bundles/:id/verify` | recompute the hash + re-hash artifacts |
 | GET | `/api/bundles/:id/artifact/:name` | serve `folded.svg` / `periodogram.svg` / `timeseries.svg` |
 | GET | `/api/ledger` | anchoring ledger (bundle anchors) |
+| GET | `/api/anchor-health` | read-only aggregate: how many anchored commitments no longer match the row's CURRENT judgement (downgraded verdict, label conflict, stand-in curve, unverifiable planet letter), with a per-row report |
 | GET | `/api/discussion` | grounded deliberation threads for all findings (fast, no LLM) |
 | GET | `/api/discussion/:id` | on-demand two-model cross-examination; seals the receipt and returns `deliberationHash` |
 | GET | `/api/discussion/:id/receipt` | the sealed deliberation receipt JSON |
@@ -1169,7 +1170,7 @@ Base URL `http://127.0.0.1:8787` (override with `PORT` / `HOST`).
 | GET | `/api/discussion/:id/anchor` | read back any on-chain deliberation anchor |
 | GET | `/api/events` | live event stream (**SSE** on Node; **WebSocket-first** with SSE fallback on the edge) |
 | POST | `/api/run` | start a run `{ targets, delay, confidence, tmag, offline, resume }` (Orchestrator on Node; triggers the `rig-run` Workflow on the edge) |
-| POST | `/api/anchor/:id` | anchor one finding's bundle hash on mainnet `{ dryRun }` (memo `sdr:1\|...`) |
+| POST | `/api/anchor/:id` | anchor one finding's bundle hash on mainnet `{ dryRun }` (memo `sdr:1\|...`); a NEW spend is refused with HTTP 409 when the current verdict is not `accepted` or the label conflicts with its own cross-match -- already-anchored rows still replay idempotently |
 | POST | `/api/anchor/:id/deliberation` | anchor the sealed deliberation receipt `{ dryRun }` (memo `sdr:delib:1\|...`, idempotent, separate from the bundle ledger) |
 
 `POST /api/run` returns immediately and streams progress over SSE; only one run at a

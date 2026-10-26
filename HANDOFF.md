@@ -620,7 +620,17 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: round-21 (2026-10-26) ships the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
+- Git: rounds 22-24 (all 2026-10-26) are CI-only work on the FEED, not the rig: 22 added the empty-window
+  pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
+  vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
+  recorded what a run read, never what it posted) and that the single window it did prove empty had FAILED the job
+  (GitHub runs `run:` blocks under `bash -e`, so the designed exit 42 aborted the step before `skip=1` was written).
+  Six defects closed -- F1 inclusive-boundary agreement with the composer, F3 the hint lag, F4 a future-dated cursor
+  is untrusted, F5 an override run no longer shadows a good hint with an empty cache entry, F11 git argv arrays
+  instead of a shell string (the quoted `:!` pathspecs were inert under cmd.exe), F13 the `bash -e` abort -- with
+  `tests/x-post-preflight.test.ts` (14 cases) loading that path for the first time; the fetch-to-post cursor gap was
+  MEASURED (13 posting runs, 0 items lost) and deliberately left alone. Round-21 (2026-10-26) ships
+  the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
   commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two
   no-spend idempotence guards), the read-only `GET /api/anchor-health` aggregate (pure `src/core/anchor-health.ts`), the
   served `dataTier` + `labelConflictStatus` projection fields, and the stand-in-aware critic wording -- stacked on the
@@ -645,11 +655,17 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 2327eda2-7043-42f3-9485-72fa3bf309ce, gitSha 336840b1bc5463641a1db1fc2c5d74785fe68128
-  (it replaced 0ea4089b-dd49-4c93-b185-4260fd215158 / `c70593e`) -- UNCHANGED at this snapshot because rounds 18/19/20
-  redeployed nothing; the round-21 Worker change (anchor spend gate + `GET /api/anchor-health` + served
-  `dataTier`/`labelConflictStatus`) deploys AFTER the round-21 commit, and the new version/`gitSha` pair is recorded here
-  and in the round-21 close note once `GET /health` confirms it; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
+- Production: wrangler version b0d9ed9f-114e-4c03-9bbe-266bd0bdf4ac, gitSha ab0ce34c67345d6d9515e52192aacfdd62aee045
+  (deploy d3960018-cec5-4f19-8dfd-acc414cff344,
+  created 2026-10-26T02:15:58Z, read off `wrangler deployments list`), `codeVersion space-data-rig@0.2.0` -- the
+  gitSha/codeVersion pair re-read live from `GET /health` at
+  2026-10-26T10:05Z by the round-24 audit. **ROUND-24 CORRECTION (F15):** this bullet named version
+  `2327eda2-7043-42f3-9485-72fa3bf309ce` / gitSha `336840b` and said the round-21 Worker change "deploys AFTER the
+  round-21 commit, recorded once `GET /health` confirms it". Both named values were the 2026-10-23T09:26 deploy -- two
+  deploys behind reality -- and the confirmation never got written back. `tests/handoff-freshness.test.ts` cannot catch
+  this class: it checks that the bullet NAMES a version id and a reachable sha, never that either equals the live
+  endpoint. Rounds 22/23/24 change no `src/` file and need no deploy (the whole surface is CI-only: a workflow, a
+  script, tests and docs), so `ab0ce34` is still current at this snapshot; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
   kinds `{58,41,none:4}`) and live has since drifted to 104 records / 91 hosts (re-measured 2026-10-24T08:04Z) as the rig
   keeps minting -- a dated proof, not a live promise. Re-verified live at the round-17 snapshot: `deploy:window`
   cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span
@@ -681,12 +697,14 @@ authority; they are deliberately not restated here.
   AUTO_RESEARCH_TMAG=10, AUTO_RESEARCH_ROTATION=1, AUTO_RESEARCH_POOL=120, AUTO_ANCHOR=live (cap 100/day),
   OBSERVE_ANCHOR=live (cap unlimited), MAST_S3=1, VET=1, PERSECTOR=1, DISCUSSION_MODE=grounded,
   CODE_VERSION=space-data-rig@0.2.0, SOLANA_RPC_FALLBACKS=api.mainnet-beta.solana.com.
-- Public counters, re-read live 2026-10-26T01:44Z (`GET /api/state/summary`; the ~84x lighter projection the twelfth-round
-  D4 asked for, carrying the same `stats`/`statDefinitions`): surveyPass 710 CLAIMED, distinctHosts 91 host STARS (audit-16
+- Public counters, re-read live 2026-10-26T10:05Z by the round-24 audit (`GET /api/state/summary`; the ~84x lighter
+  projection the twelfth-round
+  D4 asked for, carrying the same `stats`/`statDefinitions`): surveyPass 741 CLAIMED (710 at the 01:44Z round-21 read --
+  the survey loop is running), distinctHosts 91 host STARS (audit-16
   re-based from the old label count; the raw-label count is the separate distinctRecords 104), blindHeld 29 over
   blindCandidates 53 assessed, findingsAccepted 18 / findingsRejected 30 / findingsReview 56, bundlesAnchored 0
-  published-bytes, ledgerAnchored 23 chain commitments (UNCHANGED since 2026-10-23 evening -- two days with no new anchor),
-  tasksDone 92 with tasksQueued 6 and tasksFailed 11 (a per-window bookkeeping that moves between pulls; re-read it live).
+  published-bytes, ledgerAnchored 23 chain commitments (UNCHANGED since 2026-10-23 evening -- three days with no new anchor),
+  tasksDone 92 with tasksQueued 9 and tasksFailed 8 (a per-window bookkeeping that moves between pulls; re-read it live).
   ROUND-20 CORRECTION -- the round-17..19 snapshots said "nothing new anchored since 2026-10-20"; that was true when
   written and is now SUPERSEDED: three new real-fee anchors landed 2026-10-23 evening (F-AU-Mic-b 15:56:01Z, F-TOI-480-b
   16:02:26Z, F-HD-110067-b 18:03:39Z, each with a real mainnet `signature` + `slot`), moving ledgerAnchored 20 -> 23.
@@ -701,7 +719,12 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 123 files / 965 tests as this snapshot was re-taken 2026-10-26 (round-21 added ONE new file,
+- Tests: 125 files / 979 tests as this snapshot was re-taken 2026-10-26 (round-24 added ONE new file,
+  `tests/x-post-preflight.test.ts` (+14), which drives the real pre-flight CLI against a fixture rig on 127.0.0.1 and a
+  throwaway git repo AND extracts the workflow's own step shell to run it under `bash -eo pipefail` -- the F13 case is
+  the first time anything in `npm test` has loaded the gate that can suppress a post; the count also carries the
+  +2 F13 step cases, and note the file count is 125 where the round-21 snapshot said 123, i.e. that figure was already
+  one behind `scripts/run-tests.ts`'s own discovery -- measured, not inherited. Round-21 added
   `tests/anchor-health.test.ts` (+9): the pure aggregate pinned on hand-built rows, then MEASURED with the production
   helpers over the captured live fixtures before being pinned (20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict /
   3 stand-in / 4 unverifiable-letter / 0 missing), the three-state `labelConflict.status`, the tier round-trip through

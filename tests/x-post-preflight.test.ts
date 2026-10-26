@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { execFileSync, spawn } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -92,20 +92,24 @@ async function startFixture(state: unknown, ledger: unknown, opts: { stateStatus
 }
 
 /**
- * Spawn the CLI and wait. ASYNC on purpose: the fixture rig is served from this process's own event loop, so a
- * blocking execFileSync would deadlock it and every request would hang until the pre-flight's own 15s abort --
- * which is exactly how the first draft of this file failed, and it failed as a "network error", not as a hint
- * that the harness was wrong.
+ * Spawn a process and wait. ASYNC on purpose, twice over: the fixture rig is served from this process's own
+ * event loop, so ANY blocking wait (execFileSync included) deadlocks it and every request hangs until the
+ * pre-flight's own 15s abort -- which then surfaces as "state fetch failed -> proceed", i.e. as a wrong verdict
+ * rather than a broken harness. Both this file's first draft and its F13 case fell into that trap.
  */
-function runCli(cwd: string, env: Record<string, string>, script: string = SCRIPT): Promise<{ code: number; out: string }> {
+function runProc(cmd: string, args: string[], cwd: string, env: Record<string, string | undefined>): Promise<{ code: number; out: string }> {
   return new Promise((resolveRun) => {
-    const child = spawn(process.execPath, [script], { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(cmd, args, { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     child.stdout.on("data", (d: Buffer) => (out += d.toString("utf8")));
     child.stderr.on("data", (d: Buffer) => (out += d.toString("utf8")));
     child.on("error", (e: Error) => resolveRun({ code: -1, out: `${out}${e.message}` }));
     child.on("close", (code: number | null) => resolveRun({ code: code == null ? -1 : code, out }));
   });
+}
+
+function runCli(cwd: string, env: Record<string, string>, script: string = SCRIPT): Promise<{ code: number; out: string }> {
+  return runProc(process.execPath, [script], cwd, env);
 }
 
 /** One place to drive the CLI against a fixture rig, so no test can forget to close the server. */
@@ -236,4 +240,87 @@ test("F2: the pre-flight's hand copy of the blind predicate agrees with the shar
       `the two definitions of "held blind candidate" disagree on ${JSON.stringify(row)}`,
     );
   }
+});
+
+// ---- F13: the SHELL around the pre-flight, not just the pre-flight. -----------------------------------------
+// GitHub runs every `run:` block as `bash -e -o pipefail`, so a step that lets a non-zero exit reach the end of a
+// line dies there. The shipped pre-flight step ended its `node` call that way: the first window the gate ever
+// PROVED empty (run 40303969337) came back as a failed job with no `skip=1` written, because the step aborted on
+// the 42 instead of reading it. Nothing in npm test loaded that shell, which is the exact gap the workflow header
+// already documents for the compose step. These cases extract the real block from the real YAML and run it under
+// the real shell options.
+function findBash(): string | null {
+  const cands = [process.env.BASH_BIN, "/bin/bash", "C:/Program Files/Git/bin/bash.exe"];
+  return cands.find((p) => p && existsSync(p)) || null;
+}
+
+/** Slice the pre-flight step's `run: |` body out of the workflow, dedented, exactly as the runner would see it. */
+function preflightStepShell(): string {
+  const yml = readFileSync(join(REPO, ".github", "workflows", "x-post.yml"), "utf8").replace(/\r\n?/g, "\n");
+  const anchor = yml.indexOf("id: preflight");
+  assert.ok(anchor > 0, "the pre-flight step no longer carries `id: preflight`");
+  const runAt = yml.indexOf("\n        run: |\n", anchor);
+  assert.ok(runAt > 0, "the pre-flight step no longer has a `run: |` block");
+  const lines: string[] = [];
+  for (const line of yml.slice(runAt + "\n        run: |\n".length).split("\n")) {
+    if (line.startsWith("          ")) lines.push(line.slice(10));
+    else if (line.trim() === "") lines.push("");
+    else break;
+  }
+  const body = lines.join("\n");
+  assert.match(body, /x-post-preflight\.mjs/, "the extracted block does not invoke the pre-flight");
+  return body;
+}
+
+/** Run the extracted workflow step under the runner's own shell options against a fixture rig. */
+async function runStepBlock(dir: string, state: unknown, ledger: unknown): Promise<{ code: number; out: string; written: string }> {
+  const bash = findBash();
+  assert.ok(bash, "no bash on this host");
+  const blockFile = join(dir, "step.sh");
+  const outFile = join(dir, "github_output.txt");
+  writeFileSync(blockFile, preflightStepShell().replace(/\r\n?/g, "\n"));
+  const { base, server } = await startFixture(state, ledger);
+  try {
+    const r = await runProc(bash, ["--noprofile", "--norc", "-eo", "pipefail", blockFile], REPO, {
+      GITHUB_OUTPUT: outFile,
+      CURSOR_FILE: join(dir, "out", "x-cursors.json"),
+      STATE_URL: `${base}/api/state`,
+      LEDGER_URL: `${base}/api/ledger`,
+      HEARTBEAT_AFTER_MIN: "45",
+      DEV_OVERLAP_MIN: "10",
+      DEV_COMMIT_EXCLUDE: "^chore\\(deps",
+      OVERRIDE_TEXT: "",
+      OVERRIDE_SINCE: "",
+      DRY_HEARTBEAT: "",
+    });
+    return { ...r, written: existsSync(outFile) ? readFileSync(outFile, "utf8") : "" };
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+}
+
+/** A build-note cursor in the future keeps the dev window empty whenever this runs, so the empty case stays real
+ *  on a repo where commits land minutes apart. */
+function emptyWindowCursors(dir: string): void {
+  writeFileSync(join(dir, "out", "x-cursors.json"), cursorJson({ last_build_note: iso(NOW + 7200_000) }));
+}
+
+test("F13: the workflow step turns a 42 into skip=1 and a green step, not a failed job", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  emptyWindowCursors(dir);
+  const r = await runStepBlock(dir, { findings: [] }, { ledger: [] });
+  assert.match(r.out, /window provably empty/, r.out);
+  assert.equal(r.code, 0, `the step must exit clean on an empty window: ${r.out}`);
+  assert.match(r.written, /skip=1/, `the step must record skip=1; got: ${JSON.stringify(r.written)}`);
+});
+
+test("the workflow step records skip=0 and stays green when the window holds content", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  emptyWindowCursors(dir);
+  const r = await runStepBlock(dir, { findings: [{ origin: "blind-toi", verdict: null, createdAt: CURSOR }] }, { ledger: [] });
+  assert.match(r.out, /proceed/, r.out);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.written, /skip=0/, `the step must record skip=0; got: ${JSON.stringify(r.written)}`);
 });

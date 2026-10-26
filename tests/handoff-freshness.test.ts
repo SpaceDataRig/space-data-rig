@@ -91,9 +91,14 @@ test("every commit sha section 13 names is reachable from HEAD", () => {
   // Only shas on a "Git:" / "Production:" bullet -- prose elsewhere legitimately cites commits by subject too.
   const lines = s.split("\n").filter((l) => /^-\s+(Git|Production):/i.test(l));
   assert.ok(lines.length >= 1, "section 13 must record where git and production stand");
-  // A wrangler VERSION id is a hex UUID and looks exactly like a sha to a regex -- and the first run of this gate
-  // duly reported it as an unreachable commit. Take the version out before asking about commits.
-  const withoutVersions = lines.join("\n").replace(/version\s+[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/g, "");
+  // A wrangler VERSION / DEPLOY id is a hex UUID and looks exactly like a sha to a regex -- and the first run of this
+  // gate duly reported it as an unreachable commit. The original strip matched only the `version <uuid>` form, which
+  // broke the moment the production bullet named a second UUID (the deploy id) or backticked one: round-24 does both.
+  // A UUID is never a commit, so strip every uuid-shaped token regardless of what precedes it.
+  // KNOWN LIMITATION, left deliberately: the filter above keeps only the FIRST line of each bullet, so a sha written on
+  // a continuation line is not checked at all. Widening it is not free -- those lines legitimately carry non-commit hex
+  // (a scienceHash prefix, a byte count) -- so the reachability gate stays scoped to the bullet heads.
+  const withoutVersions = lines.join("\n").replace(/`?[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}`?/gi, "");
   const shas = [...new Set(withoutVersions.match(/\b[0-9a-f]{7,40}\b/g) ?? [])];
   assert.ok(shas.length >= 1, "the state bullets must name commit shas, not just say 'latest'");
   for (const sha of shas) {

@@ -699,6 +699,40 @@ non-ASCII, zero secret hits. No stored row, manifest byte, `bundleHash` or `scie
 and the 409 refusal follow the commit; the two standing calibration-gated research decisions (mint-time suppression, seat-free
 content address) remain unchanged.
 
+## Twenty-fourth-round audit response (2026-10-26, SELF-audit of round-22's own feed gate -- workflow/scripts/tests/docs only, no Worker deploy)
+
+This pass audits the previous round's work rather than the science, because round-22 shipped a component whose
+failure mode is silent (it can suppress posts) on the strength of a local four-case check. Method: read the
+pre-flight against the composer it gates, then falsify it against live traffic. Every number below is read off the
+Actions API or the live endpoints during this pass.
+
+| # | finding | status | what was actually done |
+|---|---|---|---|
+| F3 | **The gate was inert: 0 skips over the 10 live runs since it shipped**, two of them paying for a full compose pass on content the previous run had already announced. The cached hint stored what a run READ off the feed and never what it POSTED, so it lagged one full cadence. | Shipped | The hint is now advanced from the run's own pre-fetch snapshot (`FETCH_EPOCH`, backed off 30 s, provably never newer than a post the run makes), and any cursor the run could not read is written EMPTY so the next pre-flight must proceed. Verified live on run 40301862903: read cursor 09:00:38, posted twice, wrote hint 09:44:02 -- lag ~44 min -> ~30 s. The next tick then proceeded on a genuinely new candidate instead of an announced one. |
+| F13 | **A provably-empty window FAILED the job.** GitHub runs every `run:` block under `bash -e`; the step called `node scripts/x-post-preflight.mjs` bare and read `code=$?` after it, so the designed exit 42 aborted the step. Observed live on run 40303969337: `window provably empty ... ##[error]Process completed with exit code 42`, no `skip=1` written, job red, later steps skipped by the failure rule rather than by the gate. | Shipped | `code=0; node ... \|\| code=$?`. Proven mechanically (old idiom: exit 42, next line never reached; new idiom: exit 0, line reached) and pinned by two new tests that extract the real step body from the real YAML and run it under the runner's own shell options. |
+| F1 | **Boundary disagreement, permanent-suppression class.** The composer's window start is inclusive (`within()` tests `t >= start`); the pre-flight used a strict `>`. An item timestamped in the cursor's own second is reportable forever AND skippable forever, because skipping never advances a cursor. | Shipped | Both comparisons are now `>=`, with a fixture case per side (sealed-at-cursor and held-blind-at-cursor must proceed). |
+| F4 | A hint dated ahead of the clock lets the emptiness verdict be drawn from an inverted window. | Shipped | Treated as untrusted input: proceed. |
+| F5 | An override or `dry_heartbeat` run exits before writing the hint, yet its `cache/save` step still stored an EMPTY entry which then shadowed the last good hint (`restore-keys` match the newest cache) -- so every manual post threw away the next tick's saving. | Shipped | The save is gated on the file being present, via a one-line check step rather than a `hashFiles()` expression whose availability in a step `if:` we had not verified. |
+| F11 | The pre-flight built git commands as a shell string, so the quoted `:!` pathspecs survive `cmd.exe` verbatim, match no file, and make the dev window read as empty on Windows while working on Linux. Found only because the new test needed a deterministic dev-window case. | Shipped | git is invoked with an argv array. A gate that can suppress posts must not have platform-dependent semantics. |
+| F2 | `heldBlind` in the pre-flight is a hand copy of `isHeldBlindCandidate` -- unavoidable (the gate must run before `npm ci`, so it cannot import TypeScript), but it re-introduces the second-definition pattern the project had already merged away once. | Shipped (as a pin, not a merge) | Currently equivalent, verified by hand AND now by test: the copy is exported and asserted against the TS predicate over a 10-row battery, so drift fails CI instead of silently changing what gets skipped. |
+| F9 | Structural: the science window starts at the last science POST time, so an item created between a run's state fetch and its post sits behind the next run's cursor and is never reported. | Measured, deliberately NOT changed | Over every posting run today: **13 examined, 0 items landing inside a gap.** Re-pointing the cursor at the fetch time trades a zero-observed-loss hazard for a real duplicate-post risk. The measurement script is kept as the tripwire; if the count ever stops being 0, this becomes a change. |
+| F12 | Residual inefficiency: the pre-flight's dev-window check has no already-announced-subject de-dup (only the composer has it), so each push costs up to two extra full runs until the sliding hint passes it. Observed on run 40302036397: proceeded on 1 subject, composed an empty note, posted nothing. | Open, recorded | A precise fix exists (cache the newest announced commit SHA and compare SHAs instead of timestamps) but it adds a cursor field and a write path for a bounded saving; deferred rather than left implicit. |
+| F14 | Round-22 shipped a workflow change and a new script and was recorded in `devlog/` ONLY -- absent from CHANGELOG and from this ledger entirely. | Shipped (corrected) | Two retroactive CHANGELOG entries added, naming the omission and the two round-22 mechanisms later found broken. This round's entry is the third. |
+| F15 | `HANDOFF` section 13 named version `2327eda2` / gitSha `336840b` and said the round-21 deploy was still to come, while `GET /health` reported `ab0ce34` and `wrangler deployments list` shows the round-21 deploy `b0d9ed9f` created 2026-10-26T02:15:58Z -- i.e. the bullet was TWO deploys stale, and the round-21 close note's promise ("recorded once /health confirms it") had never been executed. | Shipped (corrected) | Both values re-measured and rewritten with their timestamps. Root cause noted for the class: `tests/handoff-freshness.test.ts` checks that a version id and a reachable sha are NAMED, never that either equals the live endpoint -- so the gate passes while the fact rots. |
+
+Residual risk after this pass: the pre-flight can still proceed when nothing is postable (F12, and the deliberate
+`>=`/untrusted-input conservatism), which costs Actions minutes and never costs a post. It cannot skip a window the
+composer would have posted, given (a) inclusive-boundary agreement, (b) hints that are never newer than the run's own
+snapshot, and (c) every untrusted input routed to proceed -- but (b) is a property of the write path, so a future edit
+that advances a hint from anything other than the pre-fetch instant can break it again; the F13 shell test is the only
+automated tripwire on that path.
+
+Close: suite 965 -> **979** pass / 0 fail (125 files discovered by `scripts/run-tests.ts`, +1 file / +14 tests),
+`typecheck:all` 0, `eslint --max-warnings 0` clean, `bash -n` clean on all four `run:` blocks, zero non-ASCII in the
+staged set, zero secret hits. No `src/` file touched, nothing deployed; the feed's cadence, tiers and wording are
+byte-for-byte unchanged, and `ledgerAnchored` stays 23 with `discoveryClaim` false everywhere.
+
+
 
 
 

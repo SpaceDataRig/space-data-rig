@@ -5,6 +5,83 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
+Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight
+against the composer it gates, then falsify it against live traffic instead of trusting the local four-case check
+that round-22 had shipped on. Six defects, one measurement that stopped us changing something, and two ledger
+failures of our own. Nothing here alters what the feed posts or how often: every gate change is conservative in the
+same direction -- it can only make the pre-flight PROCEED more often, never suppress a post.
+- **F3, the root cause (measured, not guessed): the gate was inert.** Over the ten live runs after it shipped it
+  skipped **0**, and two of them paid for a full compose pass on content the previous run had already announced.
+  The cached hint recorded only the cursors a run READ off the feed, never what it POSTED, so it lagged one full
+  cadence and the "is there anything new?" test kept answering yes about yesterday's news. The hint is now advanced
+  from the run's own pre-fetch snapshot (`FETCH_EPOCH`, backed off 30 s, and provably never newer than a post the
+  run makes), and any cursor the run could not read is written EMPTY so the next pre-flight must proceed. Verified
+  live: run 40301862903 read a 09:00:38 cursor, posted twice, and wrote a 09:44:02 hint -- a ~44-minute lag became
+  ~30 seconds, and the next tick proceeded on a real new candidate instead of an announced one.
+- **F13, found because F3 finally let the empty branch fire: a provably-empty window FAILED the job.** GitHub runs
+  every `run:` block under `bash -e`, and the step called the pre-flight as a bare `node ...` followed by
+  `code=$?` -- so returning the designed 42 aborted the step on the spot. Observed live on run 40303969337
+  (`x-post-preflight: window provably empty ... ##[error]Process completed with exit code 42`): `skip=1` was never
+  written, the job was red, and the later steps were skipped by the failure rule rather than by the gate. The cost
+  saving was real; the "clean skip" round-22 documented was not a thing. Fixed with `code=0; node ... || code=$?`,
+  proven mechanically (old idiom exits 42 and never reaches the next line, new idiom exits 0) and pinned by two new
+  tests that extract the real block from the real YAML and run it under the runner's own shell options.
+- **F1 (permanent-suppression class): boundary disagreement.** The composer's window start is inclusive
+  (`within()` tests `t >= start`); the pre-flight compared with a strict `>`. An item timestamped in the cursor's
+  own second is therefore reportable forever AND skippable forever, because skipping never advances a cursor. Both
+  comparisons are now `>=`.
+- **F4: a hint dated ahead of the clock is untrusted input** and proceeds, closing the inverted-window variant of
+  the same class. **F5: an override or `dry_heartbeat` run exits before writing the hint, yet its `cache/save`
+  step still stored an EMPTY entry that shadowed the last good hint** (restore-keys match the newest cache), so
+  every manual post silently threw away the next tick's saving; the save is now gated on the file being present.
+- **F11, found by writing the test:** the pre-flight built git commands as a shell string, so the quoted `:!`
+  pathspecs survive `cmd.exe` verbatim, match no file, and make the dev window read as empty on Windows while
+  behaving correctly on the Linux runner. git is now invoked with an argv array -- a gate that can suppress posts
+  must not have platform-dependent semantics.
+- **F9 measured instead of "fixed": the composer's fetch-to-post gap.** The science window starts at the last
+  science POST time, so an item created between a run's state fetch and its post sits behind the next run's cursor
+  and is never reported. Structural, but is it real? Measured over every posting run today: **13 examined, 0 items
+  landing inside a gap.** Re-pointing the cursor at the fetch time would trade a zero-observed-loss hazard for a
+  real duplicate-post risk, so it is left alone and recorded here; the measurement script is the tripwire.
+- **F14 and F15, our own ledger failures.** Round-22 shipped a workflow change and a new script and was recorded in
+  `devlog/` only -- absent from CHANGELOG and RESPONSE-TO-AUDIT entirely, which the two retroactive entries below
+  fix. And `HANDOFF` section 13 still claimed production ran `336840b` with the round-21 deploy "to follow", while
+  `GET /health` has returned `ab0ce34c` since that deploy: the freshness test only checks that a named sha is
+  reachable from HEAD, never that the production bullet matches the live endpoint, so the claim rotted silently.
+  Both bullets are re-measured and corrected in this commit.
+- **Tests + close.** New `tests/x-post-preflight.test.ts` (14): the empty window, every untrusted-input branch, the
+  F1/F4 regressions, the rejected-blind-row case that proves the predicate is applied rather than a timestamp scan,
+  the relative-path CLI case (a naive import guard would have disabled the gate on exactly the path CI uses), the
+  F2 pin that the hand-copied blind predicate cannot drift from `isHeldBlindCandidate`, and the two F13 step-shell
+  cases. This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
+  Suite 965 -> **979** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  `bash -n` clean on all four run blocks, zero non-ASCII, zero secret hits. No `src/` runtime change, no deploy:
+  the whole surface is CI-only.
+
+### Twenty-second round (recorded late, by round-24): the feed's empty-window pre-flight, the node_modules cache, and the cursor hint
+Round-22 answered "the automatic feed costs too much, without reducing how often it posts" by attacking the cost of
+EMPTY windows rather than the number of posts: a dependency-free pre-flight (`scripts/x-post-preflight.mjs`) that
+stops the job before `npm ci` when the window provably holds nothing, an `actions/cache` entry for `node_modules`
+keyed on the lockfile, and a rolling cache of the three feed cursors used as a hint only. `on.schedule` and the
+full-history checkout were deliberately KEPT (a redundant backup tick now costs a clone plus two cheap reads, and
+the history is load-bearing for the research-milestone gate and old build-note windows). Recorded at the time in
+`devlog/2026-10-26-twenty-second-round-feed-cost-gate.md` only -- see F14 above for why that was not enough. Two of
+its mechanisms were then found broken by round-24 (F3, F13), and one live bug was caught during its own verification
+(`actions/checkout`'s default `git clean -ffdx` deleted the hint restored before it; fixed in `c71f984`).
+
+### Twenty-third round (recorded late, by round-24): what is actually worth citing -- vetting, not detection, is the binding constraint
+Not a code round. It answered "what have we produced that the field would care about?" by ranking the committed
+reports and publishing the one result whose numbers hold up: a measured negative about FALSE-POSITIVE VETTING, from
+reports the freshness gate re-hashes and marks verified (P82 the 425-curve blind run -- recall 86.2%, accepted
+precision 42.2%; P93 flux-only posterior -- planets kept 48/48, eclipsing-binary family rejected 191/192, blended
+planets mis-validated 96/96; P84/P85 the pixel remedy -- 114/500 targets localisable, 0/59 labelled blends caught,
+2/55 known-planet false rejects). Deliberately excluded P79 from the citation set because its report records input
+paths but no checksums, so the gate cannot re-hash it. Posted to the feed as `workflow_dispatch` (HTTP 204, run
+40292935756, posted id 2114636247310139865) and archived byte-exact in
+`devlog/2026-10-26-vetting-coverage-bound-academic-post.md`; no discovery claim, nothing wired into a gate.
+
+
 ### Twenty-first round (self-audit): the three round-20 deploy-gated defects ship -- the anchor gate now refuses a NEW spend the current judgement does not stand behind, the data tier becomes served DATA, and the label predicate says when it structurally cannot verify (2026-10-26)
 Round-21 is a self-audit round: it implements exactly the three findings round-20 measured and staged (Defects 2/3/5, the ones that needed a Worker change) and re-measured live first at 2026-10-26T01:05Z (`/api/state` + `/api/ledger` + `/api/findings`, scratch probe under `out/`, gitignored): ledger **23** anchored over **104** served rows; of the 23 commitments, by CURRENT served state -- 5 needs-more-data, 1 rejected, 4 `labelConflictsWithKnown:true`, 3 stand-in, **0** `bundleHash`-match, 5 asserting a planet letter the conflict predicate structurally cannot check; red lines held (blind-toi accepted **0**, `origin` present on 103/104 with F-WASP-121-b missing as since round-20); designator kinds `{candidate-number:58, planet-letter:41, none:5}`. No new anchor had landed since 2026-10-24 (23 for two days).
 - **Defect 2 (the money path) -- a NEW on-chain commitment can no longer freeze a row the rig's OWN CURRENT judgement does not stand behind.** `anchorFinding` (`src/cf/rig-state.do.ts`) and the Node parity route (`POST /api/anchor/:id`, `src/api/server.ts`) now re-read the live kernel state (`labelConflict(f.targetId, f.crossmatch)`) immediately before the spend and refuse with **409** + a `reporter` warn event when `verdict !== "accepted"` OR the conflict flag is true. The gate sits deliberately AFTER the two NO-SPEND guards (prior-ledger idempotence, `scienceHash` dedup), so already-anchored rows still replay/re-stamp untouched, and a refused row becomes anchorable again the moment its verdict recovers or the flag clears. It gates NEW spends only: the 4 conflicting rows already on-chain stay on-chain (immutable history) -- and are now disclosed in aggregate instead of only row-by-row.

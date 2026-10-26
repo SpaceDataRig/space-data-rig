@@ -145,8 +145,13 @@ jobs:
             echo "skip=0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          node scripts/x-post-preflight.mjs
-          code=$?
+          # Round-24 F13: capture the exit code with `|| code=$?`, never with a bare call plus `code=$?`.
+          # GitHub runs every run: block under `bash -e`, so when the pre-flight returned its 42 the STEP aborted
+          # right there -- skip=1 was never written, the job was reported as a failure, and every later step was
+          # skipped by the default failure rule rather than by the gate. Observed live on run 40303969337, the
+          # first window the pre-flight ever proved empty. The cost saving was real; the "clean skip" was not.
+          code=0
+          node scripts/x-post-preflight.mjs || code=$?
           if [ "$code" -eq 42 ]; then
             echo "preflight: window provably empty -> skipping install + compose + post"
             echo "skip=1" >> "$GITHUB_OUTPUT"

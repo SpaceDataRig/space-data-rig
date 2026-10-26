@@ -620,7 +620,7 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
-- Git: rounds 22-24 (all 2026-10-26) are CI-only work on the FEED, not the rig: 22 added the empty-window
+- Git: rounds 22-25 (all 2026-10-26) are CI-only work on the FEED and the REPORTING gate, not the rig: 22 added the empty-window
   pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
   vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
   recorded what a run read, never what it posted) and that the single window it did prove empty had FAILED the job
@@ -636,7 +636,13 @@ authority; they are deliberately not restated here.
   `tests/x-post-preflight.test.ts` (17 cases) plus 3 new `tests/post-x-text-guard.test.ts` cases and 6 new
   `tests/xpost-health.test.ts` cases loading that path for
   the first time; the fetch-to-post cursor gap was
-  MEASURED (13 posting runs, 0 items lost) and deliberately left alone. Round-21 (2026-10-26) ships
+  MEASURED (13 posting runs, 0 items lost) and deliberately left alone. 25 left the feed for the report-freshness gate:
+  recomputed all 15 stamped verdicts independently of the module under audit (15/15 agree, 0 stale -- so round-23's
+  public citation of p82/p84/p85/p93 as verified stands), then found that p86's publish-time half had never been
+  executed by anything: `--allow-stale`, which the only CI caller passes by design, was known to keep marking reports
+  red only because the committed artifact happened to show it. `tests/p86-stale-alarm.test.ts` now runs the real
+  script against a throwaway repo and tampers a tracked input, so the alarm is heard rather than assumed.
+  Round-21 (2026-10-26) ships
   the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
   commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two
   no-spend idempotence guards), the read-only `GET /api/anchor-health` aggregate (pure `src/core/anchor-health.ts`), the
@@ -726,7 +732,15 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 125 files / 992 tests as this snapshot was re-taken 2026-10-26 (round-24 added ONE new file,
+- Tests: 127 files / 999 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
+  (+4), the first file in the suite to EXECUTE `scripts/p86-report-library.ts`: it builds a throwaway git repo holding one
+  stamped report over one tracked input, runs the real script, and asserts the alarm -- exit 1 plus `refusing to publish
+  1 stale report` on a tampered input, and that `--allow-stale` keeps the red banner and the `freshness.stale` entry while
+  returning 0. Everything known about the gate before that was static (the committed index.json is internally consistent)
+  or pure-function (compareInputs), which cannot show the publish path works. Round-25 also added
+  `tests/ledger-artifacts-tracked.test.ts` (+3), which stops these very ledgers from promising a kept tool that lives on
+  an ignored path -- the failure it catches is in the Residual/Findings table as R25-5, and it failed on its own first
+  run. Round-24 added ONE new file,
   `tests/x-post-preflight.test.ts` (+17), which drives the real pre-flight CLI against a fixture rig on 127.0.0.1 and a
   throwaway git repo AND extracts the workflow's own step shell to run it under `bash -eo pipefail` -- the F13 case is
   the first time anything in `npm test` has loaded the gate that can suppress a post; the count also carries the

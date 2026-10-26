@@ -5,6 +5,61 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Twenty-fifth round (audit of the REPORTING gate, not the feed): the freshness verdicts reproduce independently, and the alarm nobody had ever heard ring now does (2026-10-26)
+Round-25 rotates off the X channel onto the surface round-23's public post leaned on: `scripts/report-freshness.ts` +
+`scripts/p86-report-library.ts`, the gate that decides which reports the site may call machine-checked. Method, same as
+round-24: do not trust the artifact's own summary -- recompute it, then make the alarm fire on purpose.
+- **R25-1, measured and CLEAN (recorded because a passing gate is a claim too):** every `verified` / `stale` verdict in
+  the published `web/reports/index.json` was re-derived from this checkout by a script that deliberately does NOT
+  import the module under audit (`scripts/audit/freshness-recheck.mjs`: own sha256 with the same EOL normalisation, own
+  `git ls-files`). **15 of 15 stamped-with-checksums reports reproduce exactly, 0 disagreements, 0 stale.** The two
+  extra rows the index counts as `stamped` (p88, p89 -- flat top-level `generatedAt`, dated 2026-10-17, with no `meta`,
+  no `gitSha` and no `inputs`) are correctly NOT listed as verified -- so `stamped` and `verified` are still different
+  words, which is the distinction that took three earlier audits to earn. Round-23's post cited p82/p84/p85/p93 as
+  verified; their stamps cover committed fixtures (`tests/fixtures/scaled/*.jsonl`), not gitignored working files, so
+  that citation stands.
+- **R25-2, the real gap: the gate's second half had never been executed anywhere.** `report-freshness.ts` opens by
+  claiming the "prove the alarm rings" pattern, and `tests/report-freshness.test.ts` does honour it -- for the pure
+  decision function. But p86's publish-time behaviour (exit non-zero on a stale report, the red banner on the
+  fragment, the id landing in `freshness.stale`) was covered only by static assertions on the COMMITTED artifact, which
+  prove the last build saw a clean tree and nothing about the next one. New
+  `tests/p86-stale-alarm.test.ts` (4 cases) runs the REAL script in a throwaway git repo with one stamped report whose
+  single recorded input is a tracked file, then tampers that file: baseline publishes it as `verified` with
+  `stale: []`; tampered, p86 exits 1, prints `p86: STALE p99-drill ... sha256 differs`, refuses ("refusing to publish
+  1 stale report") and still records the id in the index it just wrote; `--allow-stale` returns 0 but keeps the
+  banner AND the stale entry.
+- **R25-3, the posture the header quietly overstated:** the ONE workflow that rebuilds and publishes the library
+  (`freshness-regen.yml`) passes `--allow-stale` by design -- one unreachable catalog must not block three good
+  refreshes -- so the blocking exit is not on any CI path, and what the public actually relies on is the RED MARK
+  surviving that flag. Deliberate, not a bug; but "exits non-zero so the deploy step refuses to publish" reads like a
+  live guarantee unless you go find the caller. Stated in the module header now, and pinned by a test so a future
+  edit that makes `--allow-stale` suppress the banner as well (or drops the word `stale` from index.json while keeping
+  the banner) fails instead of rotting silently.
+- **R25-5, the audit tooling had the same hole the gate exists to close -- three times over.** Round-24's ledger
+  promised "the measurement script is the tripwire", this round's draft said the same about its own recheck script, and
+  round-21 had pinned a number to a script that lived only in the gitignored scratch directory. `out/` is ignored and
+  `git ls-files out/` returns NOTHING, so in all three cases the artefact a reader is directed to does not exist
+  outside the one
+  workstation that ran it: computed but not published, the round-6 failure class aimed at our own audit trail. Fixed
+  by moving all three under `scripts/audit/` (`freshness-recheck.mjs`, `feed-fetch-to-post-gap.mjs`,
+  `anchor-health-measure21.ts`), re-pointing every ledger sentence, and adding
+  `tests/ledger-artifacts-tracked.test.ts` (3 cases): any `out|scripts|tests|src|reports|web/...{.mjs,.ts,.py,.sh,.js}`
+  path named in CHANGELOG / RESPONSE-TO-AUDIT / HANDOFF must be in `git ls-files`, with a two-entry allowlist for
+  genuine runtime paths that is itself tested (every exempt path must still be untracked and still be under `out/`).
+  The gate failed on its FIRST run, which is the only useful thing a new gate can do: three ledger sentences still
+  named the script at its ignored path, and one of those sentences had been written by this round. Moving the script
+  into `scripts/` also exposed that it had NEVER been typechecked or linted (it lived in the ignored directory); it
+  now is, and re-running it reproduces round-21's pinned counters byte-for-byte
+  (`20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict / 3 stand-in / 4 unverifiable / 0 missing`).
+- **Tests + close.** `tests/p86-stale-alarm.test.ts` is the first file in the suite to execute p86 at all, and
+  `tests/ledger-artifacts-tracked.test.ts` the first to check what the ledgers promise. Suite 992 ->
+  **999** pass / 0 fail (127 files, +2 files / +7 tests), `typecheck:all` 0, `eslint --max-warnings 0` clean. No report artifact
+  regenerated and none needed it: the drill writes only into its own temp repo, verified by `git status --porcelain`
+  showing nothing but the new test file after a full run. No `src/` change, nothing deployed.
+- **Still open after this pass, named rather than smoothed:** `unattested: 39` of 56 reports carry no stamp at all --
+  the gate cannot detect staleness in them and the site says so, but 39 is a large honest hole and closing it means
+  re-running 39 generators, several network-bound. p88/p89 could join the verified set with one re-run each.
+
 ### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
 Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight
 against the composer it gates, then falsify it against live traffic instead of trusting the local four-case check
@@ -46,7 +101,9 @@ and F16 turns a silently mangled post into a refusal.
   science POST time, so an item created between a run's state fetch and its post sits behind the next run's cursor
   and is never reported. Structural, but is it real? Measured over every posting run today: **13 examined, 0 items
   landing inside a gap.** Re-pointing the cursor at the fetch time would trade a zero-observed-loss hazard for a
-  real duplicate-post risk, so it is left alone and recorded here; the measurement script is the tripwire.
+  real duplicate-post risk, so it is left alone and recorded here; the measurement is reproducible via
+  `scripts/audit/feed-fetch-to-post-gap.mjs` (moved out of the gitignored `out/` in round-25 precisely because a
+  tripwire nobody can run is not a tripwire).
 - **F14 and F15, our own ledger failures.** Round-22 shipped a workflow change and a new script and was recorded in
   `devlog/` only -- absent from CHANGELOG and RESPONSE-TO-AUDIT entirely, which the two retroactive entries below
   fix. And `HANDOFF` section 13 still claimed production ran `336840b` with the round-21 deploy "to follow", while
@@ -131,7 +188,7 @@ Round-21 is a self-audit round: it implements exactly the three findings round-2
 - **Defect 3 -- the data tier is now DATA on the served row.** `src/data/dataTier.ts` gains `DATA_TIER_REAL`/`DATA_TIER_STANDIN` + `dataTierOfSource` + `dataTierOfHeadline`; both `findingView`s serve `dataTier`, decoded losslessly from the `[real TESS photometry]` / `[stand-in synthetic curve]` tag `narrate.ts` prefixes EVERY headline with -- so all 104 stored rows carry the tier today with no re-run and no stored-row edit (an untagged headline reads as the conservative stand-in default). Measured on the capture: 99 real / 4 stand-in over 103 rows; live 2026-10-26: 3 of the 23 anchored rows are stand-in.
 - **Defect 3 wording half -- a stand-in cross-match is no longer worded as independent evidence.** `reviewCandidate` accepts `standInCurve?` (threaded from the light-curve SOURCE through `critique` in `src/seats/seats.ts`, both callers `src/orchestrator/pipeline.ts` + `src/cf/workflow.ts` pass it); the blind `directMatch` accepted reason on a stand-in now reads "Stand-in curve: ... by construction and is NOT independent evidence of a recovery." The real-photometry wording is byte-identical (pinned by test), no verdict, score, check or hash moves -- the two sealed on-chain `verdictReason`s (F-GJ-1214-b, F-HD-189733-b) are immutable history and stay as they are; NEW rows can no longer mint that contradiction.
 - **Defect 5 -- the predicate's structural blind spot is first-class data.** `labelConflict` now returns `status: "conflict" | "clear" | "unverifiable"` (either designator null -> `unverifiable`, i.e. `conflict:false` because there is nothing to compare, NOT because letters agree); both `findingView`s serve `labelConflictStatus`, and the aggregate counts it: capture 103 rows -> `{unverifiable:69, conflict:7, clear:27}`; of the 20 captured commitments 4 carry an unverifiable letter (F-GJ-1214-b, F-HAT-P-11-b, F-HD-189733-b, F-HD-63433-d), live 23 -> 5 with F-AU-Mic-b (anchored after the capture). The five ids the audit named are now exactly the rows `/api/anchor-health` discloses.
-- **Tests + close.** New `tests/anchor-health.test.ts` (9 tests): the aggregate pinned on hand-built rows (only `status==="anchored"` counts, a vanished row is disclosed as `missing-row`), then MEASURED-WITH-THE-PRODUCTION-HELPERS over the captured live fixtures and pinned (20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict / 3 stand-in / 4 unverifiable / 0 missing -- `out/measure21.ts` ran first, the test pins what it measured), the three-state `status`, the tier round-trip through both narrate tags, the stand-in wording (by-construction clause present, evidence clause gone, score/checks untouched), and structural wiring for the gate + both served fields + both endpoints on both runtimes (the DO cannot be imported under Node -- `cloudflare:workers` -- so the gate is pinned the round-17 way). Suite 956 -> **965** pass / 0 fail (123 files), `typecheck:all` 0, `eslint --max-warnings 0` clean, zero non-ASCII, zero secret hits. No stored row, manifest byte, `bundleHash` or `scienceHash` moved; the projection fields are read-side only. Deploy + live verification of `GET /api/anchor-health` and the 409 gate follow this commit.
+- **Tests + close.** New `tests/anchor-health.test.ts` (9 tests): the aggregate pinned on hand-built rows (only `status==="anchored"` counts, a vanished row is disclosed as `missing-row`), then MEASURED-WITH-THE-PRODUCTION-HELPERS over the captured live fixtures and pinned (20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict / 3 stand-in / 4 unverifiable / 0 missing -- `scripts/audit/anchor-health-measure21.ts` ran first, the test pins what it measured -- re-run and identical after the round-25 move; it lived in the gitignored scratch directory when this line was written, which round-25 fixed and now gates), the three-state `status`, the tier round-trip through both narrate tags, the stand-in wording (by-construction clause present, evidence clause gone, score/checks untouched), and structural wiring for the gate + both served fields + both endpoints on both runtimes (the DO cannot be imported under Node -- `cloudflare:workers` -- so the gate is pinned the round-17 way). Suite 956 -> **965** pass / 0 fail (123 files), `typecheck:all` 0, `eslint --max-warnings 0` clean, zero non-ASCII, zero secret hits. No stored row, manifest byte, `bundleHash` or `scienceHash` moved; the projection fields are read-side only. Deploy + live verification of `GET /api/anchor-health` and the 409 gate follow this commit.
 
 ### Twentieth-round audit: the on-chain ledger aged 20 -> 23 while a test had frozen "20 and moved no anchor" as an invariant, the anchor gate never looks at the conflict flag, and the auditor withdrew two of our own older claims (2026-10-24)
 The twentieth pass re-measured everything first-hand at 2026-10-24T07:02Z (`/api/state`, `/api/ledger`, per-row `verify-onchain`, and the committed kernel over `tests/fixtures/live-catalog.json`) instead of trusting any prior figure. It OPENED by withdrawing two claims the auditor had itself made in rounds 4-14, confirmed every round-17/18/19 fix still recomputes, then raised seven new findings. Every number below was independently re-derived by us (scratch live probes under `out/`, gitignored) before writing. This round changes scripts/tests/docs ONLY -- NO `src/` runtime change, NO deploy -- so nothing is "changed but not shipped"; the three findings that need a Worker change are measured and staged for round-21.

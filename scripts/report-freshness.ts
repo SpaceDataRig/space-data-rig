@@ -22,6 +22,13 @@
 //      provenance. If an input changed after the report was generated, the report is HARD-STALE: p86 marks
 //      it red on the site and exits non-zero so the deploy step refuses to publish stale numbers.
 //
+// WHAT THAT SECOND HALF IS ACTUALLY WORTH IN PRODUCTION (round-25, stated here because the sentence above
+// overstates it otherwise): the ONE workflow that rebuilds and publishes the library runs p86 with --allow-stale,
+// on purpose -- one catalog that refused to answer must not block three good refreshes -- so the blocking exit is
+// not on any CI path. What the public relies on is the RED MARK surviving that flag: the fragment keeps the banner
+// and index.json keeps the id in freshness.stale. Both the refusal and the surviving mark are exercised end to end
+// by tests/p86-stale-alarm.test.ts, which runs the real script in a throwaway git repo and tampers a tracked input.
+//
 // This module keeps the DECISION logic pure and dependency-free (compareInputs / isSourceNewer /
 // evaluateAgainst) so tests/report-freshness.test.ts can drive the real gate offline with tampered hashes
 // and synthetic commit times -- the same "prove the alarm rings" pattern used for the live-probe drill.

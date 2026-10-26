@@ -651,7 +651,9 @@ authority; they are deliberately not restated here.
   `provenance unverified` badge was written fail-OPEN (`=== false`, so an absent key rendered clean) and made the mark
   something a row must earn, tested by executing the predicates lifted from `web/app.js` over the real published index;
   R25-8 re-ran p88 end to end with its own recorded arguments -- identical published numbers, new stamp -- taking the
-  library to 16 verified / 16 fully verified of 56. Commits: `12fedbf` (R25-1..R25-5) and the R25-6..R25-8 work on top.
+  library to 16 verified / 16 fully verified of 56. Commits: `12fedbf` (R25-1..R25-5), `8aad1dd` (R25-6..R25-8, then
+  DEPLOYED as version f1a50e51 and live-verified, R25-10), and a follow-up for R25-9 (measured, declined) and R25-11
+  (the handoff tree check).
   Round-21 (2026-10-26) ships
   the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
   commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two
@@ -678,17 +680,24 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version b0d9ed9f-114e-4c03-9bbe-266bd0bdf4ac, gitSha ab0ce34c67345d6d9515e52192aacfdd62aee045
-  (deploy d3960018-cec5-4f19-8dfd-acc414cff344,
-  created 2026-10-26T02:15:58Z, read off `wrangler deployments list`), `codeVersion space-data-rig@0.2.0` -- the
-  gitSha/codeVersion pair re-read live from `GET /health` at
-  2026-10-26T10:05Z by the round-24 audit. **ROUND-24 CORRECTION (F15):** this bullet named version
+- Production: wrangler version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa
+  (deployed 2026-10-26T13:07:58Z by round-25 through `npm run cf:deploy:sha`, re-read live from `GET /health`),
+  `codeVersion space-data-rig@0.2.0`. **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
+  `src/` file, but round-25 changed two SERVED assets (`web/app.js`, `web/reports/index.json` + fragments), and no
+  workflow in this repository deploys -- so a committed-and-green asset fix is not public. Before acting the live site
+  still served the 2026-10-23 library (`verified: 15`, p88 unverified) from the previous version b0d9ed9f-114e-4c03-9bbe-266bd0bdf4ac /
+  gitSha ab0ce34c67345d6d9515e52192aacfdd62aee045 (deploy d3960018-cec5-4f19-8dfd-acc414cff344,
+  created 2026-10-26T02:15:58Z, read off `wrangler deployments list`), which was the newest `src/` commit -- so the
+  upload carried identical Worker code and identical vars (`AUTO_ANCHOR=live`, `OBSERVE_ANCHOR=live` unchanged in
+  `wrangler.toml` since) and only the assets moved. The gitSha/codeVersion pair is re-read from `GET /health` rather
+  than trusted from wrangler's exit line. **ROUND-24 CORRECTION (F15), kept as history:** at that time this bullet named version
   `2327eda2-7043-42f3-9485-72fa3bf309ce` / gitSha `336840b` and said the round-21 Worker change "deploys AFTER the
   round-21 commit, recorded once `GET /health` confirms it". Both named values were the 2026-10-23T09:26 deploy -- two
-  deploys behind reality -- and the confirmation never got written back. `tests/handoff-freshness.test.ts` cannot catch
-  this class: it checks that the bullet NAMES a version id and a reachable sha, never that either equals the live
-  endpoint. Rounds 22/23/24 change no `src/` file and need no deploy (the whole surface is CI-only: a workflow, a
-  script, tests and docs), so `ab0ce34` is still current at this snapshot; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
+  deploys behind reality -- and the confirmation never got written back. `tests/handoff-freshness.test.ts` still cannot
+  check the live endpoint (CI has no network), but round-25 closed the half of the class that can be checked offline: the
+  named revision's `src/` and `web/` trees must equal HEAD's, or the bullet has to carry the marker `awaiting deploy`
+  (R25-11). Rounds 22/23/24 changed no `src/` file and needed no deploy (a workflow, a script, tests and docs -- all
+  CI-only); round-25 changed served assets and DID deploy, so `8aad1dd` is current at this snapshot; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
   kinds `{58,41,none:4}`) and live has since drifted to 104 records / 91 hosts (re-measured 2026-10-24T08:04Z) as the rig
   keeps minting -- a dated proof, not a live promise. Re-verified live at the round-17 snapshot: `deploy:window`
   cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span
@@ -738,15 +747,18 @@ authority; they are deliberately not restated here.
   makes the 104-row catalog
   filterable server-side (`/api/findings` with a filter returns matched/hasMore; since `8dd1748` an unknown-but-supplied
   filter also returns `ignored:[...]`, and since `bf12a62` a clamped paging value returns `clamped:[...]` and a numeric
-  `tic` matches the host number only, not a TESS cadence suffix). The repo report library was REBUILT this round by the
-  CI invocation itself (`npm run p86:report-library -- --allow-stale`) and now
+  `tic` matches the host number only, not a TESS cadence suffix). The repo report library was rebuilt this round by the
+  CI invocation itself (`npm run p86:report-library -- --allow-stale`) and then DEPLOYED, so what the public receives now
+  matches the repository:
   reports 56 with `stale: []`, `stamped: 17`, `verified: 16`, `fullyVerified: 16`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current. The
   +1 is p88, re-run end to end with its own recorded arguments: every published number identical, only the timestamp and
   the three input checksums new (round-25 R25-8). p89 is the one row still `stamped` but input-less, and its generator
-  needs the MAST API, which this workstation could not reach.
+  needs the MAST API, which this workstation could not reach. Live proof rather than a tool's exit line (R25-10):
+  `/health` `gitSha=8aad1dd2edf3...`, `deployVersion=f1a50e51-104c-4838-86cb-f9827c426cd2`, `/reports/index.json`
+  carrying the 16/16 counts, served `app.js` containing the earned-badge predicate.
 
-- Tests: 129 files / 1006 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
+- Tests: 129 files / 1007 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
   (+4), the first file in the suite to EXECUTE `scripts/p86-report-library.ts`: it builds a throwaway git repo holding one
   stamped report over one tracked input, runs the real script, and asserts the alarm -- exit 1 plus `refusing to publish
   1 stale report` on a tampered input, and that `--allow-stale` keeps the red banner and the `freshness.stale` entry while
@@ -759,7 +771,9 @@ authority; they are deliberately not restated here.
   them fail-OPEN on a missing `verified` key, and `tests/freshness-recheck-gate.test.ts` (+4), which gates the
   independent recheck itself -- both over this checkout's real `index.json` and over throwaway repos holding
   deliberately mis-stamped ones -- after R25-7 found that tool could not read the flat stamp shape and so had skipped
-  exactly the rows it was written to audit. Round-24 added ONE new file,
+  exactly the rows it was written to audit. Round-25 also grew `tests/handoff-freshness.test.ts` by one check (+1), the
+  offline half of R25-11: the revision this bullet names as production must have HEAD's `src/` and `web/` trees, or say
+  `awaiting deploy` -- because a green CI on a commit that nothing deploys is not a public fact. Round-24 added ONE new file,
   `tests/x-post-preflight.test.ts` (+17), which drives the real pre-flight CLI against a fixture rig on 127.0.0.1 and a
   throwaway git repo AND extracts the workflow's own step shell to run it under `bash -eo pipefail` -- the F13 case is
   the first time anything in `npm test` has loaded the gate that can suppress a post; the count also carries the

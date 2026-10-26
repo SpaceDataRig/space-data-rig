@@ -8,12 +8,14 @@
 // class as the counter labels (a published field that stopped matching the thing it describes). Sections 1-12 are a
 // map and a rulebook: they age slowly. Section 13 is a snapshot: it rots on every deploy, so it needs a clock.
 //
-// Three checks, all deterministic and offline:
+// Four checks, all deterministic and offline:
 //   1. the section's "as of" date is not older than the newest dated entry in CHANGELOG's Unreleased block -- if the
 //      changelog documents work newer than the handoff's snapshot, the snapshot is stale by its own record;
 //   2. every commit sha the section names is reachable from HEAD, so it cannot cite a rewritten or invented commit;
 //   3. the production bullet names a deployment revision next to the wrangler version, because "deployed" without a
-//      sha is exactly the claim /health.gitSha exists to make checkable.
+//      sha is exactly the claim /health.gitSha exists to make checkable;
+//   4. (round-25) that revision's src/ and web/ trees equal HEAD's, or the bullet admits the gap -- because a green CI
+//      on a commit that nothing deploys says nothing about what the public receives. See R25-11's block below.
 //
 // A test that only passes when the doc is edited to satisfy it is still worth having: the point is that the edit
 // happens, close to the work, instead of never.
@@ -114,5 +116,45 @@ test("the production bullet names the deployed revision, not only a wrangler ver
     prod,
     /gitSha [0-9a-f]{7,40}/,
     "and the revision it was built from -- /health.gitSha is what makes 'deployed' checkable, so the handoff quotes the same pair",
+  );
+});
+
+/**
+ * ROUND-25 (R25-11): name-checking a sha is not the same as checking what it SHIPS.
+ *
+ * Round-24's F15 found this bullet two deploys behind reality and concluded that this gate "cannot catch this class"
+ * because it never compares the named revision with the live endpoint. It still cannot -- CI has no network, and a test
+ * that phones production is a test that fails on a plane. But the class is wider than a wrong id: round-25 committed a
+ * fix to two SERVED files (`web/app.js`, `web/reports/index.json`), watched CI go green, and wrote "published" in the
+ * ledger while the site was still serving the 2026-10-23 build, because NO workflow in this repository deploys
+ * anything. That is the freshness gate's own failure mode -- computed but not published -- arriving in the handoff.
+ *
+ * The offline invariant that does exist: `wrangler deploy` ships exactly two trees, the Worker bundle from `src/` and
+ * the static assets from `web/`. So the revision named as production must have the SAME `src/` and `web/` content as
+ * HEAD, or the bullet must say out loud that it does not (marker: `awaiting deploy`). A later round that changes
+ * runtime code and stops short of deploying is then forced into a sentence a reader can see, instead of a green badge
+ * that means nothing. It cannot prove what the edge is serving; `/health` does that, and the bullet quotes its answer.
+ */
+test("the revision named as production ships the same src/ and web/ trees as HEAD, or the bullet says otherwise", () => {
+  const s = section(handoff, "## 13. Current state");
+  const prod = s.split("\n").find((l) => /^-\s+Production:/i.test(l)) ?? "";
+  const m = /gitSha ([0-9a-f]{7,40})/.exec(prod);
+  assert.ok(m, "the production bullet must name a gitSha for this check to mean anything");
+  const sha = m[1];
+  assert.ok(reachable(sha), `the named revision ${sha} is not an ancestor of HEAD (or this checkout is too shallow to know)`);
+
+  const differing = (dir: string): string[] => {
+    const r = spawnSync("git", ["diff", "--name-only", `${sha}..HEAD`, "--", dir], { encoding: "utf8" });
+    assert.equal(r.status, 0, `git diff ${sha}..HEAD -- ${dir} failed: ${r.stderr}`);
+    return (r.stdout || "").split("\n").filter(Boolean);
+  };
+  const shipped = [...differing("src"), ...differing("web")];
+  if (shipped.length === 0) return; // production equals HEAD in exactly the two trees a deploy uploads
+  assert.match(
+    prod,
+    /awaiting deploy/,
+    `the bullet calls ${sha.slice(0, 7)} production, but ${shipped.length} file(s) a deploy would upload differ between it and HEAD ` +
+      `(${shipped.slice(0, 6).join(", ")}${shipped.length > 6 ? ", ..." : ""}). Either deploy, or say so in the bullet with the ` +
+      `marker "awaiting deploy" so the next reader learns the gap from the handoff rather than from an incident.`,
   );
 });

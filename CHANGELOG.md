@@ -5,7 +5,7 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
-### Twenty-fifth round (audit of the REPORTING gate, not the feed): the freshness verdicts reproduce independently, and the alarm nobody had ever heard ring now does (2026-10-26)
+### Twenty-fifth round (audit of the REPORTING gate, then of the audit of it): the freshness verdicts reproduce independently, the alarm nobody had ever heard now rings, and the round's own checker turned out to have the same blind spot (2026-10-26)
 Round-25 rotates off the X channel onto the surface round-23's public post leaned on: `scripts/report-freshness.ts` +
 `scripts/p86-report-library.ts`, the gate that decides which reports the site may call machine-checked. Method, same as
 round-24: do not trust the artifact's own summary -- recompute it, then make the alarm fire on purpose.
@@ -88,13 +88,54 @@ round-24: do not trust the artifact's own summary -- recompute it, then make the
   (`mast.stsci.edu` connect-timed out at ~10.6 s on three probes while `stpubdata` S3 answered 200), so it remains the
   one flat-shaped, input-less stamp. That is the honest state the site publishes (`stamped`, not `verified`), and the
   scheduled runner -- which has network -- is where it gets closed.
+- **R25-9, measured and DECLINED (a no-change with evidence, not a shrug):** the gate's soft note "a source this report reads is
+  newer than the report" only fires when the report has recorded checksums, so the 39 unstamped rows can never get it -- and
+  their sources are not recorded anywhere, since only two `SOURCE_DEPS` entries exist. The tempting fix was to derive the
+  generator from the report id: a `pNN-something` id naming the same-named module under `scripts/`. Measured first: the convention resolves
+  35 of 39 rows (4 do not: p44-diff-imaging, p58-veto-2x2, p61-llm-hypothesis, p65-external-audit), and of the 35 exactly 3
+  have a generator whose last commit is later than the report's `.md` -- by 2 h 15 m, 2 h 36 m and 3 h 12 m, all same-day.
+  Those are the shape of a generator being finished after its output was written, which is the identical false-positive class
+  that made this gate stop using wall-clock to BLOCK (round-16's lesson, stated in `evaluateAgainst`'s own header). Inventing
+  provenance for a row to then mark it "possibly out of date" would trade a true `unattested: 39` for a fabricated 3. Left
+  alone; the real fix is re-running the generators.
+- **R25-10, "shipped" was not true yet, and the ledger said so wrongly.** Both entries above used the word published and the
+  close line said "nothing deployed" -- but `web/reports/index.json` and `web/app.js` are SERVED files, and no workflow in
+  this repository deploys anything (checked: 14 workflows, zero `wrangler deploy`; `ci.yml` only tests, and
+  `freshness-regen.yml` commits a rebuilt library without publishing it). Measured against the live site before acting:
+  `/reports/index.json` was generated 2026-10-23 and still said `verified: 15` with p88 `verified=false`, one row diverging
+  from the repo. `/health` gave the reason precisely -- `gitSha ab0ce34...`, the newest `src/` commit, with 15 src files
+  differing from the older `1e6572b` the HANDOFF had called the serving commit, and `wrangler.toml`/`package.json` identical
+  since -- so a redeploy from HEAD ships the SAME Worker code and config (`AUTO_ANCHOR=live` untouched) and changes only the
+  static assets. Deployed through the repo's own `npm run cf:deploy:sha` (dry-run first), version
+  `f1a50e51-104c-4838-86cb-f9827c426cd2`, then verified what the public receives rather than what wrangler reported:
+  `/health` `gitSha=8aad1dd2edf3...` and `deployVersion` matching, live `index.json` `verified=16 fullyVerified=16 stamped=17
+  unattested=39 stale=[]`, p88 `verified=true rehashed=3`, served `app.js` containing `r.verified !== true` and no longer
+  containing `r.verified === false`, the p88 fragment carrying neither the red banner nor the amber note, and `/api/state`
+  200 with 104 findings. This is the round-24 F16 class one layer up: a green check that never touched the surface a reader
+  sees.
+- **R25-11, the handoff's own clock could name a sha and still describe a stale deployment -- now it cannot be that
+  silent.** Round-24's F15 found this bullet two deploys behind and concluded `tests/handoff-freshness.test.ts` "cannot
+  catch this class", because it never compares the named revision with the live endpoint. CI has no network, so that
+  half is still out of reach -- but the other half is a git fact: `wrangler deploy` uploads exactly two trees, the
+  Worker bundle from `src/` and the static assets from `web/`. A fifth check now requires the revision named as
+  production to have the SAME `src/` and `web/` content as HEAD, or the bullet must carry the marker
+  `awaiting deploy` so the gap is stated where a reader finds it. Mutation-checked by pointing the bullet at the real
+  previous deploy (`ab0ce34`, before today's asset work): it fails naming precisely `web/app.js`,
+  `web/reports/index.json`, `web/reports/p88-independent-corroboration.html` and no `src/` file -- which is exactly the
+  shape of what R25-10 had to deploy. Before that, this gate would have let round-25's "shipped" stand.
 - **Tests + close.** `tests/p86-stale-alarm.test.ts` is the first file in the suite to execute p86 at all, and
   `tests/ledger-artifacts-tracked.test.ts` the first to check what the ledgers promise;
   `tests/web-report-badges.test.ts` is the first to run the served badge predicates, and
   `tests/freshness-recheck-gate.test.ts` the first to gate the independent recheck. Suite 992 ->
-  **1006** pass / 0 fail (129 files, +4 files / +14 tests), `typecheck:all` 0, `eslint --max-warnings 0` clean,
-  `node --check` clean on all 6 `web/*.js`. No `src/` change, nothing deployed; the alarm drills write only inside
-  their own temp repos.
+  **1007** pass / 0 fail (129 files, +4 files / +15 tests), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  `node --check` clean on all 6 `web/*.js`; CI green on both round-25 commits (`12fedbf`, `8aad1dd` -- checks + digest),
+  which also proves the two alarm drills work on the runner and not just on this workstation. No `src/` change; the
+  static-asset deploy R25-10 required shipped identical Worker code and config, live-verified at
+  `f1a50e51-104c-4838-86cb-f9827c426cd2`. The alarm drills write only inside their own temp repos. And the ledger gate
+  earned its keep a second time in the same round: it failed the suite over the schematic path written in this round's
+  own R25-9 entry (`scripts/` + a placeholder filename that is not a real file), which is a false positive only in the
+  sense that the sentence was careless -- it named something no checkout can contain, exactly as the three real
+  offenders did. Rewritten to describe the convention instead of printing a path.
 - **Still open after this pass, named rather than smoothed:** `unattested: 39` of 56 reports carry no stamp at all --
   the gate cannot detect staleness in them and the site says so, but 39 is a large honest hole and closing it means
   re-running 39 generators, most of them network-bound. p88 closed here (R25-8); p89 is blocked on MAST reachability

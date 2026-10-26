@@ -631,7 +631,8 @@ authority; they are deliberately not restated here.
   sender's silent truncation of an over-ceiling post (now a refusal), F17 -- a regression F3 itself introduced,
   where advancing `last_post` with the window cursors capped the pre-flight's silence watchdog at the cadence so a
   heartbeat could never come due -- and F18, where the feed's own log auditor could not see a skip and the obvious
-  detector for it matched GitHub's echo of the step's source rather than its output -- with
+  detector for it matched GitHub's echo of the step's source rather than its output, and F19's runaway-ceiling
+  warning, which promised deferred items stay reportable when the cursor in fact leaves them behind -- with
   `tests/x-post-preflight.test.ts` (17 cases) plus 3 new `tests/post-x-text-guard.test.ts` cases and 6 new
   `tests/xpost-health.test.ts` cases loading that path for
   the first time; the fetch-to-post cursor gap was
@@ -725,7 +726,7 @@ authority; they are deliberately not restated here.
   reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
   `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
 
-- Tests: 125 files / 991 tests as this snapshot was re-taken 2026-10-26 (round-24 added ONE new file,
+- Tests: 125 files / 992 tests as this snapshot was re-taken 2026-10-26 (round-24 added ONE new file,
   `tests/x-post-preflight.test.ts` (+17), which drives the real pre-flight CLI against a fixture rig on 127.0.0.1 and a
   throwaway git repo AND extracts the workflow's own step shell to run it under `bash -eo pipefail` -- the F13 case is
   the first time anything in `npm test` has loaded the gate that can suppress a post; the count also carries the

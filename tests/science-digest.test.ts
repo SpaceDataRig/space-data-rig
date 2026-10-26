@@ -642,6 +642,42 @@ test("the workflow posts every composed item: no one-post cap, no five-commit tr
   assert.ok(/DEV_COMMIT_EXCLUDE/.test(yml), "subject filtering is configurable now, not hardcoded");
 });
 
+// ---- ROUND-24 F19: the runaway ceiling must stay unreachable, because a deferred item is NOT safe. --------------
+// The loop's warning used to promise "the remaining items stay ahead of the cursors for the next window". That is
+// false: the science window starts at the last science POST, so a run that posts item 1 at 10:30 and defers item 2
+// has moved the cursor past everything item 2 was composed from. Nothing is lost today only because the compose
+// step cannot produce enough files to reach the ceiling -- 4 tier files at most plus one note file per DEV_BATCH
+// subjects, over at most DEV_COMMITS_MAX subjects. That arithmetic, not a code path, is the safety; so the
+// arithmetic is what gets pinned. If someone raises the backlog cap or lowers the ceiling, this fails and points at
+// the deferral instead of a red run at 03:00.
+test("F19: the compose step cannot produce enough files to reach the runaway ceiling", () => {
+  const yml = readFileSync(new URL("../.github/workflows/x-post.yml", import.meta.url), "utf8");
+  const envNum = (name: string) => Number(new RegExp(`^\\s*${name}:\\s*"(\\d+)"\\s*$`, "m").exec(yml)?.[1]);
+  // The shell form is `${NAME:-25}` -- braces, no parens. Escaping a paren here silently kills the fallback, which
+  // is how this helper first shipped: every value happened to live in the env block, so the dead branch never ran.
+  const shellDefault = (name: string) => Number(new RegExp(`${name}:-\\d+`).exec(yml)?.[0]?.replace(`${name}:-`, ""));
+  const bound = (name: string) => {
+    const e = envNum(name);
+    if (Number.isFinite(e)) return e;
+    const d = shellDefault(name);
+    assert.ok(Number.isFinite(d), `neither a ${name} env value nor a \${${name}:-N} default is in the workflow`);
+    return d;
+  };
+  const cap = bound("MAX_POSTS_PER_RUN");
+  const batch = bound("DEV_BATCH");
+  const subjects = bound("DEV_COMMITS_MAX");
+  assert.ok(batch > 0 && subjects > 0 && cap > 0, `the three bounds must be positive: ${cap} ${batch} ${subjects}`);
+  // One file per tier that can emit one (ledger, blind, milestone, heartbeat -- the heartbeat is a fallback, so
+  // counting it alongside the others over-estimates, which is the safe direction) plus one note per batch.
+  const maxFiles = 4 + Math.ceil(subjects / batch);
+  assert.ok(
+    maxFiles < cap,
+    `the ceiling is now reachable (max ${maxFiles} composed files vs cap ${cap}): a deferred item falls behind the ` +
+      "science cursor and is lost, because the window starts at the last POST. Raise MAX_POSTS_PER_RUN or lower DEV_COMMITS_MAX.",
+  );
+});
+
+
 // ---- a build note must always be POSTABLE, or the un-rationed loop stalls forever ------------------
 // post-x-text.ts runs overclaimViolations over the FINAL text and REFUSES on a hit, exiting non-zero; the workflow's
 // posting loop breaks on failure so the build-note cursor cannot advance past an unsent item. Each decision is

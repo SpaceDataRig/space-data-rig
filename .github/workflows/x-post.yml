@@ -423,7 +423,7 @@ jobs:
           echo "posting $NQUEUED composed item(s); runaway ceiling $CAP, delay ${DELAY}s between posts"
           for f in $QUEUED; do
             if [ "$SENT" -ge "$CAP" ]; then
-              echo "##[warning]runaway ceiling reached ($CAP posted this run); the remaining items stay ahead of the cursors for the next window"
+              echo "##[warning]runaway ceiling reached ($CAP posted this run); the rest are NOT safe -- the science window starts at this run's last post, so anything still queued may already be behind the next cursor. Raise MAX_POSTS_PER_RUN or lower DEV_COMMITS_MAX; tests/science-digest.test.ts pins the arithmetic that keeps this branch unreachable."
               break
             fi
             # strip any non-ASCII once more; English-only is enforced in the posting script too

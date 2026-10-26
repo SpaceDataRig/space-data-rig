@@ -8,7 +8,7 @@ Keep a Changelog and adheres to Semantic Versioning.
 ### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
 Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight
 against the composer it gates, then falsify it against live traffic instead of trusting the local four-case check
-that round-22 had shipped on. Ten defects closed (F1, F2, F3, F4, F5, F11, F13, F16, F17, F18), one measurement that
+that round-22 had shipped on. Eleven defects closed (F1, F2, F3, F4, F5, F11, F13, F16, F17, F18, F19), one measurement that
 stopped us changing something, and two ledger
 failures of our own. Nothing here alters what the feed posts or how often, with one deliberate exception (F16): the
 gate changes are all conservative in the same direction -- they can only make the pre-flight PROCEED more often, never
@@ -82,13 +82,22 @@ and F16 turns a silently mangled post into a refusal.
   proved-empty-but-posted-anyway (a FALSE empty verdict: the gate would have suppressed real science) and
   proved-empty-with-no-skip (the verdict was discarded, which is what 40303969337 actually was) -- and skipped runs
   leave the tier-coverage denominator while the silence rule still counts them, so a gate stuck open cannot hide.
+- **F19, a false safety claim on a branch that is (for now) unreachable.** The posting loop's runaway-ceiling warning
+  promised "the remaining items stay ahead of the cursors for the next window". They do not: the science window starts
+  at this run's last POST, so a run that posts item 1 and defers item 2 has moved the cursor past everything item 2
+  was composed from -- the same permanent-suppression class as F1, reached from the other side. Measured rather than
+  assumed: the compose step can emit at most 4 tier files plus one note file per `DEV_BATCH` subjects over at most
+  `DEV_COMMITS_MAX` of them, i.e. **13 files against a ceiling of 25**, so nothing is lost today; the branch becomes
+  reachable at `DEV_COMMITS_MAX=488`. The warning now says what actually happens, and a test pins the arithmetic, so
+  the safety is a checked property rather than a coincidence about numbers nobody re-read.
 - **Tests + close.** New `tests/x-post-preflight.test.ts` (14): the empty window, every untrusted-input branch, the
   F1/F4 regressions, the rejected-blind-row case that proves the predicate is applied rather than a timestamp scan,
   the relative-path CLI case (a naive import guard would have disabled the gate on exactly the path CI uses), the
   F2 pin that the hand-copied blind predicate cannot drift from `isHeldBlindCandidate`, the two F13 step-shell
   cases, and the three F17 hint-block cases (17 in the file now). `tests/post-x-text-guard.test.ts` gains the three
-  F16 ceiling cases, and `tests/xpost-health.test.ts` gains the six F18 cases (19 -> 25). This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
-  Suite 965 -> **991** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  F16 ceiling cases, and `tests/xpost-health.test.ts` gains the six F18 cases (19 -> 25), plus the F19 arithmetic pin
+  in `tests/science-digest.test.ts`. This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
+  Suite 965 -> **992** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
   `bash -n` clean on all four run blocks, zero non-ASCII, zero secret hits. No `src/` runtime change, no deploy:
   the whole surface is CI-only.
 

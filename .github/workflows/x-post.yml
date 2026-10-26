@@ -51,6 +51,15 @@ name: x-post (half-hourly English science digest)
 #  - Posts are ordered oldest-commit-first and the loop BREAKS on the first posting failure, so the newest work is
 #    what remains for the next window: a partial run under-reports, it never over-reports or drops.
 #  - concurrency-grouped with cancel-in-progress:false, so overlapping ticks queue instead of racing.
+#  - COST, without rationing volume: a dependency-free pre-flight (scripts/x-post-preflight.mjs) stops the job
+#    BEFORE `npm ci` when the window provably holds nothing, and the installed tree is cached against the
+#    lockfile so a run that DOES have work skips the install on a cache hit. Neither changes WHAT is posted or
+#    HOW OFTEN: the pre-flight only ever skips a window it is sure is empty (any untrusted input makes it
+#    proceed), and composeDigest still decides everything on any run that gets past it. The redundant GitHub
+#    `on.schedule` backup and the full-history checkout are deliberately KEPT -- with the pre-flight in place a
+#    redundant backup tick exits after a clone and two cheap HTTPS reads, and the full history is load-bearing
+#    for the research.json milestone gate and for build-note windows whose cursor is older than a shallow
+#    clone would reach.
 #  - The posting script is DRY-RUN unless the four X_API_* secrets are set -- inert until an operator opts in;
 #    no key ever enters the repo.
 
@@ -89,19 +98,74 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15 # a large backlog posts several items with a delay between them; 5 was sized for one
     steps:
+      # Rolling cache of the three feed cursors the previous run read off the timeline. The pre-flight below
+      # uses it as a HINT only; the run re-reads the live feed later, so a stale hint can never drop a post.
+      - name: Restore feed cursors (pre-flight hint only)
+        uses: actions/cache/restore@v4
+        with:
+          path: out/x-cursors.json
+          key: xc-${{ github.run_id }}
+          restore-keys: xc-
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history so `git log --since` can count the whole window
 
+      # Cost gate. Most half-hour windows hold nothing reportable; without this step every one of them still
+      # paid for a full dependency install, a live-feed read and an X timeline read. The pre-flight answers
+      # "could this window hold anything?" from the cached cursors + two cheap HTTPS reads + local git, and
+      # only when it is SURE the answer is no does the job stop here (skip=1 gates every step below). It is
+      # conservative by construction: any missing or untrusted input makes it proceed. See the script header.
+      - name: Pre-flight (stop before installing when the window provably holds nothing)
+        id: preflight
+        env:
+          CURSOR_FILE: out/x-cursors.json
+          HEARTBEAT_AFTER_MIN: "45"
+          DEV_OVERLAP_MIN: "10"
+          DEV_COMMIT_EXCLUDE: "^chore\\(deps"
+          OVERRIDE_TEXT: ${{ github.event.inputs.text }}
+          OVERRIDE_SINCE: ${{ github.event.inputs.since }}
+          DRY_HEARTBEAT: ${{ github.event.inputs.dry_heartbeat }}
+        run: |
+          set -uo pipefail
+          # Manual overrides and the verification path always take the full pipeline.
+          if [ -n "$OVERRIDE_TEXT" ] || [ -n "$OVERRIDE_SINCE" ] || [ "$DRY_HEARTBEAT" = "1" ]; then
+            echo "preflight: manual override / verification -> full path"
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node scripts/x-post-preflight.mjs
+          code=$?
+          if [ "$code" -eq 42 ]; then
+            echo "preflight: window provably empty -> skipping install + compose + post"
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
       - uses: actions/setup-node@v7
+        if: steps.preflight.outputs.skip != '1'
         with:
           node-version: 22
           cache: npm
 
-      - name: Install
+      # Installed tree cached against the lockfile, so a run that DOES have work skips `npm ci` entirely on a
+      # cache hit. Kept separate from setup-node's download cache, which still unpacks the tree every time.
+      - name: Restore node_modules
+        id: nm
+        if: steps.preflight.outputs.skip != '1'
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install (skipped on a node_modules cache hit)
+        if: steps.preflight.outputs.skip != '1' && steps.nm.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Compose every reportable item in the window and post each one
+        if: steps.preflight.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ github.token }}
           CUR: ${{ github.run_id }}
@@ -235,6 +299,10 @@ jobs:
           # Logged on EVERY run, not only inside a branch that may not fire, so each cursor is verifiable from any
           # job log -- including a run where the tier that owns it composed nothing.
           echo "build-note cursor: dev window since $DEV_SINCE (last build note: ${LAST_BUILD_NOTE_ISO:-none found}, overlap ${DEV_OVERLAP_MIN:-10}m)"
+          # Persist the three cursors for the NEXT run's pre-flight hint. Written from the values actually read
+          # off the feed this run, so the hint is never newer than the truth: a stale hint can only make the
+          # next pre-flight proceed, never skip a real post.
+          printf '%s\n' "{\"last_post\":\"${LAST_POST_ISO}\",\"last_science\":\"${LAST_SCIENCE_ISO}\",\"last_build_note\":\"${LAST_BUILD_NOTE_ISO}\"}" > out/x-cursors.json || true
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.
           RESEARCH_COMMITS="$(git log HEAD --no-merges --since="$SINCE" --pretty=%H -- web/research.json | wc -l | tr -d ' ')"
@@ -358,3 +426,17 @@ jobs:
           else
             echo "posted $SENT item(s) this run"
           fi
+
+      - name: Save node_modules for the next run
+        if: steps.preflight.outputs.skip != '1' && steps.nm.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: nm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Save feed cursors for the next pre-flight
+        if: always() && steps.preflight.outputs.skip != '1'
+        uses: actions/cache/save@v4
+        with:
+          path: out/x-cursors.json
+          key: xc-${{ github.run_id }}

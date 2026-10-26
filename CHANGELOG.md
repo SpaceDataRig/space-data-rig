@@ -136,6 +136,22 @@ round-24: do not trust the artifact's own summary -- recompute it, then make the
   own R25-9 entry (`scripts/` + a placeholder filename that is not a real file), which is a false positive only in the
   sense that the sentence was careless -- it named something no checkout can contain, exactly as the three real
   offenders did. Rewritten to describe the convention instead of printing a path.
+- **Milestone post, published once.** The English feed post for this round (5584 chars / 32 lines / pure ASCII) went out
+  through `x-post.yml` `workflow_dispatch` with `inputs.maxlen=25000`: HTTP `204` at
+  2026-10-26T13:59:34.822Z, run 40335501130 (`digest` success), posted id `2114718667191816270`. The local guard DRY RUN
+  (a scratch script that calls the sender's own three predicates over the exact bytes, no send path involved) REFUSED
+  twice -- the stem
+  `first`, then the time word `today` -- and both times the text was rewritten and the guard left untouched; a third
+  phrase was corrected before the guard saw it, because "blind to a third of the corpus" was wrong arithmetic (2 of 17
+  stamped rows, not a third) and no regex catches a wrong number. Link checking caught a live 404:
+  `https://spacedatarig.app/reports/` has no directory index, so the post cites `reports/index.json` and the p88
+  fragment, both fetched at 200, while the three commit objects and the CI run were confirmed through the API because
+  github.com HTML pages time out from this workstation -- disclosed in the evidence header rather than glossed. The
+  figure was drawn twice: the first render made the "1 stamped, no inputs" band about a third of the bar wide, lying
+  about its own label, the same defect round-24 found in its own plot; the published version draws it as one unit of 56
+  with a leader line. `devlog/2026-10-26-round25-audit-of-the-checker.md` (11763 bytes) carries the posted text
+  verbatim, asserted byte-for-byte by a scratch integrity check (5584 == 5584, appearing exactly once, evidence header
+  included). The evidence header names no working file as a kept artefact, for the reason R25-5 gives.
 - **Still open after this pass, named rather than smoothed:** `unattested: 39` of 56 reports carry no stamp at all --
   the gate cannot detect staleness in them and the site says so, but 39 is a large honest hole and closing it means
   re-running 39 generators, most of them network-bound. p88 closed here (R25-8); p89 is blocked on MAST reachability

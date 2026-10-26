@@ -653,7 +653,11 @@ authority; they are deliberately not restated here.
   R25-8 re-ran p88 end to end with its own recorded arguments -- identical published numbers, new stamp -- taking the
   library to 16 verified / 16 fully verified of 56. Commits: `12fedbf` (R25-1..R25-5), `8aad1dd` (R25-6..R25-8, then
   DEPLOYED as version f1a50e51 and live-verified, R25-10), and a follow-up for R25-9 (measured, declined) and R25-11
-  (the handoff tree check).
+  (the handoff tree check). The round's feed post went out once through `x-post.yml` `workflow_dispatch`
+  (HTTP 204 at 2026-10-26T13:59:34.822Z, run 40335501130, posted id 2114718667191816270, 5584 chars of pure ASCII),
+  archived byte-exact in `devlog/2026-10-26-round25-audit-of-the-checker.md` with an evidence header recording the two
+  guard refusals (both fixed in the text, never in the guard), the 404 found by checking a link instead of assuming it,
+  and the rejected first figure whose "1 stamped" band was drawn a third of the bar wide.
   Round-21 (2026-10-26) ships
   the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
   commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two

@@ -777,7 +777,10 @@ Close: suite 992 -> **1007** pass / 0 fail (129 files discovered, +4 files / +15
 `8aad1dd`). The published library moved 15 -> 16 `verified` / `fullyVerified` because p88 was genuinely re-run (R25-8) and
 then actually DEPLOYED (R25-10): version `f1a50e51-104c-4838-86cb-f9827c426cd2`, live-verified via `/health`,
 `/reports/index.json`, `/app.js` and the p88 fragment. No `src/` file touched in either commit, so the Worker code and
-its spending config shipped byte-identical; `ledgerAnchored` stays 23 and `discoveryClaim` stays false.
+its spending config shipped byte-identical; `ledgerAnchored` stays 23 and `discoveryClaim` stays false. The round's feed
+post was dispatched exactly once (HTTP 204 at 2026-10-26T13:59:34.822Z, run 40335501130, posted id
+2114718667191816270, 5584 ASCII chars) and archived byte-for-byte with its evidence header; the publication record, the
+two guard refusals and the rejected first figure are in the CHANGELOG entry for this round.
 
 
 

@@ -293,3 +293,78 @@ test("emptyFindings is a valid row, so an unreadable run still appears in the ta
   assert.deepEqual(f.tiers, {});
   assert.equal(f.dryRunIsStatus, false, "an unreadable run must never look like a credential failure");
 });
+
+// ---- ROUND-24 F18: the pre-flight gate, and the echo that is not an output. ------------------------------------
+// These fixtures are quoted from production, not written from belief -- and the first one is the reason. While
+// auditing the gate on 2026-10-26 a substring search for the skip message hit SIX runs in a row; every one of them
+// was a run that had NOT skipped. GitHub prints each command before running it, so the log carries the step's own
+// SOURCE LINE, indented, and `messagesOf()` only trims the right. Anchoring at the start of the message is what
+// separates "the tool said it" from "the script contains the words" -- the same soundness distinction the header
+// comment of this file exists to enforce, arriving from a new direction.
+const ECHOED_STEP_SOURCE = '  echo "preflight: window provably empty -> skipping install + compose + post"';
+// The tool's own verdict line, verbatim from the raw job log of run 40303969337 at 2026-10-26T10:00:30Z.
+const TOOL_VERDICT = "x-post-preflight: window provably empty (science cursor 2026-10-26T09:58:00.000Z, silent 3 min, no dev backlog)";
+// The step's declaration that it honoured the verdict. NOT YET OBSERVED IN PRODUCTION -- the gate has proved a
+// window empty exactly once (40303969337) and that attempt died on the 42 before writing skip=1 (F13). Built from
+// the shipped YAML and pinned to it below, rather than asserted as a real capture.
+const STEP_SKIP_DECLARED = "preflight: window provably empty -> skipping install + compose + post";
+
+test("F18: GitHub's echo of the step's own source line is NOT read as a skip", () => {
+  const f = analyseXpostLog(log(
+    ECHOED_STEP_SOURCE,
+    "posting item 1 (of up to 25) from out/posts/10-note.txt: The changelog now says preflight: window provably empty -> skipping install + compose + post in the docs.",
+  ));
+  assert.equal(f.preflightSkipped, false, "an indented echo of the script is not the tool speaking");
+  assert.equal(f.preflightProvedEmpty, false, "and it is not the pre-flight's verdict either");
+});
+
+test("F18: the tool's verdict and the step's skip declaration are told apart", () => {
+  const proved = analyseXpostLog(log(TOOL_VERDICT));
+  assert.equal(proved.preflightProvedEmpty, true, "the real production line must be recognised");
+  assert.equal(proved.preflightSkipped, false, "a verdict alone is not a skip -- 40303969337 proved the empty case and then FAILED");
+
+  const skipped = analyseXpostLog(log(TOOL_VERDICT, STEP_SKIP_DECLARED));
+  assert.equal(skipped.preflightSkipped, true);
+  assert.equal(skipped.preflightProvedEmpty, true);
+});
+
+test("F18: a proved-empty window with no skip declared is reported as a discarded verdict", () => {
+  const f = analyseXpostLog(log(TOOL_VERDICT));
+  const problems = judgeFleet([row("40303969337", "2026-10-26T10:00:20Z", "failure", f)], Date.parse("2026-10-26T10:30:00Z"));
+  assert.ok(problems.some((p) => /gate's verdict was discarded/.test(p)), problems.join(" | "));
+});
+
+test("F18: a proved-empty window that went on to POST is reported as a FALSE empty verdict", () => {
+  // The direction that actually costs science: had the gate been honoured, this content would have been suppressed,
+  // and because skipping never advances a cursor it would have stayed suppressed. Nothing else in the suite can see
+  // this class, because from the composer's side everything looks fine.
+  const f = analyseXpostLog(log(
+    TOOL_VERDICT,
+    "posting 1 composed item(s); runaway ceiling 25, delay 5s between posts",
+    "posting item 1 (of up to 25) from out/posts/02-blind.txt: A blind sweep turned up 1 UNCONFIRMED candidate.",
+    "x:post: OK posted (id 999).",
+    "posted 1 item(s) this run",
+  ));
+  const problems = judgeFleet([row("1", "2026-10-26T10:00:20Z", "success", f)], Date.parse("2026-10-26T10:30:00Z"));
+  assert.ok(problems.some((p) => /false "empty" verdict/.test(p)), problems.join(" | "));
+});
+
+test("F18: a window of clean skips does not fake a tier-coverage defect, and still reports real silence", () => {
+  // Before this fix, a skipped run printed no `tier manifest:` line, so every quiet window -- precisely the ones
+  // the gate now exists to skip -- read as "tier(s) with no post ... and no per-tier manifest line".
+  const skipped = analyseXpostLog(log(TOOL_VERDICT, STEP_SKIP_DECLARED));
+  const rows = [row("1", "2026-10-26T10:00:20Z", "success", skipped), row("2", "2026-10-26T10:30:20Z", "success", analyseXpostLog(log(TOOL_VERDICT, STEP_SKIP_DECLARED)))];
+  const problems = judgeFleet(rows, Date.parse("2026-10-26T11:00:00Z"));
+  assert.ok(!problems.some((p) => /no per-tier manifest line|never attempted/.test(p)), `skip must not fake a coverage defect: ${problems.join(" | ")}`);
+  assert.ok(problems.some((p) => /the feed is silent/.test(p)), `an all-skip window must still be reported as silence: ${problems.join(" | ")}`);
+});
+
+test("F18: the two literals the parser anchors on are the ones the workflow actually prints", async () => {
+  // The F2 lesson applied to log parsing: a detector written against a remembered string silently matches nothing
+  // the day the producer's wording moves. Read the shipped YAML and require both forms to be present.
+  const { readFileSync } = await import("node:fs");
+  const yml = readFileSync(new URL("../.github/workflows/x-post.yml", import.meta.url), "utf8");
+  assert.ok(yml.includes(STEP_SKIP_DECLARED), "the step no longer prints the skip line the parser anchors on");
+  assert.ok(yml.includes("x-post-preflight.mjs"), "the step no longer runs the pre-flight the verdict line comes from");
+});
+

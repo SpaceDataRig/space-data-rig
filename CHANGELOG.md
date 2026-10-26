@@ -8,9 +8,12 @@ Keep a Changelog and adheres to Semantic Versioning.
 ### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
 Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight
 against the composer it gates, then falsify it against live traffic instead of trusting the local four-case check
-that round-22 had shipped on. Eight defects, one measurement that stopped us changing something, and two ledger
-failures of our own. Nothing here alters what the feed posts or how often: every gate change is conservative in the
-same direction -- it can only make the pre-flight PROCEED more often, never suppress a post.
+that round-22 had shipped on. Ten defects closed (F1, F2, F3, F4, F5, F11, F13, F16, F17, F18), one measurement that
+stopped us changing something, and two ledger
+failures of our own. Nothing here alters what the feed posts or how often, with one deliberate exception (F16): the
+gate changes are all conservative in the same direction -- they can only make the pre-flight PROCEED more often, never
+suppress a post -- F17 restores a watchdog the gate had quietly disabled, F18 only changes what the auditor can see,
+and F16 turns a silently mangled post into a refusal.
 - **F3, the root cause (measured, not guessed): the gate was inert.** Over the ten live runs after it shipped it
   skipped **0**, and two of them paid for a full compose pass on content the previous run had already announced.
   The cached hint recorded only the cursors a run READ off the feed, never what it POSTED, so it lagged one full
@@ -67,13 +70,25 @@ same direction -- it can only make the pre-flight PROCEED more often, never supp
   Unlike the gate changes above this one *can* stop a post -- deliberately: posting nothing and saying why is
   honest, posting a truncated claim is not. The digest path is unaffected (`clip()` already bounds at 25000 and the
   workflow passes `--max-len 25000`; the two ceilings drifting apart is exactly what this would catch).
+- **F18, the monitor of the thing just fixed could not see it -- and the naive detector for it was unsound.**
+  `scripts/xpost-health.ts` reads the channel out of its job logs and knew nothing about the gate, so a skipped run
+  (no `tier manifest:` line, no posts, conclusion success) would have been reported as "tier(s) with no post ... and
+  no per-tier manifest line" on exactly the quiet windows the gate now exists to skip. Worse: prototyping the
+  detector, a substring search for the skip message matched SIX consecutive runs -- none of which had skipped. GitHub
+  echoes each command before running it, so the log carries the step's own SOURCE line, indented, and `messagesOf()`
+  only trims the right. Start-anchored on the tool's own output, the distinction holds: across the 60 runs the
+  auditor pulled for this check, the `EMPTY-NOT-SKIPPED` marker lands on run 40303969337 and on nothing else.
+  Two findings added for the directions that matter --
+  proved-empty-but-posted-anyway (a FALSE empty verdict: the gate would have suppressed real science) and
+  proved-empty-with-no-skip (the verdict was discarded, which is what 40303969337 actually was) -- and skipped runs
+  leave the tier-coverage denominator while the silence rule still counts them, so a gate stuck open cannot hide.
 - **Tests + close.** New `tests/x-post-preflight.test.ts` (14): the empty window, every untrusted-input branch, the
   F1/F4 regressions, the rejected-blind-row case that proves the predicate is applied rather than a timestamp scan,
   the relative-path CLI case (a naive import guard would have disabled the gate on exactly the path CI uses), the
   F2 pin that the hand-copied blind predicate cannot drift from `isHeldBlindCandidate`, the two F13 step-shell
   cases, and the three F17 hint-block cases (17 in the file now). `tests/post-x-text-guard.test.ts` gains the three
-  F16 ceiling cases. This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
-  Suite 965 -> **985** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  F16 ceiling cases, and `tests/xpost-health.test.ts` gains the six F18 cases (19 -> 25). This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
+  Suite 965 -> **991** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
   `bash -n` clean on all four run blocks, zero non-ASCII, zero secret hits. No `src/` runtime change, no deploy:
   the whole surface is CI-only.
 

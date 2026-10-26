@@ -38,6 +38,10 @@ export type RunFindings = {
   silentMin: number | null;
   xReadUnavailable: boolean;
   stepExitFailure: boolean;
+  /** The pre-flight TOOL printed its emptiness verdict. Real production text, quoted from run 40303969337. */
+  preflightProvedEmpty: boolean;
+  /** The pre-flight STEP declared the skip and stopped the job cleanly. Absent means the verdict was discarded. */
+  preflightSkipped: boolean;
   scienceCursor: string;
   buildNoteCursor: string;
   digestWindowSince: string;
@@ -94,6 +98,8 @@ export function analyseXpostLog(log: string): RunFindings {
     silentMin: null,
     xReadUnavailable: false,
     stepExitFailure: false,
+    preflightProvedEmpty: false,
+    preflightSkipped: false,
     scienceCursor: "",
     buildNoteCursor: "",
     digestWindowSince: "",
@@ -135,6 +141,17 @@ export function analyseXpostLog(log: string): RunFindings {
     if (/^skip out\/posts\/\S+: byte-identical to an item already posted/.test(msg)) f.byteIdenticalSkips++;
     if (/^nothing composed; could not read last-post time/.test(msg)) f.xReadUnavailable = true;
     if (/^##\[error\]Process completed with exit code/.test(msg)) f.stepExitFailure = true;
+
+    // ROUND-24 F18: the pre-flight gate. Both anchors are START-ANCHORED on purpose, and this is the second time
+    // that distinction has bitten this file. Scanning production for the round-24 audit, a substring search for
+    // `preflight: window provably empty -> skipping` matched SIX runs -- every one of them a run that had NOT
+    // skipped. GitHub echoes each command line before executing it, so the log contains the step's own SOURCE,
+    // indented (`  echo "preflight: ..."`), and messagesOf() only trims the right-hand side. Same class as the
+    // post-body problem in the header comment, arriving from a different direction: the log carries text the tool
+    // never printed. An unanchored match here would read every run as skipped and the auditor would be blind in
+    // the comfortable, green, says-nothing-wrong way.
+    if (/^x-post-preflight: window provably empty/.test(msg)) f.preflightProvedEmpty = true;
+    if (/^preflight: window provably empty -> skipping/.test(msg)) f.preflightSkipped = true;
 
     const sci = /^digest window since: (\S+)(?: \(science cursor: ([^;)]*))?/.exec(msg);
     if (sci) {
@@ -188,6 +205,22 @@ export function judgeFleet(rows: RunRow[], nowMs: number, opts: { staleAfterMin?
     if (r.f.loopAborted) out.push(`run ${r.id}: the posting loop aborted on a failed post`);
     if (r.f.ceilingReached) out.push(`run ${r.id}: runaway ceiling reached, remainder deferred to the next window`);
     if (r.f.xReadUnavailable) out.push(`run ${r.id}: the feed could not be read, so every cursor fell back and no heartbeat was possible`);
+    // ROUND-24 F18, the two directions a working gate can be wrong in, read off the one window where BOTH the
+    // gate and the composer left a trace:
+    //  - proved empty yet the run went on to POST: the gate's emptiness verdict was false, and had it been
+    //    honoured this content would have been suppressed for good (skipping never advances a cursor). This is the
+    //    finding the whole gate class needs a tripwire for, and it is not the same finding as the next one.
+    //  - proved empty and nothing posted, but no skip declaration either: the verdict was discarded, so the saving
+    //    is gone. This is exactly what run 40303969337 looked like -- `bash -e` killed the step on the 42 before
+    //    `skip=1` could be written, and the job went red.
+    if (r.f.preflightProvedEmpty && r.f.postedIds.length > 0) {
+      out.push(
+        `run ${r.id}: the pre-flight called the window empty and the composer posted ${r.f.postedIds.length} item(s) from it ` +
+          `-- a false "empty" verdict; had the gate been honoured this content would have been suppressed`,
+      );
+    } else if (r.f.preflightProvedEmpty && !r.f.preflightSkipped) {
+      out.push(`run ${r.id}: the pre-flight proved the window empty but no skip was declared -- the gate's verdict was discarded`);
+    }
     if (r.conclusion !== "success") {
       // A failed run that posted nothing AND never reached a status line is a shell abort: invisible to any
       // check that only looks for refusals.
@@ -223,7 +256,11 @@ export function judgeFleet(rows: RunRow[], nowMs: number, opts: { staleAfterMin?
   //
   // OVERRIDE runs are excluded: an authored dispatch posts its text and `exit 0`s before any tier is composed, so
   // a window of overrides legitimately contains no tier activity at all, and flagging it would be a false alarm.
-  const normal = done.filter((r) => !r.f.override);
+  // SKIPPED runs are excluded for the same reason (round-24 F18): the gate stopped the job before the compose step,
+  // so it prints no manifest line by design. That exclusion is safe against a stuck-open gate because the silence
+  // rule above counts posts across ALL completed runs, skipped ones included -- a window of nothing but skips
+  // still reads "zero posts across N completed runs: the feed is silent".
+  const normal = done.filter((r) => !r.f.override && !r.f.preflightSkipped);
   const tierSeen = new Set<string>();
   const attemptedSeen = new Set<string>();
   let anyManifest = false;
@@ -269,6 +306,7 @@ export function formatRow(r: RunRow): string {
     `alreadyReported=${f.alreadyReported ?? "-"}`,
     `dropped=${f.droppedSubjects.length}`,
     f.override ? "OVERRIDE" : "",
+    f.preflightSkipped ? "SKIP" : f.preflightProvedEmpty ? "EMPTY-NOT-SKIPPED" : "",
     f.refused ? `REFUSED=${f.refused}` : "",
     f.dryRunIsStatus ? "DRYRUN-STATUS" : "",
     f.loopAborted ? "LOOP-ABORT" : "",

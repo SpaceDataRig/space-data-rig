@@ -98,18 +98,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15 # a large backlog posts several items with a delay between them; 5 was sized for one
     steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history so `git log --since` can count the whole window
+
       # Rolling cache of the three feed cursors the previous run read off the timeline. The pre-flight below
       # uses it as a HINT only; the run re-reads the live feed later, so a stale hint can never drop a post.
+      # MUST run AFTER checkout: checkout's default `git clean -ffdx` deletes untracked files, so restoring
+      # before it would have the clean wipe the hint and the pre-flight would always see "no cached cursors".
       - name: Restore feed cursors (pre-flight hint only)
         uses: actions/cache/restore@v4
         with:
           path: out/x-cursors.json
           key: xc-${{ github.run_id }}
           restore-keys: xc-
-
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0 # full history so `git log --since` can count the whole window
 
       # Cost gate. Most half-hour windows hold nothing reportable; without this step every one of them still
       # paid for a full dependency install, a live-feed read and an X timeline read. The pre-flight answers

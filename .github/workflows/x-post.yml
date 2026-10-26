@@ -320,9 +320,10 @@ jobs:
           # Logged on EVERY run, not only inside a branch that may not fire, so each cursor is verifiable from any
           # job log -- including a run where the tier that owns it composed nothing.
           echo "build-note cursor: dev window since $DEV_SINCE (last build note: ${LAST_BUILD_NOTE_ISO:-none found}, overlap ${DEV_OVERLAP_MIN:-10}m)"
-          # Persist the three cursors for the NEXT run's pre-flight hint. Written from the values actually read
-          # off the feed this run, so the hint is never newer than the truth: a stale hint can only make the
-          # next pre-flight proceed, never skip a real post.
+          # Baseline the cursor file with the values actually read off the feed. This is the conservative floor: a
+          # stale hint can only make the next pre-flight proceed, never skip a real post. The hint block at the end
+          # of this step normally overwrites it with the advanced window cursors (round-24 F3); if this step dies
+          # between the two writes -- a failed post, say -- what gets cached is this floor, which is the safe one.
           printf '%s\n' "{\"last_post\":\"${LAST_POST_ISO}\",\"last_science\":\"${LAST_SCIENCE_ISO}\",\"last_build_note\":\"${LAST_BUILD_NOTE_ISO}\"}" > out/x-cursors.json || true
           # A research milestone may be reported ONLY when web/research.json actually landed in this window; the
           # digest script is told via --research-updated so it never re-posts a stale metric.
@@ -471,9 +472,19 @@ jobs:
             if [ "$e" -lt "$HINT_EPOCH" ]; then e="$HINT_EPOCH"; fi
             date -u -d "@$e" +%Y-%m-%dT%H:%M:%SZ
           }
-          HINT_POST="$(hint_for "$LAST_POST_ISO")"
           HINT_SCIENCE="$(hint_for "$LAST_SCIENCE_ISO")"
           HINT_NOTE="$(hint_for "$LAST_BUILD_NOTE_ISO")"
+          # ROUND-24 F17: last_post must NOT be bumped the way the two window cursors are. It is not a window
+          # start -- the pre-flight reads it as the SILENCE WATCHDOG's input (`now - last_post >= heartbeat
+          # threshold`), and bumping it on a run that posted nothing rewrites it to "about now" every half hour.
+          # Measured against the shipped code, that means silentMin never climbs past the cadence, so a heartbeat
+          # can never come due and the pre-flight skips exactly the windows the heartbeat exists to cover. The
+          # F3 fix introduced this; only a run that actually SENT something may move last_post forward.
+          if [ "${SENT:-0}" = "0" ]; then
+            HINT_POST="$LAST_POST_ISO"
+          else
+            HINT_POST="$(hint_for "$LAST_POST_ISO")"
+          fi
           printf '%s\n' "{\"last_post\":\"${HINT_POST}\",\"last_science\":\"${HINT_SCIENCE}\",\"last_build_note\":\"${HINT_NOTE}\"}" > out/x-cursors.json || true
           echo "pre-flight hint for the next run: post=${HINT_POST:-none} science=${HINT_SCIENCE:-none} note=${HINT_NOTE:-none} (snapshot $(date -u -d "@$FETCH_EPOCH" +%Y-%m-%dT%H:%M:%SZ), backed off ${CURSOR_HINT_BACKOFF_S:-30}s)"
 

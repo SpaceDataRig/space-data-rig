@@ -17,8 +17,13 @@ const HERE = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 
 /** Run the real sender with credentials forced empty, so the only outcomes are REFUSED (exit 1) or DRY RUN (exit 0). */
 function send(text: string): { status: number; stderr: string; stdout: string } {
+  return sendWith(text, ["--max-len", "25000"]);
+}
+
+/** Same, but the caller controls the length flags -- which is the whole point of the F16 cases below. */
+function sendWith(text: string, extra: string[]): { status: number; stderr: string; stdout: string } {
   try {
-    const stdout = execFileSync(process.execPath, ["--import", "tsx", SCRIPT, "--text", text, "--max-len", "25000"], {
+    const stdout = execFileSync(process.execPath, ["--import", "tsx", SCRIPT, "--text", text, ...extra], {
       encoding: "utf8",
       cwd: HERE,
       stdio: ["ignore", "pipe", "pipe"],
@@ -211,4 +216,40 @@ test("the round-20 coverage widening does NOT over-refuse honest transitions or 
     assert.equal(r.status, 0, `honest prose must stay postable: ${frag} -- stderr ${r.stderr}`);
   }
 });
+
+// ---- ROUND-24 F16: the length ceiling must refuse, never cut. -----------------------------------------------
+// The branch these tests pin is the one that used to `slice(0, MAXLEN - 3) + "..."` and carry on, so a long text
+// dispatched without a working --max-len went out mangled with `OK posted` and exit 0. The tail is where a caveat
+// or a scope note lives, which makes silent truncation an HONESTY failure, not just a formatting one.
+// `--maxlen=25000` is not a hypothetical: the round-24 author typed exactly that, watched the guard report green,
+// and only noticed because the printed length read 279/280.
+const F16_LONG = "Calibration note: the rig reports 12 of 20 rows on the bench.".repeat(12);
+// No trailing whitespace: the sender normalizes (per-line trim) BEFORE measuring, so a fixture with a trailing
+// space would arrive one char shorter than F16_LONG.length and every length assertion below would miss by one.
+
+test("F16: a text over the ceiling is REFUSED, not silently truncated", () => {
+  assert.ok(F16_LONG.length > 280, `the fixture must exceed the default ceiling, got ${F16_LONG.length}`);
+  const r = sendWith(F16_LONG, []);
+  assert.equal(r.status, 1, "over-ceiling text must exit non-zero instead of posting a stump");
+  assert.match(r.stderr, /REFUSED/, "and say REFUSED");
+  assert.match(r.stderr, /refusing to truncate/i, "and name the reason as a refusal to cut");
+  assert.match(r.stderr, new RegExp(String(F16_LONG.length)), "and report the real length, so the operator sees the gap");
+  assert.ok(!/Would post/.test(r.stdout), `nothing may be printed as postable: ${r.stdout.slice(0, 200)}`);
+});
+
+test("F16: the same text posts in full once the ceiling is set correctly (the refusal is about the ceiling)", () => {
+  const r = send(F16_LONG);
+  assert.equal(r.status, 0, `a clean long-form text must reach the DRY RUN: ${r.stderr}`);
+  assert.match(r.stdout, new RegExp(`length=${F16_LONG.length}/25000`), "the full length must be what is sent");
+  assert.ok(!/\.\.\.\s*$/.test(r.stdout.trimEnd()), "and it must not end in an ellipsis");
+});
+
+test("F16: a mistyped length flag falls back to the default ceiling and therefore REFUSES", () => {
+  // `--maxlen` (no hyphen) is ignored by the parser, so MAXLEN is the 280 default. Before the fix this was the
+  // silent path to a mangled post; now it is the loud one.
+  const r = sendWith(F16_LONG, ["--maxlen=25000"]);
+  assert.equal(r.status, 1, "a typo'd flag must not be mistaken for permission to truncate");
+  assert.match(r.stderr, /280-char ceiling/, "and the refusal must show the ceiling actually in force");
+});
+
 

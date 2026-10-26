@@ -75,7 +75,20 @@ if (!text) {
   console.error("x:post: REFUSED -- text contains a non-ASCII character; policy is English-only.");
   process.exitCode = 1;
 } else if (text.length > MAXLEN) {
-  text = `${text.slice(0, MAXLEN - 3).trimEnd()}...`;
+  // ROUND-24 F16: refuse, never cut. This branch used to slice to MAXLEN-3, append "..." and carry on, so the
+  // send path printed `x:post: OK posted (id ...)` and exited 0 on a mangled post -- with the tail gone, which is
+  // exactly where a caveat or a scope note sits. It is reachable by accident: the workflow's override path leaves
+  // --max-len out whenever the maxlen input is blank (x-post.yml: MAXLEN_ARG=""), and any typo in the flag name
+  // lands here too -- measured on this very pass, where `--maxlen` (no hyphen) silently dropped the ceiling to 280
+  // and the guard reported green on a 279-char stump of a 3186-char post. Over-refusal is a real cost in this
+  // project, but not on this axis: posting nothing and saying why is honest, posting a truncated claim is not.
+  // The digest path is unaffected -- science-digest's clip() already bounds text at 25000 and the workflow passes
+  // --max-len 25000, so it can only trip this if the two ceilings ever drift apart, which is worth failing on.
+  console.error(
+    `x:post: REFUSED -- text is ${text.length} chars against a ${MAXLEN}-char ceiling; refusing to truncate. ` +
+      "Pass --max-len (the digest path uses --max-len 25000) or shorten the text.",
+  );
+  process.exitCode = 1;
 }
 
 // Output-level over-claim net (audit-6 #2): the per-post "discoveryClaim=false" stamp was removed, so honesty

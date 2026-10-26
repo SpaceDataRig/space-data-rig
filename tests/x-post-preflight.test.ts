@@ -324,3 +324,83 @@ test("the workflow step records skip=0 and stays green when the window holds con
   assert.equal(r.code, 0, r.out);
   assert.match(r.written, /skip=0/, `the step must record skip=0; got: ${JSON.stringify(r.written)}`);
 });
+
+// ---- ROUND-24 F17: the hint must not launder the silence watchdog. -------------------------------------------
+// F3 advanced the hint to the run's own snapshot so the gate stops re-proceeding on news already announced. That
+// is right for the two WINDOW cursors (last_science, last_build_note) and wrong for last_post, which the
+// pre-flight uses as `now - last_post >= heartbeat threshold`. Bumping it every half hour caps silentMin at the
+// cadence forever: a heartbeat could never come due, and the gate would skip precisely the windows the heartbeat
+// exists to cover. The first version of the F3 fix did exactly that, and no test noticed, because the CLI side of
+// the watchdog was already pinned (above) and the shell side was not tested at all.
+function hintStepShell(): string {
+  const yml = readFileSync(join(REPO, ".github", "workflows", "x-post.yml"), "utf8").replace(/\r\n?/g, "\n");
+  const start = yml.indexOf("HINT_EPOCH=");
+  const end = yml.indexOf("pre-flight hint for the next run");
+  assert.ok(start > 0 && end > start, "the hint block is no longer in the workflow");
+  const body = yml
+    .slice(start, yml.indexOf("\n", end) + 1)
+    .split("\n")
+    .map((l) => (l.startsWith("          ") ? l.slice(10) : l))
+    .join("\n");
+  assert.match(body, /last_post/, "the extracted block does not write last_post");
+  return body;
+}
+
+/** Run the shipped hint block under the runner's shell options and return the cursor JSON it leaves behind. */
+async function runHintBlock(dir: string, over: Record<string, string>): Promise<Record<string, string>> {
+  const bash = findBash();
+  assert.ok(bash, "no bash on this host");
+  const blockFile = join(dir, "hint.sh");
+  writeFileSync(blockFile, hintStepShell().replace(/\r\n?/g, "\n"));
+  const r = await runProc(bash, ["--noprofile", "--norc", "-eo", "pipefail", blockFile], dir, {
+    FETCH_EPOCH: String(Math.floor(NOW / 1000)),
+    CURSOR_HINT_BACKOFF_S: "30",
+    LAST_POST_ISO: iso(NOW - 3 * 3600_000),
+    LAST_SCIENCE_ISO: iso(NOW - 3 * 3600_000),
+    LAST_BUILD_NOTE_ISO: iso(NOW - 3 * 3600_000),
+    SENT: "0",
+    ...over,
+  });
+  assert.equal(r.code, 0, `the hint block failed: ${r.out}`);
+  return JSON.parse(readFileSync(join(dir, "out", "x-cursors.json"), "utf8"));
+}
+
+test("F17: a run that posted nothing leaves last_post at the true feed value", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  const cur = await runHintBlock(dir, { SENT: "0" });
+  assert.equal(cur.last_post, iso(NOW - 3 * 3600_000), "last_post must NOT be advanced by a run that posted nothing");
+  // The window cursors DO advance, which is the whole point of F3.
+  assert.ok(Date.parse(cur.last_science) > NOW - 3 * 3600_000, `last_science should have advanced, got ${cur.last_science}`);
+});
+
+test("F17: a run that posted advances last_post, so the next window is measured from a real post", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  const cur = await runHintBlock(dir, { SENT: "2" });
+  const advanced = Date.parse(cur.last_post);
+  assert.ok(advanced >= NOW - 60_000 && advanced <= NOW, `expected a hint near the snapshot, got ${cur.last_post}`);
+});
+
+test("F17: the hint a silent run writes still makes the real CLI post a heartbeat, not skip", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  // Compose the two halves: the shipped shell produces the cursor file, the shipped CLI reads it. Each side was
+  // tested alone before; the defect lived in the seam, where last_post looked fresh enough to skip with.
+  const cur = await runHintBlock(dir, { SENT: "0", LAST_BUILD_NOTE_ISO: iso(NOW + 7200_000) });
+  writeFileSync(join(dir, "out", "x-cursors.json"), JSON.stringify({ ...cur, last_build_note: iso(NOW + 7200_000) }));
+  const { base, server } = await startFixture({ findings: [] }, { ledger: [] });
+  try {
+    const r = await runCli(dir, {
+      CURSOR_FILE: join(dir, "out", "x-cursors.json"),
+      STATE_URL: `${base}/api/state`,
+      LEDGER_URL: `${base}/api/ledger`,
+      HEARTBEAT_AFTER_MIN: "45",
+    });
+    assert.equal(r.code, 0, `a 3-hour silence must proceed for a heartbeat, not skip: ${r.out}`);
+    assert.match(r.out, /silent 180 min >= heartbeat 45 min/, r.out);
+  } finally {
+    await new Promise<void>((res) => server.close(() => res()));
+  }
+});
+

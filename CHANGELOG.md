@@ -8,7 +8,7 @@ Keep a Changelog and adheres to Semantic Versioning.
 ### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
 Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight
 against the composer it gates, then falsify it against live traffic instead of trusting the local four-case check
-that round-22 had shipped on. Six defects, one measurement that stopped us changing something, and two ledger
+that round-22 had shipped on. Eight defects, one measurement that stopped us changing something, and two ledger
 failures of our own. Nothing here alters what the feed posts or how often: every gate change is conservative in the
 same direction -- it can only make the pre-flight PROCEED more often, never suppress a post.
 - **F3, the root cause (measured, not guessed): the gate was inert.** Over the ten live runs after it shipped it
@@ -50,12 +50,30 @@ same direction -- it can only make the pre-flight PROCEED more often, never supp
   `GET /health` has returned `ab0ce34c` since that deploy: the freshness test only checks that a named sha is
   reachable from HEAD, never that the production bullet matches the live endpoint, so the claim rotted silently.
   Both bullets are re-measured and corrected in this commit.
+- **F17, a regression this round introduced and its own audit caught: the F3 hint laundering the silence watchdog.**
+  `hint_for()` bumps a cursor to the run's snapshot, and it was applied to all three fields -- but `last_post` is not
+  a window start, it is the pre-flight's watchdog input (`now - last_post >= 45 min`). Bumped every half hour, it
+  caps `silentMin` at the cadence, so a heartbeat could never come due and the gate would skip exactly the windows
+  the heartbeat exists to cover. Now only a run that actually SENT something may advance `last_post`; the two window
+  cursors keep advancing. Pinned three ways, including the seam: the shipped hint block is extracted from the real
+  YAML, run under `bash -eo pipefail`, and the cursor file it writes is fed back to the real CLI, which must answer
+  "silent 180 min >= heartbeat" rather than 42. Verified non-vacuous by reverting the branch -- 2 of the 3 fail.
+- **F16, found by typing the wrong flag myself: the sender truncated silently and called it success.**
+  `post-x-text.ts` cut an over-ceiling text to `MAXLEN-3` + "..." and carried on, so the send path printed
+  `x:post: OK posted` and exited 0 on a mangled post -- the tail being where a caveat or scope note lives. It is
+  reachable by accident, not only by malice: the workflow's override path omits `--max-len` entirely when the
+  `maxlen` input is blank, and on this pass `--maxlen` (one missing hyphen) silently dropped the ceiling to 280 and
+  reported green on a 279-char stump of a 3186-char post. Over-ceiling now REFUSES (exit 1) naming both lengths.
+  Unlike the gate changes above this one *can* stop a post -- deliberately: posting nothing and saying why is
+  honest, posting a truncated claim is not. The digest path is unaffected (`clip()` already bounds at 25000 and the
+  workflow passes `--max-len 25000`; the two ceilings drifting apart is exactly what this would catch).
 - **Tests + close.** New `tests/x-post-preflight.test.ts` (14): the empty window, every untrusted-input branch, the
   F1/F4 regressions, the rejected-blind-row case that proves the predicate is applied rather than a timestamp scan,
   the relative-path CLI case (a naive import guard would have disabled the gate on exactly the path CI uses), the
-  F2 pin that the hand-copied blind predicate cannot drift from `isHeldBlindCandidate`, and the two F13 step-shell
-  cases. This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
-  Suite 965 -> **979** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  F2 pin that the hand-copied blind predicate cannot drift from `isHeldBlindCandidate`, the two F13 step-shell
+  cases, and the three F17 hint-block cases (17 in the file now). `tests/post-x-text-guard.test.ts` gains the three
+  F16 ceiling cases. This closes the gap the workflow header has named since audit-6 -- no test used to load this path at all.
+  Suite 965 -> **985** pass / 0 fail (125 files discovered), `typecheck:all` 0, `eslint --max-warnings 0` clean,
   `bash -n` clean on all four run blocks, zero non-ASCII, zero secret hits. No `src/` runtime change, no deploy:
   the whole surface is CI-only.
 

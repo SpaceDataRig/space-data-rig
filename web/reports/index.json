@@ -1,15 +1,15 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-23T01:27:52.616Z",
-  "builtAtGitSha": "80ca816bf32ac989e00d0a354886a528e89b90fc",
+  "generatedAt": "2026-10-26T12:33:30.926Z",
+  "builtAtGitSha": "12fedbf24faf3168f27f8021e866d498e43c0282",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 56,
   "freshness": {
     "stamped": 17,
-    "verified": 15,
-    "fullyVerified": 15,
+    "verified": 16,
+    "fullyVerified": 16,
     "unattested": 39,
     "total": 56,
     "stale": []
@@ -667,9 +667,9 @@
       "summary": "Headline (read first): 0 of 17 hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for 6/17) -- NOT a Gaia-vs-TESS period crossmatch. With 0 period matches the two...",
       "fresh": true,
       "stamped": true,
-      "verified": false,
-      "rehashed": 0,
-      "reproducible": 0,
+      "verified": true,
+      "rehashed": 3,
+      "reproducible": 3,
       "unverifiableInputs": 0,
       "untrackedInputs": 0
     },

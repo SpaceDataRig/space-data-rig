@@ -1620,10 +1620,13 @@ function renderReportsList(reports) {
       (r.fresh === false ? `<span class="ri-stale" title="numbers may predate a change to their inputs; re-run before quoting">possibly out of date</span>` : "") +
       // `verified` (not `stamped`) is the machine-checked signal: a report can carry a timestamp and still
       // record no input checksum for the freshness gate to re-hash. Say so in the list, not only inside.
+      // ROUND-25 R25-6: `!== true`, not `=== false`. An index row whose `verified` field is absent -- an older or
+      // hand-patched index.json, a partial publish, any writer that forgets the key -- must NOT read as clean. The
+      // honesty mark has to be the thing you must EARN, not the thing you lose only by being explicitly false.
       // A `verified` report can still be only PARTLY checkable: some of its recorded inputs may be gitignored
       // working files, whose checksums match on the machine that ran the report and exist nowhere else, so
       // the badge that reads "verified" alone would overstate what a stranger can reproduce.
-      (r.fresh !== false && r.verified === false ? `<span class="ri-unverified" title="no recorded input checksum could be re-hashed against a file the repository carries; unaudited, not known-wrong">provenance unverified</span>` : "") +
+      (r.fresh !== false && r.verified !== true ? `<span class="ri-unverified" title="no recorded input checksum could be re-hashed against a file the repository carries; unaudited, not known-wrong">provenance unverified</span>` : "") +
       (r.fresh !== false && r.verified === true && ((r.untrackedInputs || 0) + (r.unverifiableInputs || 0)) > 0 ? `<span class="ri-unverified" title="some recorded inputs are working files the repository does not carry, so their checksums can only be re-hashed on the machine that ran this report">provenance partly re-verified</span>` : "") +
       (r.summary ? `<span class="ri-sum">${esc(r.summary)}</span>` : "") +
     `</button>`).join("");

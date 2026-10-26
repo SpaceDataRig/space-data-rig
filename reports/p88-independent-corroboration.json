@@ -1,6 +1,21 @@
 {
   "schema": "sdr-p88-independent-corroboration/1",
-  "generatedAt": "2026-10-17T11:23:22.053Z",
+  "generatedAt": "2026-10-26T12:29:04.452Z",
+  "gitSha": "12fedbf24faf3168f27f8021e866d498e43c0282",
+  "inputs": [
+    {
+      "path": "src/data/toiDispositions.ts",
+      "sha256": "af124436d8dee8e19b5fa822df9e84e73c2376bdcbd5824bf33b0cb64748f1bc"
+    },
+    {
+      "path": "src/data/gaiaRv.ts",
+      "sha256": "9ac9dc9298aa0ff7e744673903b095c7a2781fa85f1d633e616f5ac9a518a99e"
+    },
+    {
+      "path": "src/data/gaiaDilution.ts",
+      "sha256": "0978bade9ef4a815015959628990f5126d8731fbd7755e0d754fa59cd2526aa5"
+    }
+  ],
   "instrument": "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
   "labelSource": "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
   "population": {

@@ -637,11 +637,21 @@ authority; they are deliberately not restated here.
   `tests/xpost-health.test.ts` cases loading that path for
   the first time; the fetch-to-post cursor gap was
   MEASURED (13 posting runs, 0 items lost) and deliberately left alone. 25 left the feed for the report-freshness gate:
-  recomputed all 15 stamped verdicts independently of the module under audit (15/15 agree, 0 stale -- so round-23's
+  recomputed the stamped verdicts independently of the module under audit (all agreements held, 0 stale -- so round-23's
   public citation of p82/p84/p85/p93 as verified stands), then found that p86's publish-time half had never been
   executed by anything: `--allow-stale`, which the only CI caller passes by design, was known to keep marking reports
   red only because the committed artifact happened to show it. `tests/p86-stale-alarm.test.ts` now runs the real
-  script against a throwaway repo and tampers a tracked input, so the alarm is heard rather than assumed.
+  script against a throwaway repo and tampers a tracked input, so the alarm is heard rather than assumed. The first
+  draft of that paragraph said "all 15 stamped verdicts, 15/15": the recheck itself could only read the nested `meta`
+  stamp shape and had silently skipped the two flat-shaped rows it was sent to investigate (R25-7, corrected in the same
+  round -- the tool now resolves both shapes, accounts for all 56 index rows in named buckets, compares its own buckets
+  to the published counts, and exits 1 on any disagreement, gated by `tests/freshness-recheck-gate.test.ts`). R25-5
+  moved three measurement scripts that the ledgers promised but `out/` had swallowed onto tracked paths under
+  `scripts/audit/` and added `tests/ledger-artifacts-tracked.test.ts` to keep them there; R25-6 found the site's
+  `provenance unverified` badge was written fail-OPEN (`=== false`, so an absent key rendered clean) and made the mark
+  something a row must earn, tested by executing the predicates lifted from `web/app.js` over the real published index;
+  R25-8 re-ran p88 end to end with its own recorded arguments -- identical published numbers, new stamp -- taking the
+  library to 16 verified / 16 fully verified of 56. Commits: `12fedbf` (R25-1..R25-5) and the R25-6..R25-8 work on top.
   Round-21 (2026-10-26) ships
   the three round-20 deploy-gated defects -- the anchor SPEND GATE (refuse 409 on a NEW
   commitment when the current verdict is not accepted or the label-conflict flag is live, on BOTH runtimes, after the two
@@ -728,11 +738,15 @@ authority; they are deliberately not restated here.
   makes the 104-row catalog
   filterable server-side (`/api/findings` with a filter returns matched/hasMore; since `8dd1748` an unknown-but-supplied
   filter also returns `ignored:[...]`, and since `bf12a62` a clamped paging value returns `clamped:[...]` and a numeric
-  `tic` matches the host number only, not a TESS cadence suffix). The repo report library (converged at `1e6572b`, still serving on this deploy)
-  reports 56 with `stale: []`, `stamped: 17`, `verified: 15`, `fullyVerified: 15`, and -- the fourteenth-round N6 --
-  `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current.
+  `tic` matches the host number only, not a TESS cadence suffix). The repo report library was REBUILT this round by the
+  CI invocation itself (`npm run p86:report-library -- --allow-stale`) and now
+  reports 56 with `stale: []`, `stamped: 17`, `verified: 16`, `fullyVerified: 16`, and -- the fourteenth-round N6 --
+  `unattested: 39` as a first-class published count so the 39 unstamped reports no longer read as verified-current. The
+  +1 is p88, re-run end to end with its own recorded arguments: every published number identical, only the timestamp and
+  the three input checksums new (round-25 R25-8). p89 is the one row still `stamped` but input-less, and its generator
+  needs the MAST API, which this workstation could not reach.
 
-- Tests: 127 files / 999 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
+- Tests: 129 files / 1006 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
   (+4), the first file in the suite to EXECUTE `scripts/p86-report-library.ts`: it builds a throwaway git repo holding one
   stamped report over one tracked input, runs the real script, and asserts the alarm -- exit 1 plus `refusing to publish
   1 stale report` on a tampered input, and that `--allow-stale` keeps the red banner and the `freshness.stale` entry while
@@ -740,7 +754,12 @@ authority; they are deliberately not restated here.
   or pure-function (compareInputs), which cannot show the publish path works. Round-25 also added
   `tests/ledger-artifacts-tracked.test.ts` (+3), which stops these very ledgers from promising a kept tool that lives on
   an ignored path -- the failure it catches is in the Residual/Findings table as R25-5, and it failed on its own first
-  run. Round-24 added ONE new file,
+  run. Round-25 also added `tests/web-report-badges.test.ts` (+3), which executes the three honesty badges the site
+  actually draws (`web/app.js`, predicates lifted out of the served file rather than restated) after R25-6 found one of
+  them fail-OPEN on a missing `verified` key, and `tests/freshness-recheck-gate.test.ts` (+4), which gates the
+  independent recheck itself -- both over this checkout's real `index.json` and over throwaway repos holding
+  deliberately mis-stamped ones -- after R25-7 found that tool could not read the flat stamp shape and so had skipped
+  exactly the rows it was written to audit. Round-24 added ONE new file,
   `tests/x-post-preflight.test.ts` (+17), which drives the real pre-flight CLI against a fixture rig on 127.0.0.1 and a
   throwaway git repo AND extracts the workflow's own step shell to run it under `bash -eo pipefail` -- the F13 case is
   the first time anything in `npm test` has loaded the gate that can suppress a post; the count also carries the

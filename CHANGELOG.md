@@ -12,12 +12,13 @@ round-24: do not trust the artifact's own summary -- recompute it, then make the
 - **R25-1, measured and CLEAN (recorded because a passing gate is a claim too):** every `verified` / `stale` verdict in
   the published `web/reports/index.json` was re-derived from this checkout by a script that deliberately does NOT
   import the module under audit (`scripts/audit/freshness-recheck.mjs`: own sha256 with the same EOL normalisation, own
-  `git ls-files`). **15 of 15 stamped-with-checksums reports reproduce exactly, 0 disagreements, 0 stale.** The two
-  extra rows the index counts as `stamped` (p88, p89 -- flat top-level `generatedAt`, dated 2026-10-17, with no `meta`,
-  no `gitSha` and no `inputs`) are correctly NOT listed as verified -- so `stamped` and `verified` are still different
-  words, which is the distinction that took three earlier audits to earn. Round-23's post cited p82/p84/p85/p93 as
-  verified; their stamps cover committed fixtures (`tests/fixtures/scaled/*.jsonl`), not gitignored working files, so
-  that citation stands.
+  `git ls-files`). **Every stamped-with-checksums report reproduced exactly, 0 disagreements, 0 stale.** Round-23's post
+  cited p82/p84/p85/p93 as verified; their stamps cover committed fixtures (`tests/fixtures/scaled/*.jsonl`), not
+  gitignored working files, so that citation stands.
+  WITHDRAWN THE SAME ROUND, see R25-7: the count "15 of 15" in the first draft of this line was the CHECKER's coverage,
+  not the library's -- the recheck could not read the flat stamp shape at all, so the two rows it silently skipped were
+  the two rows this round was sent to investigate. The verdicts it did compare still reproduce; the sentence that said
+  which ones had been compared was wrong.
 - **R25-2, the real gap: the gate's second half had never been executed anywhere.** `report-freshness.ts` opens by
   claiming the "prove the alarm rings" pattern, and `tests/report-freshness.test.ts` does honour it -- for the pure
   decision function. But p86's publish-time behaviour (exit non-zero on a stale report, the red banner on the
@@ -51,14 +52,53 @@ round-24: do not trust the artifact's own summary -- recompute it, then make the
   into `scripts/` also exposed that it had NEVER been typechecked or linted (it lived in the ignored directory); it
   now is, and re-running it reproduces round-21's pinned counters byte-for-byte
   (`20 anchored / 0 match / 2 nmd / 1 rejected / 3 conflict / 3 stand-in / 4 unverifiable / 0 missing`).
+- **R25-6, the site's honesty marks had never been executed by anything, and one was written fail-OPEN.**
+  `web/app.js` draws three badges per report row, and 40 of the 56 published rows exist in the public eye only because
+  one of them says `provenance unverified`. The predicate was `r.verified === false`: a row whose `verified` key is
+  merely ABSENT -- an older or hand-patched `index.json`, a partial publish, a future writer that forgets the field --
+  rendered with no mark at all and read as clean. The gate's own doctrine is that machine-checked must be EARNED, so
+  the mark now fires unless `verified` is explicitly `true` (`!== true`). New `tests/web-report-badges.test.ts` (3
+  cases) lifts the three predicates verbatim out of the served file and runs them, the way round-24 ran the workflow's
+  own shell: a truth table, plus an assertion over the REAL published `index.json` that every not-machine-checked row
+  carries a mark. Mutation-checked -- restoring `=== false` fails the table with `actual: [] expected: [ri-unverified]`.
+- **R25-7, the checker had the blind spot it was written to find -- and this round walked into it twice.** The
+  independent recheck resolved the stamp from `doc.meta` only, while generators emit two shapes: nested `meta`, or
+  spread flat at the top level. The flat rows are p88 and p89, the two this round was sent to investigate, so the tool
+  printed `stamped=15, disagreements=0` against a published index of 17 and the mismatch got rationalised in the ledger
+  prose (see the withdrawal in R25-1) instead of being flagged. It also `continue`d past any row whose JSON it could
+  not open: a `verified: true` claim over a missing artifact would have scored as agreement. Fixed by resolving both
+  shapes independently, putting every row in exactly one named bucket, comparing the tool's buckets to the index's own
+  counts as a finding, splitting fatal disagreements from already-disclosed observations (a permanently-red gate gets
+  ignored, which is the round-24 lesson), and exiting 1 on any finding. It now accounts for all 56 rows
+  (`opened=54 absent=2`, `stamped=17/17 (flat-shaped=2)`, `verified=16/16`, `findings=0 observations=1`). New
+  `tests/freshness-recheck-gate.test.ts` (4 cases) runs the real script over this checkout AND over throwaway repos
+  holding deliberately mis-stamped indexes -- the flat stamp is now seen, `verified=true` over a missing artifact and a
+  changed checksum inside a flat stamp both ring -- so the recheck is executed by CI through `npm test` rather than
+  being a script someone might remember to run.
+- **R25-8, p88 was the cheap unattested row, and it is now fully verified with zero drift.** Re-ran the generator with
+  the same arguments the index records (`--pos 8 --neg 10 --tmag 12`) after probing both archives from this workstation
+  (ExoFOP 200 in 25.6 s, Gaia TAP 200). The only byte changes in the artifact are its `generatedAt` and the stamp the
+  script had been emitting all along but the committed file predated: `gitSha` plus three input checksums. Every
+  published number is identical -- n=17, 7 planet / 10 blend, 6 with Gaia data, 0 period-matched, 0 false vetoes,
+  `safeToGate: false`, and the `.md` is unchanged enough to not even show in `git status`. Through the CI invocation
+  (`npm run p86:report-library -- --allow-stale`) the library moved 15 -> 16 `verified` and 15 -> 16 `fullyVerified`,
+  `stamped` 17, `stale: []`, `unattested` 39 -- no public claim needed correcting, because nothing quoted a p88 number
+  as verified before and the row's own `verified` flag flipped only after the re-run.
+- **p89 stays open, measured rather than assumed:** its re-run needs the MAST API and this workstation cannot reach it
+  (`mast.stsci.edu` connect-timed out at ~10.6 s on three probes while `stpubdata` S3 answered 200), so it remains the
+  one flat-shaped, input-less stamp. That is the honest state the site publishes (`stamped`, not `verified`), and the
+  scheduled runner -- which has network -- is where it gets closed.
 - **Tests + close.** `tests/p86-stale-alarm.test.ts` is the first file in the suite to execute p86 at all, and
-  `tests/ledger-artifacts-tracked.test.ts` the first to check what the ledgers promise. Suite 992 ->
-  **999** pass / 0 fail (127 files, +2 files / +7 tests), `typecheck:all` 0, `eslint --max-warnings 0` clean. No report artifact
-  regenerated and none needed it: the drill writes only into its own temp repo, verified by `git status --porcelain`
-  showing nothing but the new test file after a full run. No `src/` change, nothing deployed.
+  `tests/ledger-artifacts-tracked.test.ts` the first to check what the ledgers promise;
+  `tests/web-report-badges.test.ts` is the first to run the served badge predicates, and
+  `tests/freshness-recheck-gate.test.ts` the first to gate the independent recheck. Suite 992 ->
+  **1006** pass / 0 fail (129 files, +4 files / +14 tests), `typecheck:all` 0, `eslint --max-warnings 0` clean,
+  `node --check` clean on all 6 `web/*.js`. No `src/` change, nothing deployed; the alarm drills write only inside
+  their own temp repos.
 - **Still open after this pass, named rather than smoothed:** `unattested: 39` of 56 reports carry no stamp at all --
   the gate cannot detect staleness in them and the site says so, but 39 is a large honest hole and closing it means
-  re-running 39 generators, several network-bound. p88/p89 could join the verified set with one re-run each.
+  re-running 39 generators, most of them network-bound. p88 closed here (R25-8); p89 is blocked on MAST reachability
+  from this workstation and is left to the scheduled runner rather than faked with a hand-written stamp.
 
 ### Twenty-fourth round (self-audit): the round-22 feed-efficiency gate skipped nothing for ten runs, and the one window it DID prove empty came back as a failed job (2026-10-26)
 Round-24 is an audit of the previous round's own work rather than of the science. Method: read the pre-flight

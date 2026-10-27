@@ -422,6 +422,19 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   the same mutation then produced 2 failures, and reverting restored 3/3. The artifact half of these seven rows stays
   `unattested` until the fleet re-runs them (MAST/S3 unreachable), the same write-side-ready / pending-fleet state as
   R26-5's p91 -- the wiring is committed and pinned by a test that is known, by mutation, to actually bite.
+- **R26-32, the first of the seven wired generators actually RUN and attested, closing the R26-29->31 chain.** After a
+  network switch the data-source probe read MAST/SPOC-S3/tesscut still UNREACHABLE but exoplanet-archive + Gaia TAP + the
+  edge all HTTP 200. `p56-real-selection` is the one wired generator whose only live inputs are the archive and Gaia (it
+  reads the committed `reports/p47-completeness-grid.json` and needs no S3), so it was runnable now. Ran it at exit 0 over
+  18 real TIC hosts: the freshly generated `reports/p56-real-selection.md` is **byte-identical to the committed one**
+  (only the `.json` changed, purely by the added `generatedAt`/`gitSha ddb1f1f`/`inputs` stamp), so the science
+  reproduced exactly and the run added provenance rather than moving numbers. `p86-report-library` re-built the served
+  index and the row flipped: `p56` is now `stamped=true verified=true fresh=true`, and the library moved from
+  `{verified 22, unattested 33}` to `{verified 23, unattested 32}` with `stale=[]`. This is the proof-of-life for R26-31's
+  write-side wiring -- the "network AND buildStamp, both required" thesis is now demonstrated end-to-end on one row, not
+  asserted. The other six wired generators (p35/p62/p67/p69/p73 need SPOC S3; p52 needs S3 target pixels) stay
+  write-side-only until those sources return; running them now would either fail or emit a degenerate report, which is
+  not attestation. Web assets changed, so this batch needs a redeploy to reach the public served index.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

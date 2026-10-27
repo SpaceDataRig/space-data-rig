@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-27T11:17:25.323Z",
+    "gitSha": "ddb1f1f2f676608116373eeb8abbe748ce2cfe52",
+    "inputs": [
+      {
+        "path": "reports/p47-completeness-grid.json",
+        "sha256": "310f51a5970428b93cea111a7fc508a542108cb5e35ec60da8be2b2f7dcfdad7"
+      },
+      {
+        "path": "scripts/p56-real-selection.ts",
+        "sha256": "b40b5926fff03567392217a814c11d53626d99c3c2972db7e002cf9417f7745d"
+      }
+    ],
     "generatedBy": "scripts/p56-real-selection.ts",
     "module": "src/sim/selectionFunction.ts",
     "completenessGrid": "reports/p47-completeness-grid.json",

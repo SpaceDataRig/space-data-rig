@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-27T01:40:51.457Z",
+  "generatedAt": "2026-10-27T02:38:53.000Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -555,7 +555,7 @@
       "novelUnion": 4,
       "shrink": 0,
       "n": 4,
-      "snapshotAt": "2026-10-27T01:39:57.201Z",
+      "snapshotAt": "2026-10-27T02:38:01.457Z",
       "stamped": true,
       "presentedAs": "point-in-time snapshot, NOT a live figure: the committed run predates the RA-unit coordinate fix and its ExoFOP-TESS leg is a single anonymous ~3.8 MB CSV that a slow/throttled mirror cannot re-fetch within the timeout, so this has not been continuously re-verified."
     },

@@ -1,5 +1,7 @@
 # P91 - can this rig verify a claim like that one?
 
+Reproduce: `npm run p91:claim-provenance`
+
 Mode: **live (resolvers queried)** -- rules, not mood: the same input must give the same verdict either way.
 
 ## What is being verified, and what is not

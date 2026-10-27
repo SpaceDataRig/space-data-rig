@@ -701,6 +701,15 @@ the Actions web page when the anonymous API is rate-limited.
   reached through writing instead of code. The committed docs were already right; the un-posted draft was the only wrong
   artifact. Before publishing any "the pipeline does X" statement, read the assignment sites in `src/cf/workflow.ts`,
   not the list of modules under `src/detect/`.
+- A blocker stated as "needs X" is often "needs X AND Y" -- check the other half before spending the scarce resource
+  (round-26, R26-29). The 33 unattested rows were framed as "waiting on a networked fleet run." They also need their
+  generator to call `buildStamp`, and none of the 33 do -- so a networked re-run alone would STILL emit unattested rows,
+  burning the scarce runner for nothing. `scripts/audit/stamping-plan26.mjs` reads the authoritative unattested set from
+  `index.json`, maps each to its generator, and extracts the committed DATA inputs it reads (excluding its own output,
+  which is circular). Beware the tempting shortcut: stamping only the generator's own source flips a row to `verified`
+  while checking nothing but "the code file did not change" -- the hollow false-comfort report-freshness.ts warns about.
+  Only 10 of the 33 have a real committed upstream input to stamp meaningfully; the other 23 are pure-network and need a
+  provenance design, not a code-only stamp. Name them; do not paper over them.
 
 ## 13. Current state (as of 2026-10-27)
 

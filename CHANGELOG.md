@@ -368,6 +368,22 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   (:277), never as a live gate. So the R26-27 defect was confined to an un-posted ad-hoc reply; the shipped documentation
   already maintains the research-vs-money-path boundary. Negative confirmation, no change -- recorded so the next reader
   does not re-run the sweep wondering whether the docs were ever checked.
+- **R26-29, "32 rows need a networked re-run" was necessary but not sufficient -- the generators have no stamp to write.**
+  The census framed the 33 unattested report rows as "waiting on a networked runner," implying a fleet re-run would attest
+  them. `scripts/audit/stamping-plan26.mjs` checked the other half and found it missing: all 33 network generators call
+  `buildStamp` ZERO times, so a fleet re-run today would STILL emit unstamped, unattested rows -- the network is necessary
+  but not sufficient. The naive fix (stamp each generator's own source) is a trap the freshness gate itself warns about:
+  a stamp naming only the generating code "verifies" nothing but "the code file did not change," flipping a row to
+  `verified` as hollow false-comfort. So the tool separates the honest cases from that trap: it reads the published
+  `index.json` for the authoritative unattested set, maps each to its generator, and statically extracts the committed
+  DATA inputs each reads (excluding its own output, which is circular). Result: 10 generators have a real upstream
+  committed input (p33/p35 read `p33-catalog.json`; p56 reads `p47`; p62/p67/p69/p73 read `p60`; p52 reads
+  `src/data/vizierEb.ts`; ...) and can be stamped meaningfully -- the tool prints the exact `buildStamp([...])` line for
+  each -- while 23 reference no committed input at all (pure network data), so they cannot be honestly attested from
+  committed bytes and would need a network-provenance design, not a code-only stamp. All 10's inputs are confirmed present
+  and git-tracked (0 absent/untracked), so those stamps would re-hash on any checkout. No generator was edited blind: the
+  wiring is left as a turnkey, validated plan (the artifact half still needs the networked fleet to run), and the 23 are
+  named rather than papered over with a hollow stamp.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

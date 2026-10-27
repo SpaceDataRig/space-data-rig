@@ -292,6 +292,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   and fragments, so the committed state can be assembled by a merge rather than a clean p86 run. The comparison logic is
   exercised on synthetic mismatch/clean inputs before the corpus is checked, so "56 rows, 56 pages, 0 missing, 0 orphans"
   is a reading, not an absence. Corpus is consistent today; this is the backstop for the merge path.
+- **R26-23, the live probe I shipped one commit earlier was itself broken, and running it is what said so.**
+  `scripts/audit/live-link-integrity26.mjs` (added in `506c62f`) had two defects the round's own standard -- a transient
+  network failure is never evidence -- indicts. First, it relied on undici's default (no timeout) with an uncaught top-level
+  `fetch`, so a stalled edge connection HUNG the run forever instead of reporting. Second, once bounded, it still labelled
+  `status 0` timeouts as "BROKEN (published row without a served page)": at concurrency 6 over a flaky network it accused 14
+  report rows of being 404s that were really dropped requests -- the exact false accusation of the library that the tool's
+  stated contract forbids. Fixed by giving every request `AbortSignal.timeout(12s)`, catching the index read, dropping
+  concurrency to 2 with a retry, and splitting the outcome into three honest buckets: BROKEN only when the server ANSWERED
+  with a non-200/non-HTML response; INCONCLUSIVE (exit 2) when pages could not be reached; OK only when all 56 resolved.
+  Re-running against the live edge now returns "UNREACHABLE ... NOT a pass and NOT a defect" (exit 2) instead of hanging or
+  falsely reporting. The hermetic bijection test is what CI trusts; the probe is best-effort and had to be held to the same
+  honesty rule as everything else this round -- including, now, its own first author.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

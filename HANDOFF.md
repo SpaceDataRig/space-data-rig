@@ -672,6 +672,14 @@ the Actions web page when the anonymous API is rate-limited.
   The live probe `scripts/audit/live-link-integrity26.mjs` confirms it against the edge but only CONCLUDES when the
   network answers; when it times out, say "unreachable", never "clean" and never "broken" -- a transient connect failure
   is not evidence either way.
+- A tool must be run before it is trusted, and held to the honesty rule it itself documents (round-26, R26-23). The live
+  probe above shipped with two defects its own prose forbade: no request timeout (a single stalled edge connection froze
+  the run forever) and `status=0` from a timeout counted as BROKEN -- at concurrency 6 it accused 14 rows of 404s that
+  were transient network faults, the exact false accusation the tool's contract warns against. Fixed by bounding every
+  request (`AbortSignal.timeout`), catching the top-level index read, dropping concurrency and retrying once, and
+  splitting three honest buckets: BROKEN (exit 1, a real non-200/non-HTML response), INCONCLUSIVE (exit 2, unreachable
+  after retry -- neither a pass nor a defect), OK. The lesson generalizes: the gap between a check's stated discipline
+  and its implementation is invisible until you run it against the failure it claims to handle.
 
 ## 13. Current state (as of 2026-10-27)
 

@@ -8,45 +8,69 @@
 // defect that tests/report-library.test.ts guards for p90 alone -- here, for all 56, against the live server.
 const BASE = "https://spacedatarig.app";
 const H = { "User-Agent": "p26-live-link-integrity" };
+// A stalled edge connection must not hang the probe forever: every request is bounded. The shipped version relied on
+// undici's default (no timeout) and a single stalled fetch froze the run -- a tool that cannot conclude is worse than one
+// that reports the edge as unreachable, which is the honest outcome this exit code now distinguishes.
+const REQ_TIMEOUT_MS = 12_000;
 
 async function get(url) {
   try {
-    const r = await fetch(url, { headers: H, redirect: "follow" });
+    const r = await fetch(url, { headers: H, redirect: "follow", signal: AbortSignal.timeout(REQ_TIMEOUT_MS) });
     const ct = r.headers.get("content-type") || "";
     return { status: r.status, ct };
   } catch (e) {
-    return { status: 0, ct: "", err: e.message };
+    return { status: 0, ct: "", err: e.name === "TimeoutError" ? "timeout" : e.message };
   }
 }
 
-const idxRes = await fetch(`${BASE}/reports/index.json`, { headers: H });
-if (!idxRes.ok) { console.log("FATAL: could not read the live index:", idxRes.status); process.exit(2); }
-const idx = await idxRes.json();
+let idx;
+try {
+  const r = await fetch(`${BASE}/reports/index.json`, { headers: H, signal: AbortSignal.timeout(REQ_TIMEOUT_MS) });
+  if (r.status !== 200) { console.log("FATAL: live index not 200:", r.status); process.exit(2); }
+  idx = await r.json();
+} catch (e) {
+  const why = e.name === "TimeoutError" ? "timeout" : e.message;
+  console.log(`UNREACHABLE: the edge did not answer the index (${why}); this is NOT a pass and NOT a defect`);
+  process.exit(2);
+}
 const rows = idx.reports || [];
 console.log(`live index: ${rows.length} rows`);
 
-// Probe each slug's page. Modest concurrency so a slow edge is not hammered, but the check finishes promptly.
-const CONC = 6;
-const failures = [];
+// Probe each slug's page. LOW concurrency: at 6 the flaky edge dropped a dozen requests to timeouts and the first version
+// mislabelled them as BROKEN -- a false accusation of the library for a transient network fault, the very thing this tool's
+// contract forbids. status 0 (timeout / fetch failed) is UNREACHABLE, not broken; only a real HTTP response that is not a
+// 200 text/html is a broken published link.
+const CONC = 2;
+const broken = [];
+const unreachable = new Set();
 let done = 0;
 const queue = rows.slice();
+async function probe(slug) {
+  const res = await get(`${BASE}/reports/${encodeURIComponent(slug)}.html`);
+  if (res.status === 0) return { kind: "unreachable", detail: res.err || "network" };
+  const ok = res.status === 200 && /text\/html/.test(res.ct);
+  return ok ? { kind: "ok" } : { kind: "broken", detail: `status=${res.status} ct=${res.ct || "?"}` };
+}
 async function worker() {
-  for (let item = queue.shift(); item; item = queue.shift()) {
-    const slug = item.slug;
-    const res = await get(`${BASE}/reports/${encodeURIComponent(slug)}.html`);
-    // A report page must be HTML and 200. Anything else (404, 200 text/plain fallback, 500) is a broken published link.
-    const ok = res.status === 200 && /text\/html/.test(res.ct);
-    if (!ok) failures.push(`${slug}: status=${res.status} ct=${res.ct || "?"}${res.err ? " err=" + res.err : ""}`);
+  for (let row = queue.shift(); row; row = queue.shift()) {
+    let r = await probe(row.slug);
+    if (r.kind === "unreachable") r = await probe(row.slug); // one retry before declaring it unreachable
+    if (r.kind === "broken") broken.push(`${row.slug}: ${r.detail}`);
+    else if (r.kind === "unreachable") unreachable.add(row.slug);
     done++;
-    item = null;
   }
 }
 await Promise.all(Array.from({ length: CONC }, worker));
 
 console.log(`probed ${done}/${rows.length} report pages`);
-if (failures.length) {
-  console.log("BROKEN (published row without a served HTML page):");
-  for (const f of failures) console.log("  " + f);
+if (broken.length) {
+  console.log("BROKEN (server answered, but not with the row's HTML page):");
+  for (const f of broken) console.log("  " + f);
   process.exit(1);
+}
+if (unreachable.size) {
+  console.log(`INCONCLUSIVE: ${unreachable.size} page(s) could not be reached after a retry (${[...unreachable].join(", ")}). ` +
+    "This is NOT a pass and NOT a defect -- the edge was unreachable for those requests; re-run when the network is steady.");
+  process.exit(2);
 }
 console.log("OK: every published index row resolves to a 200 text/html page on production.");

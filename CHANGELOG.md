@@ -230,6 +230,20 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   prose; three rows stay excused (p85 over a gitignored checkpoint, and the two CI-harness `crosscheck/` reports). Full
   suite 1019/1019/0 on the integrated HEAD. No hand-edited `.md`, no offline replay to manufacture the command -- the
   networked run produced it and the gate noticed.
+- **R26-19, round-26 increment 3 deployed and read back from the live endpoint, which is the only place "shipped" is
+  decided.** `c93a43c` (whose `src/` and `web/` trees equal the fleet's `5e4d683` publish) went to production as version
+  `6a9958fa-1620-488c-87ba-8e111bab585e`. The deploy is what the R25-11 handoff gate had been marking `AWAITING DEPLOY`
+  for, and the marker is now removed by this record, exactly as that gate's contract requires. `npm run cf:deploy:sha`
+  refused the FIRST attempt -- `REFUSED: the working tree is not what HEAD is (1 uncommitted path(s))`, an untracked
+  scratch file in `scripts/` -- and the refusal was taken seriously rather than bypassed with `--allow-dirty`: the file
+  was deleted and the clean tree redeployed, because a gitSha must not describe bytes that were never committed. Live
+  read-back: `GET /health` -> `deployVersion 6a9958fa / gitSha c93a43c`; `GET /reports/index.json` -> `freshness {stamped
+  23, verified 22, fullyVerified 22, unattested 33, stale []}` with `p91-claim-provenance` served `verified=true
+  fresh=true reproducible=3` and a reproduce command; `GET /research.json` -> the refreshed `compute {2.873, 0.788, 204}`
+  and `addressable {0, 0, null, 0}`. No `src/` change, every spending var byte-identical, `discoveryClaim`/`safeToGate`
+  still false. The served library now equals the committed, gate-verified library -- the gap between "a green CI badge"
+  and "what a visitor is shown", which round-25 named as the freshness gate's own failure mode arriving in the handoff,
+  is closed for this round by measurement rather than by the word.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -673,15 +673,21 @@ authority; they are deliberately not restated here.
   (its own counts are 0/0). Live read-back confirms the stale bundle is what visitors get. Rebuilt AND gated in the same
   round (R26-8/9), plus p91's stamp, which sits under a third key (`stamp`) that no
   reader looks at (R25-7's "both shapes" was itself an undercount) and two rows published with no JSON artifact at all
-  (R26-6). What has since closed inside the round: the bundle currency gate (`tests/research-bundle-currency.test.ts`),
-  the hermeticity fix to the feed pre-flight drill (R26-11, plus R26-13 -- CI was red on the first increment and the
-  cause is now reproducible on demand), and p91's third-key stamp, whose writer fix let the networked fleet do a LIVE
-  re-run (`61ca06c`: p91 `mode: live`, stamped and verified with 3 reproducible inputs; published library 22 verified /
-  33 unattested). Still open, in priority order: 32 generators that write no stamp at all -- the same five-line edit
-  each, then a run on the fleet this round extended; the four report rows still without a `reproduce` command (named and
-  reasoned in `tests/report-reproduce-command.test.ts`: p85 over a gitignored checkpoint, p91 awaiting the re-triggered
-  fleet arm, and the two CI-harness crosscheck reports); p89/p33/p39 when MAST answers; and the `absent=2` observation
-  in the recheck, which stays a disclosed hole rather than a red CI.
+  (R26-6). What has since closed inside the round: the bundle currency gate (`tests/research-bundle-currency.test.ts`)
+  -- and its own positive control, which had decayed to a no-op when the fleet merged a second refresh and was re-anchored
+  to content rather than a history position (R26-17); the hermeticity fix to the feed pre-flight drill (R26-11, plus R26-13
+  -- CI was red on the first increment and the cause is now reproducible on demand); the reproduce-command ratchet
+  (R26-15), whose prune direction then fired on reality when the fleet's live re-run gave p91 a command and it was dropped
+  from the exemption list (R26-18); and the handoff gate's own marker-scope bug (R26-16). p91's third-key stamp, whose
+  writer fix let the networked fleet do a LIVE re-run, is now fully closed -- the fleet re-published as `5e4d683` (p91
+  `mode: live`, `verified=true`, `reproducible=3`, and its markdown now carries the reproduce command), and this was
+  deployed and read back from the live endpoint as version `6a9958fa`, gitSha `c93a43c` (see the Production bullet), where
+  the served library reads `stamped 23 / verified 22 / fullyVerified 22 / unattested 33 / stale []`. Still open, in priority
+  order: 32 generators that write no stamp at all -- the same five-line edit each, then a run on the fleet this round
+  extended; the THREE report rows still without a `reproduce` command (named and reasoned in
+  `tests/report-reproduce-command.test.ts`: p85 over a gitignored checkpoint, and the two CI-harness crosscheck reports --
+  p91 has since been pruned from that list); p89/p33/p39 when MAST answers; and the `absent=2` observation in the recheck,
+  which stays a disclosed hole rather than a red CI.
 - Git: rounds 22-25 (all 2026-10-26) are CI-only work on the FEED and the REPORTING gate, not the rig: 22 added the empty-window
   pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
   vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
@@ -746,28 +752,31 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 556fede6-b5ef-495d-82d5-8c5fc10dac77, gitSha e97c4fde57d0d146b16620a484b58a80c44ad1c8
-  (deployed 2026-10-27T01:09:35.384Z by round-26 through `npm run cf:deploy:sha`, the creation time read back from
-  `wrangler deployments list`, with `GET /health`, `GET /research.json` and `GET /reports/index.json` re-read live),
-  `codeVersion space-data-rig@0.2.0`. **WHAT THIS DEPLOY FIXED --
-  and the first attempt did not deploy at all:** the first `cf:deploy:sha` run stopped with `auth token has expired and
-  could not be refreshed because the Cloudflare auth server could not be reached`; two probes showed the endpoints
-  answering (404 / 403, i.e. reachable-but-unauthenticated), so the retry was a real remedy rather than a re-roll, and
-  the asset that needed shipping was `web/research.json`, which had been publishing a compute exponent and an
-  addressable-veto block its own source reports no longer support (R26-3a/b/c). Live read-back after deploy:
-  `/research.json` `generatedAt 2026-10-27T00:54:33.209Z`, `compute {p 2.8730627278616767, r2 0.7880192356593715,
-  sampleN 204}`, `addressable {negatives 0, caught 0, vetoPower null, auc 0}`; `/reports/index.json` 56 rows with
-  `verified 21 / fullyVerified 21 / stamped 22 / unattested 34 / stale []`. No `src/` file changed between the previous
-  version and this one, so the Worker code and every spending var shipped byte-identical (`AUTO_ANCHOR=live`,
-  `OBSERVE_ANCHOR=live`, caps unchanged) -- verified from the `--dry-run` env block before the upload, not assumed.
-  The interim marker this bullet carried (`ROUND-26 AWAITING DEPLOY`) was removed only after `/health` named the new
-  version, which is the whole point of the `awaiting deploy` check in `tests/handoff-freshness.test.ts`.
-  Earlier production: version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa.
-  **ROUND-26 INCREMENT 3, AWAITING DEPLOY:** the tree above is 556fede6's, and HEAD's `web/` has moved since --
-  `web/reports/index.json` plus the p68/p90 fragments -- so this bullet describes the deploy that actually happened and
-  the marker says plainly that a second one is pending. It is removed by the commit that records the new version id
-  after `GET /health` confirms it, which is what the `awaiting deploy` check in
-  `tests/handoff-freshness.test.ts` is for.
+- Production: wrangler version 6a9958fa-1620-488c-87ba-8e111bab585e, gitSha c93a43c490b46b07285a55389318c3facbcf1b0a
+  (deployed 2026-10-27 by round-26 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
+  static assets from `web/`; `GET /health` read back at 2026-10-27T03:00:53Z returned `deployVersion
+  6a9958fa-1620-488c-87ba-8e111bab585e` and `gitSha c93a43c`), `codeVersion space-data-rig@0.2.0`. **THE DEPLOY GUARD
+  REFUSED THE FIRST TIME, AND THAT WAS CORRECT:** the initial `cf:deploy:sha` stopped with `REFUSED: the working tree is
+  not what HEAD is (1 uncommitted path(s))` because an untracked scratch file sat in `scripts/`; the guard exists so a
+  named gitSha cannot describe bytes that were never committed, so the scratch file was removed and the tree redeployed
+  clean -- not overridden with `--allow-dirty`. **WHAT THIS SHIPS:** the round-26 increment-3 library, the same `web/`
+  tree as the fleet's `5e4d683` -- this commit edits no `src/` and no `web/` path, and no push since hit a trigger path in
+  `.github/workflows/freshness-regen.yml`, so the served tree equals the named revision by construction. Live read-back of
+  `GET /reports/index.json`: 56 rows, `freshness {stamped 23, verified 22, fullyVerified 22, unattested 33, stale []}`,
+  and `p91-claim-provenance` served `verified=true fresh=true reproducible=3` with `reproduce "npm run
+  p91:claim-provenance"` -- the two figures round-26 set out to make true (p91 live-verified; every `verified` row also
+  reproducible), now true on the endpoint rather than only asserted in a ledger. `GET /research.json` still serves the
+  refreshed `compute {p 2.8730627278616767, r2 0.7880192356593715, sampleN 204}` and `addressable {negatives 0, caught 0,
+  vetoPower null, auc 0}`. No `src/` file changed since the previous version, so the Worker code and every spending var
+  ship byte-identical (`AUTO_ANCHOR=live`, `OBSERVE_ANCHOR=live`, caps unchanged); `discoveryClaim`/`safeToGate` remain
+  false in every report. The `ROUND-26 INCREMENT 3, AWAITING DEPLOY` marker this bullet's predecessor carried is removed
+  here, because `/health` now names a version whose `src/` and `web/` trees equal HEAD's -- exactly the condition
+  `tests/handoff-freshness.test.ts` enforces, and the reason the marker existed at all.
+  Earlier production: version 556fede6-b5ef-495d-82d5-8c5fc10dac77, gitSha e97c4fde57d0d146b16620a484b58a80c44ad1c8
+  (deployed 2026-10-27T01:09:35.384Z by round-26 -- the `web/research.json` refresh that shipped the p34-corrected
+  exponent and retired the stale addressable-veto block; its first attempt failed on an expired Cloudflare auth token and
+  the retry after two reachability probes succeeded, R26-10); and before that version f1a50e51-104c-4838-86cb-f9827c426cd2,
+  gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa.
   **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
   `src/` file, but round-25 changed two SERVED assets (`web/app.js`, `web/reports/index.json` + fragments), and no
   workflow in this repository deploys -- so a committed-and-green asset fix is not public. Before acting the live site

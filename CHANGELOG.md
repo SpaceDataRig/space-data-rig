@@ -316,6 +316,20 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   as-verdict defect was confined to the one probe R26-23 fixed, not a fleet pattern. No code change resulted -- the value
   is the reading: the tools that produce the ledger's claims were executed, not merely asserted, and their one known
   failure mode was shown bounded.
+- **R26-25, R26-24 called a crash "throwing loudly," and running the tool proved the two are not the same thing.**
+  R26-24 graded `live-readback26.mjs` as safe because its timeout made it "throw loudly on failure so it never fakes a
+  pass." That is true but incomplete, and only re-executing the tool said so: the failure surfaces as an uncaught
+  `DOMException [TimeoutError]` stack trace at exit 1, which is indistinguishable from "the tool broke" or "the served
+  content disagreed" -- the exact ambiguity R26-23 removed from its sibling probe. A pass/fail exit code that fires for a
+  dead network is itself a small false signal (the round's rule is that a transient failure is NOT a defect, so it must not
+  leave the loudest exit code). Fixed by the same discipline: bound (60s, one retry -- long enough that a legitimately slow
+  but working large `index.json` is not over-eagerly declared unreachable, the mirror image of R26-23's false 404), catch
+  each request, and split buckets -- a clean "UNREACHABLE ... NOT a pass and NOT a defect" at exit 2 reserved for where
+  the edge did not answer, while a 200 that disagrees with the committed bytes still surfaces. Guarded the served-index
+  row lookup too, so a missing id reports `MISSING FROM SERVED INDEX` instead of throwing on `undefined.stamped`. Running
+  the fixed probe against the degraded edge returned `UNREACHABLE: ... /reports/index.json (timeout)` exit 2 -- the honest
+  verdict. `live-readback26` is still a diagnostic that cannot CONCLUDE while the network is down; the fix is that it now
+  says which of the two it is doing.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -680,6 +680,15 @@ the Actions web page when the anonymous API is rate-limited.
   splitting three honest buckets: BROKEN (exit 1, a real non-200/non-HTML response), INCONCLUSIVE (exit 2, unreachable
   after retry -- neither a pass nor a defect), OK. The lesson generalizes: the gap between a check's stated discipline
   and its implementation is invisible until you run it against the failure it claims to handle.
+- "It fails loudly" is not the same as "it fails legibly" -- and only re-running the tool tells you which (round-26,
+  R26-25). Sweeping the fleet (R26-24) cleared `live-readback26` because it had a timeout, but executing it showed the
+  timeout surfaced as an uncaught `DOMException` stack trace at exit 1: a reader cannot tell "the network is down" from
+  "the tool crashed" from "the served bytes disagreed," and a non-zero exit code fired for a transient failure violates
+  the round's own rule that such a failure is not a defect. The fix is the same three-bucket shape as R26-23: bound the
+  request generously enough that a slow-but-live large payload is not wrongly declared unreachable (the mirror image of a
+  false 404), catch per request, and reserve exit 2 for a clean "UNREACHABLE ... NOT a pass and NOT a defect." A negative
+  sweep verdict (R26-24: "sound, has a timeout") is a claim about the tool's code path, not about its observable output --
+  confirm the output too.
 
 ## 13. Current state (as of 2026-10-27)
 

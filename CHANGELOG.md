@@ -304,6 +304,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   Re-running against the live edge now returns "UNREACHABLE ... NOT a pass and NOT a defect" (exit 2) instead of hanging or
   falsely reporting. The hermetic bijection test is what CI trusts; the probe is best-effort and had to be held to the same
   honesty rule as everything else this round -- including, now, its own first author.
+- **R26-24, R26-23's "run it before you trust it" was applied to the whole audit fleet, and the defect it found stayed
+  isolated.** Rather than trust the tools that assert the round's numbers, each offline one was executed at HEAD
+  `2f10f3a`: `unattested-census26` (33/33), `reproduce-command-census26`, `freshness-recheck` (findings 0),
+  `net-census-audit26` (realCall 32 / mentionOnly 0), `unattested-blockers26`, `diagnose26-preflight` -- all exit 0.
+  Every mutation drill (`stamp`/`reproduce`/`currency-control`/`replay-currency`/`redline`/`handoff-marker`) was re-run
+  and each restored the tree byte-identical with `git status` clean afterward -- the positive controls still fire, and the
+  drills still do not litter. Then the R26-23 class itself was swept across the network tools that share the flaky edge:
+  `live-readback26` (120s timeout, throws loudly on failure so it never fakes a pass), `feed-fetch-to-post-gap` (45s +
+  retry/backoff), `ci-watch26` (30s). All three already bound their requests, so the missing-timeout / transient-labelled-
+  as-verdict defect was confined to the one probe R26-23 fixed, not a fleet pattern. No code change resulted -- the value
+  is the reading: the tools that produce the ledger's claims were executed, not merely asserted, and their one known
+  failure mode was shown bounded.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -9,8 +9,22 @@
 //
 // Usage:
 //   npm run p55:replay-manifest
+//   npm run p55:replay-manifest -- --out=<path inside the repo>   (default web/replay-manifest.json; the currency test
+//     rebuilds into out/ and byte-compares the committed asset, so the writer needs a target that is not the shipped one)
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve, sep } from "node:path";
 import { buildReplayManifest, verifyManifest, type ReplayRecord } from "../src/sim/replay.ts";
+
+// Same guard scripts/p38-research-bundle.ts uses: --out may retarget the build for a test, but a resolved path that
+// escapes the working directory throws rather than letting the generator write wherever it is pointed.
+function outPath(): string {
+  const hit = process.argv.find((a) => a.startsWith("--out="));
+  if (!hit) return "web/replay-manifest.json";
+  const p = resolve(hit.slice("--out=".length));
+  const root = resolve("." + sep);
+  if (!p.startsWith(root)) throw new Error(`refusing --out=...: resolves to ${p}, outside ${root}`);
+  return p;
+}
 
 interface P50 {
   target: { name: string; tic: number; sector: number; s3Key: string; byteSha256: string; byteLength: number };
@@ -42,8 +56,9 @@ async function main() {
   console.log(`  fetch URL           : ${manifest.retrieval.url}`);
   console.log(`  VERDICT: ${selfConsistent && matchesCommitted ? "P55-MANIFEST-VERIFIED" : "P55-MANIFEST-MISMATCH"}`);
 
-  writeFileSync("web/replay-manifest.json", JSON.stringify(manifest, null, 2) + "\n");
-  console.log("\nwrote web/replay-manifest.json");
+  const out = outPath();
+  writeFileSync(out, JSON.stringify(manifest, null, 2) + "\n");
+  console.log(`\nwrote ${out}`);
   if (!(selfConsistent && matchesCommitted)) process.exitCode = 1;
 }
 

@@ -646,6 +646,15 @@ the Actions web page when the anonymous API is rate-limited.
   HEAD re-running the suite exposed it. Anchor a control to the FACT it demonstrates (walk the log for the revision that
   still carries the old figure; assert the shipped one has moved past it), never to where that fact happened to sit. The
   same discipline as "a gate and its positive control must not read the same file", extended to history.
+- A classifier that decides by SUBSTRING MENTION over-claims, and an over-claim in the "this needs network" direction
+  hides work that could be done offline (round-26, R26-20). `unattested-blockers26.mjs` marks a generator
+  `network-needed=true` if its source contains `fetch`/`http`/a fetcher module name anywhere -- including a URL in a
+  comment or an import that is never called on the path that runs. Do not accept that as evidence: detect the CALL SITE
+  (`fetch(`, an awaited live client), as `scripts/audit/net-census-audit26.mjs` does. Here the measurement happened to
+  agree with the regex (all 32 really fetch), but the value is in the method -- and in the same sweep, the derived public
+  assets in `web/` must each answer "is there a test that rebuilds you from committed inputs and byte-compares?" Only the
+  offline-rebuildable ones are gateable without a runner: `research.json` and `replay-manifest.json` now are;
+  `candidates.json`/`observe-stars.json` need a networked p22/p24 run and are named as such rather than left implied.
 
 ## 13. Current state (as of 2026-10-27)
 

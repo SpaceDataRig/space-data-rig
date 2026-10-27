@@ -244,6 +244,26 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   still false. The served library now equals the committed, gate-verified library -- the gap between "a green CI badge"
   and "what a visitor is shown", which round-25 named as the freshness gate's own failure mode arriving in the handoff,
   is closed for this round by measurement rather than by the word.
+- **R26-20, the last offline-rebuildable public asset had no currency gate, and the census's "needs network" label was a
+  regex, not a measurement.** After deploy, the next audit pass swept two things the round had asserted but not tested.
+  First, `scripts/audit/unattested-blockers26.mjs` flags each unstamped generator `network-needed=true` with a SUBSTRING
+  regex, so "32 rows need a networked runner" was a claim resting on a mention of `fetch`/`http`/a fetcher module --
+  exactly the kind of over-claim that hides an offline win. `scripts/audit/net-census-audit26.mjs` re-checked each of the
+  32 for an actual call site rather than a mention: all 32 make a real network call (`realCall=32, mentionOnly=0`), so
+  the framing holds -- but now because it was measured, and the negative is recorded so a future reader does not
+  re-litigate it. Second, sweeping `web/` for derived assets left ungated by a rebuild test: `research.json` (gated
+  R26-8/9), `reports/index.json` (gated), `figures.json` (`figures-manifest.test.ts`), but `replay-manifest.json`,
+  `candidates.json` and `observe-stars.json` had no "committed bytes == a fresh build" gate. Only `replay-manifest.json`
+  is offline-rebuildable -- `scripts/p55-replay-manifest.ts` derives it purely from the committed `reports/p50-replay.json`
+  and writes NO timestamp, so it is a deterministic byte function; `candidates.json`/`observe-stars.json` need a networked
+  p22/p24 run and join the parked-32, now named rather than silently absent. So p55 gained `--out=` (same escape-the-repo
+  guard as p38), `tests/replay-manifest-currency.test.ts` rebuilds into `out/` and requires byte equality plus
+  `discoveryClaim=false` and a well-formed 64-hex `replayHash`, and its positive control flips the hash and asserts BOTH
+  that the byte gate sees a difference AND that the semantic `verifyManifest` rejects it -- the gate watches the field
+  that actually matters. `scripts/audit/mutate26-replay-currency.mjs` proves non-vacuity by tampering the committed bytes:
+  fail 2 naming the mismatch, restore to 3/3 byte-identical. The manifest was already fresh (single commit since 2026-10-14,
+  rebuild byte-identical), so this is a preventive gate closing a latent instance of the exact class that caught
+  `research.json` six days late -- found before it drifted, not after.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

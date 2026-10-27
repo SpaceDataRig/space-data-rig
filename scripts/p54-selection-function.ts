@@ -12,6 +12,12 @@
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { buildSelectionFunction, type PeriodBinSelection } from "../src/sim/selectionFunction.ts";
 import type { GridCell } from "../src/sim/completenessGrid.ts";
+// ROUND-26: this generator wrote a meta block that NAMED its inputs in prose but recorded no freshness stamp, so the
+// site could only publish the report as `unattested`. Re-running it here reproduces the committed numbers byte for
+// byte, so the gap was never a drift -- it was the absence of anything a stranger could re-hash. buildStamp records
+// generatedAt + gitSha + a sha256 per input and p86 re-hashes them on every library build; the src module is listed
+// because its statistics are what the published table is made of, and so is this script.
+import { buildStamp } from "./report-freshness.ts";
 
 interface P47Cell { periodLo: number; periodHi: number; depthLo: number; depthHi: number; n: number; k: number; completeness: number; ciLow: number; ciHigh: number; }
 
@@ -80,6 +86,7 @@ async function main() {
         "not per-target Gaia measurements or stellar parameters. This composes geometry x dilution x " +
         "completeness into the eta_earth denominator skeleton; it is NOT a measured occurrence rate and " +
         "there is nothing to divide (no detections are claimed).",
+      ...buildStamp(["reports/p47-completeness-grid.json", "src/sim/selectionFunction.ts", "scripts/p54-selection-function.ts"]),
     },
     dilutions: DILUTIONS,
     star: STAR,

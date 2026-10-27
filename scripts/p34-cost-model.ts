@@ -31,6 +31,12 @@
 // Run:  npm run p34:cost-model  [-- --sectors 1,2,4 --stars 1000,5000,20000 --parallel 1,8,64]
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+// ROUND-26: this report was one of the rows the freshness gate could never check -- it declared no stamp, so the site
+// published it as `unattested` and a reader had no way to learn that its input catalog had grown 6x since the numbers
+// were frozen. buildStamp records generatedAt + gitSha + a sha256 per input; p86 then re-hashes them on every library
+// build. The inputs listed here are the ones this script actually reads (the P33 catalog) plus the script itself, so a
+// change in the model code is visible as staleness too.
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -160,7 +166,7 @@ function main(): void {
   mkdirSync("reports", { recursive: true });
   writeFileSync("reports/p34-cost-model.md", lines.join("\n"));
   const json = {
-    meta: { generatedBy: "p34-cost-model", source: CATALOG, sampleN: N, refSectors, runsPerCurve },
+    meta: { generatedBy: "p34-cost-model", source: CATALOG, sampleN: N, refSectors, runsPerCurve, ...buildStamp([CATALOG, "scripts/p34-cost-model.ts"]) },
     fit: { p: fit.p, k: fit.k, r2: fit.r2, n: fit.n },
     measured: { meanPerCurveMs, meanSingleDetSeconds: meanSingleDetS, meanPoints },
     doublingCostFactor: Math.pow(2, fit.p),

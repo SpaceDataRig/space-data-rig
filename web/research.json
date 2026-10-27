@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-20T04:01:42.762Z",
+  "generatedAt": "2026-10-27T00:54:33.209Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -315,15 +315,12 @@
       "auc": 0.565625
     },
     "addressable": {
-      "negatives": 13,
-      "excludedOnTargetOnly": 3,
-      "caught": 2,
-      "vetoPower": 0.15384615384615385,
-      "vetoPowerCI": [
-        0.04325726318273798,
-        0.4223517050863101
-      ],
-      "auc": 0.7423076923076923
+      "negatives": 0,
+      "excludedOnTargetOnly": 0,
+      "caught": 0,
+      "vetoPower": null,
+      "vetoPowerCI": null,
+      "auc": 0
     },
     "caveat": "FP/EB labels mix off-target blends (catchable by localization) with on-target eclipsing binaries (not catchable), so the all-negatives power is a lower bound until the resolved-companion subset; a single known-planet false kill disqualifies the gate.",
     "safeToGate": false,
@@ -551,12 +548,12 @@
       "verdict": "GATE-OPTIMISTIC-ON-REAL-NOISE"
     },
     "multiSourceNoveltyP76": {
-      "novelArchive": 5,
-      "novelUnion": 5,
+      "novelArchive": 4,
+      "novelUnion": 4,
       "shrink": 0,
-      "n": 5,
-      "snapshotAt": null,
-      "stamped": false,
+      "n": 4,
+      "snapshotAt": "2026-10-21T07:04:04.597Z",
+      "stamped": true,
       "presentedAs": "point-in-time snapshot, NOT a live figure: the committed run predates the RA-unit coordinate fix and its ExoFOP-TESS leg is a single anonymous ~3.8 MB CSV that a slow/throttled mirror cannot re-fetch within the timeout, so this has not been continuously re-verified."
     },
     "caveat": "all re-derived from the committed P73-P76 reports; positive controls on known planets / a model-free inverted null / a token-free catalog cross-check. Sibling masking gives a modest +1 re-find of 20 (P73); cross-sector coherence removes all single-sector known-planet false-kills but loses blend power (P74); the AR(1) significance gate false-alarms far above nominal on inverted planet-free noise (P75); on a point-in-time snapshot the ExoFOP TOI/CTOI table changed no candidate's novelty (P76 -- NOT continuously re-verified; its ExoFOP CSV leg is time-truncated on a slow mirror and the committed run predates the RA-unit coordinate fix). None is wired into a gate.",
@@ -918,26 +915,26 @@
     "discoveryClaim": false
   },
   "compute": {
-    "exponentP": 2.936437697567511,
-    "r2": 0.8366052738431159,
-    "sampleN": 33,
-    "singleStarDetectionSeconds": 3.9795238095238097,
-    "meanPointsPerStar": 2899.121212121212,
+    "exponentP": 2.8730627278616767,
+    "r2": 0.7880192356593715,
+    "sampleN": 204,
+    "singleStarDetectionSeconds": 2.2625826330532215,
+    "meanPointsPerStar": 2649.357843137255,
     "cpuHours": [
       {
         "stars": 1000,
         "bySectors": [
           {
             "sectors": 1,
-            "cpuHours": 0.14440185734140906
+            "cpuHours": 0.08578747552633822
           },
           {
             "sectors": 2,
-            "cpuHours": 1.1054232804232804
+            "cpuHours": 0.6284951758481171
           },
           {
             "sectors": 4,
-            "cpuHours": 8.462222379956563
+            "cpuHours": 4.604473830717655
           }
         ]
       },
@@ -946,15 +943,15 @@
         "bySectors": [
           {
             "sectors": 1,
-            "cpuHours": 0.7220092867070455
+            "cpuHours": 0.4289373776316911
           },
           {
             "sectors": 2,
-            "cpuHours": 5.527116402116403
+            "cpuHours": 3.1424758792405854
           },
           {
             "sectors": 4,
-            "cpuHours": 42.311111899782816
+            "cpuHours": 23.022369153588272
           }
         ]
       },
@@ -963,15 +960,15 @@
         "bySectors": [
           {
             "sectors": 1,
-            "cpuHours": 2.888037146828182
+            "cpuHours": 1.7157495105267644
           },
           {
             "sectors": 2,
-            "cpuHours": 22.10846560846561
+            "cpuHours": 12.569903516962341
           },
           {
             "sectors": 4,
-            "cpuHours": 169.24444759913126
+            "cpuHours": 92.08947661435309
           }
         ]
       }

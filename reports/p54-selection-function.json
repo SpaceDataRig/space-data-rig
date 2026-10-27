@@ -4,7 +4,23 @@
     "module": "src/sim/selectionFunction.ts",
     "completenessGrid": "reports/p47-completeness-grid.json (real detector efficiency on real photometry)",
     "illustrative": true,
-    "note": "Dilution factors and the solar-twin star are DOCUMENTED ASSUMPTIONS for a demonstration, not per-target Gaia measurements or stellar parameters. This composes geometry x dilution x completeness into the eta_earth denominator skeleton; it is NOT a measured occurrence rate and there is nothing to divide (no detections are claimed)."
+    "note": "Dilution factors and the solar-twin star are DOCUMENTED ASSUMPTIONS for a demonstration, not per-target Gaia measurements or stellar parameters. This composes geometry x dilution x completeness into the eta_earth denominator skeleton; it is NOT a measured occurrence rate and there is nothing to divide (no detections are claimed).",
+    "generatedAt": "2026-10-27T00:41:54.689Z",
+    "gitSha": "72d2eed8ac27aaa9099520b57bcb63d3d8e3dd6b",
+    "inputs": [
+      {
+        "path": "reports/p47-completeness-grid.json",
+        "sha256": "310f51a5970428b93cea111a7fc508a542108cb5e35ec60da8be2b2f7dcfdad7"
+      },
+      {
+        "path": "src/sim/selectionFunction.ts",
+        "sha256": "4d03e6a775341828d8d66bfb475dbdf6cba520381058d98a0f314b15b29c94b5"
+      },
+      {
+        "path": "scripts/p54-selection-function.ts",
+        "sha256": "da316a3a30627895e265a00c90e411b5ec54eae4534cebae03328ec3e5e05845"
+      }
+    ]
   },
   "dilutions": [
     1,

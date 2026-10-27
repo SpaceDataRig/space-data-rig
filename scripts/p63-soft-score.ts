@@ -14,6 +14,11 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { blendLikelihood, falseVetoAtThreshold, type SoftVetoCase } from "../src/candidate/softScore.ts";
+// ROUND-26: no stamp meant no attestation -- the library could only call this row `unattested`, and a reader had no
+// way to check that the P61 hypotheses it re-derives are still the ones that produced the published operating point.
+// buildStamp writes generatedAt + gitSha + a sha256 per input; the input list is the report this script actually
+// reads plus the scoring module and the script itself, so a later edit to either shows up as staleness.
+import { buildStamp } from "./report-freshness.ts";
 
 const p61 = JSON.parse(readFileSync("reports/p61-llm-hypothesis.json", "utf8"));
 const targets: any[] = p61.targets || [];
@@ -69,6 +74,7 @@ if (scored.length < 4) {
       nScored: scored.length, nPositives: nPos, nNegatives: nNeg,
       signals: "blendLikelihood over available per-target psf-localize offset (arcsec) + gaia-dilution factor from the P61 --deep run",
       note: "soft continuous blend-likelihood as an ADVISORY ranking weight; its false-kill rate published here; NOT a gate; nothing anchored or claimed.",
+      ...buildStamp(["reports/p61-llm-hypothesis.json", "src/candidate/softScore.ts", "scripts/p63-soft-score.ts"]),
     },
     meanBlendLikelihood: { planets: meanPos, blends: meanNeg },
     operatingPoint: { threshold: op.threshold, falseVetoRate: op.falseVetoRate, falseKills: op.falseKills, nPlanets: op.nPlanets, blendCatchRate: op.blendCatchRate, caughtBlends: op.caughtBlends, nBlends: op.nBlends, blendCatchCI: op.blendCatchCI },

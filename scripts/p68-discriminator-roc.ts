@@ -25,6 +25,12 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { wilsonInterval } from "../src/sim/completenessGrid.ts";
+// ROUND-26: the published verdict here ("NO-GATE-CONFIRMED") is exactly the kind of claim a reader should be able to
+// re-derive, yet the report carried no stamp, so the library could only call it `unattested`. buildStamp writes
+// generatedAt + gitSha + a sha256 per input; re-running reproduces the committed numbers byte for byte, so the missing
+// thing was the checkable provenance, not a drift. Inputs: the P61 report whose per-target metrics are re-used, the
+// interval module the CIs come from, and this script.
+import { buildStamp } from "./report-freshness.ts";
 
 interface Audit { metric: number; determined: boolean; outcome: string }
 interface Target { name: string; isBlend: boolean; audit: Record<string, Audit> }
@@ -127,6 +133,7 @@ function main(): void {
       generatedBy: "scripts/p68-discriminator-roc.ts", nPos, nNeg, source: "reports/p61-llm-hypothesis.json per-target continuous metrics (offline re-derivation, no new data, no re-analysis)",
       positiveClass: "known planets (false-kill = flagging one)", blendClass: "labelled FP/EB (catch-rate = flagging one)", aucConvention: "blend is the positive class; score oriented so higher = more blend-like; Mann-Whitney AUC",
       note: "maps the full threshold trade-off P61 collapsed to a single binary cut; answers whether ANY operating point rejects blends without killing known planets.",
+      ...buildStamp(["reports/p61-llm-hypothesis.json", "src/sim/completenessGrid.ts", "scripts/p68-discriminator-roc.ts"]),
     },
     discriminators: results,
     bestTest, bestAuc: maxAuc,

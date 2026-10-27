@@ -6,7 +6,23 @@
     "nPositives": 16,
     "nNegatives": 12,
     "signals": "blendLikelihood over available per-target psf-localize offset (arcsec) + gaia-dilution factor from the P61 --deep run",
-    "note": "soft continuous blend-likelihood as an ADVISORY ranking weight; its false-kill rate published here; NOT a gate; nothing anchored or claimed."
+    "note": "soft continuous blend-likelihood as an ADVISORY ranking weight; its false-kill rate published here; NOT a gate; nothing anchored or claimed.",
+    "generatedAt": "2026-10-27T00:41:55.506Z",
+    "gitSha": "72d2eed8ac27aaa9099520b57bcb63d3d8e3dd6b",
+    "inputs": [
+      {
+        "path": "reports/p61-llm-hypothesis.json",
+        "sha256": "91dc97273e9b7c6832c1f6d4974b5023ed45da04226692bd28d21d6c0e2317b8"
+      },
+      {
+        "path": "src/candidate/softScore.ts",
+        "sha256": "8935f758cfb222d3dd4f162ae7b9b96d798225fdb79b048827e7623b351b44f5"
+      },
+      {
+        "path": "scripts/p63-soft-score.ts",
+        "sha256": "49ccc134896b43ecdae68e22e2829e25ab838bd59a6c72f2a5840b00e03e43c6"
+      }
+    ]
   },
   "meanBlendLikelihood": {
     "planets": 0.3867674186195358,

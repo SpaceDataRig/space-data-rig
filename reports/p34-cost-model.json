@@ -2,37 +2,49 @@
   "meta": {
     "generatedBy": "p34-cost-model",
     "source": "reports/p33-catalog.json",
-    "sampleN": 33,
+    "sampleN": 204,
     "refSectors": 2,
-    "runsPerCurve": 7
+    "runsPerCurve": 7,
+    "generatedAt": "2026-10-27T00:41:53.838Z",
+    "gitSha": "72d2eed8ac27aaa9099520b57bcb63d3d8e3dd6b",
+    "inputs": [
+      {
+        "path": "reports/p33-catalog.json",
+        "sha256": "14261d12f39bd00fae1e16361f82e708535860ba13ad41473a7c8b0a441b8aca"
+      },
+      {
+        "path": "scripts/p34-cost-model.ts",
+        "sha256": "17eeb26332f5f5a4802b923e7419168d22bf68c80b3fd23676047a297692ad84"
+      }
+    ]
   },
   "fit": {
-    "p": 2.936437697567511,
-    "k": 8.567072253757234e-7,
-    "r2": 0.8366052738431159,
-    "n": 33
+    "p": 2.8730627278616767,
+    "k": 9.481953647640352e-7,
+    "r2": 0.7880192356593715,
+    "n": 204
   },
   "measured": {
-    "meanPerCurveMs": 27856.666666666668,
-    "meanSingleDetSeconds": 3.9795238095238097,
-    "meanPoints": 2899.121212121212
+    "meanPerCurveMs": 15838.078431372549,
+    "meanSingleDetSeconds": 2.2625826330532215,
+    "meanPoints": 2649.357843137255
   },
-  "doublingCostFactor": 7.65518741084978,
+  "doublingCostFactor": 7.326188024441381,
   "cpuHours": [
     {
       "stars": 1000,
       "bySectors": [
         {
           "sectors": 1,
-          "cpuHours": 0.14440185734140906
+          "cpuHours": 0.08578747552633822
         },
         {
           "sectors": 2,
-          "cpuHours": 1.1054232804232804
+          "cpuHours": 0.6284951758481171
         },
         {
           "sectors": 4,
-          "cpuHours": 8.462222379956563
+          "cpuHours": 4.604473830717655
         }
       ]
     },
@@ -41,15 +53,15 @@
       "bySectors": [
         {
           "sectors": 1,
-          "cpuHours": 0.7220092867070455
+          "cpuHours": 0.4289373776316911
         },
         {
           "sectors": 2,
-          "cpuHours": 5.527116402116403
+          "cpuHours": 3.1424758792405854
         },
         {
           "sectors": 4,
-          "cpuHours": 42.311111899782816
+          "cpuHours": 23.022369153588272
         }
       ]
     },
@@ -58,15 +70,15 @@
       "bySectors": [
         {
           "sectors": 1,
-          "cpuHours": 2.888037146828182
+          "cpuHours": 1.7157495105267644
         },
         {
           "sectors": 2,
-          "cpuHours": 22.10846560846561
+          "cpuHours": 12.569903516962341
         },
         {
           "sectors": 4,
-          "cpuHours": 169.24444759913126
+          "cpuHours": 92.08947661435309
         }
       ]
     }

@@ -611,7 +611,7 @@ the Actions web page when the anonymous API is rate-limited.
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
 
-## 13. Current state (as of 2026-10-26)
+## 13. Current state (as of 2026-10-27)
 
 SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -620,6 +620,25 @@ revision it was built from -- because the next reader treats this block as live 
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
+- Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
+  closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
+  `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
+  row) shows the offline 5 were blocked by something else entirely -- their generators wrote no stamp at all, and p79
+  declared `inputs` as bare path strings, the shape the gate documents as unhashable. All five (`p34`, `p54`, `p63`,
+  `p68`, `p79`) now call `buildStamp` over what they actually read plus their own source. Re-running them: four are
+  byte-identical apart from the stamp, and p34 moves almost every published figure because its input catalog had grown
+  33 -> 204 curves -- p 2.936 -> 2.873, R^2 0.837 -> 0.788, doubling cost factor 7.655 -> 7.326 -- with no alarm
+  anywhere, since an unstamped row is never compared to anything. Library after the rebuild: 56 rows / 22 stamped / 21
+  verified / 21 fully verified / 0 stale, unattested 39 -> 34, re-derived independently by the round-25 recheck with
+  `findings=0`. **The finding worth handing over:** following p34's numbers outward found `web/research.json` -- the
+  asset the digest links publicly as "Numbers + data", whose `compute` block `web/app.js` renders as a metric card --
+  last built 2026-10-20 and never re-checked, so it still published the old exponent AND an `addressable` veto block
+  (`caught 2 of 13, AUC 0.742`) that the re-measured, stamped `reports/p59-offtarget-subset.json` no longer supports
+  (its own counts are 0/0). Live read-back confirms the stale bundle is what visitors get. Rebuilt here; the currency
+  GATE for that surface is the next increment (R26-8), plus p91's stamp, which sits under a third key (`stamp`) that no
+  reader looks at (R25-7's "both shapes" was itself an undercount) and two rows published with no JSON artifact at all
+  (R26-6). Open items, in priority order: research-bundle currency gate; p91 writer fix + networked re-run; the 32
+  stamp-less generators (a five-line edit each, then the `freshness-regen` fleet); p89/p33/p39 when MAST answers.
 - Git: rounds 22-25 (all 2026-10-26) are CI-only work on the FEED and the REPORTING gate, not the rig: 22 added the empty-window
   pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
   vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
@@ -686,7 +705,11 @@ authority; they are deliberately not restated here.
   `git log` is the authority there.
 - Production: wrangler version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa
   (deployed 2026-10-26T13:07:58Z by round-25 through `npm run cf:deploy:sha`, re-read live from `GET /health`),
-  `codeVersion space-data-rig@0.2.0`. **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
+  `codeVersion space-data-rig@0.2.0`. **ROUND-26 AWAITING DEPLOY:** round-26 rebuilds served assets (`web/research.json`
+  plus `web/reports/index.json` and six fragments) and touches no `src/` file, so the version named above is still what
+  the public sees -- including the stale p34 exponent in `/research.json`, confirmed by read-back rather than assumed.
+  The bullet keeps naming 8aad1dd as the revision actually measured, and the new version id goes here only after
+  `GET /health` and `GET /research.json` agree with this tree. **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
   `src/` file, but round-25 changed two SERVED assets (`web/app.js`, `web/reports/index.json` + fragments), and no
   workflow in this repository deploys -- so a committed-and-green asset fix is not public. Before acting the live site
   still served the 2026-10-23 library (`verified: 15`, p88 unverified) from the previous version b0d9ed9f-114e-4c03-9bbe-266bd0bdf4ac /
@@ -762,7 +785,16 @@ authority; they are deliberately not restated here.
   `/health` `gitSha=8aad1dd2edf3...`, `deployVersion=f1a50e51-104c-4838-86cb-f9827c426cd2`, `/reports/index.json`
   carrying the 16/16 counts, served `app.js` containing the earned-badge predicate.
 
-- Tests: 129 files / 1007 tests as this snapshot was re-taken 2026-10-26 (round-25 added `tests/p86-stale-alarm.test.ts`
+- Tests: 130 files / 1011 tests as this snapshot was re-taken 2026-10-27. Round-26 added
+  `tests/generator-stamped-reports.test.ts` (+4), which is the pin behind R26-2: for each of the five generators that
+  could run offline it requires the SOURCE to call `buildStamp`, the ARTIFACT to record a non-null checksum for every
+  input with every input tracked and still matching the bytes on disk, and the built INDEX to call the row `verified`
+  rather than merely `stamped` -- so neither deleting the wiring nor hand-editing a stamp into JSON survives.
+  `scripts/audit/mutate26-stamp-test.mjs` proves it fires: dropping p79's `buildStamp` call turns 2 of 4 red (the source
+  check and the self-referential checksum), corrupting one recorded checksum turns 1 red and names the stale input, and
+  the drill restores both files and re-runs to 4/4; the drill's own limit is recorded in R26-9 (the index-level case did
+  not fail on the corrupted artifact, because the index predates the corruption). Round-25 added
+  `tests/p86-stale-alarm.test.ts`
   (+4), the first file in the suite to EXECUTE `scripts/p86-report-library.ts`: it builds a throwaway git repo holding one
   stamped report over one tracked input, runs the real script, and asserts the alarm -- exit 1 plus `refusing to publish
   1 stale report` on a tampered input, and that `--allow-stale` keeps the red banner and the `freshness.stale` entry while

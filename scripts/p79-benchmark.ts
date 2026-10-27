@@ -17,6 +17,11 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { blsTransitSnr, tceAccepts, daveBlendedFpp, fitTpmLogistic, tpmCompletenessProbability, type CompletenessPoint } from "../src/detect/benchmark.ts";
+// ROUND-26: this generator declared its inputs as a hand-written array of BARE PATH STRINGS -- the exact shape the
+// freshness gate documents as "declared but unhashable", so the row could never be published as checked. buildStamp
+// writes the same paths with a sha256 recorded at generation time, plus generatedAt + gitSha; p86 then re-hashes them
+// on every library build. The src module and this script are listed too, so a change in either reads as staleness.
+import { buildStamp } from "./report-freshness.ts";
 
 const p47 = JSON.parse(readFileSync("reports/p47-completeness-grid.json", "utf8")) as {
   meta: { minSnr: number; nHosts: number }; cells: { periodLo: number; periodHi: number; depthLo: number; depthHi: number; n: number; k: number; completeness: number; ciLow: number; ciHigh: number }[];
@@ -87,7 +92,8 @@ const published = {
 
 const json = {
   meta: {
-    generatedBy: "scripts/p79-benchmark.ts", inputs: ["reports/p47-completeness-grid.json", hasP78 ? "reports/p78-blind-multisector.json" : "(p78 pending)"],
+    generatedBy: "scripts/p79-benchmark.ts",
+    ...buildStamp(["reports/p47-completeness-grid.json", "reports/p78-blind-multisector.json", "src/detect/benchmark.ts", "scripts/p79-benchmark.ts"]),
     assumptions: { cadenceMin: CADENCE_MIN, baselineDays: BASELINE_DAYS, noisePpm: NOISE_PPM, durationModel: "3h * (P/4)^0.6 capped 12h", tceSnrThresh: p47.meta.minSnr, ebPriorShortPeriod: 0.015 },
     note: "core-statistic re-implementations of TCE/DAVE/TPM run on OUR measured data; NOT their production pipelines; published numbers are cross-instrument orientation only.",
   },

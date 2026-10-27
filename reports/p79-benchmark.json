@@ -1,9 +1,25 @@
 {
   "meta": {
     "generatedBy": "scripts/p79-benchmark.ts",
+    "generatedAt": "2026-10-27T00:41:57.177Z",
+    "gitSha": "72d2eed8ac27aaa9099520b57bcb63d3d8e3dd6b",
     "inputs": [
-      "reports/p47-completeness-grid.json",
-      "reports/p78-blind-multisector.json"
+      {
+        "path": "reports/p47-completeness-grid.json",
+        "sha256": "310f51a5970428b93cea111a7fc508a542108cb5e35ec60da8be2b2f7dcfdad7"
+      },
+      {
+        "path": "reports/p78-blind-multisector.json",
+        "sha256": "85a5e42f0f0d728e5c6dfdacfad56c4b445a7aaf5a512e05c6f8cfa614b3dcdb"
+      },
+      {
+        "path": "src/detect/benchmark.ts",
+        "sha256": "bceacc2180ed272c88f90b7ba0f26654064be4137ed97c7b5c3c159df1b65a60"
+      },
+      {
+        "path": "scripts/p79-benchmark.ts",
+        "sha256": "3e960c9b157d19f14532288f7dbd4b8c9086d3cf282c0dd18c9d004f78d76939"
+      }
     ],
     "assumptions": {
       "cadenceMin": 2,

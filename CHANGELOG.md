@@ -5,6 +5,104 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Twenty-sixth round (the unstamped half of the corpus): "unattested: 39" turned out to be three different problems, and one of them was hiding a real drift (2026-10-26)
+Round-25 closed with 39 of 56 published reports carrying no attestation at all, and the ledger's explanation was
+"re-running their generators mostly needs network". That sentence is true and useless: it treats 39 rows as one
+problem. Round-26 starts by measuring the difference instead of repeating the claim.
+- **R26-1, the census, done offline and made to account for itself.** `scripts/audit/unattested-census26.mjs` sorts
+  every unattested row by whether its generator could run on a machine with no network at all (reads only
+  `reports/` + `tests/fixtures/`, no fetch/http/URL). Result: **5 offline-capable, 34 network-bound, 39 accounted
+  for** -- the script asserts its own bucket arithmetic against the row count and exits non-zero if a row goes
+  unclassified, because round-25's lesson was that a checker which silently skips a row reports agreement instead of
+  coverage.
+- **R26-2, the real reason those 5 were unattested was not the network: their generators never wrote a stamp.** Each
+  of `p34-cost-model`, `p54-selection-function`, `p63-soft-score`, `p68-discriminator-roc`, `p79-benchmark` builds a
+  `meta` block by hand and calls no `buildStamp`, so re-running them -- offline or not -- could never have produced a
+  checkable input. p79 was worse in a specific way: it declared `inputs` as an array of bare path *strings*, the exact
+  shape `report-freshness.ts` documents as "a name with nothing to compare", so its row could not verify even though it
+  looked like it had provenance. All five now import `buildStamp` and stamp the files they actually read plus their own
+  source, so a later edit to the model code shows up as staleness too.
+- **R26-3, what the missing stamp had been hiding: p34's published numbers were already wrong for its own input.**
+  Re-running the cost model moved almost everything, because its input catalog `reports/p33-catalog.json` had grown
+  from 33 curves to 204 since the numbers were frozen: sampleN 33 -> 204, fit exponent p 2.936 -> 2.873, k
+  8.567e-7 -> 9.482e-7, R^2 0.837 -> 0.788, mean per-curve ms 27857 -> 15838, doubling cost factor 7.655 -> 7.326. No
+  gate fired, and none *could* have: an unstamped row is never compared to anything. The other four reproduce
+  byte-identically -- their diffs are the stamp fields and one JSON comma each -- which is why this is worth stating
+  precisely: the absence of a stamp does not mean the numbers moved, it means nobody knew whether they had.
+- **R26-3a, the claim in the draft of this entry was wrong, and the correction is the bigger finding.** The first draft
+  said "no published material quotes the p34 cost numbers, so the refresh moves a report page, not a cited figure".
+  Searching `web/` properly disproves it: `scripts/p38-research-bundle.ts` distils `reports/*.json` into
+  `web/research.json`, and `web/app.js` renders that bundle's `compute` block as a visible metric card --
+  `scaling exponent ~${cm.exponentP.toFixed(2)} (R^2 ${cm.r2.toFixed(2)})`. Re-running p38 refreshed the committed
+  bundle to `exponentP 2.873 / r2 0.788 / sampleN 204`, while the file in `HEAD` still said `2.936 / 0.837 / 33`. In
+  prose no post quotes the exponent (`git grep` over the devlogs, README, RESEARCH, HANDOFF and CHANGELOG for
+  `2.936`, `2.94`, `7.7x` returns nothing), so the reach is the rendered card, not a feed line.
+- **R26-3b, and it was not only p34: the public bundle had no currency gate at all.** `web/research.json` is the asset
+  the digest itself links as "Numbers + data", yet nothing rebuilds it in CI and no test compares it to the reports it
+  claims to summarise. It was last generated 2026-10-20T04:01Z; two of its sources have been re-measured since, on the
+  networked `freshness-regen` fleet, and the bundle kept publishing the older figures:
+  `trueVetoAcceptance.addressable` still showed `caught 2 of 13 negatives, vetoPower 0.154 [0.043, 0.422], AUC 0.742`
+  while the committed `reports/p59-offtarget-subset.json` (stamped 2026-10-22, inputs tracked) records
+  `addressableNegatives: 0, caughtOnAddressable: 0` -- the refreshed bundle publishes `0 of 0, vetoPower null, AUC 0`,
+  which is weaker and true. Checked before attributing it to the bundler: p38 reads
+  `p59.counts.addressableNegatives` and the current artifact really does carry zeros, so this is a stale-summary being
+  corrected, not a missing-key default. `multiSourceNoveltyP76` moves the same way (novel 5 -> 4, and its row goes from
+  `stamped: false / snapshotAt: null` to the stamp the re-run wrote).
+- **R26-3c, measured on the live endpoint before and after, because R25-10 set that rule.** `GET
+  https://spacedatarig.app/research.json` answered HTTP 200 in 34.5 s with `generatedAt 2026-10-20T04:01:42.762Z`,
+  `compute {p: 2.936437697567511, r2: 0.8366052738431159, sampleN: 33}` and `addressable {negatives: 13, caught: 2,
+  auc: 0.7423076923076923}`. That is the number a visitor sees today. The refreshed bundle is therefore deployed in
+  this increment, not queued: publishing a figure its own source report no longer supports is the exact failure the
+  freshness gate exists to prevent, and the gate simply never covered this surface.
+- **R26-4, counts after the refresh, and what they are not.** The library rebuilt to 56 rows / 22 stamped / 21
+  verified / 21 fully verified / **0 stale**, so unattested went 39 -> 34. `scripts/audit/freshness-recheck.mjs`
+  re-derives all of it without importing the audited module: `rows=56 opened=54 absent=2 unstamped-artifacts=32
+  stamped=22/22 (flat-shaped=2) verified=21/21 findings=0`. None of this is live yet -- the site still serves the
+  round-25 build, and "shipped" will not be written until it is read back from the endpoint (R25-10's rule).
+- **R26-5, a third stamp shape that neither the gate nor round-25's checker could see.** `scripts/audit/stamp-shapes26.ts`
+  walks every artifact in `reports/` for a `generatedAt` anywhere in the document and asks whether the gate's reader
+  would find it. One row does: `p91-claim-provenance.json` writes a complete, checksum-bearing stamp under the key
+  `stamp`, which neither `obj.meta` nor the flat top level reaches. So round-25's conclusion "both stamp shapes are now
+  understood" was itself an undercount -- the honest statement is "two of the three shapes that exist". Measured before
+  touching anything: two of p91's three recorded inputs still match this checkout, and the third is its own generator,
+  which has been edited since the run -- so if the reader were widened to see p91's stamp, p91 would publish **stale**,
+  not verified. Decision recorded rather than guessed: fix the writer (emit into `meta` like the other 50) rather than
+  reinterpret the reader's contract, and re-run it where its citation endpoints answer. OPEN at this commit.
+- **R26-6, two rows the site publishes with no machine-readable artifact at all.** `p33-scale-roc` and
+  `p39-instrumental-fp` have an `.md` and a served fragment but no JSON artifact in the repository at all, so nothing
+  about them can be re-derived by anyone. The recheck counts them under `absent=2` as an *observation*, which is how a
+  permanent hole stays politely invisible: "every published count reproduced" says nothing about a row that cannot be
+  reproduced by construction. Decided to keep it as an observation with a named list rather than promote it to a
+  blocking finding that would sit red for days -- but the census prints the ids, and they are the first thing to fix
+  once MAST answers. OPEN.
+- **R26-7, second-pass census: "34 unattested" is not one number either.** `scripts/audit/unattested-blockers26.mjs`
+  splits the remainder by what actually blocks each row, using only tracked files: **32** generators still write no
+  stamp at all (bucket C -- the same edit round-26 made five times, then a networked re-run), **2** already stamp but
+  their committed artifact predates the wiring (bucket A: p81, p91), **0** unopenable, **0** without a generator, and
+  the arithmetic checks out at 34/34. That kills the vaguer framing "34 need network": p81's and p91's artifacts are
+  stale-by-omission, not unreachable, and 32 of the rest are a code change waiting for a runner.
+- **R26-8, OPEN: the bundle has now been corrected once by hand, which is not a fix.** Nothing prevents
+  `web/research.json` from drifting behind `reports/` again, and the same 6-day gap will recur the next time the
+  networked fleet re-measures a source. The gate that should exist is a rebuild-and-compare: generate the bundle into a
+  scratch path (p38 currently writes to `web/research.json` unconditionally, so it needs an output argument first) and
+  fail when the committed bundle differs from the fresh one in anything but its own `generatedAt`. The stale bundle
+  this round found is the positive control -- the test can be written against the bytes that are already in `HEAD`, so
+  it is provably capable of failing on the real fault rather than on an invented one. Scheduled for the next increment.
+Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
+source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be
+tracked *and* still match the bytes on disk, and the built index must call the row verified rather than merely stamped.
+Mutation-checked with `scripts/audit/mutate26-stamp-test.mjs`, which restores both files byte-for-byte and re-runs:
+deleting p79's `buildStamp` call turns 2 of 4 red (the source check *and* the self-referential checksum, which is the
+point of stamping a generator's own file); corrupting one recorded checksum turns 1 red and names the input it is stale
+against; restored gives 4/4. The drill also exposes its own limit and it is recorded here rather than hidden: the
+index-level case did **not** fail on the corrupted artifact, because the index was built before the corruption -- so the
+reproduction case, not the publication case, is the sharp one.
+
+Close: suite 1007 -> **1011** pass / 0 fail (130 files, +1 file / +4 tests), `typecheck:all` 0, `eslint
+--max-warnings 0` clean. No `src/` change and no `web/app.js` change in this increment; the shipped surfaces are
+`reports/`, `scripts/`, `web/reports/` and `web/research.json`. `discoveryClaim` stays false in every report touched,
+`ledgerAnchored` stays 23, and no anchor or wallet operation is involved.
+
 ### Twenty-fifth round (audit of the REPORTING gate, then of the audit of it): the freshness verdicts reproduce independently, the alarm nobody had ever heard now rings, and the round's own checker turned out to have the same blind spot (2026-10-26)
 Round-25 rotates off the X channel onto the surface round-23's public post leaned on: `scripts/report-freshness.ts` +
 `scripts/p86-report-library.ts`, the gate that decides which reports the site may call machine-checked. Method, same as

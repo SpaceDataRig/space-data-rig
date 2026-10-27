@@ -1,6 +1,6 @@
 {
   "schema": "sdr-research/1",
-  "generatedAt": "2026-10-27T00:54:33.209Z",
+  "generatedAt": "2026-10-27T01:40:51.457Z",
   "generatedBy": "scripts/p38-research-bundle.ts (from committed reports/)",
   "note": "Research characterization on real public TESS-SPOC photometry. These are measurements of the pipeline's operating point and independent cross-checks -- NOT discoveries. Purity is a lower bound: a genuine but unconfirmed planet is counted as a false positive.",
   "survey": {
@@ -315,12 +315,15 @@
       "auc": 0.565625
     },
     "addressable": {
-      "negatives": 0,
-      "excludedOnTargetOnly": 0,
-      "caught": 0,
-      "vetoPower": null,
-      "vetoPowerCI": null,
-      "auc": 0
+      "negatives": 13,
+      "excludedOnTargetOnly": 3,
+      "caught": 2,
+      "vetoPower": 0.15384615384615385,
+      "vetoPowerCI": [
+        0.04325726318273798,
+        0.4223517050863101
+      ],
+      "auc": 0.7423076923076923
     },
     "caveat": "FP/EB labels mix off-target blends (catchable by localization) with on-target eclipsing binaries (not catchable), so the all-negatives power is a lower bound until the resolved-companion subset; a single known-planet false kill disqualifies the gate.",
     "safeToGate": false,
@@ -552,7 +555,7 @@
       "novelUnion": 4,
       "shrink": 0,
       "n": 4,
-      "snapshotAt": "2026-10-21T07:04:04.597Z",
+      "snapshotAt": "2026-10-27T01:39:57.201Z",
       "stamped": true,
       "presentedAs": "point-in-time snapshot, NOT a live figure: the committed run predates the RA-unit coordinate fix and its ExoFOP-TESS leg is a single anonymous ~3.8 MB CSV that a slow/throttled mirror cannot re-fetch within the timeout, so this has not been continuously re-verified."
     },

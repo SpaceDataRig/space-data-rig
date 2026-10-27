@@ -7,22 +7,22 @@ on-target eclipsing binaries (which it legitimately cannot). P59 splits the nega
 resolved-contaminant test: keep only cases with a companion star resolved >= 1.5" inside
 the ~21" aperture -- the regime where a displaced source is physically possible -- and measure there.
 
-Of 0 negatives with a catalog position, **0** had a resolved contaminant
-(localization-addressable) and 0 had none (on-target / unresolved, excluded from the denominator).
+Of 16 negatives with a catalog position, **13** had a resolved contaminant
+(localization-addressable) and 3 had none (on-target / unresolved, excluded from the denominator).
 
-**Refined catch-rate on the addressable subset: 0/0.** 2x2 {"trueVeto":0,"missedBlend":0,"falseVeto":1,"trueKeep":19}.
-- veto power (addressable): n/a 
+**Refined catch-rate on the addressable subset: 2/13.** 2x2 {"trueVeto":2,"missedBlend":11,"falseVeto":1,"trueKeep":19}.
+- veto power (addressable): 15% (95% CI 0.04-0.42)
 - false-veto rate: 5% (unchanged -- a known planet wrongly killed; the disqualifier)
-- ROC AUC on the addressable set: 0.000 vs P59's recompute of the all-negatives set 0.691 (P58 reported 0.694 before the offsets were rounded into this report)
+- ROC AUC on the addressable set: 0.742 vs P59's recompute of the all-negatives set 0.691 (P58 reported 0.694 before the offsets were rounded into this report)
 
 Removing the on-target eclipsing binaries (which localization cannot separate) sharpens the
-discrimination -- AUC rises -- but the catch-rate stays low: of the 0 addressable
+discrimination -- AUC rises -- but the catch-rate stays low: of the 13 addressable
 negatives most carried a resolved companion several arcsec off the host and were still NOT vetoed,
 and the single catch's offset did not coincide with the known companion's position. So even in the
 regime a localization veto is built for, this PSF method is weak and its off-target flags do not
 reliably land on the real contaminant -- a cleaner confirmation that it is not a usable blend-finder.
 
-**VERDICT (addressable subset): safeToGate = false.** no labelled blends in the sample -- veto power is unmeasurable (need a negative class)
+**VERDICT (addressable subset): safeToGate = false.** 1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate
 
 ## Honest limits
 

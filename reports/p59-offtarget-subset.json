@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generatedAt": "2026-10-22T04:27:04.632Z",
-    "gitSha": "e9f870e4ad03a74f3dbc473d1dc83ba3bd96ce24",
+    "generatedAt": "2026-10-27T01:40:49.051Z",
+    "gitSha": "18ce13096301d055ccdde810afa74711e9874f66",
     "inputs": [
       {
         "path": "reports/p58-veto-2x2.json",
@@ -27,35 +27,162 @@
   "counts": {
     "p58Negatives": 16,
     "p58Positives": 20,
-    "negativesWithPosition": 0,
-    "addressableNegatives": 0,
-    "excludedOnTargetOnly": 0,
-    "caughtOnAddressable": 0
+    "negativesWithPosition": 16,
+    "addressableNegatives": 13,
+    "excludedOnTargetOnly": 3,
+    "caughtOnAddressable": 2
   },
   "refined": {
     "safeToGate": false,
-    "reason": "no labelled blends in the sample -- veto power is unmeasurable (need a negative class)",
+    "reason": "1 real planet(s) wrongly vetoed (max 0) -- measure-before-gate disqualifies the gate",
     "cm": {
-      "trueVeto": 0,
-      "missedBlend": 0,
+      "trueVeto": 2,
+      "missedBlend": 11,
       "falseVeto": 1,
       "trueKeep": 19
     },
-    "vetoPower": null,
-    "vetoPowerCI": null,
+    "vetoPower": 0.15384615384615385,
+    "vetoPowerCI": [
+      0.04325726318273798,
+      0.4223517050863101
+    ],
     "falseVetoRate": 0.05,
     "falseVetoCI": [
       0.008881219432873136,
       0.23613589351256675
     ],
-    "auc": 0
+    "auc": 0.7423076923076923
   },
   "allNegativesPower": {
     "vetoPower": 0.125,
     "auc": 0.690625
   },
-  "addressableCases": [],
-  "excludedCases": [],
+  "addressableCases": [
+    {
+      "tic": 297967252,
+      "psfOffsetArcsec": 29.25,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 8.11,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 458856474,
+      "psfOffsetArcsec": 106.214,
+      "psfClassification": "off-target",
+      "nearestCompanionSepArcsec": 3.66,
+      "psfVeto": true,
+      "crossCheck": "offset 106.2\" vs nearest companion 3.7\" (does not line up)"
+    },
+    {
+      "tic": 412961700,
+      "psfOffsetArcsec": 20.683,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 4.2,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 269450900,
+      "psfOffsetArcsec": 23.479,
+      "psfClassification": "off-target",
+      "nearestCompanionSepArcsec": 12.6,
+      "psfVeto": true,
+      "crossCheck": "offset 23.5\" vs nearest companion 12.6\" (does not line up)"
+    },
+    {
+      "tic": 270238522,
+      "psfOffsetArcsec": 19.361,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 5.98,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 97700520,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "nearestCompanionSepArcsec": 13.91,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 96246348,
+      "psfOffsetArcsec": 0,
+      "psfClassification": "on-target",
+      "nearestCompanionSepArcsec": 2.05,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 143350972,
+      "psfOffsetArcsec": 46.957,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 6.51,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 294090620,
+      "psfOffsetArcsec": 45.558,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 19.47,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 117979850,
+      "psfOffsetArcsec": 10.708,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 9.44,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 447283466,
+      "psfOffsetArcsec": 45.094,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 9.19,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 305943739,
+      "psfOffsetArcsec": 142.479,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 8.99,
+      "psfVeto": false,
+      "crossCheck": ""
+    },
+    {
+      "tic": 9858404,
+      "psfOffsetArcsec": 15.397,
+      "psfClassification": "inconclusive",
+      "nearestCompanionSepArcsec": 3.21,
+      "psfVeto": false,
+      "crossCheck": ""
+    }
+  ],
+  "excludedCases": [
+    {
+      "tic": 20182165,
+      "nearestCompanionSepArcsec": null,
+      "psfVeto": false,
+      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
+    },
+    {
+      "tic": 364107753,
+      "nearestCompanionSepArcsec": 1.33,
+      "psfVeto": false,
+      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
+    },
+    {
+      "tic": 138017750,
+      "nearestCompanionSepArcsec": null,
+      "psfVeto": false,
+      "why": "no resolved companion in aperture -- on-target / unresolved, localization cannot address"
+    }
+  ],
   "discoveryClaim": false,
   "safeToGate": false
 }

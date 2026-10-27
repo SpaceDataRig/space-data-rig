@@ -394,9 +394,9 @@
     "passed": 5,
     "failed": []
   },
-  "stamp": {
-    "generatedAt": "2026-10-18T13:45:33.315Z",
-    "gitSha": "f78241fe3205a21722191938f60744cee24c13ad",
+  "meta": {
+    "generatedAt": "2026-10-27T01:40:51.109Z",
+    "gitSha": "18ce13096301d055ccdde810afa74711e9874f66",
     "inputs": [
       {
         "path": "reports/p91-claims.json",
@@ -408,7 +408,7 @@
       },
       {
         "path": "scripts/p91-claim-provenance.ts",
-        "sha256": "9e63b4f39cbce1c67d6c5aa329da7e4374050ec96e998af37b7472801358e4b9"
+        "sha256": "d5404bc27bb7c4f0b6ac104b37af4f3a4c6516aab00dabd2423060ed653f9c09"
       }
     ]
   }

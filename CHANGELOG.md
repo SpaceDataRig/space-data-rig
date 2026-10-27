@@ -218,6 +218,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   mine read a moving slot and called it a control; the lesson is the same one from R26-8 (a gate and its control must
   not share a file) sharpened to *history*: a control must be anchored to the fact it demonstrates, not to where that
   fact happened to sit when the test was written.
+- **R26-18, the reproduce-command ratchet pruned its own exemption the moment the fleet made it false -- the both-ways
+  list earning its keep.** R26-15 excused four rows for lacking a `reproduce` command, one of them `p91-claim-provenance`
+  with the explicit reason "code fixed, awaiting the networked fleet arm to re-run it". This push triggered that arm: the
+  fleet re-ran p91 live against the generator that now emits the line, published `5e4d683`, and `reports/p91-claim-provenance.md`
+  gained `Reproduce: \`npm run p91:claim-provenance\`` while its index row went `verified=true, reproducible=3`. Fast-forwarding
+  onto that publish and re-running the suite flipped the ratchet's *prune* direction red -- "these rows now DO carry a
+  reproduce command, so remove them from the allow-list" -- which is the exemption list behaving exactly as designed: it
+  does not let a fixed row keep a stale excuse that would read as a claim about the present. Fixed by dropping p91 from
+  `ALLOWED_EMPTY`, folding p91's markdown into the generator-sourced assertion (now satisfiable), and correcting the header
+  prose; three rows stay excused (p85 over a gitignored checkpoint, and the two CI-harness `crosscheck/` reports). Full
+  suite 1019/1019/0 on the integrated HEAD. No hand-edited `.md`, no offline replay to manufacture the command -- the
+  networked run produced it and the gate noticed.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

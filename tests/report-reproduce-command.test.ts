@@ -5,8 +5,9 @@
 // reports as `verified`. Freshness says the bytes match the inputs a run recorded; it says nothing about whether a
 // reader can perform that run, so a row could be machine-checked and still unrepeatable by anyone who found it on the
 // site. Round-26 fixed the two it could re-run offline (p68, p90) by adding the line to the GENERATOR -- hand-editing a
-// generated .md would recreate exactly the artifact-vs-source divergence this round has been chasing -- and the fleet
-// picks up p91's on its next live arm.
+// generated .md would recreate exactly the artifact-vs-source divergence this round has been chasing -- and the fleet's
+// live arm then picked up p91's (it re-ran with the generator that emits the line, so p91.md now carries it and has been
+// pruned from the allow-list below). Three rows remain excused, each for a named reason.
 //
 // WHY A RATCHET AND NOT A CLEAN-UP ASSERTION. The remaining ids are blocked for named, checkable reasons, not by
 // neglect, and pretending otherwise would either fail CI for days or invite a `--allow-stale`-shaped workaround. So the
@@ -22,7 +23,6 @@ const INDEX = "web/reports/index.json";
 /** Rows with no reproduce command, and the specific reason each one is still standing. */
 const ALLOWED_EMPTY: Record<string, string> = {
   "p85-contaminant-fit": "its stamp covers out/scaled/*.jsonl, a gitignored checkpoint no other checkout carries; re-running it here would restamp the row against bytes that exist on one workstation",
-  "p91-claim-provenance": "the generator now writes the Reproduce line; the committed markdown predates that edit and only the networked fleet arm (api.crossref.org) can regenerate it",
   "crosscheck/benchmark-vs-field": "produced by the LEO-Vetter CI harness, not a scripts/ generator; the fix belongs in that job's report writer",
   "crosscheck/cross-pipeline": "produced by the Python cross-pipeline CI harness (batman/wotan/astropy), which has no npm reproduce command to emit yet",
 };
@@ -64,7 +64,7 @@ test("the command comes from the generator, not from a hand-edited markdown file
     const src = readFileSync(script, "utf8");
     assert.ok(src.includes(`Reproduce: \`${cmd}\``), `${script} must emit its own reproduce command into the report markdown`);
   }
-  for (const id of ["p68-discriminator-roc", "p90-depth-estimators"]) {
+  for (const id of ["p68-discriminator-roc", "p90-depth-estimators", "p91-claim-provenance"]) {
     const md = readFileSync(`reports/${id}.md`, "utf8");
     assert.match(md, /^Reproduce: `npm run /m, `reports/${id}.md must carry the command its generator writes`);
   }

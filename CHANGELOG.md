@@ -5,6 +5,14 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Operator-directed change: X-post cadence halved to cut posting cost (2026-10-27)
+The public digest fired twice an hour (a Cloudflare `*/15` research tick dispatching x-post at `:00`/`:30`, with a
+GitHub `*/30` schedule as backup). On operator request ("cost still too high, halve the frequency") the posting cadence
+is now once an hour: `src/cf/worker.ts` wakes x-post only at `wakeMinute === 0`, and the GitHub backup `on.schedule` is
+`0 * * * *`. The `*/15` research cron is unchanged -- it drives the science loop, not posting. Every current-behavior
+comment that said "half-hourly" was updated to "hourly"; historical devlog and CHANGELOG entries that recorded the
+earlier cadence were left as accurate history. No test asserted the old `:00/:30` gate; typecheck + full suite 1028/0.
+
 ### Twenty-sixth round (the unstamped half of the corpus): "unattested: 39" turned out to be three different problems, and one of them was hiding a real drift (2026-10-26)
 Round-25 closed with 39 of 56 published reports carrying no attestation at all, and the ledger's explanation was
 "re-running their generators mostly needs network". That sentence is true and useless: it treats 39 rows as one

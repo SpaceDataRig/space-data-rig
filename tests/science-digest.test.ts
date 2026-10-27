@@ -1,4 +1,4 @@
-// Science-digest composer guard (scripts/science-digest.ts). The half-hourly X digest reports SCIENCE as a
+// Science-digest composer guard (scripts/science-digest.ts). The hourly X digest reports SCIENCE as a
 // LONG-FORM Premium post -- not commit counts, not one clipped sentence -- so composeDigest is the single place
 // that decides what the rig says in public. Offline,
 // deterministic, PURE: it takes an already-built window + data and returns text (all network/file I/O lives

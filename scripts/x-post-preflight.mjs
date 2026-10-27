@@ -1,6 +1,6 @@
-// Pre-flight for the half-hourly X digest (.github/workflows/x-post.yml).
+// Pre-flight for the hourly X digest (.github/workflows/x-post.yml).
 //
-// WHY: most half-hour windows hold nothing reportable, yet the workflow used to pay for a full dependency
+// WHY: most hourly windows hold nothing reportable, yet the workflow used to pay for a full dependency
 // install, a live-feed read and an X timeline read on every single one of them. This script answers "could
 // this window possibly hold anything?" using ONLY the cursors the previous run cached (out/x-cursors.json),
 // two cheap HTTPS reads of the public rig state, and local git -- no npm install required. When the answer

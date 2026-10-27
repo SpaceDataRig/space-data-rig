@@ -585,16 +585,17 @@ export default {
    */
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     // Reliable X-post trigger. GitHub throttles the x-post workflow's own `on.schedule` (observed 2-5h
-    // gaps), so the digest could fall silent even though THIS cron fires on time. Twice an hour, if a
+    // gaps), so the digest could fall silent even though THIS cron fires on time. Once an hour (halved from
+    // twice an hour on operator request to cut posting cost), if a
     // dispatch token is configured, wake x-post.yml; it reads its own windows off the feed (one cursor per
     // tier: science, build note, silence) and de-duplicates against what is already posted, so an extra
     // wake never double-posts. Runs before the AUTO_RESEARCH guard (posting must not depend on research
     // being on), is inert without the secret, and swallows failures -- the workflow's own schedule remains
     // a backup.
     const wakeMinute = new Date(controller.scheduledTime).getUTCMinutes();
-    if (env.GH_XPOST_DISPATCH_TOKEN && (wakeMinute === 0 || wakeMinute === 30)) {
+    if (env.GH_XPOST_DISPATCH_TOKEN && wakeMinute === 0) {
       // Best-effort wake, but NOT best-effort SILENT. An expired/revoked PAT (401) or a renamed/moved workflow
-      // (404) would otherwise stop the reliable half-hourly trigger with no signal at all, and the feed would
+      // (404) would otherwise stop the reliable hourly trigger with no signal at all, and the feed would
       // quietly fall back to GitHub's own throttled schedule (observed 2-5h gaps) -- a degradation nobody could
       // see. Surface the failure on the rig event log so /api/state and the dashboard show the dispatch is
       // degraded. The token is NEVER logged -- only the HTTP status or the error message.
@@ -613,13 +614,13 @@ export default {
         if (!r.ok) {
           await warnBestEffort(
             env,
-            `x-post dispatch wake got HTTP ${r.status} from the GitHub Actions API; the reliable half-hourly feed trigger is degraded (check the dispatch token's repo + Actions permissions). The workflow's own schedule remains a backup.`,
+            `x-post dispatch wake got HTTP ${r.status} from the GitHub Actions API; the reliable hourly feed trigger is degraded (check the dispatch token's repo + Actions permissions). The workflow's own schedule remains a backup.`,
           );
         }
       } catch (e) {
         await warnBestEffort(
           env,
-          `x-post dispatch wake failed (${e instanceof Error ? e.message : String(e)}); the reliable half-hourly feed trigger is degraded. The workflow's own schedule remains a backup.`,
+          `x-post dispatch wake failed (${e instanceof Error ? e.message : String(e)}); the reliable hourly feed trigger is degraded. The workflow's own schedule remains a backup.`,
         );
       }
     }

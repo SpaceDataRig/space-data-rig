@@ -1,5 +1,5 @@
 // SCIENCE DIGEST: compose ONE honest, English-only long-form post about the most important science the rig
-// produced in a time window, for the half-hourly X (Twitter) digest. The author is a Premium ("blue") account,
+// produced in a time window, for the hourly X (Twitter) digest. The author is a Premium ("blue") account,
 // so a post may run well past the classic 280 chars (X allows up to 25,000 weighted chars): each digest is a
 // compact multi-sentence summary -- the result, the key numbers, and the link -- rather than one clipped
 // sentence. The channel LEADS WITH SCIENCE (a result sealed on-chain, a newly flagged candidate, or a research

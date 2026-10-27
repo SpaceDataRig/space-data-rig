@@ -1,4 +1,4 @@
-// X LAST-POST (read): print TWO cursors from the authenticated account's recent tweets so the half-hourly x-post
+// X LAST-POST (read): print TWO cursors from the authenticated account's recent tweets so the hourly x-post
 // workflow can (a) tell how long the channel has actually been silent -- counting human posts too, since those are
 // visible on the feed and mean the channel is not really quiet -- and (b) give the BUILD NOTE tier its own commit
 // window. This is the read counterpart of scripts/post-x-text.ts and shares its rules: credentials come ONLY from

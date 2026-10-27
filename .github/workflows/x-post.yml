@@ -1,8 +1,8 @@
-name: x-post (half-hourly English science digest)
+name: x-post (hourly English science digest)
 
 # audit-6: DIGEST posting, not per-push. This channel used to fire on EVERY qualifying push, so a run of
 # consecutive commits produced a run of consecutive tweets with no ordering at all. It is now a digest that runs
-# every 30 minutes and posts EVERY item the window actually holds: one post per science tier that has something,
+# every hour and posts EVERY item the window actually holds: one post per science tier that has something,
 # plus one build note per batch of unreported commits.
 #
 # VOLUME IS DELIBERATELY NOT RATIONED. The earlier "at most ONE line per window" rule was written as a spam guard
@@ -38,7 +38,7 @@ name: x-post (half-hourly English science digest)
 # fallback.)
 
 # Cursors and guards:
-#  - No push trigger: a push never posts on its own. The half-hourly digest is the only automatic path.
+#  - No push trigger: a push never posts on its own. The hourly digest is the only automatic path.
 #  - THREE cursors, because each tier fires under different conditions and a shared cursor silently drops work:
 #      science  = newest tweet that is neither a build note nor a heartbeat (x-last-post `last_science`);
 #      dev      = newest BUILD NOTE on the feed (`last_build_note`), minus DEV_OVERLAP_MIN;
@@ -74,7 +74,7 @@ name: x-post (half-hourly English science digest)
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # every 30 minutes (at :00 and :30 UTC)
+    - cron: "0 * * * *" # every hour (at :00 UTC) -- halved from */30 on operator request to cut posting cost
   workflow_dispatch:
     inputs:
       text:

@@ -1,4 +1,4 @@
-// The half-hourly X digest is gated by scripts/x-post-preflight.mjs, which may stop the job BEFORE installing
+// The hourly X digest is gated by scripts/x-post-preflight.mjs, which may stop the job BEFORE installing
 // anything. That makes it the one component in this channel whose failure mode is silent: a wrong "empty" verdict
 // suppresses a post, and because skipping never advances a cursor, the suppressed item stays suppressible forever.
 // The workflow header itself records the lesson -- "composeDigest's tiers are unit-tested, but the SHELL that

@@ -638,6 +638,14 @@ the Actions web page when the anonymous API is rate-limited.
   widened scope still fires with `scripts/audit/mutate26-handoff-marker.mjs`, which strips EVERY case variant (a
   single-occurrence replace would delete the bullet's historical mention of the marker and leave the live one, so the
   drill would report success about nothing).
+- A positive control anchored to a fixed POSITION in git history decays silently as new commits land on top of it
+  (round-26, R26-17). The research-bundle currency test's control read "the second-newest revision of
+  `web/research.json`" and asserted the diff names `compute.exponentP`; that held the day it was written, then the
+  round's own refresh and the fleet's refresh both landed after it, so the slot pointed at an already-refreshed bundle
+  and the control became a no-op -- the gate passed for a whole merge while believing it had teeth, and only a rebased
+  HEAD re-running the suite exposed it. Anchor a control to the FACT it demonstrates (walk the log for the revision that
+  still carries the old figure; assert the shipped one has moved past it), never to where that fact happened to sit. The
+  same discipline as "a gate and its positive control must not read the same file", extended to history.
 
 ## 13. Current state (as of 2026-10-27)
 

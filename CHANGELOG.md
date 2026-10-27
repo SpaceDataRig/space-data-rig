@@ -202,6 +202,22 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   one-occurrence replacement would delete a mention and leave the live marker in place, reporting success about nothing)
   makes the gate red naming the same three files, and restoring gives 6/0 with the handoff byte-identical. The
   instructive part is that the failure I blamed on my ledger prose was a failure of the check's own scope.
+- **R26-17, the research-bundle currency gate's own positive control decayed to a no-op when the fleet merged, and the
+  rebased suite caught it.** Increment 2 shipped `tests/research-bundle-currency.test.ts`, whose positive control read
+  "the second-newest revision of `web/research.json`" and asserted the diff still named `compute.exponentP`. On the day
+  it was written that slot held the pre-refresh bundle (exponent 2.936). But increment 1's refresh (`e97c4fd`) and the
+  fleet's refresh (`61ca06c`) both landed *after* it, so the second-newest revision became an already-refreshed bundle
+  (2.873): the control silently stopped naming the figure it exists to prove, and the gate kept passing while believing
+  it had a working positive control. The suite caught it only on the rebased HEAD -- 1 of 1019 red, naming
+  `trueVetoAcceptance.addressable.*` as the only differences and none in `compute.exponentP`. Fixed by anchoring the
+  control to CONTENT (the newest revision that still published 2.936, located by walking `git log -- web/research.json`)
+  rather than to a fixed position, plus a guard that the shipped bundle no longer carries 2.936 -- so if the drift were
+  ever un-fixed the control fails loudly instead of going vacuous. `scripts/audit/mutate26-currency-control.mjs`
+  recomputes both anchors independently of the test: the content anchor produces 19 diffs naming the exponent, the old
+  position anchor produces 7 and does not -- the regression, reproduced. This is the third time this round a check of
+  mine read a moving slot and called it a control; the lesson is the same one from R26-8 (a gate and its control must
+  not share a file) sharpened to *history*: a control must be anchored to the fact it demonstrates, not to where that
+  fact happened to sit when the test was written.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

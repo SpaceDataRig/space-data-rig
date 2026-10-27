@@ -5,8 +5,10 @@
 // summarises, so when two of its sources were re-measured on the networked fleet the public file kept publishing the
 // older figures for six days -- including `addressable: caught 2 of 13, AUC 0.742` after the stamped
 // `reports/p59-offtarget-subset.json` had moved to 0 of 0. This round found that by following p34's drift outward, and
-// the correction itself proves the point: the previous committed revision of this asset is the stale bytes, and it is
-// the positive control below. The gate is written after a fault that had already happened, not around an imagined one.
+// the correction itself proves the point: the historical revision that published the stale exponent is the positive
+// control below, located by its content rather than by a fixed position in the log (a position-anchored control decayed
+// silently once a second refresh merged -- see the control's own comment). The gate is written after a fault that had
+// already happened, not around an imagined one.
 //
 // WHY THE COMPARISON IGNORES ONLY THE BUNDLE'S OWN TIMESTAMP. `generatedAt` legitimately changes on every rebuild; a
 // gate that cannot tell a rebuild from a re-measurement would be silenced inside a day. Everything else -- every
@@ -82,20 +84,39 @@ test("the committed research bundle equals a fresh build from the committed repo
   }
 });
 
-test("positive control: the bundle published before round-26 fails this gate, naming the figure", () => {
-  // NOT a synthetic fixture. This is the exact stale asset the gate was written for, read out of git history: the
-  // second-newest revision of web/research.json, which is the one that published p 2.936 / R^2 0.837 / sampleN 33 and
-  // an addressable veto block the re-measured p59 no longer supports.
-  const revs = git(["log", "--format=%H", "-n", "2", "--", "web/research.json"]).trim().split(/\r?\n/).filter(Boolean);
+test("positive control: the bundle that published the pre-refresh exponent fails this gate, naming the figure", () => {
+  // NOT a synthetic fixture -- this is a real historical asset, read out of git. But it is selected BY CONTENT, not by
+  // tip position. The first version of this control took "the second-newest revision of web/research.json", which
+  // happened to be the 2.936 bundle on the day it was written. The fleet then merged a SECOND refresh (`61ca06c`) on
+  // top of `e97c4fd`, so the second-newest revision became an already-refreshed bundle: the control quietly stopped
+  // naming the figure it exists to prove, and the gate passed while believing it had a positive control. That is the
+  // same decay this round keeps hitting -- a check anchored to a moving history slot. The stable anchor is the newest
+  // revision that still published the pre-refresh exponent, whatever its position turns out to be.
+  const revs = git(["log", "--format=%H", "--", "web/research.json"]).trim().split(/\r?\n/).filter(Boolean);
   assert.ok(revs.length >= 2, `expected at least two revisions touching web/research.json, found ${revs.length}`);
-  const old = git(["show", `${revs[1]}:web/research.json`]);
-  const d = diffPaths(JSON.parse(withoutOwnStamp(old)), JSON.parse(withoutOwnStamp(readFileSync(PUBLISHED, "utf8"))));
+  let control = "";
+  for (const h of revs) {
+    const blob = git(["show", `${h}:web/research.json`]);
+    if (blob.includes("2.936437697567511")) { control = blob; break; }
+  }
+  assert.ok(
+    control,
+    "no reachable revision of web/research.json published the pre-refresh exponent 2.936437697567511: the control " +
+    "cannot be built. Either this checkout's history is too shallow to reach it, or the figure changed name -- in " +
+    "which case this gate has silently lost the drift it was written to catch.",
+  );
+  const published = readFileSync(PUBLISHED, "utf8");
+  assert.ok(
+    !published.includes("2.936437697567511"),
+    "the shipped bundle still carries the pre-refresh exponent, so nothing has moved past the drift and there is no " +
+    "gap for the control to demonstrate -- the gate would be asserting a difference against itself.",
+  );
+  const d = diffPaths(JSON.parse(withoutOwnStamp(control)), JSON.parse(withoutOwnStamp(published)));
   assert.ok(d.length > 0, "the pre-refresh bundle is byte-identical to the refreshed one: the drift this gate exists for has gone invisible");
   assert.ok(
     d.some((line) => /^compute\.exponentP:/.test(line)),
     `the control must catch the figure the site renders, not only incidental fields. Differences found: ${d.slice(0, 6).join(" | ")}`,
   );
-  assert.match(old, /2\.936437697567511/, "the control revision is not the stale bundle this round found");
 });
 
 test("the bundler refuses an --out that escapes the repository instead of writing wherever it is pointed", () => {

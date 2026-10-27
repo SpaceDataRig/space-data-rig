@@ -384,6 +384,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   and git-tracked (0 absent/untracked), so those stamps would re-hash on any checkout. No generator was edited blind: the
   wiring is left as a turnkey, validated plan (the artifact half still needs the networked fleet to run), and the 23 are
   named rather than papered over with a hollow stamp.
+- **R26-30, the served library was finally read back CONCLUSIVELY from the live edge, and it matches the committed,
+  gate-verified tree -- including the 33-unattested figure R26-29 derived locally.** Every served-state read-back since
+  the R26-19 deploy had been inconclusive (R26-23 and R26-25 both hit the flaky edge and correctly refused to call a
+  timeout a pass). `scripts/audit/live-readback26.mjs` (the R26-25 three-bucket version) ran clean at exit 0 once the
+  edge answered: `/health` -> gitSha `c93a43c`, deployVersion `6a9958fa`; `/research.json` -> the refreshed compute
+  `{p 2.873, R^2 0.788, sampleN 204}` and addressable `{negatives 13, caught 2, auc 0.742}`; `/reports/index.json` -> 56
+  rows, freshness `{stamped 23, verified 22, fullyVerified 22, unattested 33, stale []}`, with the five spot-checked rows
+  all `stamped=true verified=true fresh=true`. Two things this closes: the R26-19 "what a visitor is actually shown"
+  claim is now measured, not asserted; and the served `unattested=33` independently confirms R26-29's local-tree census
+  from the public side -- the committed bytes and the served bytes agree, which is exactly the deployed-vs-inert gap the
+  round keeps probing. No redeploy was warranted: R26-20..29 touched only offline tests, audit tools and ledgers, so the
+  deployed `src/`/`web/` trees still equal HEAD's; the read-back confirms that rather than assuming it.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -435,6 +435,13 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   asserted. The other six wired generators (p35/p62/p67/p69/p73 need SPOC S3; p52 needs S3 target pixels) stay
   write-side-only until those sources return; running them now would either fail or emit a degenerate report, which is
   not attestation. Web assets changed, so this batch needs a redeploy to reach the public served index.
+- **R26-33, the public read-back was spot-checking yesterday's frontier, not today's.** `live-readback26.mjs` hard-coded its
+  spot-check list to the R26-2 offline FIVE (p34/p54/p63/p68/p79), so even after R26-32 attested p56 the conclusive served
+  read-back never actually looked at the row that had just flipped -- it confirmed a set that hadn't changed in six rounds
+  and stayed silent on the one that had. Added `p56-real-selection` to the list (renamed the key `five` -> `spotChecks`) and
+  commented that it must track the attestation frontier. Re-ran against the live edge: `p56-real-selection: stamped=true
+  verified=true fresh=true reproducible=2`, exit 0. A smaller cousin of the R26-24 lesson -- a checker is only as good as
+  whether it inspects the thing that actually moved.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

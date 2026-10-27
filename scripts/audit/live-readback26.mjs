@@ -44,7 +44,10 @@ const f = idx.body.freshness;
 out.library = {
   status: idx.status, count: idx.body.count, rows: (idx.body.reports || []).length,
   freshness: { verified: f.verified, fullyVerified: f.fullyVerified, stamped: f.stamped, unattested: f.unattested, stale: f.stale },
-  five: ["p34-cost-model", "p54-selection-function", "p63-soft-score", "p68-discriminator-roc", "p79-benchmark"]
+  // Spot-check the rows at the attestation frontier -- the ones the audit just wired and re-ran -- so a fresh public
+  // read-back actually confirms the closure rather than only the older offline FIVE. p56 is the first generator whose
+  // write-side stamp (R26-31) was proven end-to-end by a real run (R26-32), so it belongs here.
+  spotChecks: ["p34-cost-model", "p54-selection-function", "p63-soft-score", "p68-discriminator-roc", "p79-benchmark", "p56-real-selection"]
     .map((id) => { const r = idx.body.reports.find((x) => x.id === id); return r ? `${id}: stamped=${r.stamped} verified=${r.verified} fresh=${r.fresh} reproducible=${r.reproducible}` : `${id}: MISSING FROM SERVED INDEX`; }),
 };
 

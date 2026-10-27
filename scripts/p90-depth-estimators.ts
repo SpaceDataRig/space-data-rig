@@ -347,6 +347,11 @@ async function main(): Promise<void> {
 
   const L: string[] = [];
   L.push("# P90 - which depth should the rig publish?");
+  // ROUND-26 R26-15: the report library publishes a `reproduce` command read out of this line (scripts/report-md.ts
+  // greps for "Reproduce: `...`"). Without it the site lists the report and silently withholds how to re-run it, so the
+  // row was `verified` to the gate and still unreproducible for a reader.
+  L.push("");
+  L.push("Reproduce: `npm run p90:depth-estimators`");
   L.push("");
   L.push(`Two estimators, one reference. Box depth = the BLS step-function fit that \`scout()\` returns and that the`);
   L.push(`detection SNR is computed from. Per-sector depth = the limb-darkened shape fit the pipeline runs sector by`);

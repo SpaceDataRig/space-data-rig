@@ -148,6 +148,10 @@ function main(): void {
   const md = [
     "# P68 discriminator ROC: does ANY threshold reject blends without killing known planets?",
     "",
+    // ROUND-26 R26-15: the library publishes a `reproduce` command scraped from this line by scripts/report-md.ts. An
+    // absent line is not a cosmetic gap -- the row shows on the site with no way for a reader to re-run it.
+    "Reproduce: `npm run p68:discriminator-roc`",
+    "",
     "P61 collapsed each vetting tool to a binary at one hard-coded cut. This study sweeps the FULL continuous",
     "threshold for every discriminator on the committed P61 per-target metrics",
     `(${nPos} known planets + ${nNeg} labelled FP/EB blends, run --deep), giving a Mann-Whitney AUC and the best`,

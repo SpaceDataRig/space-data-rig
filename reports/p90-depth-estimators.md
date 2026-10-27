@@ -1,5 +1,7 @@
 # P90 - which depth should the rig publish?
 
+Reproduce: `npm run p90:depth-estimators`
+
 Two estimators, one reference. Box depth = the BLS step-function fit that `scout()` returns and that the
 detection SNR is computed from. Per-sector depth = the limb-darkened shape fit the pipeline runs sector by
 sector at the DETECTOR'S ephemeris and combines by robust median. Reference = the NASA Exoplanet Archive

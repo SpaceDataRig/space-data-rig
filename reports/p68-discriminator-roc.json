@@ -8,8 +8,8 @@
     "blendClass": "labelled FP/EB (catch-rate = flagging one)",
     "aucConvention": "blend is the positive class; score oriented so higher = more blend-like; Mann-Whitney AUC",
     "note": "maps the full threshold trade-off P61 collapsed to a single binary cut; answers whether ANY operating point rejects blends without killing known planets.",
-    "generatedAt": "2026-10-27T00:41:56.350Z",
-    "gitSha": "72d2eed8ac27aaa9099520b57bcb63d3d8e3dd6b",
+    "generatedAt": "2026-10-27T01:45:20.374Z",
+    "gitSha": "18ce13096301d055ccdde810afa74711e9874f66",
     "inputs": [
       {
         "path": "reports/p61-llm-hypothesis.json",
@@ -21,7 +21,7 @@
       },
       {
         "path": "scripts/p68-discriminator-roc.ts",
-        "sha256": "fef5c15485bf76f3d8de063217fb4d42130b1b1941593c540852aac7bd86725a"
+        "sha256": "f30adabfbc676f6cb8ba469f6c9b664ebcbb3b211c08fee8a2e0a2c55e534cfe"
       }
     ]
   },

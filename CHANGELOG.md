@@ -150,6 +150,46 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   through the step at all, so two cases were added that commit `web/research.json` inside the fixture, one minute-side
   and one cursor-side, proving the tier fires on the window rather than on the file's existence. 17 -> 19 cases, all
   green.
+- **R26-13, CI was RED on the first increment, and the diagnosis is proven rather than argued.**
+  `scripts/audit/ci-watch26.mjs` reads check runs and workflow runs as API objects (github.com HTML does not load from
+  this workstation): run 40431879147 for `e97c4fd` concluded failure at the step "Tests + coverage gate
+  (auto-discovers tests/*.test.ts)". Anonymous log download is auth-gated, so the cause was reproduced instead of
+  guessed: `scripts/audit/diagnose26-preflight.mjs` strips the `GIT_DIR`/`GIT_WORK_TREE` lines from the pre-flight
+  drill, re-runs that file and restores it -- 2 of 19 fail with the assertion text
+  `x-post-preflight: proceed (web/research.json changed inside the science window)`, the identical failure CI hit. So
+  the second increment is not a plausible fix; it addresses the observed red, and the local 1011/0 had been measured
+  with HEAD still on the pre-refresh commit. The process lesson is narrower and less comfortable than the code fix:
+  every gate here is run against a tree, but this test reads the repository's HISTORY, so when a commit touches a path
+  a window check inspects, the honest sequence is commit, then run the suite with that commit as HEAD, then push.
+- **R26-14, the fleet fired.** Pushing the second increment triggered `freshness-regen` (run 40433770058, created
+  2026-10-27T01:38:31Z) on the new trigger paths, with `CI` run 40433769938 alongside. The fleet now carries the live
+  p91 arm and the p38 rebuild; whether it publishes a stamped p91 and a bundle that still passes the currency gate is
+  knowable only from that run and its publish commit, so this entry records "in progress" instead of a predicted
+  success. **Resolved while this increment was still being written:** the run completed SUCCESS and published
+  `61ca06c` ("freshness-regen: re-stamp p48/p59/p76/p91/p92 + rebuild research bundle and report library") at
+  2026-10-27T01:40:52Z. Read from the remote tree through the contents API, p91 is now `mode: live` with its stamp under
+  `meta` and three hashed inputs, its row reads `stamped=true verified=true rehashed=3 reproducible=3`, and the published
+  freshness moved to stamped 23 / verified 22 / fullyVerified 22 / **unattested 33** / stale [] -- the third-key-shape
+  finding closed by the writer fix plus a run nobody had to fake. That commit also re-triggered CI, whose verdict is
+  fetched rather than assumed.
+- **R26-15, six published rows told readers nothing about how to re-run them, and five of them were `verified`.** The
+  report index carries a `reproduce` command per row, which `scripts/report-md.ts` scrapes from a
+  `Reproduce: \`...\`` line in the report's own markdown. `scripts/audit/reproduce-command-census26.mjs` found 6 of 56
+  rows with none: p68, p85, p90, p91 and both `crosscheck/` rows. Freshness and reproducibility are different promises
+  -- a row can match every recorded checksum and still be unrepeatable by the person reading the page -- and nothing in
+  the suite was comparing the two. Fixed in the generators, never in the markdown (hand-editing a generated `.md` is
+  the artifact-versus-source divergence this entire round has been chasing): p68, p90 and p91 now emit their own
+  command line. p68 and p90 were re-run offline and their `.md` diffs are the added line plus a blank -- each `.json`
+  moved only its `generatedAt`, `gitSha` and its own script hash; the re-run of p90 also refreshed a seven-day-old
+  artifact whose recorded `gitSha` was `e8d6de4`. That leaves 4 rows, each with a named reason in the new
+  `tests/report-reproduce-command.test.ts` allow-list: p85 (its stamp covers `out/scaled/*.jsonl`, gitignored, so
+  re-running it here would restamp the row against bytes that exist on one workstation), p91 (fixed in code, waiting on
+  the fleet's live arm, which this push retriggers), and the two CI-harness crosscheck reports, whose generator is a
+  Python job with no npm command to emit yet. The test asserts BOTH directions -- an unexcused row may not lose its
+  command, and an excused row may not stay excused once it has one -- and
+  `scripts/audit/mutate26-reproduce-test.mjs` proves each half: clearing p34's command fails case 1 naming
+  `p34-cost-model (stamped=true verified=true)`, giving p85 one fails case 2 demanding the list be pruned, and
+  restoring leaves the index byte-identical with 3/3 green.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be
@@ -161,13 +201,16 @@ against; restored gives 4/4. The drill also exposes its own limit and it is reco
 index-level case did **not** fail on the corrupted artifact, because the index was built before the corruption -- so the
 reproduction case, not the publication case, is the sharp one.
 
-Close: suite 1007 -> **1016** pass / 0 fail (131 files, +2 files / +9 tests), `typecheck:all` 0, `eslint
+Close: suite 1007 -> **1019** pass / 0 fail (132 files, +3 files / +12 tests), `typecheck:all` 0, `eslint
 --max-warnings 0` clean. No `src/` change and no `web/app.js` change in this round's first increment; the shipped
 surfaces are `reports/`, `scripts/`, `web/reports/` and `web/research.json`, deployed as version 556fede6 (R26-10). The
 second increment touches `scripts/p38-research-bundle.ts`, `scripts/p91-claim-provenance.ts`,
 `.github/workflows/freshness-regen.yml` and tests only, so the deployed assets are unchanged and no second upload was
-needed. `discoveryClaim` stays false in every report touched, `ledgerAnchored` stays 23, and no anchor or wallet
-operation is involved.
+needed. The third increment adds reproduce commands to three generators (p68/p90 re-run offline, p91 awaiting the
+networked fleet), the `reproduce`-command ratchet and the round's audit tools, and merges the fleet's own publish commit
+`61ca06c`, which moved the published library to verified 22 / unattested 33. A deploy follows the merge, because after
+it the local tree is ahead of what the edge serves. `discoveryClaim` stays false in every report touched,
+`ledgerAnchored` stays 23, and no anchor or wallet operation is involved.
 
 ### Twenty-fifth round (audit of the REPORTING gate, then of the audit of it): the freshness verdicts reproduce independently, the alarm nobody had ever heard now rings, and the round's own checker turned out to have the same blind spot (2026-10-26)
 Round-25 rotates off the X channel onto the surface round-23's public post leaned on: `scripts/report-freshness.ts` +

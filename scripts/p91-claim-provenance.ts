@@ -308,6 +308,11 @@ async function run(): Promise<void> {
 
   const md: string[] = [];
   md.push("# P91 - can this rig verify a claim like that one?\n");
+  // ROUND-26 R26-15: scripts/report-md.ts reads the `Reproduce:` line to fill the index's reproduce command; with none,
+  // the published row told readers nothing about how to re-run it. Not `--offline`: that flag reproduces the verdicts but
+  // rewrites resolved titles from captured records, which is why the fleet arm runs it live.
+  md.push("Reproduce: `npm run p91:claim-provenance`");
+  md.push("");
   const modeLabel = offline ? "offline (captured records, no network)" : "live (resolvers queried)";
   md.push(`Mode: **${modeLabel}** -- rules, not mood: the same input must give the same verdict either way.`);
   md.push("");

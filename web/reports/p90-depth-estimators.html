@@ -1,4 +1,5 @@
 <h1>P90 - which depth should the rig publish?</h1>
+<p>Reproduce: <code>npm run p90:depth-estimators</code></p>
 <p>Two estimators, one reference. Box depth = the BLS step-function fit that <code>scout()</code> returns and that the detection SNR is computed from. Per-sector depth = the limb-darkened shape fit the pipeline runs sector by sector at the DETECTOR&#39;S ephemeris and combines by robust median. Reference = the NASA Exoplanet Archive <code>pl_trandep</code> for confirmed transiting planets, consulted AFTER both fits and never given to either.</p>
 <p>Production parity: <code>seats.scout()</code> (0.8-16 d, oversample 8, nDurations 12), <code>detect/perSectorRun.robustPerSectorDepth()</code> with the catalogue stellar radius, and <code>detect/depthAdoption.decideDepthAdoption()</code> at the shipped bound of 5x. Nothing here gates, anchors or claims; the archive value is a measuring stick, not a truth the rig is allowed to see. Rows are kept only for stars with &gt;=2 fetched sectors and &gt;=200 points.</p>
 <h2>Sample</h2>

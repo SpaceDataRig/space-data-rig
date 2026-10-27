@@ -1,5 +1,7 @@
 # P68 discriminator ROC: does ANY threshold reject blends without killing known planets?
 
+Reproduce: `npm run p68:discriminator-roc`
+
 P61 collapsed each vetting tool to a binary at one hard-coded cut. This study sweeps the FULL continuous
 threshold for every discriminator on the committed P61 per-target metrics
 (24 known planets + 18 labelled FP/EB blends, run --deep), giving a Mann-Whitney AUC and the best

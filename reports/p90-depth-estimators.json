@@ -104,12 +104,12 @@
     "detector": "seats.scout -> detectTransit {minPeriodDays 0.8, maxPeriodDays 16, oversample 8, nDurations 12}",
     "perSector": "detect/perSectorRun.robustPerSectorDepth at the DETECTOR ephemeris",
     "generatedBy": "scripts/p90-depth-estimators.ts --from-json=reports/fixtures/p90-frozen-rows.json (replay of frozen rows)",
-    "generatedAt": "2026-10-20T07:40:37.203Z",
-    "gitSha": "e8d6de459ffb29a8e8458db21c36cdf8d2f7d819",
+    "generatedAt": "2026-10-27T01:45:21.268Z",
+    "gitSha": "18ce13096301d055ccdde810afa74711e9874f66",
     "inputs": [
       {
         "path": "scripts/p90-depth-estimators.ts",
-        "sha256": "9887badfcc3cc266e362742d50d5e1b34a5a758dfd31c105e92077c2a0ebbd24"
+        "sha256": "5d32a677198e2377095baaa2080d166354c9193cde307b55ac93470f320fb258"
       },
       {
         "path": "reports/fixtures/p90-frozen-rows.json",

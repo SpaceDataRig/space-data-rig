@@ -1,18 +1,20 @@
 {
   "schema": "sdr-reports/1",
-  "generatedAt": "2026-10-27T01:40:52.324Z",
-  "builtAtGitSha": "18ce13096301d055ccdde810afa74711e9874f66",
+  "generatedAt": "2026-10-27T02:22:08.804Z",
+  "builtAtGitSha": "61ca06c428711a6b79f75e3860e0ab8898556bdc",
   "shaNote": "builtAtGitSha is the working-tree HEAD when this static library was built, so it always trails the deployed revision by the one commit that carries this file. Use /health.gitSha for the deployed revision and freshness.stale for whether any report here is out of date.",
   "generatedBy": "scripts/p86-report-library.ts (from committed reports/*.md)",
   "note": "Human-readable research reports, rendered from the committed reports/ directory. These characterise the pipeline's operating point and cross-checks on real public TESS data with positive controls -- measurements and method checks, not claims of new planets. Each entry carries a freshness flag from the report-freshness gate; stale reports are marked red both here and in their fragment. Three levels, and they are not interchangeable: `stamped` means only that a report carries a generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths that are absent here entirely. Both are named on the report page, so exactly what is missing is visible.",
   "count": 56,
   "freshness": {
     "stamped": 23,
-    "verified": 22,
-    "fullyVerified": 22,
+    "verified": 21,
+    "fullyVerified": 21,
     "unattested": 33,
     "total": 56,
-    "stale": []
+    "stale": [
+      "p91-claim-provenance"
+    ]
   },
   "reports": [
     {
@@ -439,7 +441,7 @@
       "id": "p68-discriminator-roc",
       "slug": "p68-discriminator-roc",
       "title": "P68 discriminator ROC: does ANY threshold reject blends without killing known planets?",
-      "reproduce": "",
+      "reproduce": "npm run p68:discriminator-roc",
       "summary": "P61 collapsed each vetting tool to a binary at one hard-coded cut. This study sweeps the FULL continuous threshold for every discriminator on the committed P61 per-target metrics (24 known planets + 18 labelled FP/EB blends, run...",
       "fresh": true,
       "stamped": true,
@@ -691,7 +693,7 @@
       "id": "p90-depth-estimators",
       "slug": "p90-depth-estimators",
       "title": "P90 - which depth should the rig publish?",
-      "reproduce": "",
+      "reproduce": "npm run p90:depth-estimators",
       "summary": "Two estimators, one reference. Box depth = the BLS step-function fit that scout() returns and that the detection SNR is computed from. Per-sector depth = the limb-darkened shape fit the pipeline runs sector by sector at the DETECTOR'S...",
       "fresh": true,
       "stamped": true,
@@ -707,11 +709,11 @@
       "title": "P91 - can this rig verify a claim like that one?",
       "reproduce": "",
       "summary": "Mode: live (resolvers queried) -- rules, not mood: the same input must give the same verdict either way.",
-      "fresh": true,
+      "fresh": false,
       "stamped": true,
-      "verified": true,
-      "rehashed": 3,
-      "reproducible": 3,
+      "verified": false,
+      "rehashed": 2,
+      "reproducible": 2,
       "unverifiableInputs": 0,
       "untrackedInputs": 0
     },

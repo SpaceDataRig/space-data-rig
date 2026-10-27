@@ -624,7 +624,11 @@ the Actions web page when the anonymous API is rate-limited.
   commit that refreshed `web/research.json` flipped the F13 empty-window verdict for a reason unrelated to the gate, and
   the suite had been green purely because no recent commit touched that path inside the synthetic window. Set
   `GIT_DIR`/`GIT_WORK_TREE` to the fixture explicitly (cwd may stay, when the step refers to repo-relative script
-  paths), and treat "it passed for weeks" as no evidence of hermeticity.
+  paths), and treat "it passed for weeks" as no evidence of hermeticity. CONSEQUENCE FOR THE PUSH RITUAL (round-26,
+  R26-13): gates are run against a tree, but a history-reading test changes meaning when the commit lands. CI was red on
+  `e97c4fd` for exactly this reason -- locally the suite had been green at 1011/0 with HEAD still on the pre-refresh
+  commit. When a commit touches a path that a window or freshness check inspects, run `npm test` AFTER committing, with
+  that commit as HEAD, before pushing.
 
 ## 13. Current state (as of 2026-10-27)
 
@@ -652,12 +656,15 @@ authority; they are deliberately not restated here.
   (its own counts are 0/0). Live read-back confirms the stale bundle is what visitors get. Rebuilt AND gated in the same
   round (R26-8/9), plus p91's stamp, which sits under a third key (`stamp`) that no
   reader looks at (R25-7's "both shapes" was itself an undercount) and two rows published with no JSON artifact at all
-  (R26-6). Open items, in priority order: the live re-run of p91 (its generator now writes `meta`, but the committed
-  artifact still carries the third-key stamp, and an offline replay would quietly rewrite two resolved paper titles --
-  so it is queued on the networked fleet, which round-26 extended with p91 and the bundle rebuild); the 32 stamp-less
-  generators (a five-line edit each, then the same fleet); p89/p33/p39 when MAST answers. Done inside the round rather
-  than left open: the bundle currency gate (`tests/research-bundle-currency.test.ts`) and the hermeticity fix to the
-  feed pre-flight drill (R26-11).
+  (R26-6). What has since closed inside the round: the bundle currency gate (`tests/research-bundle-currency.test.ts`),
+  the hermeticity fix to the feed pre-flight drill (R26-11, plus R26-13 -- CI was red on the first increment and the
+  cause is now reproducible on demand), and p91's third-key stamp, whose writer fix let the networked fleet do a LIVE
+  re-run (`61ca06c`: p91 `mode: live`, stamped and verified with 3 reproducible inputs; published library 22 verified /
+  33 unattested). Still open, in priority order: 32 generators that write no stamp at all -- the same five-line edit
+  each, then a run on the fleet this round extended; the four report rows still without a `reproduce` command (named and
+  reasoned in `tests/report-reproduce-command.test.ts`: p85 over a gitignored checkpoint, p91 awaiting the re-triggered
+  fleet arm, and the two CI-harness crosscheck reports); p89/p33/p39 when MAST answers; and the `absent=2` observation
+  in the recheck, which stays a disclosed hole rather than a red CI.
 - Git: rounds 22-25 (all 2026-10-26) are CI-only work on the FEED and the REPORTING gate, not the rig: 22 added the empty-window
   pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
   vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
@@ -815,7 +822,7 @@ authority; they are deliberately not restated here.
   `/health` `gitSha=8aad1dd2edf3...`, `deployVersion=f1a50e51-104c-4838-86cb-f9827c426cd2`, `/reports/index.json`
   carrying the 16/16 counts, served `app.js` containing the earned-badge predicate.
 
-- Tests: 131 files / 1016 tests as this snapshot was re-taken 2026-10-27. Round-26 added
+- Tests: 132 files / 1019 tests as this snapshot was re-taken 2026-10-27. Round-26 added
   `tests/generator-stamped-reports.test.ts` (+4), which is the pin behind R26-2: for each of the five generators that
   could run offline it requires the SOURCE to call `buildStamp`, the ARTIFACT to record a non-null checksum for every
   input with every input tracked and still matching the bytes on disk, and the built INDEX to call the row `verified`
@@ -829,6 +836,15 @@ authority; they are deliberately not restated here.
   commit that refreshed `web/research.json` flipped the F13 empty-window verdict for a reason unrelated to the gate
   (R26-11). `GIT_DIR`/`GIT_WORK_TREE` now point at the fixture, and the research milestone -- previously never driven
   through the step -- has one in-window and one out-of-window case.
+  `tests/report-reproduce-command.test.ts` (+3) is R26-15: `web/reports/index.json` publishes a `reproduce` command per
+  row (scraped by `scripts/report-md.ts` from the report's markdown), and 6 of 56 rows had none while five of them read
+  `verified` -- freshness and repeatability are different promises. It ratchets both ways (no unexcused row may lack a
+  command; no excused row may keep its excuse after being fixed), the commands are emitted by the GENERATORS (p68, p90,
+  p91), and `scripts/audit/mutate26-reproduce-test.mjs` proves each direction fires and restores the index byte-exact.
+  `scripts/audit/ci-watch26.mjs` and `scripts/audit/diagnose26-preflight.mjs` are this round's CI tools: the first reads
+  check runs and workflow runs as API objects because github.com HTML does not load here, the second reproduces the
+  exact failure CI hit on `e97c4fd` by removing the pre-flight drill's `GIT_DIR`/`GIT_WORK_TREE` lines and putting them
+  back.
   `scripts/audit/mutate26-stamp-test.mjs` proves the first file fires: dropping p79's `buildStamp` call turns 2 of 4 red (the source
   check and the self-referential checksum), corrupting one recorded checksum turns 1 red and names the stale input, and
   the drill restores both files and re-runs to 4/4; the drill's own limit is recorded in R26-12 (the index-level case did

@@ -190,6 +190,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   `scripts/audit/mutate26-reproduce-test.mjs` proves each half: clearing p34's command fails case 1 naming
   `p34-cost-model (stamped=true verified=true)`, giving p85 one fails case 2 demanding the list be pruned, and
   restoring leaves the index byte-identical with 3/3 green.
+- **R26-16, the round-25 handoff gate could not see its own marker, and said so in a way that wasted a commit.** After
+  the increment-3 artifacts landed, `tests/handoff-freshness.test.ts` went red: the Production bullet named `e97c4fd`
+  while three served files differed from it -- a true statement of fact, and exactly what the check exists to force
+  into the open. The bullet *did* say so: it carried `AWAITING DEPLOY` on its third line. The R25-11 implementation read
+  only the single line matching `- Production:` and matched `/awaiting deploy/` case-sensitively, so a disclosure placed
+  where it naturally belongs -- next to the version id it qualifies, one line down -- was invisible to the gate it was
+  written for. Fixed by scoping the search to the whole bullet and making the marker match
+  case-insensitive, with `scripts/audit/mutate26-handoff-marker.mjs` proving the widened check is not vacuous: stripping
+  every case variant of the phrase (not just the first hit -- the bullet also quotes the marker historically, so a
+  one-occurrence replacement would delete a mention and leave the live marker in place, reporting success about nothing)
+  makes the gate red naming the same three files, and restoring gives 6/0 with the handoff byte-identical. The
+  instructive part is that the failure I blamed on my ledger prose was a failure of the check's own scope.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

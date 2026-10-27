@@ -137,7 +137,18 @@ test("the production bullet names the deployed revision, not only a wrangler ver
  */
 test("the revision named as production ships the same src/ and web/ trees as HEAD, or the bullet says otherwise", () => {
   const s = section(handoff, "## 13. Current state");
-  const prod = s.split("\n").find((l) => /^-\s+Production:/i.test(l)) ?? "";
+  const lines = s.split("\n");
+  const start = lines.findIndex((l) => /^-\s+Production:/i.test(l));
+  const prod = start < 0 ? "" : (() => {
+    // ROUND-26: the marker has to be searched for across the BULLET, not just its first line. The original
+    // implementation took the single line matching "- Production:", so a disclosure written on the bullet's second or
+    // third line -- where a careful writer naturally puts it, right next to the version id it qualifies -- did not count,
+    // and the check failed for a formatting accident instead of for the silence it exists to catch. Scope widened to the
+    // whole bullet, and the marker match made case-insensitive for the same reason.
+    let end = start + 1;
+    while (end < lines.length && !/^(?:-\s+\S|##\s)/.test(lines[end])) end++;
+    return lines.slice(start, end).join("\n");
+  })();
   const m = /gitSha ([0-9a-f]{7,40})/.exec(prod);
   assert.ok(m, "the production bullet must name a gitSha for this check to mean anything");
   const sha = m[1];
@@ -152,7 +163,7 @@ test("the revision named as production ships the same src/ and web/ trees as HEA
   if (shipped.length === 0) return; // production equals HEAD in exactly the two trees a deploy uploads
   assert.match(
     prod,
-    /awaiting deploy/,
+    /awaiting deploy/i,
     `the bullet calls ${sha.slice(0, 7)} production, but ${shipped.length} file(s) a deploy would upload differ between it and HEAD ` +
       `(${shipped.slice(0, 6).join(", ")}${shipped.length > 6 ? ", ..." : ""}). Either deploy, or say so in the bullet with the ` +
       `marker "awaiting deploy" so the next reader learns the gap from the handoff rather than from an incident.`,

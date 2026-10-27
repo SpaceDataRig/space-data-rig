@@ -629,6 +629,15 @@ the Actions web page when the anonymous API is rate-limited.
   `e97c4fd` for exactly this reason -- locally the suite had been green at 1011/0 with HEAD still on the pre-refresh
   commit. When a commit touches a path that a window or freshness check inspects, run `npm test` AFTER committing, with
   that commit as HEAD, before pushing.
+- A gate that reads the FIRST LINE of a markdown bullet is blind to anything the writer places on a later line, and will
+  accuse a compliant author of non-compliance (round-26, R26-16). The R25-11 handoff check demanded the Production
+  bullet carry `awaiting deploy`, but scoped its search to the single line matching `- Production:` and matched the
+  phrase case-sensitively -- so a disclosure written one line down, next to the version id it qualifies (exactly where a
+  careful writer puts it), failed for a formatting reason rather than for the silence the check exists to catch. When a
+  check scans structured prose, scope it to the whole block the prose occupies and match case-insensitively; prove the
+  widened scope still fires with `scripts/audit/mutate26-handoff-marker.mjs`, which strips EVERY case variant (a
+  single-occurrence replace would delete the bullet's historical mention of the marker and leave the live one, so the
+  drill would report success about nothing).
 
 ## 13. Current state (as of 2026-10-27)
 

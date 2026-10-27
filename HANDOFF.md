@@ -655,6 +655,14 @@ the Actions web page when the anonymous API is rate-limited.
   assets in `web/` must each answer "is there a test that rebuilds you from committed inputs and byte-compares?" Only the
   offline-rebuildable ones are gateable without a runner: `research.json` and `replay-manifest.json` now are;
   `candidates.json`/`observe-stars.json` need a networked p22/p24 run and are named as such rather than left implied.
+- A per-module test that pins an invariant in the GENERATING code does not prove the invariant holds in the SHIPPED
+  bytes (round-26, R26-21). `discoveryClaim` and `safeToGate` -- the two red lines -- are asserted false across many unit
+  tests of the functions that build them, yet nothing read the committed `reports/*.json` and `web/*.json` artifacts as a
+  corpus, which is what the site actually serves. The same artifact-vs-source gap that let `research.json` publish a dead
+  figure for six days applies to the honesty invariants too. Scan the corpus, and scan it RECURSIVELY: a nested
+  `foo.discoveryClaim=true` is the same breach and a top-level key lookup misses it. Prove the scan is not a tautology by
+  asserting the fields appear at all, then tampering a real artifact (`scripts/audit/mutate26-redline.mjs`) and requiring
+  the corpus case to name the offending file.
 
 ## 13. Current state (as of 2026-10-27)
 

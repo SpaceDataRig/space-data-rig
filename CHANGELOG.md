@@ -264,6 +264,21 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   fail 2 naming the mismatch, restore to 3/3 byte-identical. The manifest was already fresh (single commit since 2026-10-14,
   rebuild byte-identical), so this is a preventive gate closing a latent instance of the exact class that caught
   `research.json` six days late -- found before it drifted, not after.
+- **R26-21, the two red lines were enforced in the code that produces them but never scanned in the artifacts that ship
+  them.** A sweep of the test suite first confirmed the round's remaining position/history-anchored checks are sound
+  (`deploy-guard.test.ts` branches on the observed tree state, not a slot; the CI test workflow sets `fetch-depth: 0`, so
+  R26-17's content-walk reaches the pre-refresh revision -- and CI `checks` passed on `aad7cde`, the commit carrying that
+  rewrite). The gap was elsewhere: `discoveryClaim` and `safeToGate` -- the booleans encoding "never claim a planet" and
+  "never arm a spending gate uncalibrated" -- are pinned false by many per-module tests of the GENERATION code, but
+  nothing read the PUBLISHED BYTES as a corpus, which is precisely the surface a visitor sees. `tests/redline-artifact-scan.test.ts`
+  walks every `reports/**/*.json` plus `web/research.json`, `web/replay-manifest.json` and `web/candidates.json`
+  RECURSIVELY and requires each `discoveryClaim`/`safeToGate` to be exactly `false`. The recursion is the point -- a
+  nested `foo.discoveryClaim=true` is the same violation a shallow key lookup sails past. Two guards keep it honest: the
+  scan asserts the fields actually appear in the corpus (so "zero violations" is a reading, not an absent-key tautology),
+  and its control feeds a deeply-nested synthetic object and requires the walker to surface both flags.
+  `scripts/audit/mutate26-redline.mjs` then tampers a REAL committed artifact (p44's `discoveryClaim` -> true) and requires
+  the corpus case to go red naming that file, restore to 3/3, byte-identical. The corpus is clean today; this turns "the
+  code would not produce it" into "the bytes we ship do not contain it."
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

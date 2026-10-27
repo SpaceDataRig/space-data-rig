@@ -57,8 +57,9 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
 - **R26-4, counts after the refresh, and what they are not.** The library rebuilt to 56 rows / 22 stamped / 21
   verified / 21 fully verified / **0 stale**, so unattested went 39 -> 34. `scripts/audit/freshness-recheck.mjs`
   re-derives all of it without importing the audited module: `rows=56 opened=54 absent=2 unstamped-artifacts=32
-  stamped=22/22 (flat-shaped=2) verified=21/21 findings=0`. None of this is live yet -- the site still serves the
-  round-25 build, and "shipped" will not be written until it is read back from the endpoint (R25-10's rule).
+  stamped=22/22 (flat-shaped=2) verified=21/21 findings=0`. Written while still repo-only, per R25-10's rule that
+  "shipped" is not true until the endpoint agrees -- which it now does: see R26-10 for the deploy and the read-back
+  values, which match these exactly.
 - **R26-5, a third stamp shape that neither the gate nor round-25's checker could see.** `scripts/audit/stamp-shapes26.ts`
   walks every artifact in `reports/` for a `generatedAt` anywhere in the document and asks whether the gate's reader
   would find it. One row does: `p91-claim-provenance.json` writes a complete, checksum-bearing stamp under the key
@@ -67,7 +68,19 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   touching anything: two of p91's three recorded inputs still match this checkout, and the third is its own generator,
   which has been edited since the run -- so if the reader were widened to see p91's stamp, p91 would publish **stale**,
   not verified. Decision recorded rather than guessed: fix the writer (emit into `meta` like the other 50) rather than
-  reinterpret the reader's contract, and re-run it where its citation endpoints answer. OPEN at this commit.
+  reinterpret the reader's contract, and re-run it where its citation endpoints answer. **Writer shipped in this
+  round's second commit; the artifact deliberately untouched.** Measured before deciding, on this workstation:
+  `api.crossref.org` answers 200 in 855 ms while `export.arxiv.org` fails to fetch, and an offline replay
+  (`--offline`) reproduces all five verdicts and every control but silently rewrites two resolved paper titles
+  (`Multi-Object` -> `Multiobject`, the captured fixture versus the live Crossref record) and flips `mode: live ->
+  offline`. Publishing a re-run whose evidence strings differ from the run that made the claim is not a stamping fix,
+  so the row stays unattested until the fleet does it live -- which round-26 also wired:
+  `.github/workflows/freshness-regen.yml` now runs p91 (deliberately not `--offline`, for exactly the reason above) and
+  `scripts/p38-research-bundle.ts`, publishes `reports/p91-claim-provenance.*` and `web/research.json` alongside the
+  existing four arms, and triggers on the two new generators, `reports/p91-claims.json` and
+  `src/claims/claimReview.ts`. `scripts/p38-research-bundle.ts`'s `claimProvenanceP91.stamp` also stopped reading the
+  third key: it now prefers `meta` and still accepts `stamp`, so fixing the address cannot make the summary claim the
+  row lost its provenance.
 - **R26-6, two rows the site publishes with no machine-readable artifact at all.** `p33-scale-roc` and
   `p39-instrumental-fp` have an `.md` and a served fragment but no JSON artifact in the repository at all, so nothing
   about them can be re-derived by anyone. The recheck counts them under `absent=2` as an *observation*, which is how a
@@ -81,13 +94,63 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   their committed artifact predates the wiring (bucket A: p81, p91), **0** unopenable, **0** without a generator, and
   the arithmetic checks out at 34/34. That kills the vaguer framing "34 need network": p81's and p91's artifacts are
   stale-by-omission, not unreachable, and 32 of the rest are a code change waiting for a runner.
-- **R26-8, OPEN: the bundle has now been corrected once by hand, which is not a fix.** Nothing prevents
-  `web/research.json` from drifting behind `reports/` again, and the same 6-day gap will recur the next time the
-  networked fleet re-measures a source. The gate that should exist is a rebuild-and-compare: generate the bundle into a
-  scratch path (p38 currently writes to `web/research.json` unconditionally, so it needs an output argument first) and
-  fail when the committed bundle differs from the fresh one in anything but its own `generatedAt`. The stale bundle
-  this round found is the positive control -- the test can be written against the bytes that are already in `HEAD`, so
-  it is provably capable of failing on the real fault rather than on an invented one. Scheduled for the next increment.
+- **R26-8, CLOSED the same round by R26-9 below.** The bundle was corrected once by hand, which is not a fix: nothing
+  prevented `web/research.json` from drifting behind `reports/` again, and the same 6-day gap would recur the next time
+  the networked fleet re-measured a source. The gate that should exist is a rebuild-and-compare --
+  generate the bundle into a scratch path (p38 wrote to `web/research.json` unconditionally, so it needed an output
+  argument first) and fail when the committed bundle differs from the fresh one in anything but its own
+  `generatedAt`. The stale bundle this round found is the positive control, so the test is provably capable of failing
+  on the real fault rather than on an invented one.
+- **R26-10, deployed and read back from the public endpoints, including a first attempt that failed for real.** The
+  refresh ships as `e97c4fde57d0d146b16620a484b58a80c44ad1c8`. The first `npm run cf:deploy:sha` did NOT deploy: wrangler
+  reported `Your auth token has expired and could not be refreshed because the Cloudflare auth server could not be
+  reached`, and stopped with credentials unchanged. Two probes then answered (`cloudflare.com/access/oauth2/token` 404
+  in 2.7 s, `api.cloudflare.com` 403 in 1.9 s -- reachable, and not authorised), so the diagnosis was a transport blip
+  and not a bad login; a straight retry succeeded. Version `556fede6-b5ef-495d-82d5-8c5fc10dac77`, created
+  2026-10-27T01:09:35.384Z per `wrangler deployments list`, 3 assets uploaded /
+  97 already cached, after a `--dry-run` that printed the env block and confirmed the spending vars are untouched
+  (`AUTO_ANCHOR=live`, `OBSERVE_ANCHOR=live`, `AUTO_ANCHOR_DAILY_CAP=100`, `OBSERVE_ANCHOR_DAILY_CAP=unlimited`).
+  Read back with `scripts/audit/live-readback26.mjs`, which asserts facts about responses rather than about the tool's
+  exit line: `/health` `gitSha=e97c4fd...` with `deployVersion=556fede6...`; `/research.json` now
+  `generatedAt 2026-10-27T00:54:33.209Z`, `compute {p 2.8730627278616767, r2 0.7880192356593715, sampleN 204}` and
+  `addressable {negatives 0, caught 0, vetoPower null, auc 0}` -- the two figures this round found unsupported are gone
+  from the public surface; `/reports/index.json` `count 56`, `verified 21 / fullyVerified 21 / stamped 22 /
+  unattested 34 / stale []`, with all five refreshed rows `stamped=true verified=true fresh=true` and
+  `reproducible` 2/3/3/3/4; and the served `/reports/p34-cost-model.html` matches `2.87`, contains no `2.93`/`2.94` and
+  no stale-or-unverified banner. `git push` itself is still failing on `github.com:443` (connect timeout, then `Empty
+  reply from server`) while the deploy path works -- retried in the background, and the remote is checked with
+  `git ls-remote` rather than inferred from an exit code.
+- **R26-9, the gate for the public bundle, written against a fault that had already happened.** A one-off manual
+  correction is not a fix, so `scripts/p38-research-bundle.ts` learned an `--out=<path>` argument (default unchanged,
+  and a path resolving outside the working directory throws rather than writing wherever it is pointed) and
+  `tests/research-bundle-currency.test.ts` rebuilds the bundle into `out/` and compares it to the committed asset with
+  the bundle's own `generatedAt` removed from both sides -- so a rebuild that changed nothing is not a false positive,
+  and a source that moved really is. The test runs the bundler with cwd at the repo root because the script resolves
+  every input relative to cwd; its own scratch guard is what makes that safe.
+  Mutation-checked in the strongest way available: the pre-refresh bytes were injected in place of the committed
+  bundle and the file re-tested -- 2 of 3 red, with the diff naming `compute.exponentP: published 2.936437697567511 vs
+  a fresh build 2.8730627278616767`, all six `trueVetoAcceptance.addressable` fields, and the five
+  `multiSourceNoveltyP76` fields. The second case went red for an instructive reason: with the stale bundle installed,
+  the committed asset and the historical control became the same bytes, so the control could no longer see a
+  difference -- a gate and its positive control must not share a file. Restoring gave 3/3, and the injected backup was
+  deleted rather than left to be found later. One bug in the test itself surfaced during this: the timestamp-stripping
+  regex was missing the closing quote, so it matched nothing and every case failed with "no top-level generatedAt line
+  found" -- which is precisely the loud-failure branch it was written to have, and it fired on the test rather than on
+  the data.
+- **R26-11, a regression this commit caused, and the non-hermetic test that let it hide.** After `e97c4fd` landed,
+  `npm test` went red on `tests/x-post-preflight.test.ts`'s F13 empty-window case: the pre-flight answered
+  `proceed (web/research.json changed inside the science window)`. The drill extracts the real workflow step and runs
+  it under `bash -eo pipefail`, but launches it with cwd at THIS checkout, so every `git log` inside the step read the
+  repository running the suite instead of the throwaway fixture the test had built -- and the science cursor is
+  deliberately in the past. A commit touching `web/research.json` here therefore flipped a fixture's verdict for a
+  reason that had nothing to do with the gate under test; the suite had been green only because no recent commit had
+  touched that path inside the window. Fixed by pointing `GIT_DIR`/`GIT_WORK_TREE` at the fixture for the step block
+  (cwd stays, because the step refers to `scripts/x-post-preflight.mjs` by a repo-relative path). Fixing it exposed a
+  second gap: the research milestone -- the one tier allowed to announce a science result -- had never been exercised
+  through the step at all, so two cases were added that commit `web/research.json` inside the fixture, one minute-side
+  and one cursor-side, proving the tier fires on the window rather than on the file's existence. 17 -> 19 cases, all
+  green.
+
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be
 tracked *and* still match the bytes on disk, and the built index must call the row verified rather than merely stamped.
@@ -98,10 +161,13 @@ against; restored gives 4/4. The drill also exposes its own limit and it is reco
 index-level case did **not** fail on the corrupted artifact, because the index was built before the corruption -- so the
 reproduction case, not the publication case, is the sharp one.
 
-Close: suite 1007 -> **1011** pass / 0 fail (130 files, +1 file / +4 tests), `typecheck:all` 0, `eslint
---max-warnings 0` clean. No `src/` change and no `web/app.js` change in this increment; the shipped surfaces are
-`reports/`, `scripts/`, `web/reports/` and `web/research.json`. `discoveryClaim` stays false in every report touched,
-`ledgerAnchored` stays 23, and no anchor or wallet operation is involved.
+Close: suite 1007 -> **1016** pass / 0 fail (131 files, +2 files / +9 tests), `typecheck:all` 0, `eslint
+--max-warnings 0` clean. No `src/` change and no `web/app.js` change in this round's first increment; the shipped
+surfaces are `reports/`, `scripts/`, `web/reports/` and `web/research.json`, deployed as version 556fede6 (R26-10). The
+second increment touches `scripts/p38-research-bundle.ts`, `scripts/p91-claim-provenance.ts`,
+`.github/workflows/freshness-regen.yml` and tests only, so the deployed assets are unchanged and no second upload was
+needed. `discoveryClaim` stays false in every report touched, `ledgerAnchored` stays 23, and no anchor or wallet
+operation is involved.
 
 ### Twenty-fifth round (audit of the REPORTING gate, then of the audit of it): the freshness verdicts reproduce independently, the alarm nobody had ever heard now rings, and the round's own checker turned out to have the same blind spot (2026-10-26)
 Round-25 rotates off the X channel onto the surface round-23's public post leaned on: `scripts/report-freshness.ts` +

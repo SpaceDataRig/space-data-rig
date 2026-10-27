@@ -610,6 +610,21 @@ the Actions web page when the anonymous API is rate-limited.
   being invented. When a check depends on the environment (history depth, an external file, a network path), make it
   name the missing precondition -- and never let an unavailable answer be reported as a passing one, which is how
   `existsSync("out/probe-*.fits")` quietly skipped six MAST gates for months.
+- A summary that nobody rebuilds is a stale page waiting to happen (round-26, R26-3a/b). `web/research.json` is written
+  by `scripts/p38-research-bundle.ts` from `reports/*.json`, linked from the feed post as "Numbers + data", and rendered
+  by `web/app.js` as a metric card -- yet no workflow rebuilt it and no test compared it to its sources, so it published
+  a superseded compute exponent and an addressable-veto block for six days after the reports behind it moved. If you
+  add a derived public asset, wire its rebuild into `freshness-regen.yml` AND add a currency test that rebuilds into a
+  scratch path and diffs; `tests/research-bundle-currency.test.ts` is the template, including the discipline that the
+  gate and its positive control must not read the same file (when the stale asset was installed as the committed one,
+  the control went red because it had nothing left to compare).
+- A drill that spawns a real script with cwd at this checkout inherits this repository's history (round-26, R26-11).
+  `tests/x-post-preflight.test.ts` builds a throwaway git repo for the pre-flight's window checks but launches the
+  extracted workflow step from the suite's own directory, so every `git log` inside the step read the real repo: the
+  commit that refreshed `web/research.json` flipped the F13 empty-window verdict for a reason unrelated to the gate, and
+  the suite had been green purely because no recent commit touched that path inside the synthetic window. Set
+  `GIT_DIR`/`GIT_WORK_TREE` to the fixture explicitly (cwd may stay, when the step refers to repo-relative script
+  paths), and treat "it passed for weeks" as no evidence of hermeticity.
 
 ## 13. Current state (as of 2026-10-27)
 
@@ -634,11 +649,15 @@ authority; they are deliberately not restated here.
   asset the digest links publicly as "Numbers + data", whose `compute` block `web/app.js` renders as a metric card --
   last built 2026-10-20 and never re-checked, so it still published the old exponent AND an `addressable` veto block
   (`caught 2 of 13, AUC 0.742`) that the re-measured, stamped `reports/p59-offtarget-subset.json` no longer supports
-  (its own counts are 0/0). Live read-back confirms the stale bundle is what visitors get. Rebuilt here; the currency
-  GATE for that surface is the next increment (R26-8), plus p91's stamp, which sits under a third key (`stamp`) that no
+  (its own counts are 0/0). Live read-back confirms the stale bundle is what visitors get. Rebuilt AND gated in the same
+  round (R26-8/9), plus p91's stamp, which sits under a third key (`stamp`) that no
   reader looks at (R25-7's "both shapes" was itself an undercount) and two rows published with no JSON artifact at all
-  (R26-6). Open items, in priority order: research-bundle currency gate; p91 writer fix + networked re-run; the 32
-  stamp-less generators (a five-line edit each, then the `freshness-regen` fleet); p89/p33/p39 when MAST answers.
+  (R26-6). Open items, in priority order: the live re-run of p91 (its generator now writes `meta`, but the committed
+  artifact still carries the third-key stamp, and an offline replay would quietly rewrite two resolved paper titles --
+  so it is queued on the networked fleet, which round-26 extended with p91 and the bundle rebuild); the 32 stamp-less
+  generators (a five-line edit each, then the same fleet); p89/p33/p39 when MAST answers. Done inside the round rather
+  than left open: the bundle currency gate (`tests/research-bundle-currency.test.ts`) and the hermeticity fix to the
+  feed pre-flight drill (R26-11).
 - Git: rounds 22-25 (all 2026-10-26) are CI-only work on the FEED and the REPORTING gate, not the rig: 22 added the empty-window
   pre-flight + the `node_modules` cache + the cursor hint; 23 ranked the committed reports and published the
   vetting-is-the-wall result; 24 audited 22's own gate and found it had skipped NOTHING in ten live runs (the hint
@@ -703,13 +722,24 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa
-  (deployed 2026-10-26T13:07:58Z by round-25 through `npm run cf:deploy:sha`, re-read live from `GET /health`),
-  `codeVersion space-data-rig@0.2.0`. **ROUND-26 AWAITING DEPLOY:** round-26 rebuilds served assets (`web/research.json`
-  plus `web/reports/index.json` and six fragments) and touches no `src/` file, so the version named above is still what
-  the public sees -- including the stale p34 exponent in `/research.json`, confirmed by read-back rather than assumed.
-  The bullet keeps naming 8aad1dd as the revision actually measured, and the new version id goes here only after
-  `GET /health` and `GET /research.json` agree with this tree. **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
+- Production: wrangler version 556fede6-b5ef-495d-82d5-8c5fc10dac77, gitSha e97c4fde57d0d146b16620a484b58a80c44ad1c8
+  (deployed 2026-10-27T01:09:35.384Z by round-26 through `npm run cf:deploy:sha`, the creation time read back from
+  `wrangler deployments list`, with `GET /health`, `GET /research.json` and `GET /reports/index.json` re-read live),
+  `codeVersion space-data-rig@0.2.0`. **WHAT THIS DEPLOY FIXED --
+  and the first attempt did not deploy at all:** the first `cf:deploy:sha` run stopped with `auth token has expired and
+  could not be refreshed because the Cloudflare auth server could not be reached`; two probes showed the endpoints
+  answering (404 / 403, i.e. reachable-but-unauthenticated), so the retry was a real remedy rather than a re-roll, and
+  the asset that needed shipping was `web/research.json`, which had been publishing a compute exponent and an
+  addressable-veto block its own source reports no longer support (R26-3a/b/c). Live read-back after deploy:
+  `/research.json` `generatedAt 2026-10-27T00:54:33.209Z`, `compute {p 2.8730627278616767, r2 0.7880192356593715,
+  sampleN 204}`, `addressable {negatives 0, caught 0, vetoPower null, auc 0}`; `/reports/index.json` 56 rows with
+  `verified 21 / fullyVerified 21 / stamped 22 / unattested 34 / stale []`. No `src/` file changed between the previous
+  version and this one, so the Worker code and every spending var shipped byte-identical (`AUTO_ANCHOR=live`,
+  `OBSERVE_ANCHOR=live`, caps unchanged) -- verified from the `--dry-run` env block before the upload, not assumed.
+  The interim marker this bullet carried (`ROUND-26 AWAITING DEPLOY`) was removed only after `/health` named the new
+  version, which is the whole point of the `awaiting deploy` check in `tests/handoff-freshness.test.ts`.
+  Earlier production: version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa.
+  **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
   `src/` file, but round-25 changed two SERVED assets (`web/app.js`, `web/reports/index.json` + fragments), and no
   workflow in this repository deploys -- so a committed-and-green asset fix is not public. Before acting the live site
   still served the 2026-10-23 library (`verified: 15`, p88 unverified) from the previous version b0d9ed9f-114e-4c03-9bbe-266bd0bdf4ac /
@@ -785,14 +815,23 @@ authority; they are deliberately not restated here.
   `/health` `gitSha=8aad1dd2edf3...`, `deployVersion=f1a50e51-104c-4838-86cb-f9827c426cd2`, `/reports/index.json`
   carrying the 16/16 counts, served `app.js` containing the earned-badge predicate.
 
-- Tests: 130 files / 1011 tests as this snapshot was re-taken 2026-10-27. Round-26 added
+- Tests: 131 files / 1016 tests as this snapshot was re-taken 2026-10-27. Round-26 added
   `tests/generator-stamped-reports.test.ts` (+4), which is the pin behind R26-2: for each of the five generators that
   could run offline it requires the SOURCE to call `buildStamp`, the ARTIFACT to record a non-null checksum for every
   input with every input tracked and still matching the bytes on disk, and the built INDEX to call the row `verified`
   rather than merely `stamped` -- so neither deleting the wiring nor hand-editing a stamp into JSON survives.
-  `scripts/audit/mutate26-stamp-test.mjs` proves it fires: dropping p79's `buildStamp` call turns 2 of 4 red (the source
+  `tests/research-bundle-currency.test.ts` (+3) is the pin behind R26-8/9: it runs the real bundler with its new
+  `--out=` into `out/` and requires byte equality with committed `web/research.json` once the bundle's own
+  `generatedAt` is stripped from both sides, holds the previous committed revision of that asset as a positive control
+  (it must differ, and must name `compute.exponentP`), and refuses an `--out` that escapes the working directory.
+  Round-26 also made `tests/x-post-preflight.test.ts` hermetic (+2 cases, 17 -> 19): the step block used to run with
+  cwd at this checkout, so the pre-flight's `git log` read the suite's own repository instead of the fixture, and the
+  commit that refreshed `web/research.json` flipped the F13 empty-window verdict for a reason unrelated to the gate
+  (R26-11). `GIT_DIR`/`GIT_WORK_TREE` now point at the fixture, and the research milestone -- previously never driven
+  through the step -- has one in-window and one out-of-window case.
+  `scripts/audit/mutate26-stamp-test.mjs` proves the first file fires: dropping p79's `buildStamp` call turns 2 of 4 red (the source
   check and the self-referential checksum), corrupting one recorded checksum turns 1 red and names the stale input, and
-  the drill restores both files and re-runs to 4/4; the drill's own limit is recorded in R26-9 (the index-level case did
+  the drill restores both files and re-runs to 4/4; the drill's own limit is recorded in R26-12 (the index-level case did
   not fail on the corrupted artifact, because the index predates the corruption). Round-25 added
   `tests/p86-stale-alarm.test.ts`
   (+4), the first file in the suite to EXECUTE `scripts/p86-report-library.ts`: it builds a throwaway git repo holding one

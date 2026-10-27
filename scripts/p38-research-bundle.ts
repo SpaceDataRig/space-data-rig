@@ -15,8 +15,25 @@
 // hash/money path, nothing anchored or claimed. discoveryClaim stays structurally false everywhere downstream.
 //
 // Usage: npm run p38:research-bundle   (writes web/research.json)
+//        npm run p38:research-bundle -- --out=<path under the repo>   (scratch build for the currency gate)
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve, sep } from "node:path";
+
+// ROUND-26 R26-9. The output argument exists for exactly one reason: a currency gate has to rebuild this bundle and
+// compare it against the published asset WITHOUT overwriting the thing it is auditing. The path is kept inside the
+// working directory on purpose -- this script resolves every INPUT relative to cwd, so a scratch build outside the
+// repo root would be a bundle of a different checkout, and a gate that compares that to itself agrees for the wrong
+// reason. Refusing loudly beats writing to a path nobody meant to touch.
+function outPath(): string {
+  const hit = process.argv.find((a) => a.startsWith("--out="));
+  if (!hit) return "web/research.json";
+  const p = resolve(hit.slice("--out=".length));
+  const root = resolve("." + sep);
+  if (!p.startsWith(root)) throw new Error(`refusing --out=${hit.slice("--out=".length)}: resolves to ${p}, outside ${root}`);
+  return p;
+}
+const OUT = outPath();
 
 function load(p: string): any {
   return JSON.parse(readFileSync(p, "utf8"));
@@ -401,7 +418,11 @@ const payload = {
     independentCorroborationP88: { label: "independent corroboration 2x2 on a labelled set (P88)", n: p88.metrics.n, cm: p88.metrics.cm, vetoPower: p88.metrics.vetoPower, falseVetoRate: p88.metrics.falseVetoRate, verdict: p88.verdict, safeToGate: false, discoveryClaim: false },
     multiepochDiP89: { label: "multi-epoch difference-imaging 2x2 (P89)", n: p89.metrics.n, cm: p89.metrics.cm, vetoPower: p89.metrics.vetoPower, falseVetoRate: p89.metrics.falseVetoRate, verdict: p89.verdict, safeToGate: false, discoveryClaim: false },
     depthEstimatorsP90: { label: "measured vs catalogued transit depth across independent estimators (P90)", matched: p90.meta.matched, usable: p90.meta.usable, maxSectors: p90.meta.maxSectors, summary: p90.meta.summary, discoveryClaim: false },
-    claimProvenanceP91: { label: "claim-vs-primary provenance audit: does the resolved primary say what the post claims (P91)", mode: p91.mode, axes: Object.keys(p91.axes), controls: p91.controlsSummary, stamp: !!p91.stamp, discoveryClaim: false },
+    // ROUND-26 R26-5: `stamp: !!p91.stamp` was reading the artifact's third-key stamp, which is the very shape the
+    // freshness gate cannot see. The bundle should report whether the row carries a stamp the GATE can resolve -- so it
+    // now prefers `meta` (where p91's generator puts it after this round) and still accepts the old key, so the summary
+    // cannot flip to "no stamp" the moment the address is fixed.
+    claimProvenanceP91: { label: "claim-vs-primary provenance audit: does the resolved primary say what the post claims (P91)", mode: p91.mode, axes: Object.keys(p91.axes), controls: p91.controlsSummary, stamp: !!(p91.meta?.generatedAt || p91.stamp?.generatedAt), discoveryClaim: false },
     caveat: "All re-derived from the committed P82-P91 report JSON; no new analysis, no hardcoded numbers. The negative results (veto power 0.00 / coverage collapse / a known-planet false veto) are reported as measured and kept off every gate.",
     safeToGate: false, discoveryClaim: false,
   },
@@ -432,8 +453,8 @@ const payload = {
   compute,
 };
 
-writeFileSync("web/research.json", JSON.stringify(payload, null, 2) + "\n", "utf8");
-console.log(`wrote web/research.json`);
+writeFileSync(OUT, JSON.stringify(payload, null, 2) + "\n", "utf8");
+console.log(`wrote ${OUT}`);
 console.log(`  survey: ${N33} stars, purity ${tsDets ? (100 * tsTP / tsDets).toFixed(1) : "?"}% (${tsTP}TP/${tsFP}FP)`);
 console.log(`  completeness TS: ${completenessTS.map((c) => (c.rate * 100).toFixed(0) + "%").join(" ")}`);
 console.log(`  PDM agreement: ${pdmAgreement.agree}/${pdmAgreement.comparable}; Python purity ${pythonValidation.purity}`);

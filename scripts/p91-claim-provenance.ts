@@ -299,7 +299,11 @@ async function run(): Promise<void> {
       passed: outcomes.filter((o) => o.control.passed || !Object.keys(o.control.expected).length).length,
       failed: outcomes.filter((o) => !o.control.passed && Object.keys(o.control.expected).length).map((o) => ({ id: o.row.id, failed: o.control.failed })),
     },
-    stamp: buildStamp(["reports/p91-claims.json", "src/claims/claimReview.ts", "scripts/p91-claim-provenance.ts"]),
+    // ROUND-26 R26-5: this used to be `stamp: buildStamp(...)`, a THIRD key that no reader looked at -- p86 resolves a
+    // stamp from `meta` or from the flat top level, so a complete hashed stamp sat in the artifact invisible and the row
+    // was published as unattested. The data was always good; only its address was wrong. `meta` is where the other 50
+    // reports put it.
+    meta: buildStamp(["reports/p91-claims.json", "src/claims/claimReview.ts", "scripts/p91-claim-provenance.ts"]),
   }, null, 2) + "\n", "utf8");
 
   const md: string[] = [];

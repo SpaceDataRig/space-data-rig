@@ -283,6 +283,14 @@ async function runStepBlock(dir: string, state: unknown, ledger: unknown): Promi
   try {
     const r = await runProc(bash, ["--noprofile", "--norc", "-eo", "pipefail", blockFile], REPO, {
       GITHUB_OUTPUT: outFile,
+      // HERMETICITY (round-26). The step is launched from this checkout because its shell refers to
+      // `scripts/x-post-preflight.mjs` by a repo-relative path -- but the pre-flight's own `git log` calls then read
+      // THIS repository, not the fixture. That is how a commit touching web/research.json in the real repo flipped the
+      // F13 empty-window case to "proceed (web/research.json changed inside the science window)": the science cursor is
+      // deliberately in the past, so the only thing that kept that window empty was a fixture that was never consulted.
+      // Pointing GIT_DIR/GIT_WORK_TREE at the fixture makes the drill test the gate instead of the calendar.
+      GIT_DIR: join(dir, ".git"),
+      GIT_WORK_TREE: dir,
       CURSOR_FILE: join(dir, "out", "x-cursors.json"),
       STATE_URL: `${base}/api/state`,
       LEDGER_URL: `${base}/api/ledger`,
@@ -323,6 +331,43 @@ test("the workflow step records skip=0 and stays green when the window holds con
   assert.match(r.out, /proceed/, r.out);
   assert.equal(r.code, 0, r.out);
   assert.match(r.written, /skip=0/, `the step must record skip=0; got: ${JSON.stringify(r.written)}`);
+});
+
+/**
+ * Commit `web/research.json` in the FIXTURE repo at a chosen moment. Round-26 added this because the research tier --
+ * the one tier allowed to announce a science milestone -- had never been exercised through the step block, and the
+ * step used to read this checkout by accident: a commit here could flip a fixture's verdict. Now the only repository
+ * that can move the answer is the one the test built.
+ */
+function addResearchCommit(dir: string, atMs: number): void {
+  mkdirSync(join(dir, "web"), { recursive: true });
+  writeFileSync(join(dir, "web", "research.json"), '{"schema":"sdr-research/1"}\n');
+  execFileSync("git", ["add", "web/research.json"], { cwd: dir, stdio: "ignore" });
+  const epoch = `@${Math.floor(atMs / 1000)}`;
+  execFileSync("git", ["commit", "-q", "-m", "docs(research): bundle refresh"], {
+    cwd: dir, stdio: "ignore", env: { ...process.env, GIT_AUTHOR_DATE: epoch, GIT_COMMITTER_DATE: epoch },
+  });
+}
+
+test("the research tier fires when research.json lands inside the science window of the repository the step reads", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  emptyWindowCursors(dir);
+  addResearchCommit(dir, NOW - 120_000); // two minutes ago: inside a window opened an hour ago
+  const r = await runStepBlock(dir, { findings: [] }, { ledger: [] });
+  assert.match(r.out, /research\.json changed inside the science window/, r.out);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.written, /skip=0/, `a research milestone must not be skipped away; got: ${JSON.stringify(r.written)}`);
+});
+
+test("the same commit is ignored once it predates the science cursor -- the window decides, not the file's existence", async (t) => {
+  if (!findBash()) return t.skip("no bash on this host");
+  const dir = makeRepo();
+  emptyWindowCursors(dir);
+  addResearchCommit(dir, NOW - 2 * 3600_000); // two hours ago: outside the window, and already reported
+  const r = await runStepBlock(dir, { findings: [] }, { ledger: [] });
+  assert.match(r.out, /window provably empty/, r.out);
+  assert.match(r.written, /skip=1/, `an already-announced bundle must not re-fire the tier; got: ${JSON.stringify(r.written)}`);
 });
 
 // ---- ROUND-24 F17: the hint must not launder the silence watchdog. -------------------------------------------

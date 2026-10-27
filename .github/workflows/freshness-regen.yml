@@ -1,4 +1,4 @@
-name: freshness-regen (re-stamp network-bound reports + rebuild the report library)
+name: freshness-regen (re-stamp network-bound reports + rebuild the research bundle + rebuild the report library)
 
 # Audit point #3 follow-up. The report-freshness gate (scripts/report-freshness.ts, applied by p86) marks a
 # report HARD-STALE when a file its numbers were stamped against changed AFTER it was generated. Four reports
@@ -11,11 +11,24 @@ name: freshness-regen (re-stamp network-bound reports + rebuild the report libra
 # CURRENT tree, rebuild the report library, and PUBLISH the refreshed reports + web/reports/ back -- exactly the
 # self-publish pattern scale-roc/veto-multisector/leo-vetter already use.
 #
-# SCOPE (four genuinely-network reports):
+# SCOPE (five genuinely-network reports + the public summary of all of them):
 #   - p48 novelty-check         : fetchConfirmedPlanets + fetchTocCandidates (NASA Archive) over web/candidates.json
 #   - p76 multisource-novelty   : fetchToiTable (ExoFOP, a multi-MB CSV the sandbox times out on)  -> was unstamped
 #   - p92 scrambled-fa          : fetchSpocLightCurve (MAST S3) + fetchConfirmedPlanets (Archive)   -> was unstamped
 #   - p59 offtarget-subset      : Gaia blend census (reads the committed p58 report, does NOT rerun p58) -> STALE after toiDispositions edit
+#   - p91 claim-provenance      : api.crossref.org + export.arxiv.org over the committed claims ledger. Added in
+#       round-26 because its generator wrote a complete hashed stamp under a THIRD key (`stamp`) that no reader can
+#       see, so the row published as unattested; the writer now emits `meta`, and only a LIVE re-run keeps the record
+#       faithful -- measured, not assumed: `--offline` reproduces every verdict but silently rewrites two resolved
+#       paper titles ("Multi-Object" -> "Multiobject") and flips mode live->offline, so refreshing it here, where the
+#       registering bodies answer, is the only run that changes nothing but the stamp.
+#   - p38 research-bundle       : the summariser, not a measurement. Added in round-26 for a reason that hurts:
+#       web/research.json is the asset the digest links publicly as "Numbers + data" and web/app.js renders its
+#       compute block as a metric card, yet NOTHING rebuilt it and no test compared it to the reports it claims to
+#       summarise. It was six days behind, still publishing an exponent and an addressable-veto block that the
+#       re-measured p59 no longer supports. Rebuilding it here, after the fleet re-measures and before p86 indexes,
+#       is what keeps that surface from drifting again; tests/research-bundle-currency.test.ts holds the committed
+#       file to a fresh build in CI regardless.
 # p48 and p76 both stamp web/candidates.json as an input, so a board republish by p22 HARD-STALEs them together --
 # p48 is in this fleet precisely so a candidate-board flip re-stamps BOTH novelty reports on a runner where the
 # Archive and ExoFOP answer, and the rebuilt library never carries a stale novelty report.
@@ -29,11 +42,11 @@ name: freshness-regen (re-stamp network-bound reports + rebuild the report libra
 # (a fresh generatedAt/gitSha), and the numbers stay honest because they are re-MEASURED, not copied. discoveryClaim
 # remains structurally false.
 #
-# TRIGGERS: manual dispatch, and any push to main that edits one of the four networked generators, a tracked source
-# their stamps cover, or web/candidates.json (the board p48/p76 read) -- so a candidate-board republish re-stamps the
-# novelty reports on a networked runner instead of reappearing silently as STALE. Neither the publish commit (only
-# reports/ and web/reports/, never web/candidates.json) nor this workflow's own definition is a trigger path, so
-# neither can re-fire the fleet.
+# TRIGGERS: manual dispatch, and any push to main that edits one of the five networked generators, the bundler, a
+# tracked source their stamps cover, or web/candidates.json (the board p48/p76 read) -- so a candidate-board republish
+# re-stamps the novelty reports on a networked runner instead of reappearing silently as STALE. Neither the publish
+# commit (only reports/, web/reports/ and web/research.json, never web/candidates.json) nor this workflow's own
+# definition is a trigger path, so neither can re-fire the fleet.
 
 on:
   workflow_dispatch:
@@ -53,6 +66,10 @@ on:
       - scripts/p48-novelty-check.ts
       - scripts/p92-scrambled-fa.ts
       - scripts/p59-offtarget-subset.ts
+      - scripts/p91-claim-provenance.ts
+      - scripts/p38-research-bundle.ts
+      - reports/p91-claims.json
+      - src/claims/claimReview.ts
       - src/data/toiDispositions.ts
       - src/data/gaiaDilution.ts
       - src/data/mastS3.ts
@@ -96,6 +113,17 @@ jobs:
       - name: Localization-addressable subset veto (p59, reads the committed p58 report)
         run: npm run p59:offtarget-subset -- --aperture 21 --min-sep 1.5
 
+      - name: Claim-vs-primary provenance audit against the registering bodies (p91, LIVE)
+        # Deliberately NOT --offline. The offline replay reproduces every verdict, but two resolved paper titles come
+        # from the live Crossref record ("Multi-Object"), and the mode field must say what the run actually did. This
+        # runner is the only place both are true.
+        run: npm run p91:claim-provenance
+
+      - name: Rebuild the public research bundle from the refreshed reports (p38)
+        # Must run after the measurement arms and before p86: web/research.json summarises reports/*.json, and a
+        # summary nobody rebuilds is how a superseded exponent stayed on the site for six days.
+        run: npm run p38:research-bundle
+
       - name: Rebuild the report library + freshness index from the refreshed reports
         # --allow-stale so a single catalog that refused to answer still publishes the OTHER three, marked honestly;
         # the publish summary below echoes how many remain stale so a red run is never a mystery.
@@ -118,9 +146,10 @@ jobs:
                   reports/p76-multisource-novelty.json reports/p76-multisource-novelty.md \
                   reports/p92-scrambled-fa.json reports/p92-scrambled-fa.md \
                   reports/p59-offtarget-subset.json reports/p59-offtarget-subset.md \
-                  web/reports/ || true
+                  reports/p91-claim-provenance.json reports/p91-claim-provenance.md \
+                  web/research.json web/reports/ || true
           if git diff --cached --quiet; then echo "reports and index unchanged; nothing to publish"; exit 0; fi
-          git commit -m "freshness-regen: re-stamp p48/p59/p76/p92 + rebuild report library (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
+          git commit -m "freshness-regen: re-stamp p48/p59/p76/p91/p92 + rebuild research bundle and report library (run $GITHUB_RUN_ID, CI-measured)" -m "Co-authored-by: Space Data Rig <dev@spacedatarig.app>"
           published=0
           for attempt in 1 2 3 4 5; do
             git fetch origin main --quiet

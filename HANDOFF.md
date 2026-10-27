@@ -663,6 +663,15 @@ the Actions web page when the anonymous API is rate-limited.
   `foo.discoveryClaim=true` is the same breach and a top-level key lookup misses it. Prove the scan is not a tautology by
   asserting the fields appear at all, then tampering a real artifact (`scripts/audit/mutate26-redline.mjs`) and requiring
   the corpus case to name the offending file.
+- A published list and the files it points at must be kept a bijection, especially when a merge -- not a clean build --
+  can assemble the shipped state (round-26, R26-22). `web/app.js` maps each `web/reports/index.json` row's `slug` to
+  `/reports/<slug>.html`; only p90's page was pinned, so a row whose fragment was never built (or merged away) is a
+  visitor-facing 404, and an orphan fragment is dead bytes on the CDN. `freshness-regen` publishes index and fragments
+  with `-X ours`, so the committed pairing is a possible merge product, not guaranteed by p86 having run cleanly.
+  `tests/report-library-bijection.test.ts` asserts both directions from the tree (hermetic -- CI runs it without network).
+  The live probe `scripts/audit/live-link-integrity26.mjs` confirms it against the edge but only CONCLUDES when the
+  network answers; when it times out, say "unreachable", never "clean" and never "broken" -- a transient connect failure
+  is not evidence either way.
 
 ## 13. Current state (as of 2026-10-27)
 

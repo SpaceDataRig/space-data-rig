@@ -279,6 +279,19 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   `scripts/audit/mutate26-redline.mjs` then tampers a REAL committed artifact (p44's `discoveryClaim` -> true) and requires
   the corpus case to go red naming that file, restore to 3/3, byte-identical. The corpus is clean today; this turns "the
   code would not produce it" into "the bytes we ship do not contain it."
+- **R26-22, the report library's index and its built pages are only checked for one row, and the fleet's own merge is a
+  desync path.** `web/app.js:1638` maps every index row's `slug` to `/reports/<slug>.html`, so a published row whose
+  fragment is missing is a link a visitor clicks into a 404 -- the exact class round-25 hit when its release text cited
+  `https://spacedatarig.app/reports/` (a directory with no index). Until now only p90's page was pinned
+  (`tests/report-library.test.ts`). A live probe over all 56 rows was attempted and is the right manual complement
+  (`scripts/audit/live-link-integrity26.mjs`), but outbound network to the edge was flaky this session, and per the
+  round's own rule a transient connect timeout is not reported as a defect. The durable, hermetic version is the invariant
+  itself: `tests/report-library-bijection.test.ts` reads the committed tree and requires the published `index.json` rows
+  and the `web/reports/*.html` fragments to be a BIJECTION -- no row without a page (a live 404), and no orphan fragment no
+  row references (dead bytes on the CDN) -- a real risk because `freshness-regen` merges with `-X ours` across `index.json`
+  and fragments, so the committed state can be assembled by a merge rather than a clean p86 run. The comparison logic is
+  exercised on synthetic mismatch/clean inputs before the corpus is checked, so "56 rows, 56 pages, 0 missing, 0 orphans"
+  is a reading, not an absence. Corpus is consistent today; this is the backstop for the merge path.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

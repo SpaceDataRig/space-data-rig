@@ -30,6 +30,7 @@ import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { resolveSpocKey, fetchSpocBytes, stitchLightCurves } from "../src/data/mastS3.ts";
 import { fitsToLightCurve } from "../src/data/mast.ts";
+import { buildStamp } from "./report-freshness.ts";
 import { injectTransitInto } from "../src/sim/injectInto.ts";
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import type { LightCurve, ArchivePlanet } from "../src/core/types.ts";
@@ -238,7 +239,7 @@ async function main(): Promise<void> {
   lines.push(`Reproduce: \`npm run p35:pdm-crosscheck -- --stars ${wantStars} --maxsectors ${maxSectors} --period ${injPeriod} --seed ${seed}\``);
   lines.push(``);
   writeFileSync("reports/p35-pdm-crosscheck.md", lines.join("\n"));
-  writeFileSync("reports/p35-pdm-crosscheck.json", JSON.stringify({ meta: { stars: N, coverageMiss, depthsPpm, injPeriod, seed, matchTolPct, pdmBins, pdmOversample, generatedBy: "p35-pdm-crosscheck" }, agreement: { comparable: comparable.length, agree: agreeCount }, rows }, null, 2));
+  writeFileSync("reports/p35-pdm-crosscheck.json", JSON.stringify({ meta: { stars: N, coverageMiss, depthsPpm, injPeriod, seed, matchTolPct, pdmBins, pdmOversample, generatedBy: "p35-pdm-crosscheck", ...buildStamp(["reports/p33-catalog.json", "scripts/p35-pdm-crosscheck.ts"]) }, agreement: { comparable: comparable.length, agree: agreeCount }, rows }, null, 2));
   console.log(`\nWrote reports/p35-pdm-crosscheck.md and reports/p35-pdm-crosscheck.json`);
   console.log(`\nVERDICT: P35-RAN`);
 }

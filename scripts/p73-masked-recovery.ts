@@ -35,6 +35,7 @@ import { wilsonInterval } from "../src/sim/completenessGrid.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve, stitchLightCurves } from "../src/data/mastS3.ts";
 import type { LightCurve, ArchivePlanet } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -201,6 +202,7 @@ async function main(): Promise<void> {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["reports/p60-joint-vs-single.json", "scripts/p73-masked-recovery.ts"]),
       generatedBy: "scripts/p73-masked-recovery.ts", n, k, maxSectors, minPeriod, maxPeriod, tmagCap, minSnr, tolPct, win, padFrac,
       arms: "recovered = best period matches catalog truth within tol at snr>=floor. SINGLE best per-sector bls; NAIVE-JOINT bls(stitched); MASK-* masks the host's OTHER catalogued planets (period+tranmid+trandur widened +-pad) on the stitched curve before searching; ORACLE truth-seeded narrow fold.",
       data: "real TESS-SPOC light curves (token-free public S3) + NASA pscomppars ephemerides; strict A/B on the P60/P62/P67 sample",

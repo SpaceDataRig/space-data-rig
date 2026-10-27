@@ -708,8 +708,21 @@ the Actions web page when the anonymous API is rate-limited.
   `index.json`, maps each to its generator, and extracts the committed DATA inputs it reads (excluding its own output,
   which is circular). Beware the tempting shortcut: stamping only the generator's own source flips a row to `verified`
   while checking nothing but "the code file did not change" -- the hollow false-comfort report-freshness.ts warns about.
-  Only 10 of the 33 have a real committed upstream input to stamp meaningfully; the other 23 are pure-network and need a
+  Only 7 of the 33 have a real committed upstream input to stamp meaningfully; the other 26 are pure-network and need a
   provenance design, not a code-only stamp. Name them; do not paper over them.
+- A tool's own output is a CLAIM, not a fact -- verify it against the read site before acting on it (round-26, R26-31).
+  `stamping-plan26.mjs` printed "10 determinable" and a ready `buildStamp([...])` line each; trusting that verbatim would
+  have wired circular stamps into p33/p39 (they WRITE the files the scan called inputs, they never read them) and edited
+  the wrong p81 script (a bare `pNN` prefix matched `p81-round-figure` before `p81-triceratops-lite`, which already
+  stamped). Both bugs were invisible until I checked whether each named input was actually `readFileSync`'d. The general
+  form: a static scan of "which files does X touch" cannot tell a read from a write or resolve an ambiguous id -- confirm
+  the specific read site before spending the (scarce) action it was planning.
+- A green test is not a working test -- mutate it before believing it guards anything (round-26, R26-31). The first
+  `generator-stamp-wiring.test.ts` passed 3/3 but was vacuous: it grepped the whole file for the input path, and the real
+  read line makes that substring present regardless of what the stamp actually names. Pointing a stamp at the WRONG file
+  still passed. Only rewriting it to parse the `buildStamp([...])` argument list and re-running the mutation (2 failures)
+  made it bite. When you add a guard, apply the exact defect it is meant to catch and watch it fail; a guard that survives
+  its own mutation is decoration.
 
 ## 13. Current state (as of 2026-10-27)
 

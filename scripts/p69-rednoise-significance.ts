@@ -37,6 +37,7 @@ import { estimateRho, autocorrFunction, fitAr1ToAcf } from "../src/sim/redNoise.
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
 import type { LightCurve } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -142,7 +143,7 @@ async function main(): Promise<void> {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p69-rednoise-significance.ts", n: all.length, nNull, trials, sectorsPer, seed, fapBar: FAP_BAR, noiseLikeCut: 50, data: "real TESS-SPOC transit-masked residuals (token-free public S3)", note: "AR(1)-model null (production calibratedFap) vs model-free block-bootstrap (estimateFap) on the SAME noise; NOT a discovery claim; re-tunes nothing." },
+    meta: { ...buildStamp(["reports/p60-joint-vs-single.json", "scripts/p69-rednoise-significance.ts"]), generatedBy: "scripts/p69-rednoise-significance.ts", n: all.length, nNull, trials, sectorsPer, seed, fapBar: FAP_BAR, noiseLikeCut: 50, data: "real TESS-SPOC transit-masked residuals (token-free public S3)", note: "AR(1)-model null (production calibratedFap) vs model-free block-bootstrap (estimateFap) on the SAME noise; NOT a discovery claim; re-tunes nothing." },
     summary: { quiet: quiet.length, red: red.length, noiseLike: noise.length, meanDeltaAll: mean(all.map((r) => r.delta)), meanDeltaQuiet: quietMeanDelta, meanDeltaRed: redMeanDelta, meanDeltaNoise: noiseMeanDelta, nOptimistic: optimistic, nOptimisticNoise: optimisticNoise, flipsAll, flipsNoise, meanExcessAtLastLag: meanExcess, maxResidualSnr: maxResSnr },
     rows, verdict, safeToGate: false, discoveryClaim: false,
   };

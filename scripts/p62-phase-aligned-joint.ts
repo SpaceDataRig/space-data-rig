@@ -34,6 +34,7 @@ import { wilsonInterval } from "../src/sim/completenessGrid.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve, stitchLightCurves } from "../src/data/mastS3.ts";
 import type { LightCurve } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function arg(name: string, dflt: string): string {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -193,6 +194,7 @@ async function main(): Promise<void> {
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
+      ...buildStamp(["reports/p60-joint-vs-single.json", "scripts/p62-phase-aligned-joint.ts"]),
       generatedBy: "scripts/p62-phase-aligned-joint.ts", n, maxSectors, minPeriod, maxPeriod, tmagCap, minSnr, tolPct, win, oversample, minSectorDepthPpm,
       arms: "SINGLE best per-sector bls; NAIVE full-range stitched bls; REFINED stitched bls seeded at the best single-sector period within +-win (phase-aligned fold); ORACLE same seeded at catalog truth (diagnostic ceiling)",
       data: "real TESS-SPOC light curves (token-free public S3); strict A/B on the P60 20-planet sample",

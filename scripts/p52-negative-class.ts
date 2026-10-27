@@ -25,6 +25,7 @@ import { sectorsForCoord, fetchSpocLightCurve } from "../src/data/mastS3.ts";
 import { fetchSpocTargetPixels } from "../src/data/mastS3Pixels.ts";
 import { localizeTransitSource, judgeLocalization } from "../src/detect/diffImaging.ts";
 import type { ArchivePlanet } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function argNum(name: string, dflt: number): number {
   const i = process.argv.indexOf(`--${name}`);
@@ -128,7 +129,7 @@ async function main() {
   console.log(`\nVERDICT: ${verdict}`);
 
   const json = {
-    meta: { generatedBy: "scripts/p52-negative-class.ts", wantHosts, coneRadiusArcsec, listRows, reviewerStandard: "acceptance needs a labelled negative class (real off-target blends), not just positives" },
+    meta: { ...buildStamp(["src/data/vizierEb.ts", "scripts/p52-negative-class.ts"]), generatedBy: "scripts/p52-negative-class.ts", wantHosts, coneRadiusArcsec, listRows, reviewerStandard: "acceptance needs a labelled negative class (real off-target blends), not just positives" },
     exofopReachable,
     gcvsList: { variablesParsed: allVars.length, eclipsingBines: ebList.length },
     hosts: hosts.map((p) => ({ name: p.pl_name ?? p.hostname ?? `TIC ${p.tic}`, ra: p.ra, dec: p.dec, absB: +absGalacticLatitude(p.ra!, p.dec!).toFixed(2) })),

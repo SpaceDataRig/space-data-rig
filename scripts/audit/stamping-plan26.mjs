@@ -31,16 +31,25 @@ const allScripts = readdirSync("scripts").filter((f) => /^p\d+-.*\.ts$/.test(f))
 const rows = [];
 for (const id of unattested) {
   const nn = /^p(\d+)/.exec(id)?.[1];
-  const file = allScripts.find((f) => f.startsWith(`p${nn}-`));
+  // Map the report id to its generator by EXACT stem first: the published row id equals the generator filename
+  // (reports/p81-triceratops-lite.json <- scripts/p81-triceratops-lite.ts). Falling back to the bare pNN prefix is
+  // wrong when two scripts share a number (p81-round-figure.ts AND p81-triceratops-lite.ts) -- a prefix scan picks
+  // the alphabetically-first one and analyzes the wrong generator, which is exactly the mistake this line used to make.
+  const file = existsSync(`scripts/${id}.ts`) ? `${id}.ts` : allScripts.find((f) => f.startsWith(`p${nn}-`));
   if (!file) { rows.push({ script: `scripts/p${nn}-??? (no generator matched id ${id})`, alreadyStamped: false, inputs: [], missing: [], untracked: [], determinable: false }); continue; }
   const src = readFileSync(`scripts/${file}`, "utf8");
   const alreadyStamped = /buildStamp\(/.test(src);
-  // Committed data inputs the source references by literal path. EXCLUDE the generator's own OUTPUT report
-  // (a "reports/pNN-*.json" with the same pNN it writes): naming your own output as your input is circular and
-  // would let a stamp "verify" a file against itself. What survives is a genuine upstream committed input.
+  // Committed data inputs the source references by literal path. EXCLUDE every file the generator WRITES:
+  // naming an output as an input is circular and lets a stamp "verify" a file against itself. This is not just
+  // the primary reports/<id>.json -- p33 also writes reports/p33-catalog.json and p39 writes
+  // reports/p39-candidates.json as secondary outputs, and a literal-path scan alone counts those as "inputs"
+  // unless every writeFileSync target is removed. What survives is a genuine upstream committed input.
+  const written = new Set();
+  for (const w of src.matchAll(/writeFileSync\(\s*["'`](reports\/[\w.-]+\.json|tests\/[\w./-]+)["'`]/g)) written.add(w[1]);
+  written.add(`reports/${id}.json`);
   const inputs = new Set();
   for (const m of src.matchAll(/["'`](reports\/p[\w.-]+\.json|tests\/fixtures\/[\w./-]+|src\/data\/[\w.-]+\.ts)["'`]/g)) {
-    if (m[1] === `reports/${id}.json`) continue; // the generator's own output, not an input
+    if (written.has(m[1])) continue; // the generator writes this file; it is an output, not an input
     inputs.add(m[1]);
   }
   const missing = [];

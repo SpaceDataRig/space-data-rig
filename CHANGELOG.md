@@ -404,10 +404,32 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   from the public side -- the committed bytes and the served bytes agree, which is exactly the deployed-vs-inert gap the
   round keeps probing. No redeploy was warranted: R26-20..29 touched only offline tests, audit tools and ledgers, so the
   deployed `src/`/`web/` trees still equal HEAD's; the read-back confirms that rather than assuming it.
+- **R26-31, turning R26-29's plan into write-side code -- and finding three bugs in my own planner before trusting it.**
+  R26-29 shipped `stamping-plan26.mjs` as a "turnkey" that printed the `buildStamp([...])` line to wire per generator.
+  Before editing any science generator I checked each printed input against the actual read site, and the tool was wrong
+  three ways. (1) It counted p33 and p39 as "having a committed input" because they reference `reports/p33-catalog.json` /
+  `reports/p39-candidates.json` by literal path -- but they *write* those, they don't read them; wiring them would have
+  produced exactly the circular stamp (a file verified against itself) the tool's own header warns about. The scan only
+  excluded the *primary* output `reports/<id>.json`, not secondary write targets. (2) It mapped a report id to its
+  generator by bare `pNN` prefix, so the `p81` row resolved to `p81-round-figure.ts` (which writes only an SVG) instead of
+  `p81-triceratops-lite.ts` (the real generator, which *already* stamps). The honest split is not "10 determinable" but
+  **7 to wire** (p35, p52, p56, p62, p67, p69, p73), each verified to `readFileSync` a tracked committed report (or import
+  a tracked src module) that it does not itself write. Those seven are now wired with `...buildStamp([...])` in their `meta`.
+  (3) My first `tests/generator-stamp-wiring.test.ts` looked green but was **vacuous**: it grepped the whole file for the
+  input path, so pointing a stamp at the wrong file still passed (the genuine read line elsewhere contained the path
+  anyway). A mutation -- editing p35 to stamp its own output -- proved it: 0 failures. I rewrote the test to parse the
+  actual `buildStamp([...])` argument list and assert every named input is read and none is a file the generator writes;
+  the same mutation then produced 2 failures, and reverting restored 3/3. The artifact half of these seven rows stays
+  `unattested` until the fleet re-runs them (MAST/S3 unreachable), the same write-side-ready / pending-fleet state as
+  R26-5's p91 -- the wiring is committed and pinned by a test that is known, by mutation, to actually bite.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be
 tracked *and* still match the bytes on disk, and the built index must call the row verified rather than merely stamped.
+New `tests/generator-stamp-wiring.test.ts` (3 cases, R26-31) pins the seven write-side wirings by parsing the actual
+`buildStamp([...])` argument list -- asserting each named input is genuinely `readFileSync`'d and that no stamped input
+is a file the same generator writes. It was mutation-checked by pointing p35's stamp at its own output: the first
+(whole-file grep) version stayed green and was rewritten; the argument-list version failed 2 of 3 and restored on revert.
 Mutation-checked with `scripts/audit/mutate26-stamp-test.mjs`, which restores both files byte-for-byte and re-runs:
 deleting p79's `buildStamp` call turns 2 of 4 red (the source check *and* the self-referential checksum, which is the
 point of stamping a generator's own file); corrupting one recorded checksum turns 1 red and names the input it is stale

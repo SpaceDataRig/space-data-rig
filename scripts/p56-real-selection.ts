@@ -20,6 +20,7 @@ import { fetchGaiaNeighborhood, dilutionFromNeighbors, angularSepArcsec } from "
 import { buildSelectionFunction, type PeriodBinSelection } from "../src/sim/selectionFunction.ts";
 import type { GridCell } from "../src/sim/completenessGrid.ts";
 import type { ArchivePlanet } from "../src/core/types.ts";
+import { buildStamp } from "./report-freshness.ts";
 
 function argNum(name: string, dflt: number): number {
   const i = process.argv.indexOf(`--${name}`);
@@ -149,6 +150,7 @@ async function main() {
 
   const json = {
     meta: {
+      ...buildStamp(["reports/p47-completeness-grid.json", "scripts/p56-real-selection.ts"]),
       generatedBy: "scripts/p56-real-selection.ts", module: "src/sim/selectionFunction.ts",
       completenessGrid: "reports/p47-completeness-grid.json",
       data: "real NASA Archive stellar R*/M* + real Gaia DR3 aperture dilution (token-free)",

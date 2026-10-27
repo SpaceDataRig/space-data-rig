@@ -6,12 +6,19 @@
 // this round extended actually fired). A step added to a workflow is a hypothesis about CI until a run proves it.
 const REPO = "SpaceDataRig/space-data-rig";
 const api = async (path) => {
-  const r = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
-    headers: { accept: "application/vnd.github+json", "user-agent": "space-data-rig-audit" },
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!r.ok) return { error: `HTTP ${r.status}` };
-  return r.json();
+  // A non-2xx is one kind of "did not get an answer"; a thrown fetch (the header comment's github.com:443 connect timeout)
+  // is another, and both must report legibly rather than crash with an uncaught DOMException -- the R26-25 distinction
+  // between failing loudly and failing legibly. Route both through the same {error} shape the callers already print.
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
+      headers: { accept: "application/vnd.github+json", "user-agent": "space-data-rig-audit" },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    return await r.json();
+  } catch (e) {
+    return { error: `network: ${e.name === "TimeoutError" ? "timeout" : e.message}` };
+  }
 };
 
 const shas = process.argv.slice(2);

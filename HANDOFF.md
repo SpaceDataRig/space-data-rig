@@ -688,7 +688,10 @@ the Actions web page when the anonymous API is rate-limited.
   request generously enough that a slow-but-live large payload is not wrongly declared unreachable (the mirror image of a
   false 404), catch per request, and reserve exit 2 for a clean "UNREACHABLE ... NOT a pass and NOT a defect." A negative
   sweep verdict (R26-24: "sound, has a timeout") is a claim about the tool's code path, not about its observable output --
-  confirm the output too.
+  confirm the output too. The same lens caught `ci-watch26` (R26-26): it set a timeout but only mapped a bad HTTP *status*
+  to a legible error, so a *thrown* fetch still crashed with a stack trace. "Has a timeout" and "fails legibly on a
+  timeout" are independent properties; audit each network tool for both, and record which ones already pass so the next
+  reader does not re-sweep them.
 
 ## 13. Current state (as of 2026-10-27)
 

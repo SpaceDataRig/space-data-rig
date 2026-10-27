@@ -330,6 +330,17 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   the fixed probe against the degraded edge returned `UNREACHABLE: ... /reports/index.json (timeout)` exit 2 -- the honest
   verdict. `live-readback26` is still a diagnostic that cannot CONCLUDE while the network is down; the fix is that it now
   says which of the two it is doing.
+- **R26-26, R26-25's lens (inspect the failure OUTPUT, not just the timeout) caught ci-watch26, which R26-24 had cleared.**
+  R26-24's static fleet sweep marked `ci-watch26.mjs` sound because it set `AbortSignal.timeout(30s)`. But its `api()`
+  only turned a bad HTTP *status* into `{error}`; a *thrown* fetch -- the very `github.com:443` connect timeout its own
+  header comment describes -- still escaped as an uncaught DOMException, the same loud-but-illegible crash R26-25 had just
+  removed from `live-readback26`. Having a timeout and failing legibly on a timeout are different properties, and only the
+  R26-25 question ("what does the reader actually see when the network is down?") distinguishes them. Fixed by wrapping
+  the request so both a non-2xx and a throw route through the same `{error}` shape the callers already print
+  (`network: timeout` / `HTTP <status>`), never a stack trace. Re-run reached api.github.com and printed live check-runs
+  (f833a92 in_progress, prior pushes success) with no crash. The sibling `feed-fetch-to-post-gap.mjs` was checked the same
+  way and already qualifies -- it catches per request with backoff and guards every downstream field -- so it needed no
+  change; recording that negative is what stops the next reader re-sweeping it.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

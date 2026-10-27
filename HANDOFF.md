@@ -746,6 +746,11 @@ authority; they are deliberately not restated here.
   The interim marker this bullet carried (`ROUND-26 AWAITING DEPLOY`) was removed only after `/health` named the new
   version, which is the whole point of the `awaiting deploy` check in `tests/handoff-freshness.test.ts`.
   Earlier production: version f1a50e51-104c-4838-86cb-f9827c426cd2, gitSha 8aad1dd2edf3996c0347440b3dcbcd58d295adaa.
+  **ROUND-26 INCREMENT 3, AWAITING DEPLOY:** the tree above is 556fede6's, and HEAD's `web/` has moved since --
+  `web/reports/index.json` plus the p68/p90 fragments -- so this bullet describes the deploy that actually happened and
+  the marker says plainly that a second one is pending. It is removed by the commit that records the new version id
+  after `GET /health` confirms it, which is what the `awaiting deploy` check in
+  `tests/handoff-freshness.test.ts` is for.
   **ROUND-25 R25-10, the reason this is a deploy at all:** rounds 22-25 touched no
   `src/` file, but round-25 changed two SERVED assets (`web/app.js`, `web/reports/index.json` + fragments), and no
   workflow in this repository deploys -- so a committed-and-green asset fix is not public. Before acting the live site

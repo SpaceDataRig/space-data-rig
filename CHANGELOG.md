@@ -358,6 +358,16 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   moves the blind FP rate only ~25%->23%. Recorded as a self-caught communication defect. The durable lesson: before
   publishing any "our pipeline does X" claim, read the fields the production caller actually assigns, not the modules
   that exist.
+- **R26-28, having caught the R26-27 overclaim in a draft, the same lens was turned on the committed docs -- and they
+  hold the line.** The natural follow-up question is whether the boundary my draft blurred is blurred anywhere durable too.
+  A sweep of `README.md` and `RESEARCH.md` for the research-only tools (common-mode, systematics-aware FAP, odd/even,
+  secondary-eclipse) found every mention correctly scoped: README calls odd/even + secondary "DIAGNOSTIC ONLY and
+  deliberately NOT [gates]" (:444-447, :1354) and common-mode "research-only, worker not imported" (:1509); RESEARCH.md
+  presents the 35-42% and 61%->16% common-mode/systematics results as measured findings WITH their price stated ("keeps
+  only 3 of 17 injected planets", :26-27) and describes `candidateRecord.ts` as accepting an *optional* `systematicsFap`
+  (:277), never as a live gate. So the R26-27 defect was confined to an un-posted ad-hoc reply; the shipped documentation
+  already maintains the research-vs-money-path boundary. Negative confirmation, no change -- recorded so the next reader
+  does not re-run the sweep wondering whether the docs were ever checked.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

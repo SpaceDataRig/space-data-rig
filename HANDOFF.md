@@ -692,6 +692,15 @@ the Actions web page when the anonymous API is rate-limited.
   to a legible error, so a *thrown* fetch still crashed with a stack trace. "Has a timeout" and "fails legibly on a
   timeout" are independent properties; audit each network tool for both, and record which ones already pass so the next
   reader does not re-sweep them.
+- A capability claimed in prose must be traced to the field the production caller actually sets (round-26, R26-27). A
+  public reply describing the candidate gate named common-mode subtraction and a "systematics-inclusive null" as checks
+  that run before something is called a candidate. Both modules exist, are tested, and `review.ts` will gate on
+  `systematicsFap` if supplied -- but the live workflow builds the gating `vetting` object with only `fap` (per-star
+  `calibratedFap`) and `centroidShiftArcsec`, never `systematicsFap`, and never subtracts common mode from the real
+  curve. The gap between "a module exists and could gate" and "the money path feeds it" is the deployed-but-inert class
+  reached through writing instead of code. The committed docs were already right; the un-posted draft was the only wrong
+  artifact. Before publishing any "the pipeline does X" statement, read the assignment sites in `src/cf/workflow.ts`,
+  not the list of modules under `src/detect/`.
 
 ## 13. Current state (as of 2026-10-27)
 

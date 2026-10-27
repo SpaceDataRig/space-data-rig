@@ -341,6 +341,23 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   (f833a92 in_progress, prior pushes success) with no crash. The sibling `feed-fetch-to-post-gap.mjs` was checked the same
   way and already qualifies -- it catches per request with backoff and guards every downstream field -- so it needed no
   change; recording that negative is what stops the next reader re-sweeping it.
+- **R26-27, a public reply drafted this session attributed research-only false-positive machinery to the production gate,
+  and tracing the claim to the code said so.** Answering a follower's methods question, the draft listed "subtract an
+  ensemble common-mode template before BLS" and "a systematics-inclusive null" among the checks that run "before calling
+  it a candidate." Those tools exist and are honest -- `src/detect/commonMode.ts`, `src/detect/instrumentalNull.ts`,
+  measured in `scripts/p31-common-mode-fp.ts` / `p39` -- and `review.ts` / `candidateRecord.ts` will gate on a
+  `systematicsFap` IF a caller supplies one. But the live money path never does: `src/cf/workflow.ts` builds the gating
+  `vetting` object with exactly two fields, `fap` (the per-star `calibratedFap` red-noise null, :493) and
+  `centroidShiftArcsec` (:531); it never sets `systematicsFap` and never subtracts common mode from `fr.lc` before the
+  search, and it computes odd/even + secondary only to EMIT them as "informational, not gating" (:514-521). So the draft
+  described a research result as a live veto -- the "deployed but inert" class, arriving through prose this time. The
+  committed docs were already correct (`README.md` labels common-mode "research-only, worker not imported"; the
+  workflow comment states the boundary precisely), so the fix is to the un-posted draft, not the code: it was rewritten
+  to gate-claims only what the live path gates on, and to name the common-mode/systematics-null work as measured
+  research pending calibration -- which is both true and a stronger answer, since it also concedes the per-star FAP alone
+  moves the blind FP rate only ~25%->23%. Recorded as a self-caught communication defect. The durable lesson: before
+  publishing any "our pipeline does X" claim, read the fields the production caller actually assigns, not the modules
+  that exist.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

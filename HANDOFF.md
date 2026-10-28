@@ -927,30 +927,30 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version dbaff271-53ff-45a1-ad5c-a1185162ba9a, gitSha adef4666e82088e95ec2e5f14e20b8ddebd504ac
-  (deployed 2026-10-28 by R26-59 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
-  static assets from `web/`; `GET /health` read back returned `deployVersion dbaff271-53ff-45a1-ad5c-a1185162ba9a` and
-  `gitSha adef466`), `codeVersion space-data-rig@0.2.0`. **R26-60 AWAITING DEPLOY:** the p81 TRICERATOPS-grade frozen-fixture lift is
-  committed -- its report, `reports/fixtures/p81-frozen-rows.json`, and the regenerated `web/reports/index.json` +
-  `web/reports/p81-triceratops-lite.html` move the library to `stamped 34 / verified 32 / fullyVerified 32 / unattested 22 /
-  stale []` -- but as of this ledger commit the live endpoint still serves the adef466 build (`verified 31`); a redeploy is
-  pending, so this bullet carries the `awaiting deploy` marker the `tests/handoff-freshness.test.ts` tree-equality check
-  requires (the named production revision adef466 and HEAD differ in exactly the two served `web/` files). **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
-  R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59 frozen-fixture lifts of p41, p88, p71, p65, p45, p46 and p51 -- each report now re-DERIVES
+- Production: wrangler version 75a43010-459e-4018-893f-cf04f3cf2e44, gitSha bdff1680d64c37295d4dceabffa46e00130ea7ff
+  (deployed 2026-10-28 by R26-60 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
+  static assets from `web/`; `GET /health` read back returned `deployVersion 75a43010-459e-4018-893f-cf04f3cf2e44` and
+  `gitSha bdff168`), `codeVersion space-data-rig@0.2.0`. HEAD (this section's ledger commit, made after the deploy)
+  differs from the deployed revision bdff168 only in `HANDOFF.md` -- no `src/` and no `web/` path -- so the served
+  `src/` and `web/` trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces.
+  **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51 and p81 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,
   `reports/fixtures/p71-frozen-rows.json`, `reports/fixtures/p65-frozen-outcomes.json`, `reports/fixtures/p45-frozen-rows.json`,
-  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`), so each stamp carries a real DATA input and all seven are honestly machine-verified again (p81 joins them once redeployed).
-  Live read-back of `GET /reports/index.json` (the deployed adef466 build): 56 rows, `freshness {stamped 33, verified 31, fullyVerified 31, unattested 23,
-  stale []}`; `p41-longbaseline`, `p88-independent-corroboration`, `p71-audit-positive-control`, `p65-external-audit`, `p45-fp-probability`, `p46-coherence` and `p51-crowding-stratified` each serve
+  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`, `reports/fixtures/p81-frozen-rows.json`), so each stamp carries a real DATA input and all eight are honestly machine-verified again.
+  Live read-back of `GET /reports/index.json`: 56 rows, `freshness {stamped 34, verified 32, fullyVerified 32, unattested 22,
+  stale []}`; `p41-longbaseline`, `p88-independent-corroboration`, `p71-audit-positive-control`, `p65-external-audit`, `p45-fp-probability`, `p46-coherence`, `p51-crowding-stratified` and `p81-triceratops-lite` each serve
   `verified=true / reproducibleData=1` with
   their rendered HTML fragments WITHOUT the amber provenance banner, while the still-code-only row (`p92-scrambled-fa`)
   keeps `verified=false / reproducibleData=0` and still serves the banner (the R26-41 correction intact; p92 stays demoted
   honestly because its report persists only the aggregate, so a zero-drift freeze is not available for it). The independent
-  freshness-recheck on the committed tree reproduces `verified=32/32`. `discoveryClaim`/`safeToGate` remain false in every report. Once this
-  tree is redeployed the honest live count rises 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32, earned by pinning the measurement behind the numbers (zero drift, no coupling
+  freshness-recheck reproduces `verified=32/32`. `discoveryClaim`/`safeToGate` remain false in every report. This is the
+  honest count RISING 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32, earned by pinning the measurement behind the numbers (zero drift, no coupling
   cascade, independently rechecked), not by loosening the gate; the earlier downward correction 27 -> 24 (R26-41) still
   stands for what was genuinely checkable at that point.
-  Earlier production: version 8095cf08-7c09-4ae8-b0f1-17404b5edf40, gitSha 8c7f2ca10d2eaee3974447da7c9e7d12dc970ac8
+  Earlier production: version dbaff271-53ff-45a1-ad5c-a1185162ba9a, gitSha adef4666e82088e95ec2e5f14e20b8ddebd504ac
+  (deployed 2026-10-28 by R26-59 -- the seventh frozen-fixture lift, p51, serving `freshness {stamped 33, verified 31,
+  fullyVerified 31, unattested 23, stale []}`); and before that version 8095cf08-7c09-4ae8-b0f1-17404b5edf40, gitSha 8c7f2ca10d2eaee3974447da7c9e7d12dc970ac8
   (deployed 2026-10-28 by R26-58 -- the sixth frozen-fixture lift, p46, serving `freshness {stamped 32, verified 30,
   fullyVerified 30, unattested 24, stale []}`); and before that version 197ccc8b-3137-47dd-a6b8-add150b3b2ca, gitSha c5a8dd7efb5abf867fe2fc2e2499a54a7f406420
   (deployed 2026-10-28 by R26-57 -- the fifth frozen-fixture lift, p45, serving `freshness {stamped 31, verified 29,

@@ -17,7 +17,8 @@ import { resolvePeriodAlias } from "../src/sim/aliasResolver.ts";
 import { multiYearCoherence } from "../src/detect/multiYearCoherence.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { sectorsForCoord, fetchSpocLightCurve, stitchLightCurves } from "../src/data/mastS3.ts";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import type { LightCurve, ArchivePlanet } from "../src/core/types.ts";
 
 function arg(name: string, dflt: string): string {
@@ -67,9 +68,27 @@ interface Row {
   bestCandidatePeriod: number; bestCandidateCoherence: number; coherenceRankMatched: boolean;
 }
 
-async function main(): Promise<void> {
-  console.log(`P46 multi-year O-C coherence on real known planets: ${wantHosts} hosts, up to ${maxSectors} sectors, T<=${tmagCap}, match tol ${matchTolPct}%. REAL photometry; no discovery claim.`);
+const MODULE = "src/detect/multiYearCoherence.ts";
 
+/** The PURE aggregate: every published figure is a deterministic function of the per-host rows -- the trueCoherence
+ *  median via sort + integer-index selection over the stored full-precision values, and the raw/coherence/trueHigh
+ *  counts via thresholds. Runs the same whether rows came from a live stitch+detect or the frozen fixture, so the
+ *  report is re-DERIVED, not copied (the p41/p45/p71/p65 discipline). */
+function derive(rows: Row[]) {
+  const trueCohs = rows.map((r) => r.trueCoherence).filter(Number.isFinite).sort((a, b) => a - b);
+  const rawMatch = rows.filter((r) => r.rawMatched).length;
+  const cohMatch = rows.filter((r) => r.coherenceRankMatched).length;
+  const trueHigh = rows.filter((r) => r.trueCoherence >= 0.5).length;
+  const helps = cohMatch > rawMatch;
+  const verdict = trueHigh >= rows.length * 0.6
+    ? (helps ? "P46-COHERENCE-HELPS" : "P46-COHERENCE-VALID-BUT-NO-SELECTION-GAIN")
+    : "P46-COHERENCE-NO-SELECTION-GAIN";
+  return { n: rows.length, trueCohs, rawMatch, cohMatch, trueHigh, verdict, trueCoherenceMedian: q(trueCohs, 0.5) };
+}
+
+/** LIVE measurement: fetch the catalog, stitch >=2 sectors per host, run BLS + coherence ranking. */
+async function measureLive(): Promise<Row[]> {
+  console.log(`P46 multi-year O-C coherence on real known planets: ${wantHosts} hosts, up to ${maxSectors} sectors, T<=${tmagCap}, match tol ${matchTolPct}%. REAL photometry; no discovery claim.`);
   const planets = (await fetchConfirmedPlanets({ maxTmag: tmagCap, requireTic: true, limit: 6000 })).planets
     .filter((p) => p.pl_orbper != null && p.pl_orbper >= minPeriod && p.pl_orbper <= maxPeriod)
     .filter((p) => p.pl_tranmid != null && p.pl_trandur != null)
@@ -135,6 +154,28 @@ async function main(): Promise<void> {
     rows.push(row);
     console.log(`  ${name.padEnd(16)} nsec ${sectorLcs.length} base ${baselineDays.toFixed(0)}d  raw ${raw.periodDays.toFixed(4)}d coh ${row.rawCoherence.toFixed(2)}${rawMatched ? "[M]" : "   "}  true ${trueP.toFixed(4)}d coh ${trueCoh.coherence.toFixed(2)}  coh-best ${best.c.periodDays.toFixed(4)}d coh ${best.r.coherence.toFixed(2)}${coherenceRankMatched ? "[M]" : "   "}`);
   }
+  return rows;
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p41/p45/p71/p65 precedent, applied here. p46 measures against LIVE SPOC stitched curves;
+  // a plain re-run re-fetches/re-detects and can move a coherence value (the p90 drift lesson). The per-host rows are
+  // therefore frozen into reports/fixtures/p46-frozen-rows.json (a committed snapshot, dated at measurement) and the
+  // DEFAULT re-DERIVES every figure OFFLINE from those rows through the same q/count formulas. `--live` is deliberate.
+  const FROZEN = "reports/fixtures/p46-frozen-rows.json";
+  const REPLAY = arg("from-json", process.argv.includes("--live") ? "" : FROZEN);
+
+  let rows: Row[];
+  let measuredAt: string;
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { rows: Row[]; measuredAt?: string };
+    rows = j.rows;
+    measuredAt = j.measuredAt ?? "unknown";
+    console.log(`P46 multi-year O-C coherence -- OFFLINE REPLAY from ${REPLAY}: ${rows.length} stored host systems, original measurement ${measuredAt}. No network, no re-detect.`);
+  } else {
+    rows = await measureLive();
+    measuredAt = new Date().toISOString();
+  }
 
   if (!rows.length) {
     console.log(`\nNo multi-sector hosts resolved (network/SPOC unavailable).`);
@@ -142,27 +183,33 @@ async function main(): Promise<void> {
     return;
   }
 
-  const trueCohs = rows.map((r) => r.trueCoherence).filter(Number.isFinite).sort((a, b) => a - b);
-  const rawMatch = rows.filter((r) => r.rawMatched).length;
-  const cohMatch = rows.filter((r) => r.coherenceRankMatched).length;
-  const trueHigh = rows.filter((r) => r.trueCoherence >= 0.5).length;
-  console.log(`\n=== P46 SUMMARY (${rows.length} host systems with >=2 usable sectors) ===`);
-  console.log(`  (a) positive control: true-period coherence median ${q(trueCohs, 0.5).toFixed(2)}; ${trueHigh}/${rows.length} score >= 0.5`);
-  console.log(`  (b) selection: raw-BLS-peak matched a known planet ${rawMatch}/${rows.length}; coherence-ranked best matched ${cohMatch}/${rows.length}`);
-  const helps = cohMatch > rawMatch;
-  const verdict = trueHigh >= rows.length * 0.6
-    ? (helps ? "P46-COHERENCE-HELPS" : "P46-COHERENCE-VALID-BUT-NO-SELECTION-GAIN")
-    : "P46-COHERENCE-NO-SELECTION-GAIN";
-  console.log(`  VERDICT: ${verdict}`);
+  const d = derive(rows);
+  console.log(`\n=== P46 SUMMARY (${d.n} host systems with >=2 usable sectors) ===`);
+  console.log(`  (a) positive control: true-period coherence median ${q(d.trueCohs, 0.5).toFixed(2)}; ${d.trueHigh}/${d.n} score >= 0.5`);
+  console.log(`  (b) selection: raw-BLS-peak matched a known planet ${d.rawMatch}/${d.n}; coherence-ranked best matched ${d.cohMatch}/${d.n}`);
+  console.log(`  VERDICT: ${d.verdict}`);
 
   const json = {
-    meta: { generatedBy: "scripts/p46-coherence.ts", tmag: tmagCap, maxSectors, matchTolPct, data: "real TESS-SPOC multi-sector stitched curves of confirmed planets", module: "src/detect/multiYearCoherence.ts" },
-    n: rows.length,
-    trueCoherenceMedian: q(trueCohs, 0.5),
-    trueCoherenceHighCount: trueHigh,
-    rawMatchCount: rawMatch,
-    coherenceRankMatchCount: cohMatch,
-    verdict,
+    meta: {
+      // Replay stamps the SCRIPT + the FROZEN rows (both tracked -> a clean checkout re-hashes them -> verified), NOT the
+      // SPOC/detect modules, so a catalog or detector update cannot mark this cited report stale and force a drift-inducing
+      // re-detect; `--live` stamps the modules because there they really produced the numbers (p75 discipline).
+      ...buildStamp(REPLAY
+        ? ["scripts/p46-coherence.ts", FROZEN]
+        : ["src/detect/bls.ts", "src/sim/aliasResolver.ts", "src/detect/multiYearCoherence.ts", "src/data/exoplanetArchive.ts", "src/data/mastS3.ts", "scripts/p46-coherence.ts"]),
+      generatedBy: "scripts/p46-coherence.ts", tmag: tmagCap, maxSectors, matchTolPct,
+      module: MODULE,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of real TESS-SPOC multi-sector coherence measurements, replayed offline -- the live run as measured, not re-fetched"
+        : "real TESS-SPOC multi-sector stitched curves of confirmed planets",
+    },
+    n: d.n,
+    trueCoherenceMedian: d.trueCoherenceMedian,
+    trueCoherenceHighCount: d.trueHigh,
+    rawMatchCount: d.rawMatch,
+    coherenceRankMatchCount: d.cohMatch,
+    verdict: d.verdict,
     safeToGate: false,
     discoveryClaim: false,
     rows,
@@ -175,13 +222,16 @@ async function main(): Promise<void> {
     "",
     `Reproduce: \`npm run p46:coherence -- --hosts ${wantHosts} --maxsectors ${maxSectors} --tmag ${tmagCap}\``,
     "Data: real TESS-SPOC multi-sector stitched light curves of confirmed planets. Module: `src/detect/multiYearCoherence.ts`.",
+    REPLAY
+      ? `OFFLINE REPLAY: figures re-DERIVED from \`reports/fixtures/p46-frozen-rows.json\` (a committed snapshot of the live measurements, taken ${measuredAt}); \`--live\` re-measures.`
+      : `LIVE re-measure: real multi-sector stitched curves run through BLS + coherence at run time (${measuredAt}).`,
     "",
-    `Measured on **${rows.length}** host systems with >=2 usable sectors:`,
+    `Measured on **${d.n}** host systems with >=2 usable sectors:`,
     "",
-    `- **(a) positive control (mixed):** a known planet's TRUE period scores coherence median **${q(trueCohs, 0.5).toFixed(2)}**, but only ${trueHigh}/${rows.length} clear 0.5. It recognises clean, isolated signals yet collapses on multi-planet systems where the stitched curve mixes several orbits (e.g. HD 63433 true period scores 0.14).`,
-    `- **(b) selection (no gain):** the raw stitched-BLS peak matched a known planet of the host ${rawMatch}/${rows.length}; ranking method candidates (peak, half, double, alias-resolved) by coherence matched only ${cohMatch}/${rows.length} -- coherence did NOT beat the raw peak, because it promotes harmonic aliases (raw/2 or 2x) to top coherence, exactly the limitation the module states.`,
+    `- **(a) positive control (mixed):** a known planet's TRUE period scores coherence median **${q(d.trueCohs, 0.5).toFixed(2)}**, but only ${d.trueHigh}/${d.n} clear 0.5. It recognises clean, isolated signals yet collapses on multi-planet systems where the stitched curve mixes several orbits (e.g. HD 63433 true period scores 0.14).`,
+    `- **(b) selection (no gain):** the raw stitched-BLS peak matched a known planet of the host ${d.rawMatch}/${d.n}; ranking method candidates (peak, half, double, alias-resolved) by coherence matched only ${d.cohMatch}/${d.n} -- coherence did NOT beat the raw peak, because it promotes harmonic aliases (raw/2 or 2x) to top coherence, exactly the limitation the module states.`,
     "",
-    `**VERDICT: ${verdict}.**`,
+    `**VERDICT: ${d.verdict}.**`,
     "",
     "Honest reading: O-C coherence is a valid Keplerian-consistency test on a CLEAN single signal, but on real",
     "multi-sector data it neither reliably recognises every true planet (multi-planet contamination) nor fixes",

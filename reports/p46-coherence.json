@@ -1,11 +1,24 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T13:17:43.592Z",
+    "gitSha": "313d9b1313fb19220fca1e20db3028e6407c5fc7",
+    "inputs": [
+      {
+        "path": "scripts/p46-coherence.ts",
+        "sha256": "b58097659e0c3c790e1a152ed3592d67a38e76c082ac872ee610f13aabb0db2f"
+      },
+      {
+        "path": "reports/fixtures/p46-frozen-rows.json",
+        "sha256": "b110fb0b39dc2fa8d2e94bd8d499cfcfa4f99644c8c669bd1ab5fb67d1b724c5"
+      }
+    ],
     "generatedBy": "scripts/p46-coherence.ts",
     "tmag": 11,
     "maxSectors": 3,
     "matchTolPct": 2,
-    "data": "real TESS-SPOC multi-sector stitched curves of confirmed planets",
-    "module": "src/detect/multiYearCoherence.ts"
+    "module": "src/detect/multiYearCoherence.ts",
+    "measuredAt": "2026-10-14T02:14:45Z",
+    "data": "FROZEN snapshot of real TESS-SPOC multi-sector coherence measurements, replayed offline -- the live run as measured, not re-fetched"
   },
   "n": 6,
   "trueCoherenceMedian": 0.7376074926287418,

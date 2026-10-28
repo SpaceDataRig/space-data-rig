@@ -2,6 +2,7 @@
 
 Reproduce: `npm run p46:coherence -- --hosts 6 --maxsectors 3 --tmag 11`
 Data: real TESS-SPOC multi-sector stitched light curves of confirmed planets. Module: `src/detect/multiYearCoherence.ts`.
+OFFLINE REPLAY: figures re-DERIVED from `reports/fixtures/p46-frozen-rows.json` (a committed snapshot of the live measurements, taken 2026-10-14T02:14:45Z); `--live` re-measures.
 
 Measured on **6** host systems with >=2 usable sectors:
 

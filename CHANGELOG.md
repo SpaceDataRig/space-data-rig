@@ -731,6 +731,19 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   provenance line; `.json` diff = stamp envelope + the intentional `data` string; every row/quantile byte-identical. This confirms the lift rule's clause (a)
   covers EXACT-PERSISTED FLOATS with a deterministic selection, not only integers/enums -- the real discriminator is "does the artifact store the value the
   aggregate consumes", not the value's type. lint 0, typecheck 0, suite 1035/0, ASCII clean; no re-deploy of src needed beyond the asset refresh.
+- **R26-58, fourth lift through the screen -- p46 coherence, honest `verified` 29 -> 30.**
+  Same offline pre-filter, same clean outcome. Clause (b): reverse-dependency scan shows p46 has ZERO consumers, so re-stamping cannot cascade.
+  Clause (a): p46 publishes a trueCoherence MEDIAN plus raw/coherence/trueHigh match counts and a verdict; its 6 rows store `trueCoherence` at FULL
+  float precision and the median is `q(sorted, 0.5)` = a deterministic integer-index selection (it returns one of the stored values, not an
+  interpolated average), so re-deriving is byte-identical -- the counts and verdict are pure functions of the stored booleans/thresholds. Measured zero
+  drift BEFORE editing: a probe recomputed n, the median, the three counts and the verdict from the committed rows alone -> ALL MATCH. Froze the 6 rows
+  into `reports/fixtures/p46-frozen-rows.json` (measuredAt = the original live SPOC date 2026-10-14, NOT a re-detect), gave p46 a default offline replay
+  that re-DERIVES the summary via the same q/filter formulas and stamps `[script, fixture]`, kept `--live` the deliberate re-measure. After rebuild p46
+  reads `verified=true, reproducibleData=1`; served library `{stamped 32, verified 30, fullyVerified 30, unattested 24, stale []}` (unattested = 56 - 32);
+  the INDEPENDENT freshness-recheck reproduces `verified=30/30`. `.md` diff = only the OFFLINE-REPLAY provenance line; `.json` diff = stamp envelope + the
+  intentional `data` string; every row/median/verdict byte-identical. Four lifts now (p71/p65/p45/p46) all pass both clauses with zero drift and zero
+  cascade; the honest count stands at 30, up from 26 at the start of this lift arc, each +1 earned by pinning a measurement, never by loosening the gate.
+  lint 0, typecheck 0, suite 1035/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

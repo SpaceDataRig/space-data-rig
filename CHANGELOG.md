@@ -442,6 +442,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   commented that it must track the attestation frontier. Re-ran against the live edge: `p56-real-selection: stamped=true
   verified=true fresh=true reproducible=2`, exit 0. A smaller cousin of the R26-24 lesson -- a checker is only as good as
   whether it inspects the thing that actually moved.
+- **R26-34, CI caught my own process miss: the R26-32 milestone archive was committed red, and the gate that fired was
+  the one that reads the archive itself.** `b27c8db`'s `checks` job went `completed/failure` on one test:
+  `devlog/2026-10-27-r32-p56-attestation-milestone.md: must cite the Actions run that posted it`. The repo's
+  `devlog-archive.test.ts` requires every archived entry's header to literally contain `actions/runs/<id>`,
+  ``posted id: `<digits>` `` and ``HTTP `204` `` -- the evidence format that makes a public post auditable. My R26-32
+  evidence wrote those facts loosely (`run=40497903118`, "Tweet id:", "HTTP 204 accepted"), so the archive failed its
+  own integrity gate. The deeper miss is procedural: `187b086` added a `devlog/*.md` -- a path the test suite inspects --
+  but I ran `npm test` at `c888151`, *before* the archive existed, and then committed and pushed the archive without
+  re-running the suite at that commit, which is exactly the R26-13 rule. CI did the job my local gate skipped. Fix: the
+  evidence header now uses the canonical citation form (matching `2026-10-18-byte-exact-devlog-archive.md`), re-archived
+  through `devlog-archive.ts` so the pushed text stays the same 1341 bytes, and `npm test` re-run at the corrected tree
+  gives 1031/0. Recorded plainly because a checker that only the CI catches is a checker I should have run.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

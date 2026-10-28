@@ -723,6 +723,12 @@ the Actions web page when the anonymous API is rate-limited.
   still passed. Only rewriting it to parse the `buildStamp([...])` argument list and re-running the mutation (2 failures)
   made it bite. When you add a guard, apply the exact defect it is meant to catch and watch it fail; a guard that survives
   its own mutation is decoration.
+- A commit is "just docs" only for paths nothing reads -- re-run the suite at the HEAD of any commit that touches a
+  test-inspected directory (round-26, R26-34). `devlog/*.md` and `reports/*.json` are read by tests (`devlog-archive.test.ts`,
+  the freshness gate), yet the R26-32 milestone archive was committed on a `docs`-looking commit after `npm test` had only
+  been run at the PRIOR tree. The archive then failed `devlog-archive.test.ts`'s citation gate in CI. R26-13 says: if the
+  commit touches a path a freshness/window/test check inspects, run `npm test` with THAT commit as HEAD before pushing --
+  "it's only a ledger file" is exactly how a red commit reaches main while local looks green.
 
 ## 13. Current state (as of 2026-10-27)
 

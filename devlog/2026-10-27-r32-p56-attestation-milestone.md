@@ -1,15 +1,26 @@
-# Milestone dispatch evidence (R26-32)
+# 2026-10-27 -- a wired report generator ran for real and the served row flipped to verified
 
-- Commit: `c888151` "R26-32: p56 wired, run and attested -- the row flipped to verified"
-- CI (`ci.yml`, event=push, run 40496087223): checks=completed/success
-- Live site self-proof: `GET /health` gitSha=`c888151`, deployVersion=`f60acd16-1166-48af-a026-ea2b709d2cab`
-- Served index at publish: `/reports/index.json` freshness `{stamped 24, verified 23, fullyVerified 23, unattested 32, total 56, stale []}`; row `p56-real-selection` = stamped/verified/fresh true.
-- Guard (pre-dispatch, same code as production): `npm run x:post -- --text-file out/milestone26-r32-en.txt --max-len 25000` -> `DRY RUN` exit 0, `length=1341/25000`, English-only, ASCII + over-claim clean.
-- Dispatch: `POST actions/workflows/x-post.yml/dispatches` (ref main, inputs.text=<this copy>, maxlen=25000) -> HTTP 204 accepted. Actions-scope token fetched via `git credential fill`, held in memory only, never printed or written.
-- Run: `run=40497903118` event=workflow_dispatch head=c888151 completed/success; job `122167930986` (digest) all steps success incl "Compose every reportable item in the window and post each one".
-- Posted: job log line `x:post: OK posted (id 2115046017368228119).`
-- Tweet id: 2115046017368228119
-- The archived body below is the EXACT bytes dispatched (from out/milestone26-r32-en.txt), not a re-typed copy.
+Pushed to the public feed through the `x-post.yml` `workflow_dispatch` override.
+
+- dispatch accepted: HTTP `204`
+- run: https://github.com/SpaceDataRig/space-data-rig/actions/runs/40497903118
+- posted id: `2115046017368228119`
+- job log: `x:post: OK posted (id 2115046017368228119).`
+- head at dispatch: `c888151a68d57d0a8d570de96fbbc4fa7f941db9`
+- CI for that head: https://github.com/SpaceDataRig/space-data-rig/actions/runs/40496087223 `completed/success`
+- pre-flight through the REAL guard before dispatching, not after a failed run:
+  `npm run x:post -- --text-file out/milestone26-r32-en.txt --max-len 25000` printed
+  `DRY RUN (no X credentials in the environment; nothing was sent to X)` and `length=1341/25000`
+- Actions-scope token fetched via `git credential fill`, held in memory only, never printed or written.
+
+## What this milestone is
+
+`p56` (per-target selection function over 18 real TIC hosts from the NASA Exoplanet Archive and Gaia DR3) is the
+first of the R26-31 generators whose write-side `buildStamp` wiring was proven end-to-end by an actual run once
+exoplanet-archive + Gaia TAP became reachable while MAST/SPOC-S3/tesscut stayed down. The regenerated report `.md`
+came out byte-identical to the committed one -- only the `.json` gained the stamp -- so the run added provenance
+without moving any number. The served index moved from `verified 22, unattested 33` to `verified 23, unattested 32`,
+`stale=[]`; `/health` read back gitSha `c888151`, deployVersion `f60acd16-1166-48af-a026-ea2b709d2cab`.
 
 ## Text as pushed
 

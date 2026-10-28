@@ -15,6 +15,7 @@
 // NETWORK read-only, run locally (CI has no network), like p57/p58. Usage:
 //   npm run p88:independent-corroboration -- --pos 8 --neg 8 --tmag 12
 import { writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { buildStamp } from "./report-freshness.ts";
 import { fetchToiTable, confirmedPositives, labelledNegatives, type ToiRecord } from "../src/data/toiDispositions.ts";
@@ -85,33 +86,78 @@ async function run(list: ToiRecord[], isBlend: boolean): Promise<{ cases: VetoCa
   return { cases, scored };
 }
 
-async function main(): Promise<void> {
+/** The LIVE measurement path -- only reached with `--live`. Pulls the labelled ExoFOP populations, resolves each host to
+ *  its Gaia DR3 source and scores whether Gaia independently corroborates an EB at the candidate period. */
+async function measureLive(): Promise<{ cases: VetoCase[]; scored: Scored[]; posN: number; negN: number; tmag: number }> {
   const posN = Math.max(1, Number(arg("pos", "8")) || 8);
   const negN = Math.max(1, Number(arg("neg", "8")) || 8);
   const tmag = Number(arg("tmag", "12")) || 12;
   const all = await fetchToiTable({});
-  if (!all.length) { console.error("p88: ExoFOP TOI table unavailable (network) -- ABORT, no fabricated 2x2."); process.exitCode = 1; return; }
+  if (!all.length) { console.error("p88: ExoFOP TOI table unavailable (network) -- ABORT, no fabricated 2x2."); return { cases: [], scored: [], posN, negN, tmag }; }
   const posPool = confirmedPositives(all).filter((r) => Number.isFinite(r.periodDays) && r.periodDays > 0 && r.tessMag <= tmag);
   const negPool = labelledNegatives(all).filter((r) => Number.isFinite(r.periodDays) && r.periodDays > 0 && r.tessMag <= tmag);
   console.error(`p88: pool positives=${posPool.length} negatives=${negPool.length} (tmag<=${tmag}); scoring ${posN}+${negN} with Gaia DR3 ...`);
 
   const pos = await run(posPool.slice(0, posN), false);
   const neg = await run(negPool.slice(0, negN), true);
-  const cases = [...pos.cases, ...neg.cases];
-  const scored = [...pos.scored, ...neg.scored];
+  return { cases: [...pos.cases, ...neg.cases], scored: [...pos.scored, ...neg.scored], posN, negN, tmag };
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p75/p90/p41 precedent, applied here. p88 measures against the LIVE ExoFOP TOI table and
+  // Gaia DR3 TAP; a plain re-fetch re-MEASURES on whatever those catalogs return NOW, silently moving the published
+  // coverage / 2x2 (the exact drift that burned p90). The per-candidate outcomes are therefore frozen into
+  // reports/fixtures/p88-frozen-cases.json (a committed snapshot of what a live run gathered, dated at measurement) and
+  // the DEFAULT replays the 2x2 from those rows OFFLINE via the same vetoMetrics/acceptVetoTool the live run used --
+  // re-DERIVING the metrics, not copying them. `--live` (or `--from-json=`) is the deliberate re-measure path.
+  const FROZEN = "reports/fixtures/p88-frozen-cases.json";
+  const REPLAY = arg("from-json", process.argv.includes("--live") ? "" : FROZEN);
+  let cases: VetoCase[] = [];
+  let scored: Scored[] = [];
+  let posN = 8, negN = 8, tmag = 12;
+  let measuredAt = new Date().toISOString();
+  if (REPLAY) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as {
+      cases: (VetoCase & { score?: number | null })[];
+      scored: Scored[];
+      measuredAt?: string;
+      meta?: { posN?: number; negN?: number; tmag?: number };
+    };
+    cases = j.cases.map((c) => ({ id: c.id, isBlend: c.isBlend, veto: c.veto, score: c.score ?? undefined }));
+    scored = j.scored;
+    posN = j.meta?.posN ?? posN;
+    negN = j.meta?.negN ?? negN;
+    tmag = j.meta?.tmag ?? tmag;
+    measuredAt = j.measuredAt ?? "unknown";
+    console.error(`p88: REPLAY from ${REPLAY}: ${scored.length} stored candidates, original measurement ${measuredAt}. No network, no new measurement.`);
+  } else {
+    const m = await measureLive();
+    cases = m.cases; scored = m.scored; posN = m.posN; negN = m.negN; tmag = m.tmag;
+  }
   if (cases.length === 0) { console.error("p88: no host resolved to Gaia -- nothing to score."); process.exitCode = 1; return; }
 
   const metrics = vetoMetrics(cases);
   const verdict = acceptVetoTool(cases, { targetPower: 0.5, chanceFloor: 0.5, maxFalseVetoes: 0 });
   const nData = scored.filter((s) => s.hasGaiaData).length;
   const nMatched = scored.filter((s) => s.periodMatched).length;
+  const positives = scored.filter((s) => !s.isBlend).length;
+  const negatives = scored.filter((s) => s.isBlend).length;
 
   const out = {
     schema: "sdr-p88-independent-corroboration/1",
-    ...buildStamp(["src/data/toiDispositions.ts", "src/data/gaiaRv.ts", "src/data/gaiaDilution.ts"]),
+    // Replay stamps the SCRIPT + the FROZEN rows (both tracked -> any clean checkout re-hashes them -> verified), NOT the
+    // Gaia/ExoFOP fetch modules, so a catalog update cannot mark this cited report stale and force a drift-inducing
+    // re-measure; `--live` stamps the fetch modules because there they really produced the numbers (the p75 discipline).
+    ...buildStamp(REPLAY
+      ? ["scripts/p88-independent-corroboration.ts", FROZEN]
+      : ["src/data/toiDispositions.ts", "src/data/gaiaRv.ts", "src/data/gaiaDilution.ts", "scripts/p88-independent-corroboration.ts"]),
     instrument: "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
     labelSource: "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
-    population: { positives: pos.scored.length, negatives: neg.scored.length, withGaiaData: nData, periodMatched: nMatched },
+    measuredAt,
+    data: REPLAY
+      ? "FROZEN snapshot of the per-candidate Gaia-corroboration outcomes (nearest-DR3-source orbit/RV flags vs the labelled ExoFOP population), replayed offline -- the live sample as measured, not re-queried"
+      : "live Gaia DR3 TAP vs ExoFOP-TESS labelled population, re-queried",
+    population: { positives, negatives, withGaiaData: nData, periodMatched: nMatched },
     metrics,
     verdict: { safeToGate: verdict.safeToGate, reason: verdict.reason, auc: verdict.auc },
     falseVeto: metrics.cm.falseVeto, // the disqualifying number
@@ -121,11 +167,14 @@ async function main(): Promise<void> {
   const md = [
     "# P88 independent-instrument 2x2 -- a COVERAGE measurement, not yet a Gaia-vs-TESS crossmatch (period-matched orbits: 0)",
     "",
-    `Reproduce: \`npm run p88:independent-corroboration -- --pos ${posN} --neg ${negN} --tmag ${tmag}\``,
+    REPLAY
+      ? `Reproduce: \`npm run p88:independent-corroboration\` replays the frozen rows offline; \`npm run p88:independent-corroboration -- --live\` re-measures against the live ExoFOP/Gaia (and may move the numbers).`
+      : `Reproduce: \`npm run p88:independent-corroboration -- --pos ${posN} --neg ${negN} --tmag ${tmag}\``,
+    REPLAY ? `This report is an OFFLINE REPLAY of the ${cases.length} candidate measurements frozen on ${measuredAt} (sampled --pos ${posN} --neg ${negN} --tmag ${tmag}); the 2x2 is byte-stable across runs.` : "",
     "",
     `**Headline (read first): ${nMatched} of ${cases.length} hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for ${nData}/${cases.length}) -- NOT a Gaia-vs-TESS period crossmatch. With ${nMatched} period matches the two datasets never actually intersected, so the 2x2 is all-zeros BY CONSTRUCTION. The honest read is "safe but under-powered", never "Gaia agrees/disagrees"; discoveryClaim false.**`,
     "",
-    `Gaia (a different satellite) is asked, for ${pos.scored.length} confirmed planets (must keep) and ${neg.scored.length} labelled FP/EB blends (should veto): does its two-body orbit / RV series independently corroborate a stellar-mass companion on the candidate's period?`,
+    `Gaia (a different satellite) is asked, for ${positives} confirmed planets (must keep) and ${negatives} labelled FP/EB blends (should veto): does its two-body orbit / RV series independently corroborate a stellar-mass companion on the candidate's period?`,
     "",
     `Independent Gaia data present for **${nData}/${cases.length}** hosts; an orbit on the candidate period for **${nMatched}**.`,
     "",

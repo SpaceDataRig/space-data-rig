@@ -1,0 +1,255 @@
+{
+  "schema": "drill/p88-frozen-cases/1",
+  "note": "Frozen snapshot of the per-candidate Gaia-corroboration measurements behind reports/p88-independent-corroboration.json: each labelled host (ExoFOP KP positive / FP-EB negative) resolved to its nearest Gaia DR3 source, scored for whether the orbit/RV series independently corroborates an eclipsing binary at the candidate period. The 2x2 metrics and verdict are re-DERIVED offline from these rows, so a clean checkout reproduces the published coverage figure without re-querying Gaia (which would re-measure and could move it -- the p90 drift lesson). Every case here had periodMatched=false, so no AUC score exists to carry; score is null by construction. measuredAt is when the live run gathered them; --live re-measures deliberately.",
+  "measuredAt": "2026-10-26T12:29:04.452Z",
+  "meta": {
+    "posN": 8,
+    "negN": 10,
+    "tmag": 12,
+    "instrument": "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
+    "labelSource": "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
+    "measuredGitSha": "12fedbf24faf3168f27f8021e866d498e43c0282"
+  },
+  "cases": [
+    {
+      "id": "2197.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "7059.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "7907.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "5087.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "6551.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "2125.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1282.01:kp",
+      "isBlend": false,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1340.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1421.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1424.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1520.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1637.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "5954.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "6065.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "7071.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "2477.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    },
+    {
+      "id": "1285.01:eb",
+      "isBlend": true,
+      "veto": false,
+      "score": null
+    }
+  ],
+  "scored": [
+    {
+      "id": "2197.01",
+      "isBlend": false,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7059.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7907.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "5087.01",
+      "isBlend": false,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "6551.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "2125.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1282.01",
+      "isBlend": false,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1340.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1421.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1424.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1520.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1637.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "5954.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "6065.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "7071.01",
+      "isBlend": true,
+      "hasGaiaData": true,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "2477.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    },
+    {
+      "id": "1285.01",
+      "isBlend": true,
+      "hasGaiaData": false,
+      "periodMatched": false,
+      "ebExclusion": "unknown",
+      "veto": false
+    }
+  ]
+}

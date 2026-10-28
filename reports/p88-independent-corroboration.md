@@ -1,6 +1,7 @@
 # P88 independent-instrument 2x2 -- a COVERAGE measurement, not yet a Gaia-vs-TESS crossmatch (period-matched orbits: 0)
 
-Reproduce: `npm run p88:independent-corroboration -- --pos 8 --neg 10 --tmag 12`
+Reproduce: `npm run p88:independent-corroboration` replays the frozen rows offline; `npm run p88:independent-corroboration -- --live` re-measures against the live ExoFOP/Gaia (and may move the numbers).
+This report is an OFFLINE REPLAY of the 17 candidate measurements frozen on 2026-10-26T12:29:04.452Z (sampled --pos 8 --neg 10 --tmag 12); the 2x2 is byte-stable across runs.
 
 **Headline (read first): 0 of 17 hosts had a Gaia orbit ON the candidate period, so this run measured INDEPENDENT-INSTRUMENT COVERAGE (Gaia data present for 6/17) -- NOT a Gaia-vs-TESS period crossmatch. With 0 period matches the two datasets never actually intersected, so the 2x2 is all-zeros BY CONSTRUCTION. The honest read is "safe but under-powered", never "Gaia agrees/disagrees"; discoveryClaim false.**
 

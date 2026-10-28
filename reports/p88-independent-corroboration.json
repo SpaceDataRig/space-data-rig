@@ -1,23 +1,21 @@
 {
   "schema": "sdr-p88-independent-corroboration/1",
-  "generatedAt": "2026-10-26T12:29:04.452Z",
-  "gitSha": "12fedbf24faf3168f27f8021e866d498e43c0282",
+  "generatedAt": "2026-10-28T09:01:38.135Z",
+  "gitSha": "75df0f4a2a76d568fce04783e102cecd42e617f0",
   "inputs": [
     {
-      "path": "src/data/toiDispositions.ts",
-      "sha256": "af124436d8dee8e19b5fa822df9e84e73c2376bdcbd5824bf33b0cb64748f1bc"
+      "path": "scripts/p88-independent-corroboration.ts",
+      "sha256": "802c9c592c56ada4411695855c2af2fdaf64885ce8ff7be2eb1ca518b96223dc"
     },
     {
-      "path": "src/data/gaiaRv.ts",
-      "sha256": "9ac9dc9298aa0ff7e744673903b095c7a2781fa85f1d633e616f5ac9a518a99e"
-    },
-    {
-      "path": "src/data/gaiaDilution.ts",
-      "sha256": "0978bade9ef4a815015959628990f5126d8731fbd7755e0d754fa59cd2526aa5"
+      "path": "reports/fixtures/p88-frozen-cases.json",
+      "sha256": "b23838fe2f872dea10cb96dae4282d78ca9bf8d14b3d55c39126eab83385f0d1"
     }
   ],
   "instrument": "Gaia DR3 TAP (independent of TESS): vari_epoch_radial_velocity + nss_two_body_orbit + gaia_source flags",
   "labelSource": "ExoFOP-TESS public TOI table (token-free): KP positives, FP/EB negatives",
+  "measuredAt": "2026-10-26T12:29:04.452Z",
+  "data": "FROZEN snapshot of the per-candidate Gaia-corroboration outcomes (nearest-DR3-source orbit/RV flags vs the labelled ExoFOP population), replayed offline -- the live sample as measured, not re-queried",
   "population": {
     "positives": 7,
     "negatives": 10,

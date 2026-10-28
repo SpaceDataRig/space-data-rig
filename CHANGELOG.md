@@ -612,6 +612,20 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   (5 table rows and the Sample line byte-identical); `.json` diff touched only the stamp envelope + the intentional `inputs` swap. Deployed
   and read back live: p41's served fragment now renders WITHOUT the amber provenance banner (it is honestly machine-verified). This is the
   first time the audited corpus's honest verified count has gone UP since the R26-41 downward correction -- earned, not asserted.
+- **R26-50, applied the same frozen-fixture recipe to p88: honest `verified` rose 25 -> 26 (two of the three R26-41 demotions now undone).**
+  p88-independent-corroboration (the Gaia-vs-ExoFOP 2x2) was the second code-only row demoted in R26-41. Its committed report already
+  persisted the per-candidate measurement rows (`cases[]`: isBlend/hasGaiaData/periodMatched/veto), and its published metrics/verdict are a
+  pure function of those rows through the repo's own `vetoMetrics`/`acceptVetoTool` -- and because every case had `periodMatched=false`
+  (the honest headline: "period-matched orbits: 0"), no continuous AUC score exists to carry, so the frozen rows reproduce the exact 2x2.
+  Froze them into `reports/fixtures/p88-frozen-cases.json` (measuredAt=2026-10-26, the original live date; NOT a re-query) and gave p88 a
+  default offline replay that re-DERIVES the 2x2 from those rows and stamps `[script, fixture]`, with `--live` the deliberate re-measure.
+  Drift guarded BEFORE editing: a standalone guard script recomputed metrics/cm/vetoPowerCI/falseVetoCI/verdict/population/falseVeto
+  from the frozen rows via the real src functions and asserted equality with the committed report -- ALL MATCH. After rebuild p88 reads
+  `verified=true, reproducibleData=1`; served library `{verified 26, fullyVerified 26, unattested 28, stale []}`, and the INDEPENDENT recheck
+  reproduces `verified=26/26`. The `.md` diff touched only the Reproduce line + the OFFLINE-REPLAY provenance line (Headline, table and all
+  figures byte-identical). Of the three R26-41 demotions, p41 and p88 are now honestly machine-verified again; p92 stays demoted because its
+  report persists only the aggregate (not the per-TCE measurements that would make a non-circular freeze), so lifting it needs a drift-
+  inducing live re-measure, not a zero-drift freeze -- a different, more invasive increment. lint 0, typecheck 0, suite 1032/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

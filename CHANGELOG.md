@@ -655,6 +655,21 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   clean -- proving the note is CONDITIONAL, not painted on every page. Mutation-checked: neutering the `!verified` branch (an env-guarded edit,
   reverted byte-for-byte) fails exactly the 2 drill cases and leaves the control green, so the test is not inertial. No code/artifact/gate change
   to the shipped tree; served `verified` stays 26. lint 0, typecheck 0, suite 1032 -> 1035/0, ASCII clean.
+- **R26-53, generalized the lift frontier into a structural rule and measured it against the unattested PSF-2x2 family (p57, p58).**
+  R26-49/50 lifted p41 and p88; R26-51 found p89 (a stamped 2x2) un-liftable. Why the difference? The recipe is not "the artifact has per-target
+  rows" -- it is narrower and worth stating as a rule so the count is not padded by forcing the wrong candidates: **a frozen-fixture replay can be
+  zero-drift only when the committed artifact persists the EXACT values its published aggregate consumes.** p41 froze integer per-host recovery
+  counts and p88 froze boolean 2x2 rows (and, with `periodMatched=0`, carried no continuous score at all), so re-deriving from them reproduces the
+  figures byte-for-byte. The PSF double-difference family instead computes its `blendOffsetArcsec`/`planetOffsetArcsec` quantiles and `psf.auc`
+  from the RAW per-target offset but persists only `offset.toFixed(3)` -- so a replay reconstructs the rounded value and the float aggregate
+  drifts. MEASURED, not assumed, via a standalone probe script that rebuilt the `VetoCase[]` from each committed report and re-ran the repo's real
+  `acceptVetoTool`: every boolean-derived figure (cm, vetoPower + Wilson CI, falseVeto + CI, precision) reproduced EXACTLY, but p58 drifted on
+  `psf.auc` 0.6937500000000001 -> 0.690625 and `blendOffsetArcsec.p50` 23.478713763747773 -> 23.479, and p57 (its smaller sibling, same generator
+  shape) drifted the same way (`blendOffsetArcsec.p50` 20.682601383771814 -> 20.683). So p57/p58/p89 are all the SAME blocker class as each other
+  and cannot be lifted by an honest offline freeze; lifting them needs a drift-inducing live re-measure (a separate, more invasive increment that
+  must not be rushed to inflate a number). This is a frontier-accuracy result, not a count change: the honest `verified` stays 26, and the rule now
+  tells the next reader exactly which remaining candidates are worth a careful per-generator build (those persisting exact integer/boolean
+  per-target measurements) versus which are blocked by float rounding. No code, artifact or gate change; suite unchanged at 1035/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

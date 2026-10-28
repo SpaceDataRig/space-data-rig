@@ -789,8 +789,15 @@ authority; they are deliberately not restated here.
   naming its distinct reason, and R26-52 pinned that reader-facing disclosure with `tests/p86-provenance-note.test.ts` (3 cases) -- the first
   end-to-end run of that branch (report-freshness.test.ts drives only the pure verdict; p86-stale-alarm.test.ts runs the real script only for the
   STALE branch), mutation-checked so a future branch reorder cannot silently drop the note while still writing `verified=false`.
-  The other ~24 pure-network generators can be lifted the p41/p88 way where they persist FULL-PRECISION per-target measurements -- one careful
-  increment at a time; 3 rows still lack a `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
+  R26-53 turned "which generators can still be lifted?" into a measured RULE, not a guess: a frozen-fixture replay is zero-drift only when the
+  committed artifact persists the EXACT values its published aggregate consumes. p41 (integer recovery counts) and p88 (boolean 2x2 rows, and no
+  continuous score because `periodMatched=0`) satisfy this and lifted cleanly; the PSF double-difference family does NOT -- p57/p58/p89 compute
+  their `blendOffsetArcsec`/`planetOffsetArcsec` quantiles and `psf.auc` from the RAW per-target offset but persist only `offset.toFixed(2/3)`, so
+  a replay reconstructs the rounded value and the float aggregate drifts (measured: p58 `psf.auc` 0.6937500000000001 -> 0.690625,
+  `blendOffsetArcsec.p50` 23.478713763747773 -> 23.479; p57 the same shape). Those three share one blocker class and can only be lifted by a
+  drift-inducing live re-measure -- deliberately not forced to pad the count. So the honest `verified` stays 26; the remaining candidates worth a
+  careful per-generator build are those persisting exact integer/boolean per-target measurements, NOT the float-offset 2x2s; 3 rows still lack a
+  `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified

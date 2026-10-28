@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T01:56:06.134Z",
+    "gitSha": "be174aec9c94108e6b31f9ba3e9d16da5b8c96da",
+    "inputs": [
+      {
+        "path": "reports/p60-joint-vs-single.json",
+        "sha256": "04870f1739b8deea607c46b6cb97485a303ab7c18533384d40c13b986d8f115c"
+      },
+      {
+        "path": "scripts/p69-rednoise-significance.ts",
+        "sha256": "b75613b6d22a485e512918642c4fdd20f8786b017e365375c5b314c199e99f2a"
+      }
+    ],
     "generatedBy": "scripts/p69-rednoise-significance.ts",
     "n": 10,
     "nNull": 100,
@@ -52,7 +64,7 @@
       "ar1PassesBlockDoesNot": false
     },
     {
-      "name": "HR 858 d",
+      "name": "HR 858 c",
       "rho": 0.17581403576210508,
       "bucket": "quiet",
       "excessAtLastLag": -0.01626358317182705,
@@ -64,7 +76,7 @@
       "ar1PassesBlockDoesNot": false
     },
     {
-      "name": "HR 858 c",
+      "name": "HR 858 d",
       "rho": 0.17581403576210508,
       "bucket": "quiet",
       "excessAtLastLag": -0.01626358317182705,
@@ -112,7 +124,7 @@
       "ar1PassesBlockDoesNot": true
     },
     {
-      "name": "HD 25463 c",
+      "name": "HD 25463 b",
       "rho": 0.0008377843988224779,
       "bucket": "quiet",
       "excessAtLastLag": -0.017406030755692605,
@@ -124,7 +136,7 @@
       "ar1PassesBlockDoesNot": true
     },
     {
-      "name": "HD 25463 b",
+      "name": "HD 25463 c",
       "rho": 0.0008377843988224779,
       "bucket": "quiet",
       "excessAtLastLag": -0.017406030755692605,

@@ -471,6 +471,17 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   design that records the fetched bytes (the R26-29 "provenance design," now shown to apply to the wired six too, not just
   the pure-network 25). Lesson for the ledger: a network-data generator is only honestly stampable when its non-committed
   inputs are themselves reproducible, and the way to find that out is to run it and diff, not to trust the input list.
+- **R26-36, the run-and-diff test the R26-35 lesson demands, applied to p69 -- which reproduced and so was attested.**
+  p35 failed to reproduce because its host sample comes from the p33 catalog that grew 33->204; but `p69`
+  (`rednoise-significance`) draws its fixed 10-host set from the *committed* `reports/p60-joint-vs-single.json`, so the
+  R26-35 reasoning predicted it might reproduce. Ran it faithfully (`--targets 10 --nnull 100 --trials 100`, seed 7): the
+  report `.md` came out **byte-identical** (same 10 hosts 8-quiet/2-red, mean delta 0.266, 5/8, max resSnr 1172, same
+  verdict), and the `.json` changed only by the added stamp plus a cosmetic row re-order (HR 858 c/d, HD 25463 b/c swapped
+  -- same set, sequence only, which is exactly why the aggregate md is unchanged). So p69's published science genuinely
+  reproduced and its stamp pins the real determinant (p60). `p86` re-attested: p69 now `verified/fresh=true`, library
+  `{verified 24, unattested 31}`. This is the R26-35 rule working as intended -- attest on byte-reproduction, not on the
+  input list. The remaining p60-based wired generators (p62/p67/p73) share p69's fixed-host pattern and are the next
+  run-and-diff candidates; p52 (S3 target pixels + vizier) is its own case. Reverted p35 stays unattested.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

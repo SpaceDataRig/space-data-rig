@@ -537,6 +537,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   real pre-flight DRY RUN (`length=1472/25000`, nothing sent locally). The post text and evidence are byte-archived to
   `devlog/2026-10-28-r41-verified-count-correction.md`. The post states the lowered count (24, not 27) and the code-vs-data rule;
   it claims no discovery. Only `devlog/` + this ledger changed -> no `src`/`web`, no redeploy; full suite re-run at HEAD (R26-34).
+- **R26-43, a call-site-precise sweep confirms the offline-attestation frontier is exhausted (negative finding, ledgers only).**
+  After R26-41 the question was whether any of the 30 remaining unattested/unverified reports could still be honestly stamped by
+  re-running offline against a committed data input. A scanner that flags a generator as network ONLY when it INVOKES a real data
+  fetch (not merely imports a parser, prints an `https` link, or references a URL string) found all 30 call SPOC / Gaia / ExoFOP /
+  VizieR at runtime (`fetchSpocBytes`/`fetchSpocLightCurve`/`fetchSpocTargetPixels`/`sectorsForCoord`/`buildEbListUrl`/...). So the
+  fixed-committed-input family (p56/p62/p67/p69/p73) is fully attested and NOTHING more is mechanically attestable -- raising
+  `verified` past 24 needs the fetched-bytes provenance design, and the network sources are additionally unreachable from this
+  environment right now. Recording the boundary so the next reader does not redo the sweep; the gate R26-41 hardened is what keeps
+  this honest (no code-only stamp can quietly re-inflate the number). No code/artifact/index changed, so no redeploy.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

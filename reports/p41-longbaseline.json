@@ -18,37 +18,19 @@
     "usableHosts": 29,
     "multiSectorHosts": 25,
     "meanSectorsPerHost": 2.69,
-    "generatedBy": "scripts/p41-longbaseline.ts",
-    "generatedAt": "2026-10-18T15:36:44.596Z",
-    "gitSha": "0788adb263d4cbcdc10d140683bb04f38c72ee83",
+    "measuredAt": "2026-10-18T15:36:44.596Z",
+    "data": "FROZEN snapshot of the per-host single-vs-stitched injection-recovery measurements on real TESS-SPOC photometry (longest sector and stitched multi-sector baseline), replayed offline -- the live sample as measured, not re-fetched",
+    "generatedBy": "scripts/p41-longbaseline.ts --from-json=reports/fixtures/p41-frozen-rows.json (offline replay of frozen rows)",
+    "generatedAt": "2026-10-28T08:10:05.330Z",
+    "gitSha": "015f876be8576b466782c1c4f0e6bf17a248ffb3",
     "inputs": [
       {
         "path": "scripts/p41-longbaseline.ts",
-        "sha256": "76baf3576d7ee2fdb0bd0ac0e669ee2566e074e478f56ebb0380ad57041c05dd"
+        "sha256": "7e4ad33a8bff158001a53ddfea801949b328ad892c5485ab7c05a2224e10174b"
       },
       {
-        "path": "src/detect/bls.ts",
-        "sha256": "bc9a24f4c984379c5fcfdd9a21078e14a057ae74ff20f69f24a9dd923534f8ec"
-      },
-      {
-        "path": "src/detect/detrend.ts",
-        "sha256": "e6bf24de23ba1a6dad9ace8e01f9b7b259cc0b030342977f880ae7d599b558df"
-      },
-      {
-        "path": "src/sim/injectInto.ts",
-        "sha256": "dbf0deb5a5180dcd9840f6a59de6f964f261c594c3406d42bbb27aebdec142a4"
-      },
-      {
-        "path": "src/data/mastS3.ts",
-        "sha256": "017ff9a2728df1741ea9fd90f96625f66896792d1700db761e00b4729b1418ce"
-      },
-      {
-        "path": "src/data/mast.ts",
-        "sha256": "dbfa9c012589637a16d3e7271fbc2f62aad12587a0edf12e1e5b5b239c5350fd"
-      },
-      {
-        "path": "src/candidate/falsePositive.ts",
-        "sha256": "199c5c37cfa7c1e90ac1dad62cbabad89e08cd27858ef2251d055d1067382414"
+        "path": "reports/fixtures/p41-frozen-rows.json",
+        "sha256": "a49562510913953439463af9c145234472ca4231c953e69b632591fd3febf5f0"
       }
     ]
   },

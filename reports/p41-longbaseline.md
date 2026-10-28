@@ -1,6 +1,7 @@
 # P41 longer baseline (multi-sector) vs single sector -- completeness on real photometry
 
-Reproduce: `npm run p41:longbaseline -- --stars 30 --maxsectors 4 --period 3 --seed 7`
+Reproduce: `npm run p41:longbaseline` replays the frozen rows offline; `npm run p41:longbaseline -- --live` re-measures against the live Archive/S3 (and may move the numbers).
+This report is an OFFLINE REPLAY of the 29 host measurements frozen on 2026-10-18T15:36:44.596Z; the completeness is byte-stable across runs.
 Sample: first 30 seeded hosts (T<=12, P in [1,13] d); 29 had a public SPOC curve, 25 had >=2 sectors stitched.
 Identical injection-recovery depth grid on (a) each host's longest single sector and (b) its stitched
 multi-sector baseline; only the baseline differs. Detector: bls + SNR>=7 / depth>=200ppm / plausibility,

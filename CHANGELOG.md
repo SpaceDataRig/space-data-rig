@@ -597,6 +597,21 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   (p41/p92 -- the Archive is reachable per R26-47), capture the rows it actually used, regenerate, and the report becomes byte-stable from a
   committed DATA input. That is a science-sensitive per-generator build (must not move a number it does not intend to, must re-verify prose
   that cites the old value) and belongs in its own focused increment (R26-49+), not a tail-of-turn rush. Ledger-only here; no redeploy.
+- **R26-49, executed the frozen-fixture lift on p41: the honest `verified` count rose 24 -> 25.**
+  Applying the p75/p90 pattern measured in R26-48. p41-longbaseline was demoted in R26-41 because its stamp's only inputs were 7 code
+  files (a code-only stamp can never reveal a stale input). p41 measures on LIVE TESS-SPOC photometry, so a naive re-run re-measures and
+  moves its published completeness (the exact drift that burned p90). The lift: freeze the 29 per-host injection-recovery measurements that
+  are BEHIND the currently-published numbers into `reports/fixtures/p41-frozen-rows.json` (derived from the committed report's own rows,
+  preserving the original `measuredAt=2026-10-18` and `measuredGitSha=0788adb` -- NOT a re-fetch, which is precisely why no number moved),
+  give p41 a default offline-replay path that re-DERIVES the completeness table from those frozen measurements (real aggregation, not a
+  copy of the answer) and stamps `[script, fixture]`, and keep `--live` as the deliberate re-measure. Zero-drift proven before touching the
+  generator: a standalone script re-computed usable=29 / multiSector=25 / mean=2.69 and every completeness cell from the frozen rows alone
+  and asserted equality with the committed report (ALL MATCH). After the rebuild, p41 reads `verified=true, reproducibleData=1` and the
+  served library is `{verified:25, fullyVerified:25, unattested:28, stale:[]}`. The INDEPENDENT recheck tool (shares no import with the gate)
+  reproduces `verified=25/25`, so the rise is not the gate grading its own homework. `.md` diff touched only the Reproduce/provenance lines
+  (5 table rows and the Sample line byte-identical); `.json` diff touched only the stamp envelope + the intentional `inputs` swap. Deployed
+  and read back live: p41's served fragment now renders WITHOUT the amber provenance banner (it is honestly machine-verified). This is the
+  first time the audited corpus's honest verified count has gone UP since the R26-41 downward correction -- earned, not asserted.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

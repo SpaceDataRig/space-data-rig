@@ -573,6 +573,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   R26-25 semantics: unreachable -> exit 2 (not a defect), a non-200 / missing key / leak -> exit 1 naming the finding, else exit 0. Run
   live: all five endpoints 200, shapes ok, no leak. Mutation-verified -- demanding a bogus key made it exit 1 and name it, proving the
   detector is not a vacuous pass. New tracked tool + ledgers only; no artifact/index/src change, so no redeploy.
+- **R26-47, self-correction: the "sources unreachable" framing in R26-43 was wrong; the real blocker is provenance, not reachability.**
+  R26-43 recorded that the remaining generators could not be re-run partly because "the live sources are additionally unreachable from
+  here now." Re-probing the EXACT hosts each generator calls (the R26-35 discipline -- not plausible siblings) contradicts that blanket
+  claim: `exoplanetarchive.ipac.caltech.edu/TAP` answers HTTP 200 with real bytes; the `mast.stsci.edu`, `gea.esac.esa.int` and
+  `stpubdata.s3.amazonaws.com` hosts all RESPOND (HTTP 400/404 to a deliberately malformed placeholder key means the host is reachable,
+  the request was wrong); only `vizier.cds.unistra.fr` fails DNS -- which is exactly why the one VizieR-fed generator (p52) was honestly
+  left unattested in R26-40. So reachability is NOT what caps `verified` at 24. The genuine cap is that those generators' stamps carry no
+  re-hashable DATA bytes (R26-41: code-only), and their live catalogs drift so a naive re-run does not byte-reproduce (R26-35: p35/p52).
+  The only honest way past 24 is the committed-fixture provenance design: capture the fetched payload to a committed snapshot, have the
+  attested path read that snapshot, and stamp the snapshot as a real DATA input -- which is a science-sensitive build (must not alter any
+  generator's numbers or verdict semantics), not a re-run. Correcting my own record rather than letting a stale "it's the network" excuse
+  stand. No artifact/index/src change; the correction is to the ledger's account of WHY the frontier sits at 24.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

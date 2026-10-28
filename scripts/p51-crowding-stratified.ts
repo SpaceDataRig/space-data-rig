@@ -19,7 +19,8 @@
 //
 // Usage:  npm run p51:crowding  [-- --targets 24 --tmag 12 --pixcap 8 --aperture 21]
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { fetchGaiaNeighborhood, angularSepArcsec } from "../src/data/gaiaDilution.ts";
 import { assessFalsePositive, type BlendNeighbor } from "../src/candidate/falsePositiveProbability.ts";
@@ -67,7 +68,39 @@ async function probeVizierEb(): Promise<{ reachable: boolean; nRows: number; sam
   }
 }
 
-async function main() {
+/** Stratify the rows by crowding bin: every per-bin median is q() = an integer-index selection over the stored
+ *  FULL-PRECISION values (so it returns one of them, not an interpolated average); the counts are pure over the
+ *  stored booleans/thresholds. Runs the same whether rows came from a live measure or the frozen fixture, so the
+ *  report is re-DERIVED, not copied (the p41/p45/p46/p71/p65 discipline). */
+function stratify(rows: Row[]) {
+  return BINS.map((b) => {
+    const g = rows.filter((r) => r.bin === b);
+    const offs = g.map((r) => r.offsetArcsec).filter((v): v is number => v != null).sort((x, y) => x - y);
+    const pfps = g.map((r) => r.pFalsePositive).sort((x, y) => x - y);
+    const vetoedCount = g.filter((r) => r.vetoed === true).length;
+    return {
+      bin: b, n: g.length,
+      medianAbsB: g.length ? q(g.map((r) => r.absB).sort((x, y) => x - y), 0.5) : NaN,
+      pfpMedian: g.length ? q(pfps, 0.5) : NaN,
+      pfpAbove05: g.filter((r) => r.pFalsePositive > 0.5).length,
+      nLocalized: offs.length,
+      offsetMedian: offs.length ? q(offs, 0.5) : NaN,
+      offsetMax: offs.length ? offs[offs.length - 1] : NaN,
+      falseKills: vetoedCount,
+    };
+  });
+}
+
+function derive(rows: Row[]) {
+  const byBin = stratify(rows);
+  const nCrowded = byBin.find((x) => x.bin === "crowded")?.n ?? 0;
+  const totalLocalized = byBin.reduce((s, x) => s + x.nLocalized, 0);
+  const totalFalseKills = byBin.reduce((s, x) => s + x.falseKills, 0);
+  const crowdedLocalized = (byBin.find((x) => x.bin === "crowded")?.nLocalized ?? 0) + (byBin.find((x) => x.bin === "moderate")?.nLocalized ?? 0);
+  return { byBin, nCrowded, totalLocalized, totalFalseKills, crowdedLocalized };
+}
+
+async function measureLive(): Promise<{ rows: Row[]; skipped: { name: string; why: string }[] }> {
   console.log(`P51 crowding-stratified re-validation (targets=${want} tmag<${tmag} pixcap=${pixcap} aperture=${aperture}")`);
   const cat = await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true, limit: 500 });
   if (cat.source !== "nasa-tap") console.log(`WARNING: catalog source=${cat.source} (live TAP unavailable)`);
@@ -137,47 +170,77 @@ async function main() {
     }
   }
 
-  // stratify by crowding bin
-  const byBin = BINS.map((b) => {
-    const g = rows.filter((r) => r.bin === b);
-    const offs = g.map((r) => r.offsetArcsec).filter((v): v is number => v != null).sort((x, y) => x - y);
-    const pfps = g.map((r) => r.pFalsePositive).sort((x, y) => x - y);
-    const vetoedCount = g.filter((r) => r.vetoed === true).length;
-    return {
-      bin: b, n: g.length,
-      medianAbsB: g.length ? q(g.map((r) => r.absB).sort((x, y) => x - y), 0.5) : NaN,
-      pfpMedian: g.length ? q(pfps, 0.5) : NaN,
-      pfpAbove05: g.filter((r) => r.pFalsePositive > 0.5).length,
-      nLocalized: offs.length,
-      offsetMedian: offs.length ? q(offs, 0.5) : NaN,
-      offsetMax: offs.length ? offs[offs.length - 1] : NaN,
-      falseKills: vetoedCount, // confirmed planets wrongly vetoed off-target
-    };
-  });
+  return { rows, skipped };
+}
 
-  const nCrowded = byBin.find((x) => x.bin === "crowded")?.n ?? 0;
-  const totalLocalized = byBin.reduce((s, x) => s + x.nLocalized, 0);
-  const totalFalseKills = byBin.reduce((s, x) => s + x.falseKills, 0);
+async function main() {
+  // FROZEN DATA SOURCE -- the p41/p45/p46/p71/p65 precedent, applied here. p51 measures each planet against LIVE
+  // Gaia cones + TESS-SPOC target-pixel cubes and probes VizieR live; a plain re-run re-fetches and can move an
+  // offset / P(FP) / the VizieR row count (the p90 drift lesson). The rows AND the live negative-class probe result
+  // are therefore frozen into reports/fixtures/p51-frozen-rows.json (a committed snapshot, dated at measurement) and
+  // the DEFAULT re-DERIVES every stratified figure OFFLINE from those rows via the same q()/count formulas. `--live`
+  // (or `--from-json=`) is the deliberate re-measure.
+  const FROZEN = "reports/fixtures/p51-frozen-rows.json";
+  const live = process.argv.includes("--live");
+  const fromArg = (process.argv.find((a) => a.startsWith("--from-json=")) || "").split("=")[1];
+  const REPLAY = live ? "" : (fromArg !== undefined ? fromArg : FROZEN);
+
+  const EXOFOP = { reachable: false, why: "REST paths 404 anonymously; documented API requires a registered token" };
+  const REVIEWER_PROMPT = "a synthetic pass is not enough; acceptance needs localization on confirmed planets AND crowded-field performance";
+
+  let rows: Row[];
+  let skipped: { name: string; why: string }[];
+  let vizier: { reachable: boolean; nRows: number; sample: string[]; error?: string };
+  let measuredAt: string;
+  let pm: { want: number; tmag: number; pixcap: number; aperture: number; gateArcsec: number; minSnrFloor: number };
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { rows: Row[]; skipped?: { name: string; why: string }[]; negativeClass: { vizierEb: { reachable: boolean; nRows: number; sample: string[]; error?: string } }; measuredAt?: string; meta?: Record<string, number> };
+    rows = j.rows;
+    skipped = j.skipped ?? [];
+    vizier = j.negativeClass.vizierEb;
+    measuredAt = j.measuredAt ?? "unknown";
+    const m = j.meta ?? ({} as Record<string, number>);
+    pm = { want: m.want ?? want, tmag: m.tmag ?? tmag, pixcap: m.pixcap ?? pixcap, aperture: m.aperture ?? aperture, gateArcsec: m.gateArcsec ?? GATE_ARCSEC, minSnrFloor: m.minSnrFloor ?? MIN_SNR };
+    console.log(`P51 crowding-stratified re-validation -- OFFLINE REPLAY from ${REPLAY}: ${rows.length} stored planets, original measurement ${measuredAt}. No network, no re-fetch.`);
+  } else {
+    const m = await measureLive();
+    rows = m.rows;
+    skipped = m.skipped;
+    vizier = await probeVizierEb();
+    measuredAt = new Date().toISOString();
+    pm = { want, tmag, pixcap, aperture, gateArcsec: GATE_ARCSEC, minSnrFloor: MIN_SNR };
+  }
+
+  const d = derive(rows);
 
   console.log(`\n=== P51 SUMMARY ===`);
-  console.log(`  crowding of sample: ${byBin.map((x) => `${x.bin}=${x.n}`).join(", ")}  (${nCrowded} crowded of ${rows.length})`);
-  console.log(`  localized on real pixels: ${totalLocalized} planets; confirmed-planet false-kills at ${GATE_ARCSEC}": ${totalFalseKills}`);
-  for (const x of byBin) console.log(`  [${x.bin}] n=${x.n} |b|~${Number.isFinite(x.medianAbsB) ? x.medianAbsB.toFixed(1) : "-"} P(FP)med=${Number.isFinite(x.pfpMedian) ? x.pfpMedian.toFixed(3) : "-"} >0.5:${x.pfpAbove05} localized=${x.nLocalized} offsetmed=${Number.isFinite(x.offsetMedian) ? x.offsetMedian.toFixed(1) : "-"} kills=${x.falseKills}`);
-
-  const vizier = await probeVizierEb();
+  console.log(`  crowding of sample: ${d.byBin.map((x) => `${x.bin}=${x.n}`).join(", ")}  (${d.nCrowded} crowded of ${rows.length})`);
+  console.log(`  localized on real pixels: ${d.totalLocalized} planets; confirmed-planet false-kills at ${GATE_ARCSEC}": ${d.totalFalseKills}`);
+  for (const x of d.byBin) console.log(`  [${x.bin}] n=${x.n} |b|~${Number.isFinite(x.medianAbsB) ? x.medianAbsB.toFixed(1) : "-"} P(FP)med=${Number.isFinite(x.pfpMedian) ? x.pfpMedian.toFixed(3) : "-"} >0.5:${x.pfpAbove05} localized=${x.nLocalized} offsetmed=${Number.isFinite(x.offsetMedian) ? x.offsetMedian.toFixed(1) : "-"} kills=${x.falseKills}`);
   console.log(`  negative-class reachability: ExoFOP-TESS = gated (REST 404 / token required); VizieR GCVS EB rows = ${vizier.reachable ? `reachable, ${vizier.nRows} labelled variable-star rows returned (e.g. ${vizier.sample.slice(0, 4).join(" | ")})` : "NOT reachable in this run"}`);
-
-  const crowdedLocalized = (byBin.find((x) => x.bin === "crowded")?.nLocalized ?? 0) + (byBin.find((x) => x.bin === "moderate")?.nLocalized ?? 0);
-  const verdict = `P51-CROWDING-STRATIFIED-REVALIDATED (crowded/moderate localization tested on ${crowdedLocalized} real planets, ${totalFalseKills} false-kills; negative class ${vizier.reachable ? "REACHABLE via VizieR (EB catalogues), true-veto test unblocked not-yet-run" : "UNREACHABLE this run"})`;
+  const verdict = `P51-CROWDING-STRATIFIED-REVALIDATED (crowded/moderate localization tested on ${d.crowdedLocalized} real planets, ${d.totalFalseKills} false-kills; negative class ${vizier.reachable ? "REACHABLE via VizieR (EB catalogues), true-veto test unblocked not-yet-run" : "UNREACHABLE this run"})`;
   console.log(`\nVERDICT: ${verdict}`);
 
   const json = {
-    meta: { generatedBy: "scripts/p51-crowding-stratified.ts", want, tmag, pixcap, aperture, gateArcsec: GATE_ARCSEC, minSnrFloor: MIN_SNR, data: "real Gaia DR3 neighbours + TESS-SPOC target-pixel cubes of confirmed planets, sampled low-|b| first", reviewerPrompt: "a synthetic pass is not enough; acceptance needs localization on confirmed planets AND crowded-field performance" },
+    meta: {
+      // Replay stamps the SCRIPT + the FROZEN rows (both tracked -> a clean checkout re-hashes them -> verified), NOT the
+      // Gaia/SPOC/VizieR modules, so a catalog or archive update cannot mark this cited report stale and force a
+      // drift-inducing re-measure; `--live` stamps the modules because there they really produced the numbers (p75 discipline).
+      ...buildStamp(REPLAY
+        ? ["scripts/p51-crowding-stratified.ts", FROZEN]
+        : ["src/data/exoplanetArchive.ts", "src/data/gaiaDilution.ts", "src/candidate/falsePositiveProbability.ts", "src/candidate/crowding.ts", "src/data/mastS3.ts", "src/data/mastS3Pixels.ts", "src/detect/diffImaging.ts", "scripts/p51-crowding-stratified.ts"]),
+      generatedBy: "scripts/p51-crowding-stratified.ts", ...pm, gateArcsec: pm.gateArcsec, minSnrFloor: pm.minSnrFloor,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of real Gaia crowding + TESS-SPOC target-pixel localization + the VizieR negative-class probe, replayed offline -- the live run as measured, not re-fetched"
+        : "real Gaia DR3 neighbours + TESS-SPOC target-pixel cubes of confirmed planets, sampled low-|b| first",
+      reviewerPrompt: REVIEWER_PROMPT,
+    },
     nRows: rows.length,
-    crowdingOfSample: byBin.map((x) => ({ bin: x.bin, n: x.n })),
-    stratified: byBin,
-    totalLocalized, totalFalseKills,
-    negativeClass: { exofop: { reachable: false, why: "REST paths 404 anonymously; documented API requires a registered token" }, vizierEb: vizier },
+    crowdingOfSample: d.byBin.map((x) => ({ bin: x.bin, n: x.n })),
+    stratified: d.byBin,
+    totalLocalized: d.totalLocalized, totalFalseKills: d.totalFalseKills,
+    negativeClass: { exofop: EXOFOP, vizierEb: vizier },
     safeToGate: false, discoveryClaim: false,
     rows, skipped,
   };
@@ -187,7 +250,11 @@ async function main() {
   const md = [
     "# P51 crowding-stratified acceptance re-validation of the blend-veto tools",
     "",
-    `Reproduce: \`npm run p51:crowding -- --targets ${want} --tmag ${tmag} --pixcap ${pixcap} --aperture ${aperture}\``,
+    `Reproduce: \`npm run p51:crowding -- --targets ${pm.want} --tmag ${pm.tmag} --pixcap ${pm.pixcap} --aperture ${pm.aperture}\``,
+    "",
+    REPLAY
+      ? `OFFLINE REPLAY: figures re-DERIVED from \`reports/fixtures/p51-frozen-rows.json\` (a committed snapshot of the live measurements, taken ${measuredAt}); \`--live\` re-measures.`
+      : `LIVE re-measure: real Gaia cones + SPOC target-pixel localization + a VizieR probe at run time (${measuredAt}).`,
     "",
     "A reviewer's correct objection: *a synthetic-data pass is not enough for a veto tool; acceptance testing",
     "also needs localization on confirmed planets AND performance in crowded fields where blends matter.* Our",
@@ -195,16 +262,16 @@ async function main() {
     "blends do NOT happen. This script re-tests the veto tools with the sample deliberately pushed toward",
     "the galactic disc (lowest |b| first) and reports every metric STRATIFIED BY CROWDING.",
     "",
-    `**Crowding of the ${rows.length}-planet sample** (Gaia neighbours in the ${aperture}" aperture):`,
+    `**Crowding of the ${rows.length}-planet sample** (Gaia neighbours in the ${pm.aperture}" aperture):`,
     "",
     "| crowding bin | n | median \\|b\\| | P(FP) median | P(FP)>0.5 | localized | offset median (arcsec) | offset max | confirmed-planet false-kills |",
     "|---|---|---|---|---|---|---|---|---|",
-    ...byBin.map((x) => `| ${x.bin} | ${x.n} | ${Number.isFinite(x.medianAbsB) ? x.medianAbsB.toFixed(1) : "-"} | ${Number.isFinite(x.pfpMedian) ? x.pfpMedian.toFixed(3) : "-"} | ${x.pfpAbove05} | ${x.nLocalized} | ${Number.isFinite(x.offsetMedian) ? x.offsetMedian.toFixed(1) : "-"} | ${Number.isFinite(x.offsetMax) ? x.offsetMax.toFixed(1) : "-"} | ${x.falseKills} |`),
+    ...d.byBin.map((x) => `| ${x.bin} | ${x.n} | ${Number.isFinite(x.medianAbsB) ? x.medianAbsB.toFixed(1) : "-"} | ${Number.isFinite(x.pfpMedian) ? x.pfpMedian.toFixed(3) : "-"} | ${x.pfpAbove05} | ${x.nLocalized} | ${Number.isFinite(x.offsetMedian) ? x.offsetMedian.toFixed(1) : "-"} | ${Number.isFinite(x.offsetMax) ? x.offsetMax.toFixed(1) : "-"} | ${x.falseKills} |`),
     "",
-    `**What this measures.** ${nCrowded}/${rows.length} hosts are crowded and ${crowdedLocalized} planets were localized on real pixels in crowded/moderate fields -- the regime P45 never touched.`,
-    totalFalseKills === 0
+    `**What this measures.** ${d.nCrowded}/${rows.length} hosts are crowded and ${d.crowdedLocalized} planets were localized on real pixels in crowded/moderate fields -- the regime P45 never touched.`,
+    d.totalFalseKills === 0
       ? "The difference-image gate killed 0 confirmed planets here, but P44 already showed it MISLOCALIZES real planets by 11-45\" on a broader sample, so a small clean subset killing zero is not evidence of safety."
-      : `The difference-image gate wrongly vetoed ${totalFalseKills} confirmed planets even on this sample -- it is NOT safe to gate.`,
+      : `The difference-image gate wrongly vetoed ${d.totalFalseKills} confirmed planets even on this sample -- it is NOT safe to gate.`,
     "P(FP) stays prior-dependent: a Gaia neighbour existing is not evidence it is an eclipsing binary, so",
     "crowding raises the *count of candidate contaminants* but not a validated discrimination.",
     "",

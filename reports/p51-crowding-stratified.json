@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T13:42:29.599Z",
+    "gitSha": "9944c4cdee5990e996c318944e2f1eb4987e8afb",
+    "inputs": [
+      {
+        "path": "scripts/p51-crowding-stratified.ts",
+        "sha256": "99f660d4bd0d267636fb414e450ba689a80641f1b6095c9b93af99c3205481a9"
+      },
+      {
+        "path": "reports/fixtures/p51-frozen-rows.json",
+        "sha256": "ab1d081f7137c7ed6924543de5762c5c8ae50dd4ae25ef7c5ce3d5a13c039509"
+      }
+    ],
     "generatedBy": "scripts/p51-crowding-stratified.ts",
     "want": 24,
     "tmag": 12,
@@ -7,7 +19,8 @@
     "aperture": 21,
     "gateArcsec": 2,
     "minSnrFloor": 5,
-    "data": "real Gaia DR3 neighbours + TESS-SPOC target-pixel cubes of confirmed planets, sampled low-|b| first",
+    "measuredAt": "2026-10-14T04:46:10Z",
+    "data": "FROZEN snapshot of real Gaia crowding + TESS-SPOC target-pixel localization + the VizieR negative-class probe, replayed offline -- the live run as measured, not re-fetched",
     "reviewerPrompt": "a synthetic pass is not enough; acceptance needs localization on confirmed planets AND crowded-field performance"
   },
   "nRows": 24,

@@ -744,6 +744,26 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   intentional `data` string; every row/median/verdict byte-identical. Four lifts now (p71/p65/p45/p46) all pass both clauses with zero drift and zero
   cascade; the honest count stands at 30, up from 26 at the start of this lift arc, each +1 earned by pinning a measurement, never by loosening the gate.
   lint 0, typecheck 0, suite 1035/0, ASCII clean.
+- **R26-59, fifth lift through the screen and the most composite aggregate yet -- p51 crowding-stratified, honest `verified` 30 -> 31.**
+  p51 re-validates the blend-veto tools on real confirmed planets sampled low-|b| (crowded fields), and its published figures are the most layered of
+  the lift family: a per-bin `stratified[]` table where each bin carries a median |b|, a P(FP) median + a >0.5 count, a localized count and an offset
+  median/max, plus `totalLocalized`/`totalFalseKills`, `crowdingOfSample` bin counts and a `safeToGate`/`discoveryClaim` flag. Clause (a) held for the
+  same reason as p45/p46: every stored row persists `pFalsePositive`/`offsetArcsec`/`absB` at FULL float precision, and EVERY median is `q(sorted, f)` =
+  a deterministic integer-index selection (returns one of the stored values, never an interpolated average), while the counts are pure threshold/boolean
+  filters -- so all of it re-derives byte-identically from the 24 committed rows. The one field that is NOT a function of the rows is
+  `negativeClass.vizierEb`, a LIVE VizieR probe result (row count + sample) with no re-derivable formula, so it is frozen VERBATIM alongside the rows and
+  the skipped list rather than recomputed -- the fixture records it as measured, and the replay reads it back unchanged. Measured zero drift BEFORE
+  editing: a probe recomputed the whole stratified table, totals and crowdingOfSample from the committed rows -> ALL MATCH (10 content fields, byte-identical).
+  Reverse-dependency scan: p51 has ZERO consumers, so re-stamping cannot cascade. Note p51 carries no top-level `verdict` field (the verdict line is
+  console-only), so the committed JSON field set (meta/nRows/crowdingOfSample/stratified/totals/negativeClass/safeToGate/discoveryClaim/rows/skipped) is
+  preserved exactly. Froze the 24 rows + skipped + negativeClass into `reports/fixtures/p51-frozen-rows.json` (measuredAt = the original live Gaia/SPOC/VizieR
+  date 2026-10-14T04:46:10Z, NOT a re-fetch), gave p51 a default offline replay that re-DERIVES the stratified table via the same q/filter formulas and stamps
+  `[script, fixture]`, kept `--live` the deliberate re-measure. After rebuild p51 reads `verified=true, reproducibleData=1`; served library
+  `{stamped 33, verified 31, fullyVerified 31, unattested 23, stale []}` (unattested = 56 - 33); the INDEPENDENT freshness-recheck reproduces `verified=31/31`.
+  `.json` diff = stamp envelope + the intentional `data` provenance string only; every row/median/count byte-identical, the live VizieR probe returned as stored.
+  This extends clause (a) to a COMPOSITE aggregate whose single non-row-derived member is honestly frozen rather than faked: five lifts now (p71/p65/p45/p46/p51)
+  all pass both clauses with zero drift and zero cascade; the honest count stands at 31, up from 26 at the start of this lift arc, each +1 earned by pinning a
+  measurement, never by loosening the gate. lint 0, typecheck 0, suite 1035/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

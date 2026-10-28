@@ -2,6 +2,8 @@
 
 Reproduce: `npm run p51:crowding -- --targets 24 --tmag 12 --pixcap 8 --aperture 21`
 
+OFFLINE REPLAY: figures re-DERIVED from `reports/fixtures/p51-frozen-rows.json` (a committed snapshot of the live measurements, taken 2026-10-14T04:46:10Z); `--live` re-measures.
+
 A reviewer's correct objection: *a synthetic-data pass is not enough for a veto tool; acceptance testing
 also needs localization on confirmed planets AND performance in crowded fields where blends matter.* Our
 P45 (blended-EB P(FP)) had only ever been characterised on bright, isolated hosts -- the regime where

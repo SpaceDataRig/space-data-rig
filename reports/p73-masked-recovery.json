@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T03:09:48.879Z",
+    "gitSha": "718571154e68177521263790d4d04856f218982c",
+    "inputs": [
+      {
+        "path": "reports/p60-joint-vs-single.json",
+        "sha256": "04870f1739b8deea607c46b6cb97485a303ab7c18533384d40c13b986d8f115c"
+      },
+      {
+        "path": "scripts/p73-masked-recovery.ts",
+        "sha256": "c3e40fd83ed36f1b959d4bfe9685d9f3f606cf7a007781d838e26e5ccf948c6d"
+      }
+    ],
     "generatedBy": "scripts/p73-masked-recovery.ts",
     "n": 20,
     "k": 3,
@@ -77,24 +89,6 @@
       "maskJointSnr": 28.362987120650416
     },
     {
-      "name": "HR 858 d",
-      "catPeriod": 11.230511,
-      "nSectors": 4,
-      "nSiblings": 2,
-      "siblingsMasked": 518,
-      "single": false,
-      "naiveJoint": false,
-      "maskJoint": false,
-      "maskIter1": false,
-      "maskIterK": false,
-      "oracle": true,
-      "naiveJointPeriod": 3.5856777260463923,
-      "maskJointPeriod": 7.7322562173307485,
-      "maskIterPeriod": null,
-      "naiveJointSnr": 27.639434133039618,
-      "maskJointSnr": 17.9203092218244
-    },
-    {
       "name": "HR 858 c",
       "catPeriod": 5.973865,
       "nSectors": 4,
@@ -111,6 +105,24 @@
       "maskIterPeriod": null,
       "naiveJointSnr": 27.639434133039618,
       "maskJointSnr": 18.771240714744366
+    },
+    {
+      "name": "HR 858 d",
+      "catPeriod": 11.230511,
+      "nSectors": 4,
+      "nSiblings": 2,
+      "siblingsMasked": 518,
+      "single": false,
+      "naiveJoint": false,
+      "maskJoint": false,
+      "maskIter1": false,
+      "maskIterK": false,
+      "oracle": true,
+      "naiveJointPeriod": 3.5856777260463923,
+      "maskJointPeriod": 7.7322562173307485,
+      "maskIterPeriod": null,
+      "naiveJointSnr": 27.639434133039618,
+      "maskJointSnr": 17.9203092218244
     },
     {
       "name": "HD 63433 b",
@@ -167,24 +179,6 @@
       "maskJointSnr": -41.35719328582608
     },
     {
-      "name": "HD 25463 c",
-      "catPeriod": 3.04405,
-      "nSectors": 3,
-      "nSiblings": 1,
-      "siblingsMasked": 173,
-      "single": false,
-      "naiveJoint": false,
-      "maskJoint": false,
-      "maskIter1": false,
-      "maskIterK": false,
-      "oracle": true,
-      "naiveJointPeriod": 7.048357337745268,
-      "maskJointPeriod": 8.402837364230571,
-      "maskIterPeriod": null,
-      "naiveJointSnr": 26.2430300854006,
-      "maskJointSnr": -16.710374283452687
-    },
-    {
       "name": "HD 25463 b",
       "catPeriod": 7.0491423,
       "nSectors": 3,
@@ -201,6 +195,24 @@
       "maskIterPeriod": 7.048223816310085,
       "naiveJointSnr": 26.2430300854006,
       "maskJointSnr": 25.892913184814287
+    },
+    {
+      "name": "HD 25463 c",
+      "catPeriod": 3.04405,
+      "nSectors": 3,
+      "nSiblings": 1,
+      "siblingsMasked": 173,
+      "single": false,
+      "naiveJoint": false,
+      "maskJoint": false,
+      "maskIter1": false,
+      "maskIterK": false,
+      "oracle": true,
+      "naiveJointPeriod": 7.048357337745268,
+      "maskJointPeriod": 8.402837364230571,
+      "maskIterPeriod": null,
+      "naiveJointSnr": 26.2430300854006,
+      "maskJointSnr": -16.710374283452687
     },
     {
       "name": "TOI-5789 c",
@@ -221,24 +233,6 @@
       "maskJointSnr": 29.12374070805495
     },
     {
-      "name": "HD 101581 c",
-      "catPeriod": 6.20401,
-      "nSectors": 2,
-      "nSiblings": 1,
-      "siblingsMasked": 436,
-      "single": false,
-      "naiveJoint": false,
-      "maskJoint": false,
-      "maskIter1": false,
-      "maskIterK": false,
-      "oracle": false,
-      "naiveJointPeriod": 9.841648358750062,
-      "maskJointPeriod": 13.576786409999045,
-      "maskIterPeriod": null,
-      "naiveJointSnr": -43.43108019269912,
-      "maskJointSnr": -42.99202293989644
-    },
-    {
       "name": "HD 101581 b",
       "catPeriod": 4.46569,
       "nSectors": 2,
@@ -255,6 +249,24 @@
       "maskIterPeriod": null,
       "naiveJointSnr": -43.43108019269912,
       "maskJointSnr": -43.59956431247301
+    },
+    {
+      "name": "HD 101581 c",
+      "catPeriod": 6.20401,
+      "nSectors": 2,
+      "nSiblings": 1,
+      "siblingsMasked": 436,
+      "single": false,
+      "naiveJoint": false,
+      "maskJoint": false,
+      "maskIter1": false,
+      "maskIterK": false,
+      "oracle": false,
+      "naiveJointPeriod": 9.841648358750062,
+      "maskJointPeriod": 13.576786409999045,
+      "maskIterPeriod": null,
+      "naiveJointSnr": -43.43108019269912,
+      "maskJointSnr": -42.99202293989644
     },
     {
       "name": "AU Mic b",

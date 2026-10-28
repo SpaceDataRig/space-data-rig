@@ -493,6 +493,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   published numbers but not byte-identical in row sequence across runs -- the freshness gate is unaffected (it hashes the
   inputs, not the output order), and the `.md` is the human-facing surface. p73 (masked-recovery, same fixed-host pattern)
   and p52 (target-pixel based) remain to be run-and-diff tested; p35 stays reverted.
+- **R26-38, p73 byte-reproduced and was attested -- the whole fixed-p60-family is now machine-verified (unattested 29 -> 28).**
+  Ran p73 (`--minsnr 7 --tol 5 --win 0.1 --k 3 --pad 0.25`, masked-recovery over the 20-planet P60 sample with sibling
+  masking). Its `.md` came out byte-identical (`numstat` empty; VERDICT unchanged: "MODEST-SIBLING-LIFT: re-find 6->7/20,
+  well under the ORACLE 11/20"), and the `.json` gained only the stamp + the same cosmetic row re-order. `p86` re-attested:
+  `{verified 27, unattested 28}`. With this, every generator whose committed input fully determines the output on a fixed
+  host set is attested (p56 via p47; p69/p62/p67/p73 via p60). Of the original seven wired candidates, only p35 stays
+  unattested (its p33-catalog grew -> does not reproduce) and p52 remains to test (target-pixel based). The R26-35 rule
+  -- attest only on byte-reproduction, never on the input list -- has now gated four attests and one refusal, exactly as
+  intended.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

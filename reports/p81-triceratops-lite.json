@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T14:13:54.318Z",
+    "gitSha": "1c1227ef5ecb66925037c37649c23bb2fbfabed4",
+    "inputs": [
+      {
+        "path": "scripts/p81-triceratops-lite.ts",
+        "sha256": "3af2ea373fd8296005c9181a45e254c0fea6adfe06d84fd2bffe7e3f0c203ebf"
+      },
+      {
+        "path": "reports/fixtures/p81-frozen-rows.json",
+        "sha256": "32d81839bb608407e79d836f4bf6fea4532e13bcb4816e06c74fc37bced0f043"
+      }
+    ],
     "generatedBy": "scripts/p81-triceratops-lite.ts",
     "protocol": "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test",
     "wantKp": 10,
@@ -14,6 +26,8 @@
     "centroidEnabled": true,
     "falseCoincidenceBase": 0.5294117647058824,
     "ebPriorShortPeriod": 0.015,
+    "measuredAt": "2026-10-17T11:52:04Z",
+    "data": "FROZEN snapshot of the per-candidate Gaia census + multi-sector centroid F-test grades of P80-validated external candidates, replayed offline -- the live run as measured, not re-fetched",
     "note": "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false."
   },
   "totals": {

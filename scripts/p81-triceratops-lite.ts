@@ -20,7 +20,7 @@
 // Usage: npm run p81:triceratops-lite [-- --kp 10 --cp 10 --sectors 4 --tmag 11 --min-depth 3000 --tol 0.02
 //          --min-corr 2 --aperture 21 --alpha 0.001 --centroid 1 --maxcentroid 20]
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { buildStamp } from "./report-freshness.ts";
 import { iterativeBls } from "../src/detect/iterative.ts";
 import { classifyDepthRegime } from "../src/candidate/falsePositive.ts";
@@ -134,14 +134,16 @@ async function centroidCheck(tic: number, sectors: number[], name: string, perio
   return { testable: r.testable, p: r.p, nUsed: r.nUsed };
 }
 
-async function main(): Promise<void> {
+interface Row { tic: number; toi: string; disp: string; periodDays: number; depthPpm: number; maxCorr: number; validated: boolean; censusDetermined: boolean; dilution: number; nInAperture: number; blendFpp: number; correctedDepthPpm: number; inconsistent: boolean; harmonicSiblings: number; centroidP: number | null; centroidOnTarget: boolean | null; aliasLevel: string; aliasNote: string; tricGrade: boolean }
+
+async function measureLive(): Promise<{ rows: Row[]; fcBase: number }> {
   console.log(`P81 TRICERATOPS-grade upgrade of P80. Blind per-sector detection (claim ephemeris never fed), corroboration>=${MIN_CORR}, tol ${(TOL * 100).toFixed(0)}%; then per validated candidate: Gaia ${APERTURE}" census + blend FPP + harmonic alias + ${DO_CENTROID ? "centroid F-test" : "no centroid"}.`);
   let fcBase = 0.53;
   try { const p78 = JSON.parse(readFileSync("reports/p78-blind-multisector.json", "utf8")) as { capped: { acceptedPrecision: number } }; if (Number.isFinite(p78.capped.acceptedPrecision)) fcBase = 1 - p78.capped.acceptedPrecision; } catch { /* keep fallback */ }
   console.log(`empirical false-coincidence base from P78: ${(fcBase * 100).toFixed(0)}% (1 - accepted precision)`);
 
   const records = await fetchToiTable();
-  if (!records.length) { console.log("ExoFOP TOI table unavailable (network)."); process.exitCode = 1; return; }
+  if (!records.length) { console.log("ExoFOP TOI table unavailable (network)."); process.exitCode = 1; return { rows: [], fcBase }; }
   const usable = (r: ToiRecord) => isPlaceable(r) && Number.isFinite(r.depthPpm) && r.depthPpm >= minDepth && r.periodDays >= 2 && r.periodDays <= 8 && r.sectors.length >= 2 && Number.isFinite(r.tessMag) && r.tessMag <= tmagCap;
   const isKP = (r: ToiRecord) => (r.tfopwgDisposition || "").toUpperCase() === "KP" || (r.tessDisposition || "").toUpperCase() === "KP";
   const isCP = (r: ToiRecord) => (r.tfopwgDisposition || "").toUpperCase() === "CP" || (r.tessDisposition || "").toUpperCase() === "CP";
@@ -157,7 +159,6 @@ async function main(): Promise<void> {
     cache.set(rec.tic, c); return c;
   }
 
-  interface Row { tic: number; toi: string; disp: string; periodDays: number; depthPpm: number; maxCorr: number; validated: boolean; censusDetermined: boolean; dilution: number; nInAperture: number; blendFpp: number; correctedDepthPpm: number; inconsistent: boolean; harmonicSiblings: number; centroidP: number | null; centroidOnTarget: boolean | null; aliasLevel: string; aliasNote: string; tricGrade: boolean }
   const rows: Row[] = [];
   let centroidBudget = maxCentroid;
   for (const pool of [kp, cp]) {
@@ -184,6 +185,37 @@ async function main(): Promise<void> {
     }
   }
 
+  return { rows, fcBase };
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p41/p45/p46/p51/p71/p65 precedent, applied here. p81 measures each validated candidate
+  // against a LIVE Gaia census + TESS-SPOC pixel centroid F-test, after fetching the live ExoFOP TOI table; a plain
+  // re-run re-fetches and can flip a tricGrade/alias cell (the p90 drift lesson). The per-candidate rows are therefore
+  // frozen into reports/fixtures/p81-frozen-rows.json (a committed snapshot dated at measurement) and the DEFAULT
+  // re-DERIVES every total AND the verdict OFFLINE from those stored rows via the same pure `.filter(...).length`
+  // counts. `--live` (or `--from-json=`) is the deliberate re-measure.
+  const FROZEN = "reports/fixtures/p81-frozen-rows.json";
+  const live = process.argv.includes("--live");
+  const fromArg = (process.argv.find((a) => a.startsWith("--from-json=")) || "").split("=")[1];
+  const REPLAY = live ? "" : (fromArg !== undefined ? fromArg : FROZEN);
+  let rows: Row[];
+  let fcBase: number;
+  let measuredAt: string;
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { rows: Row[]; measuredAt?: string; meta?: Record<string, number | boolean> };
+    rows = j.rows;
+    measuredAt = j.measuredAt ?? "unknown";
+    fcBase = typeof j.meta?.falseCoincidenceBase === "number" ? j.meta.falseCoincidenceBase : 0.53;
+    console.log(`P81 TRICERATOPS-grade upgrade -- OFFLINE REPLAY from ${REPLAY}: ${rows.length} stored candidates, original measurement ${measuredAt}. No network, no re-fetch.`);
+  } else {
+    const meas = await measureLive();
+    rows = meas.rows;
+    fcBase = meas.fcBase;
+    measuredAt = new Date().toISOString();
+  }
+  const pm = { wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, apertureArcsec: APERTURE, centroidAlpha: ALPHA, centroidEnabled: DO_CENTROID, falseCoincidenceBase: fcBase, ebPriorShortPeriod: 0.015 };
+
   const cpValid = rows.filter((r) => r.disp === "CP" && r.validated);
   const kpValid = rows.filter((r) => r.disp === "KP" && r.validated);
   const cpGrade = cpValid.filter((r) => r.tricGrade).length;
@@ -202,7 +234,7 @@ async function main(): Promise<void> {
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { ...buildStamp(["reports/p78-blind-multisector.json", "src/data/toiDispositions.ts"]), generatedBy: "scripts/p81-triceratops-lite.ts", protocol: "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test", wantKp, wantCp, sectorCap, tmagCap, minDepth, tol: TOL, minCorroboration: MIN_CORR, apertureArcsec: APERTURE, centroidAlpha: ALPHA, centroidEnabled: DO_CENTROID, falseCoincidenceBase: fcBase, ebPriorShortPeriod: 0.015, note: "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false." },
+    meta: { ...buildStamp(REPLAY ? ["scripts/p81-triceratops-lite.ts", FROZEN] : ["reports/p78-blind-multisector.json", "src/data/toiDispositions.ts", "scripts/p81-triceratops-lite.ts"]), generatedBy: "scripts/p81-triceratops-lite.ts", protocol: "P80 blind corroboration validation, then per validated candidate: Gaia 21-inch blend census + blendFpp + harmonic alias + multi-sector centroid F-test", ...pm, measuredAt, data: REPLAY ? "FROZEN snapshot of the per-candidate Gaia census + multi-sector centroid F-test grades of P80-validated external candidates, replayed offline -- the live run as measured, not re-fetched" : "live ExoFOP TOI table + real Gaia DR3 neighbours + TESS-SPOC target-pixel centroid F-test", note: "first-order TRICERATOPS-grade-up, not full TRICERATOPS; discoveryClaim false, safeToGate false." },
     totals: { validated: totalValid, kpValidated: kpValid.length, cpValidated: cpValid.length, cpTricGrade: cpGrade, kpTricGrade: kpGrade, cpLowOrModerate: cpLowOrMod, censusDetermined: determined, censusUndetermined: undetermined, inconsistentDepth: contradict.length },
     rows, verdict, discoveryClaim: false, safeToGate: false,
   };
@@ -218,6 +250,8 @@ async function main(): Promise<void> {
     "# P81 TRICERATOPS-grade upgrade of the P80 external-candidate validation (audit finding 9, gap 3)",
     "",
     `Reproduce: \`npm run p81:triceratops-lite -- --kp ${wantKp} --cp ${wantCp} --aperture ${APERTURE} --centroid ${DO_CENTROID ? 1 : 0}\``,
+    "",
+    REPLAY ? `OFFLINE REPLAY: totals + verdict re-DERIVED from \`reports/fixtures/p81-frozen-rows.json\` (a committed snapshot of the per-candidate live grades, taken ${measuredAt}); \`--live\` re-measures.` : `LIVE re-measure: ExoFOP TOI table + Gaia blend census + SPOC pixel centroid F-test at run time (${measuredAt}).`,
     "",
     "P80 confirmed external (ExoFOP) claims via a BLIND, non-circular per-sector corroboration match, but its",
     "residual risks -- blends and period aliasing (P78: 2-sector precision ~47%) -- were only bounded statistically.",

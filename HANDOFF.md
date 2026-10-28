@@ -763,10 +763,11 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 33 / verified 31 / fullyVerified 31 / unattested 23 /
-  stale []` -- see the Production bullet for the deployed revision. R26-55, R26-56, R26-57, R26-58 and R26-59 lifted five more rows
+  As of 2026-10-28 the served report library reads `total 56 / stamped 34 / verified 32 / fullyVerified 32 / unattested 22 /
+  stale []` -- see the Production bullet for the deployed revision. R26-55, R26-56, R26-57, R26-58, R26-59 and R26-60 lifted six more rows
   (`p71` the audit positive control, its subject `p65` the external-candidate audit, `p45` the false-positive-probability
-  characterisation, `p46` the multi-year coherence study, and `p51` the crowding-stratified veto re-validation) the disciplined way:
+  characterisation, `p46` the multi-year coherence study, `p51` the crowding-stratified veto re-validation, and `p81` the TRICERATOPS-grade
+  external-candidate upgrade) the disciplined way:
   the two-clause screen (R26-53 exact-persistence + R26-54 not-a-DATA-input-to-verified) flagged each eligible, zero drift was measured
   before editing, and their frozen rows replay the published figures offline. The attestation frontier of the seven R26-31-wired
   generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
@@ -825,7 +826,11 @@ authority; they are deliberately not restated here.
   plus totals and crowdingOfSample, every median a `q(sorted,f)` integer-index selection over the 24 rows' FULL-precision stored values and every count
   a pure threshold filter, all re-deriving byte-identically; the one field that is NOT a function of the rows -- the live VizieR negative-class probe
   (`negativeClass.vizierEb`) -- is frozen VERBATIM in the fixture rather than recomputed, and p51 has no top-level verdict (console-only) so its field
-  set is preserved exactly. verified rose 30 -> 31. The five clean lifts (p71/p65/p45/p46/p51) confirm the screen is reliable, not lucky.
+  set is preserved exactly. verified rose 30 -> 31. R26-60 then lifted `p81` (TRICERATOPS-grade external-candidate upgrade) -- whose committed
+  artifact predated the `buildStamp` wiring (the old p89 shape, served `stamped=false`): its 20 rows store each per-candidate grade and EVERY
+  published figure (`totals` + the `verdict` string) is a pure `.filter(...).length` count over stored booleans/enums (validated/disp/tricGrade/
+  censusDetermined/inconsistent/aliasLevel), the rounded floats being display-only -- the same shape as p71/p65; its only consumer p38 reads just
+  `totals` (byte-preserved), so no cascade. verified rose 31 -> 32. The six clean lifts (p71/p65/p45/p46/p51/p81) confirm the screen is reliable, not lucky.
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -925,22 +930,24 @@ authority; they are deliberately not restated here.
 - Production: wrangler version dbaff271-53ff-45a1-ad5c-a1185162ba9a, gitSha adef4666e82088e95ec2e5f14e20b8ddebd504ac
   (deployed 2026-10-28 by R26-59 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
   static assets from `web/`; `GET /health` read back returned `deployVersion dbaff271-53ff-45a1-ad5c-a1185162ba9a` and
-  `gitSha adef466`), `codeVersion space-data-rig@0.2.0`. HEAD (this section's ledger commit, made after the deploy)
-  differs from the deployed revision adef466 only in `HANDOFF.md` -- no `src/` and no `web/` path -- so the served
-  `src/` and `web/` trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces.
-  **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  `gitSha adef466`), `codeVersion space-data-rig@0.2.0`. **R26-60 AWAITING DEPLOY:** the p81 TRICERATOPS-grade frozen-fixture lift is
+  committed -- its report, `reports/fixtures/p81-frozen-rows.json`, and the regenerated `web/reports/index.json` +
+  `web/reports/p81-triceratops-lite.html` move the library to `stamped 34 / verified 32 / fullyVerified 32 / unattested 22 /
+  stale []` -- but as of this ledger commit the live endpoint still serves the adef466 build (`verified 31`); a redeploy is
+  pending, so this bullet carries the `awaiting deploy` marker the `tests/handoff-freshness.test.ts` tree-equality check
+  requires (the named production revision adef466 and HEAD differ in exactly the two served `web/` files). **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59 frozen-fixture lifts of p41, p88, p71, p65, p45, p46 and p51 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,
   `reports/fixtures/p71-frozen-rows.json`, `reports/fixtures/p65-frozen-outcomes.json`, `reports/fixtures/p45-frozen-rows.json`,
-  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`), so each stamp carries a real DATA input and all seven are honestly machine-verified again.
-  Live read-back of `GET /reports/index.json`: 56 rows, `freshness {stamped 33, verified 31, fullyVerified 31, unattested 23,
+  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`), so each stamp carries a real DATA input and all seven are honestly machine-verified again (p81 joins them once redeployed).
+  Live read-back of `GET /reports/index.json` (the deployed adef466 build): 56 rows, `freshness {stamped 33, verified 31, fullyVerified 31, unattested 23,
   stale []}`; `p41-longbaseline`, `p88-independent-corroboration`, `p71-audit-positive-control`, `p65-external-audit`, `p45-fp-probability`, `p46-coherence` and `p51-crowding-stratified` each serve
   `verified=true / reproducibleData=1` with
   their rendered HTML fragments WITHOUT the amber provenance banner, while the still-code-only row (`p92-scrambled-fa`)
   keeps `verified=false / reproducibleData=0` and still serves the banner (the R26-41 correction intact; p92 stays demoted
   honestly because its report persists only the aggregate, so a zero-drift freeze is not available for it). The independent
-  freshness-recheck reproduces `verified=31/31`. `discoveryClaim`/`safeToGate` remain false in every report. This is the
-  honest count RISING 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31, earned by pinning the measurement behind the numbers (zero drift, no coupling
+  freshness-recheck on the committed tree reproduces `verified=32/32`. `discoveryClaim`/`safeToGate` remain false in every report. Once this
+  tree is redeployed the honest live count rises 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32, earned by pinning the measurement behind the numbers (zero drift, no coupling
   cascade, independently rechecked), not by loosening the gate; the earlier downward correction 27 -> 24 (R26-41) still
   stands for what was genuinely checkable at that point.
   Earlier production: version 8095cf08-7c09-4ae8-b0f1-17404b5edf40, gitSha 8c7f2ca10d2eaee3974447da7c9e7d12dc970ac8

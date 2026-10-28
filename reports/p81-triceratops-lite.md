@@ -2,6 +2,8 @@
 
 Reproduce: `npm run p81:triceratops-lite -- --kp 10 --cp 10 --aperture 21 --centroid 1`
 
+OFFLINE REPLAY: totals + verdict re-DERIVED from `reports/fixtures/p81-frozen-rows.json` (a committed snapshot of the per-candidate live grades, taken 2026-10-17T11:52:04Z); `--live` re-measures.
+
 P80 confirmed external (ExoFOP) claims via a BLIND, non-circular per-sector corroboration match, but its
 residual risks -- blends and period aliasing (P78: 2-sector precision ~47%) -- were only bounded statistically.
 Here each already-validated candidate gets three discriminants from data the detector never saw: a real Gaia

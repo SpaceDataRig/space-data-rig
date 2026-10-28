@@ -670,6 +670,22 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   must not be rushed to inflate a number). This is a frontier-accuracy result, not a count change: the honest `verified` stays 26, and the rule now
   tells the next reader exactly which remaining candidates are worth a careful per-generator build (those persisting exact integer/boolean
   per-target measurements) versus which are blocked by float rounding. No code, artifact or gate change; suite unchanged at 1035/0, ASCII clean.
+- **R26-54, found a SECOND, orthogonal lift blocker -- downstream coupling -- by attempting the recipe on p60 and reverting cleanly.**
+  p60-joint-vs-single looked like the ideal next lift: its committed report persists full-precision per-target rows (no `toFixed`), and I verified
+  by measurement that every published figure -- the single/joint re-find counts, the joint-minus-single lift, the Wilson intervals, the mean SNRs
+  and the verdict -- is a pure function of those rows, so a replay re-derived them BYTE-IDENTICAL (zero drift; the R26-53 rounding test passed).
+  I built the fixture, gave p60 a default offline replay with `buildStamp([script, fixture])`, and confirmed the regenerated aggregate matched the
+  committed one exactly. The rebuild then exposed the real blocker: p60's committed report is itself a tracked DATA input to FOUR downstream reports
+  (`p62-phase-aligned-joint`, `p67-seed-precision`, `p69-rednoise-significance`, `p73-masked-recovery`), each of which stamps
+  `[reports/p60-joint-vs-single.json, its own .ts]` and is honestly verified because of that. Rewriting p60 -- changing ONLY the provenance envelope
+  and moving NO number -- invalidates all four recorded hashes and cascades them HARD-STALE: the served `verified` fell 26 -> 23 and p86 refused to
+  publish. A reverse-dependency scan confirmed the cascade is terminal (none of the four feeds anything else), but un-staling them means RE-RUNNING
+  each downstream, and those are live-network generators (they call `fetchConfirmedPlanets` + `fetchSpocLightCurve`, not a fixed committed input), so
+  refreshing them is precisely the drift-inducing re-measure the discipline forbids -- and empirically one (`p67`, an iterative search) did not even
+  terminate here and had to be stopped. DECISION: revert the whole p60 attempt; no fixture, generator, report or artifact change ships and the tree
+  is byte-clean at the R26-53 commit. Frontier-accuracy result, not a count change: `verified` stays 26, and the honest lift rule now has TWO
+  clauses -- a report can be frozen zero-drift only if (a) its artifact persists the exact values its aggregate consumes (R26-53) AND (b) it is not
+  itself a stamp-input to other verified reports that could only be refreshed by a live re-measure (R26-54). p60 passes (a) and fails (b).
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

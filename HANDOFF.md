@@ -797,7 +797,14 @@ authority; they are deliberately not restated here.
   `blendOffsetArcsec.p50` 23.478713763747773 -> 23.479; p57 the same shape). Those three share one blocker class and can only be lifted by a
   drift-inducing live re-measure -- deliberately not forced to pad the count. So the honest `verified` stays 26; the remaining candidates worth a
   careful per-generator build are those persisting exact integer/boolean per-target measurements, NOT the float-offset 2x2s; 3 rows still lack a
-  `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
+  `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports). R26-54 added a SECOND, orthogonal clause by
+  ATTEMPTING the lift on p60 and reverting it: p60 satisfies clause (a) -- its rows are full-precision and every figure (re-find counts, liftPp,
+  Wilson CIs, mean SNRs, verdict) re-derives byte-identical offline -- yet it is NOT safely liftable, because its committed report is a tracked DATA
+  input to four verified downstream reports (p62/p67/p69/p73), and rewriting p60's bytes (provenance only, numbers unchanged) cascades all four
+  HARD-STALE (verified 26 -> 23, p86 refused); refreshing them means re-running live-network generators, the drift-inducing path the rule forbids
+  (p62 reproduced today; p67 did not terminate and was stopped). So the honest lift rule has TWO clauses -- (a) the artifact persists the exact
+  values its aggregate consumes, AND (b) it is not itself a stamp-input to other verified reports refreshable only by live re-measure -- and
+  `verified` stays 26. The tree was reverted byte-clean; nothing from the p60 attempt shipped.
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified

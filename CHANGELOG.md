@@ -585,6 +585,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   attested path read that snapshot, and stamp the snapshot as a real DATA input -- which is a science-sensitive build (must not alter any
   generator's numbers or verdict semantics), not a re-run. Correcting my own record rather than letting a stale "it's the network" excuse
   stand. No artifact/index/src change; the correction is to the ledger's account of WHY the frontier sits at 24.
+- **R26-48, measurement: the committed-fixture provenance pattern is not hypothetical -- it already ships and byte-reproduces offline.**
+  R26-47 framed "capture the fetched payload to a committed snapshot, stamp it as a DATA input" as a future build to invent. It exists:
+  `p90-depth-estimators` defaults to replaying a committed frozen snapshot (`reports/fixtures/p90-frozen-rows.json`, tracked), stamps
+  `[script, fixture]` in replay mode (so the fixture is a real re-hashable DATA input, `reproducibleData=1`), and is `verified=true` -- it
+  is already one of the 24. Proving it, not assuming it (p90's own history: a live re-fetch silently moved a published figure 16->6 when the
+  Archive drifted, which is why the default is offline replay): ran `npm run p90:depth-estimators` (no `--live`) and diffed. The rendered
+  `.md` came back byte-identical; the `.json` differed ONLY in `meta.generatedAt` and `gitSha` -- the two stamp-envelope fields the freshness
+  gate already exempts. Reverted cleanly (`reports/` back to HEAD, no artifact change). So the frontier is genuinely unblocked for offline
+  mechanical attestation, and the demotion-lift recipe is concrete: port p90's frozen-fixture replay into an archive/SPOC-fed generator
+  (p41/p92 -- the Archive is reachable per R26-47), capture the rows it actually used, regenerate, and the report becomes byte-stable from a
+  committed DATA input. That is a science-sensitive per-generator build (must not move a number it does not intend to, must re-verify prose
+  that cites the old value) and belongs in its own focused increment (R26-49+), not a tail-of-turn rush. Ledger-only here; no redeploy.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

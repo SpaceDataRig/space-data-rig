@@ -555,6 +555,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   Its positive control is content-anchored (locates the pre-refresh exponent `2.936...` in git history, not a log position) and
   fails the gate on the rendered `compute.exponentP` path specifically. So no gap to fix here; recorded so the next reader does
   not re-audit it. No code/artifact/index change, no redeploy.
+- **R26-45, the live read-back now proves the served FRAGMENT matches the index verdict (codifies R26-41's reader-facing effect).**
+  The index flag (`verified:false` for p41/p88/p92) and the rendered HTML fragment are two byte streams a deploy can desync --
+  index rebuilt but fragment stale, or vice versa -- so a demotion that is real in the JSON but invisible on the page would still
+  mislead a reader (the R26-22/R26-24 lesson: a checker must inspect what actually moved). `scripts/audit/live-readback26.mjs` now
+  re-derives the code-only class from the SERVED index (stamped, not verified, still code-reproducible) and fetches each row's page,
+  asserting the amber provenance banner is present -- and that a spot-checked verified row renders WITHOUT it -- exiting 1 on any
+  divergence. Run against production it confirms all three demoted pages carry the banner and three verified pages render clean
+  (exit 0). Verified live because it is a network tool by design (not part of `npm test`). The tool is the only change; no
+  artifact/index touched, so no redeploy. The R26-41 correction is now provably visible to a visitor, not just machine-readable.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

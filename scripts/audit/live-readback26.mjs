@@ -63,4 +63,39 @@ out.p34fragment = {
   provenanceBanner: /STALE|unverified/i.test(p34.body) ? "present" : "absent",
 };
 
+// R26-45: the index flag and the RENDERED fragment are two different bytes a visitor can see, and a deploy can make them
+// disagree (index rebuilt, fragment stale, or the reverse). The R26-41 demotion (p41/p88/p92) is only real to a reader if
+// the served FRAGMENT carries the amber provenance banner, not just a `verified:false` field in index.json. So re-derive
+// the code-only class from the served index (stamped, not verified, still code-reproducible) and assert each one's page
+// shows the banner -- and that a spot-checked verified row does NOT. A mismatch is a finding, not a note.
+const BANNER = /PROVENANCE NOT MACHINE-VERIFIABLE|source code, not a data file/i;
+const demoted = (idx.body.reports || []).filter((r) => r.stamped && r.verified === false && (r.reproducible ?? 0) > 0);
+const fragmentAgreement = [];
+for (const r of demoted) {
+  const frag = await get(`/reports/${r.id}.html`, "text");
+  if (!frag.ok) { fragmentAgreement.push(`${r.id}: UNREACHABLE fragment (${frag.err})`); continue; }
+  const banner = BANNER.test(frag.body);
+  fragmentAgreement.push(`${r.id}: index verified=false, fragment banner=${banner ? "present" : "ABSENT <-- DIVERGENCE"} (http ${frag.status})`);
+}
+out.frontierFragmentAgreement = fragmentAgreement.length ? fragmentAgreement : ["(no code-only demoted rows in the served index)"];
+
+// And the inverse: a machine-verified frontier row must render clean (no false provenance banner).
+const verified = (idx.body.reports || []).filter((r) => r.verified === true).slice(0, 3);
+const verifiedClean = [];
+for (const r of verified) {
+  const frag = await get(`/reports/${r.id}.html`, "text");
+  if (!frag.ok) { verifiedClean.push(`${r.id}: UNREACHABLE (${frag.err})`); continue; }
+  verifiedClean.push(`${r.id}: index verified=true, fragment banner=${BANNER.test(frag.body) ? "PRESENT <-- DIVERGENCE" : "absent (correct)"}`);
+}
+out.verifiedFragmentCheck = verifiedClean;
+
+// Surface a hard failure if any served fragment contradicts its own index verdict -- the point of reading the bytes back.
+const divergences = [...fragmentAgreement, ...verifiedClean].filter((l) => /DIVERGENCE/.test(l));
+if (divergences.length) {
+  console.log(JSON.stringify(out, null, 1));
+  console.error(`FINDING: ${divergences.length} served fragment(s) disagree with the index verdict:\n  ${divergences.join("\n  ")}`);
+  process.exit(1);
+}
+
 console.log(JSON.stringify(out, null, 1));
+

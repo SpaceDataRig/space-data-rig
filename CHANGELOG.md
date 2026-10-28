@@ -686,6 +686,22 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   is byte-clean at the R26-53 commit. Frontier-accuracy result, not a count change: `verified` stays 26, and the honest lift rule now has TWO
   clauses -- a report can be frozen zero-drift only if (a) its artifact persists the exact values its aggregate consumes (R26-53) AND (b) it is not
   itself a stamp-input to other verified reports that could only be refreshed by a live re-measure (R26-54). p60 passes (a) and fails (b).
+- **R26-55, applied the two-clause rule to SCREEN, then lifted p71 -- the honest `verified` count rose 26 -> 27.**
+  Instead of trying generators one at a time and getting surprised (R26-54's coupling lesson), first computed the reverse-dependency graph offline:
+  of 28 unattested reports, which are NOT a tracked DATA input to any currently-verified report (clause b)? 23 qualify. Of those, screen for clause
+  (a) -- does the committed artifact persist the EXACT values its published aggregate consumes? p71-audit-positive-control passed cleanly: each of its
+  14 per-target rows stores the critic's BLIND and CORROBORATED verdict as an exact enum string, and every published figure -- the accepted /
+  needs-more-data counts, the reachability example, the `reachability`/`cleanBlindSeparation` booleans and the verdict string -- is a pure count over
+  those enums (the float SNR/FAP columns are diagnostic only, consumed by no aggregate). Verified zero drift BEFORE editing: a standalone probe
+  recomputed all six figures from the committed rows alone and matched the committed report (ALL MATCH). Confirmed p71 has ZERO downstream consumers,
+  so re-stamping it cannot cascade (the p60 blocker absent). Froze the 14 rows into `reports/fixtures/p71-frozen-rows.json` (from the committed rows,
+  preserving `measuredAt=2026-10-15`, the original live date -- NOT a re-detect), gave p71 a default offline replay that re-DERIVES the summary via the
+  same enum-count formulas and stamps `[script, fixture]`, kept `--live` the deliberate re-detect. After rebuild p71 reads `verified=true,
+  reproducibleData=1`; served library `{stamped 29, verified 27, fullyVerified 27, unattested 27, stale []}`; the INDEPENDENT freshness-recheck (no
+  shared import with the gate) reproduces `verified=27/27`. The `.md` diff was ONLY the added OFFLINE-REPLAY provenance line (table, verdict, every
+  figure byte-identical); the `.json` diff only the stamp envelope + the intentional `inputs` swap. This is the honest count rising 26 -> 27, earned by
+  pinning p71's measurement behind its numbers (zero drift, no coupling, independently rechecked) -- exactly the disciplined application of the two
+  clauses, not a loosening of the gate. lint 0, typecheck 0, suite 1035/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -2,6 +2,8 @@
 
 Reproduce: `npm run p71:audit-positive-control -- --targets 14 --tmag 11`
 
+OFFLINE REPLAY: figures re-DERIVED from `reports/fixtures/p71-frozen-rows.json` (a committed snapshot of the live critic outcomes, taken 2026-10-15T01:06:25Z); `--live` re-detects.
+
 P65 capped 0/2 novel external claims at needs-more-data. Is that the intended BLIND guard (a novel
 signal with no catalog cross-match can never be accepted -- src/critic/review.ts:282-296) or a broken,
 unsatisfiable gate? This control scores the SAME detected candidate two ways on real known planets:

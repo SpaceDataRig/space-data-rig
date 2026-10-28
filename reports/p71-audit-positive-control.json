@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T12:06:23.191Z",
+    "gitSha": "65f4d956cd60a27fdeda91313fc66c7e565ba070",
+    "inputs": [
+      {
+        "path": "scripts/p71-audit-positive-control.ts",
+        "sha256": "3fbecb41b6efbafcbeb6999fba1898fa0604281b544a8288dd8f9ea3c910c5ad"
+      },
+      {
+        "path": "reports/fixtures/p71-frozen-rows.json",
+        "sha256": "9262aeb3bd79923e2cbc3e17d436c26833b9d56f19daf728884a86ed1280ee2a"
+      }
+    ],
     "generatedBy": "scripts/p71-audit-positive-control.ts",
     "n": 14,
     "wantTargets": 14,
@@ -7,7 +19,8 @@
     "minPeriod": 1,
     "maxPeriod": 8,
     "maxSectors": 3,
-    "data": "real TESS-SPOC + NASA confirmed-planet archive (token-free)",
+    "measuredAt": "2026-10-15T01:06:25Z",
+    "data": "FROZEN snapshot of the per-target BLIND vs CORROBORATED critic outcomes on real known planets, replayed offline -- the live sample as measured, not re-detected",
     "note": "same detected candidate scored BLIND (catalog=[]) vs CORROBORATED (catalog=archive) via src/critic/review; truth period post-hoc non-gating. Positive control on known planets; not a discovery."
   },
   "summary": {

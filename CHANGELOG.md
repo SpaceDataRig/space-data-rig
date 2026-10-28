@@ -715,7 +715,22 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   provenance string only; every outcome/figure byte-identical. p65 is p71's SUBJECT (p71 was built as the positive control for p65's 0/2) -- lifting
   both means the audit entry AND its control are now machine-verified together. lint 0, typecheck 0, ASCII clean; the full suite passed 1035/0 except one
   orthogonal live-network flake in `tests/x-post-preflight.test.ts` (it fetches `/api/state` and on a blip short-circuits to "proceed" instead of the
-  asserted branch -- it passes 19/19 standalone on retry), which is logged as a hermeticity finding for R26-57, not a regression here.
+  asserted branch -- it passes 19/19 standalone on retry), which is logged as an OPEN hermeticity finding for a later round (R26-57 went to the next
+  lift instead), not a regression here.
+- **R26-57, third lift through the screen, and the first whose aggregate is FLOAT quantiles -- p45 fp-probability, honest `verified` 28 -> 29.**
+  The screen had flagged p45 eligible; this one is a stronger test of clause (a) than the enum/count lifts p71/p65, because p45 publishes P(FP)
+  min/p50/p90/max quantiles (floats), not just counts. It passes for the same reason p60 did but WITHOUT p60's coupling blocker: each of its 16 rows
+  persists `pFalsePositive` at FULL float precision (e.g. `0.020000000000000018`, `0.042262529283898176`, not a rounded value), and the aggregate selects
+  quantiles by `sort + Math.floor(f*len)` -- a deterministic integer index into those stored values -- so re-deriving reproduces every float byte-identically
+  (no re-rounding, unlike the p57/p58/p89 toFixed(3) blocker class of R26-53). Measured zero drift BEFORE editing: a probe recomputed n, the four quantiles,
+  withViableBlend, highFpCount and highFpFraction from the committed rows alone -> ALL MATCH. Reverse-dependency scan: p45 has ZERO consumers, so no
+  cascade. Froze the 16 rows + skipped list into `reports/fixtures/p45-frozen-rows.json` (measuredAt = the original live Gaia date 2026-10-14, NOT a
+  re-fetch), gave p45 a default offline replay that re-DERIVES the quantiles/counts via the same `q`/filter formulas and stamps `[script, fixture]`, kept
+  `--live` the deliberate re-measure. After rebuild p45 reads `verified=true, reproducibleData=1`; served library `{stamped 31, verified 29, fullyVerified 29,
+  unattested 25, stale []}` (unattested = 56 - 31); the INDEPENDENT freshness-recheck reproduces `verified=29/29`. `.md` diff = only the OFFLINE-REPLAY
+  provenance line; `.json` diff = stamp envelope + the intentional `data` string; every row/quantile byte-identical. This confirms the lift rule's clause (a)
+  covers EXACT-PERSISTED FLOATS with a deterministic selection, not only integers/enums -- the real discriminator is "does the artifact store the value the
+  aggregate consumes", not the value's type. lint 0, typecheck 0, suite 1035/0, ASCII clean; no re-deploy of src needed beyond the asset refresh.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

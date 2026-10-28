@@ -13,7 +13,8 @@
 // Usage:
 //   npm run p45:fp-probability
 //   npm run p45:fp-probability -- --targets 20 --tmag 10 --aperture 21
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { fetchConfirmedPlanets } from "../src/data/exoplanetArchive.ts";
 import { fetchGaiaNeighborhood, angularSepArcsec } from "../src/data/gaiaDilution.ts";
 import { assessFalsePositive, type BlendNeighbor } from "../src/candidate/falsePositiveProbability.ts";
@@ -51,16 +52,37 @@ interface Row {
   pFalsePositive: number;
 }
 
-async function main() {
-  console.log(`P45 false-positive probability on confirmed planets (tmag<${tmag}, aperture ${aperture}")`);
+const MODULE = "src/candidate/falsePositiveProbability.ts";
+const PRIORS = "literature (ebFraction 0.11, geoProb 0.3, onTarget 0.02)";
+interface Skipped { name: string; why: string; }
+
+/** The PURE aggregate. Every published figure is a deterministic function of the per-planet rows -- the P(FP)
+ *  quantiles via sort + integer-index selection over the stored full-precision values, and the with-viable /
+ *  high-FP counts via thresholds. The same code path runs whether the rows came from a live Gaia measurement or
+ *  the frozen fixture, so the report is re-DERIVED, not copied (the p41/p71/p65 discipline). */
+function derive(rows: Row[]) {
+  const pfp = rows.map((r) => r.pFalsePositive).sort((a, b) => a - b);
+  const withViableBlend = rows.filter((r) => r.nViable > 0).length;
+  const highFpCount = rows.filter((r) => r.pFalsePositive > 0.5).length;
+  return {
+    n: rows.length,
+    pfp,
+    pFalsePositive: { min: pfp[0], p50: q(pfp, 0.5), p90: q(pfp, 0.9), max: pfp[pfp.length - 1] },
+    withViableBlend,
+    highFpCount,
+    highFpFraction: highFpCount / rows.length,
+  };
+}
+
+/** LIVE measurement: fetch the catalog + a Gaia cone per planet, run assessFalsePositive. */
+async function measureLive(): Promise<{ rows: Row[]; skipped: Skipped[] }> {
   const cat = await fetchConfirmedPlanets({ maxTmag: tmag, requireTic: true });
   if (cat.source !== "nasa-tap") console.log(`WARNING: catalog source=${cat.source} (live TAP unavailable)`);
   const picked = cat.planets.filter(usable).slice(0, want);
   console.log(`queued ${picked.length} planets from ${cat.planets.length} catalog rows\n`);
 
   const rows: Row[] = [];
-  const skipped: { name: string; why: string }[] = [];
-
+  const skipped: Skipped[] = [];
   for (const p of picked) {
     const name = p.pl_name ?? p.hostname ?? `planet ${p.tic ?? "?"}`;
     try {
@@ -105,6 +127,36 @@ async function main() {
       skipped.push({ name, why: e instanceof Error ? e.message : String(e) });
     }
   }
+  return { rows, skipped };
+}
+
+async function main() {
+  // FROZEN DATA SOURCE -- the p41/p71/p65 precedent, applied here. p45 measures against LIVE Gaia cones; a plain
+  // re-run re-fetches and can move a P(FP) (the p90 drift lesson). The per-planet measurements are therefore frozen
+  // into reports/fixtures/p45-frozen-rows.json (a committed snapshot, dated at measurement) and the DEFAULT
+  // re-DERIVES every quantile/count OFFLINE from those rows through the same deterministic formulas. `--live`
+  // (or `--from-json=`) is the deliberate re-measure.
+  const FROZEN = "reports/fixtures/p45-frozen-rows.json";
+  const live = process.argv.includes("--live");
+  const fromArg = (process.argv.find((a) => a.startsWith("--from-json=")) || "").split("=")[1];
+  const REPLAY = live ? "" : (fromArg !== undefined ? fromArg : FROZEN);
+
+  console.log(`P45 false-positive probability on confirmed planets (tmag<${tmag}, aperture ${aperture}")`);
+  let rows: Row[];
+  let skipped: Skipped[];
+  let measuredAt: string;
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { rows: Row[]; skipped?: Skipped[]; measuredAt?: string };
+    rows = j.rows;
+    skipped = j.skipped ?? [];
+    measuredAt = j.measuredAt ?? "unknown";
+    console.log(`P45 OFFLINE REPLAY from ${REPLAY}: ${rows.length} stored planets, original measurement ${measuredAt}. No network, no re-fetch.`);
+  } else {
+    const m = await measureLive();
+    rows = m.rows;
+    skipped = m.skipped;
+    measuredAt = new Date().toISOString();
+  }
 
   console.log("");
   if (rows.length === 0) {
@@ -112,21 +164,32 @@ async function main() {
     return;
   }
 
-  const pfp = rows.map((r) => r.pFalsePositive).sort((a, b) => a - b);
-  const withViable = rows.filter((r) => r.nViable > 0).length;
-  const highFP = rows.filter((r) => r.pFalsePositive > 0.5).length;
-  console.log(`characterised ${rows.length} confirmed planets (all are REAL planets, so a low P(FP) is expected):`);
-  console.log(`  P(FP): min=${pfp[0].toFixed(3)} p50=${q(pfp, 0.5).toFixed(3)} p90=${q(pfp, 0.9).toFixed(3)} max=${pfp[pfp.length - 1].toFixed(3)}`);
-  console.log(`  ${withViable}/${rows.length} have >=1 neighbour that COULD be a diluted blend; ${highFP}/${rows.length} get P(FP)>0.5 despite being real.`);
-  console.log(`  VERDICT: P45-CHARACTERISED (on this bright, isolated confirmed-planet sample the blend prior flags ${highFP}/${rows.length} real planets above 0.5; ${highFP === 0 ? "a clean no-false-alarm sanity check, but these uncrowded hosts do not exercise the crowded-field regime, so discrimination is untested here" : "the crude prior over-flags real planets -> prior-dependent"}) -> P(FP) ranks, it does not validate`);
+  const d = derive(rows);
+  console.log(`characterised ${d.n} confirmed planets (all are REAL planets, so a low P(FP) is expected):`);
+  console.log(`  P(FP): min=${d.pfp[0].toFixed(3)} p50=${q(d.pfp, 0.5).toFixed(3)} p90=${q(d.pfp, 0.9).toFixed(3)} max=${d.pfp[d.pfp.length - 1].toFixed(3)}`);
+  console.log(`  ${d.withViableBlend}/${d.n} have >=1 neighbour that COULD be a diluted blend; ${d.highFpCount}/${d.n} get P(FP)>0.5 despite being real.`);
+  console.log(`  VERDICT: P45-CHARACTERISED (on this bright, isolated confirmed-planet sample the blend prior flags ${d.highFpCount}/${d.n} real planets above 0.5; ${d.highFpCount === 0 ? "a clean no-false-alarm sanity check, but these uncrowded hosts do not exercise the crowded-field regime, so discrimination is untested here" : "the crude prior over-flags real planets -> prior-dependent"}) -> P(FP) ranks, it does not validate`);
 
   const json = {
-    meta: { generatedBy: "scripts/p45-fp-probability.ts", tmag, aperture, data: "real Gaia DR3 neighbours of confirmed planets", module: "src/candidate/falsePositiveProbability.ts", priors: "literature (ebFraction 0.11, geoProb 0.3, onTarget 0.02)" },
-    n: rows.length,
-    pFalsePositive: { min: pfp[0], p50: q(pfp, 0.5), p90: q(pfp, 0.9), max: pfp[pfp.length - 1] },
-    withViableBlend: withViable,
-    highFpCount: highFP,
-    highFpFraction: highFP / rows.length,
+    meta: {
+      // Replay stamps the SCRIPT + the FROZEN rows (both tracked -> a clean checkout re-hashes them -> verified), NOT the
+      // Gaia/archive modules, so a catalog or Gaia update cannot mark this cited report stale and force a drift-inducing
+      // re-fetch; `--live` stamps the modules because there they really produced the numbers (p75 discipline).
+      ...buildStamp(REPLAY
+        ? ["scripts/p45-fp-probability.ts", FROZEN]
+        : ["src/data/exoplanetArchive.ts", "src/data/gaiaDilution.ts", "src/candidate/falsePositiveProbability.ts", "scripts/p45-fp-probability.ts"]),
+      generatedBy: "scripts/p45-fp-probability.ts", tmag, aperture,
+      module: MODULE, priors: PRIORS,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of real Gaia DR3 neighbour measurements of confirmed planets, replayed offline -- the live run as measured, not re-fetched"
+        : "real Gaia DR3 neighbours of confirmed planets",
+    },
+    n: d.n,
+    pFalsePositive: d.pFalsePositive,
+    withViableBlend: d.withViableBlend,
+    highFpCount: d.highFpCount,
+    highFpFraction: d.highFpFraction,
     safeToGate: false,
     discoveryClaim: false,
     rows,
@@ -140,17 +203,20 @@ async function main() {
     "",
     `Reproduce: \`npm run p45:fp-probability -- --targets ${want} --tmag ${tmag} --aperture ${aperture}\``,
     "Data: real Gaia DR3 neighbours of confirmed planets. Module: `src/candidate/falsePositiveProbability.ts`.",
+    REPLAY
+      ? `OFFLINE REPLAY: figures re-DERIVED from \`reports/fixtures/p45-frozen-rows.json\` (a committed snapshot of the live Gaia measurements, taken ${measuredAt}); \`--live\` re-measures.`
+      : `LIVE re-measure: real Gaia DR3 cones run through the module at run time (${measuredAt}).`,
     "Every row here is a REAL planet, so the honest question is how often the blended-EB prior wrongly",
     "elevates P(FP).",
     "",
-    `Characterised **${rows.length}** confirmed planets:`,
+    `Characterised **${d.n}** confirmed planets:`,
     "",
     "| P(FP) | min | p50 | p90 | max |",
     "|---|---|---|---|---|",
-    `| across real planets | ${pfp[0].toFixed(3)} | ${q(pfp, 0.5).toFixed(3)} | ${q(pfp, 0.9).toFixed(3)} | ${pfp[pfp.length - 1].toFixed(3)} |`,
+    `| across real planets | ${d.pfp[0].toFixed(3)} | ${q(d.pfp, 0.5).toFixed(3)} | ${q(d.pfp, 0.9).toFixed(3)} | ${d.pfp[d.pfp.length - 1].toFixed(3)} |`,
     "",
-    `- **${withViable}/${rows.length}** real planets have at least one Gaia neighbour that *could* be a diluted blend.`,
-    `- **${highFP}/${rows.length}** real planets were pushed above P(FP) > 0.5 by that neighbour + a literature EB prior.`,
+    `- **${d.withViableBlend}/${d.n}** real planets have at least one Gaia neighbour that *could* be a diluted blend.`,
+    `- **${d.highFpCount}/${d.n}** real planets were pushed above P(FP) > 0.5 by that neighbour + a literature EB prior.`,
     "",
     "Honest conclusion: P(FP) here is a **prior-dependent ranking / triage** quantity, NOT a validation and NOT",
     "safe to gate. A neighbour existing does not mean it is an eclipsing binary; these uncrowded bright hosts do",

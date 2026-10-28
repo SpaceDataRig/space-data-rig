@@ -763,11 +763,11 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 30 / verified 28 / fullyVerified 28 / unattested 26 /
-  stale []` -- see the Production bullet for the deployed revision. R26-55 and R26-56 lifted two more rows (`p71`, the audit
-  positive control, then its subject `p65`, the external-candidate audit) the disciplined way: the two-clause screen (R26-53
-  exact-persistence + R26-54 not-a-DATA-input-to-verified) flagged both eligible, zero drift was measured before editing, and
-  their frozen rows replay the published summary offline. The attestation frontier of the seven R26-31-wired
+  As of 2026-10-28 the served report library reads `total 56 / stamped 31 / verified 29 / fullyVerified 29 / unattested 25 /
+  stale []` -- see the Production bullet for the deployed revision. R26-55, R26-56 and R26-57 lifted three more rows (`p71`, the audit
+  positive control, then its subject `p65`, the external-candidate audit, then `p45`, the false-positive-probability characterisation)
+  the disciplined way: the two-clause screen (R26-53 exact-persistence + R26-54 not-a-DATA-input-to-verified) flagged each eligible, zero
+  drift was measured before editing, and their frozen rows replay the published figures offline. The attestation frontier of the seven R26-31-wired
   generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
   two are network-determined and honestly stay unattested because a faithful re-run does not byte-reproduce (`p35`, `p52`,
   R26-40). R26-41 then hardened the freshness gate itself: a report now reads `verified` only when at least one re-hashed
@@ -813,7 +813,11 @@ authority; they are deliberately not restated here.
   offline, and `verified` honestly rose 26 -> 27, now live in production (`GET /reports/index.json` reads `verified 27 / fullyVerified 27 /
   stale []`, independent recheck reproduces 27/27). R26-56 applied the identical screen and lifted `p65` next (the same
   enum/boolean row shape -- criticVerdict + passesCurrentGate, ZERO consumers): verified rose 27 -> 28, and p65 plus its
-  positive control p71 are now machine-verified together.
+  positive control p71 are now machine-verified together. R26-57 then lifted `p45` -- the first case whose published figures are FLOAT quantiles
+  (P(FP) min/p50/p90/max), not just counts: it re-derives byte-identically because the rows store `pFalsePositive` at FULL precision and the
+  quantile is a deterministic `sort + Math.floor(f*len)` index, and p45 likewise has ZERO consumers. verified rose 28 -> 29. This refines clause
+  (a): the discriminator is "the artifact persists the exact value the aggregate consumes", regardless of type -- the p57/p58/p89 blockers (R26-53)
+  failed not for being floats but for storing only `toFixed(3)`, whereas p45/p60 store the raw float and reproduce it.
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -913,7 +917,12 @@ authority; they are deliberately not restated here.
 - Production: wrangler version feb61d91-b417-46f9-8f99-a4589ac45d60, gitSha 8d4fc3c5f5217700c2621edb56056f59259b6d2d
   (deployed 2026-10-28 by R26-56 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
   static assets from `web/`; `GET /health` read back returned `deployVersion feb61d91-b417-46f9-8f99-a4589ac45d60` and
-  `gitSha 8d4fc3c`), `codeVersion space-data-rig@0.2.0`. **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  `gitSha 8d4fc3c`), `codeVersion space-data-rig@0.2.0`. **R26-57 AWAITING DEPLOY:** the p45 fp-probability frozen-fixture lift is
+  committed -- its report, `reports/fixtures/p45-frozen-rows.json`, and the regenerated `web/reports/index.json` +
+  `web/reports/p45-fp-probability.html` move the library to `stamped 31 / verified 29 / fullyVerified 29 / unattested 25 /
+  stale []` -- but as of this ledger commit the live endpoint still serves the 8d4fc3c build (`verified 28`); a redeploy is
+  pending, so this bullet carries the `awaiting deploy` marker the `tests/handoff-freshness.test.ts` tree-equality check
+  requires (the named production revision 8d4fc3c and HEAD differ in exactly the two served `web/` files). **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56 frozen-fixture lifts of p41, p88, p71 and p65 -- each report now re-DERIVES its published
   figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,
   `reports/fixtures/p71-frozen-rows.json`, `reports/fixtures/p65-frozen-outcomes.json`), so each stamp carries a real DATA input

@@ -1,11 +1,24 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T12:57:44.093Z",
+    "gitSha": "e31f4c80d1d7233397119ecd5bf187ba8bd9b550",
+    "inputs": [
+      {
+        "path": "scripts/p45-fp-probability.ts",
+        "sha256": "70dd9dba25209fc1c97fcc2ae764f91902282db2b28c4c913ec9e69492d4af6e"
+      },
+      {
+        "path": "reports/fixtures/p45-frozen-rows.json",
+        "sha256": "1139574e408ee78ab3442af1d652b789e6b0b89e0fa90c3523984d7010d8dba7"
+      }
+    ],
     "generatedBy": "scripts/p45-fp-probability.ts",
     "tmag": 10,
     "aperture": 21,
-    "data": "real Gaia DR3 neighbours of confirmed planets",
     "module": "src/candidate/falsePositiveProbability.ts",
-    "priors": "literature (ebFraction 0.11, geoProb 0.3, onTarget 0.02)"
+    "priors": "literature (ebFraction 0.11, geoProb 0.3, onTarget 0.02)",
+    "measuredAt": "2026-10-14T01:31:54Z",
+    "data": "FROZEN snapshot of real Gaia DR3 neighbour measurements of confirmed planets, replayed offline -- the live run as measured, not re-fetched"
   },
   "n": 16,
   "pFalsePositive": {

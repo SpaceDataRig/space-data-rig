@@ -507,6 +507,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   byte-copied through `devlog-archive.ts`; the evidence header carries the canonical citations the integrity gate
   requires (`actions/runs/<id>`, backtick-wrapped `posted id`, HTTP `204`) per R26-34. Because it touches `devlog/`
   (a test-inspected path) the full suite was re-run at this HEAD: 1031/0. No `src`/`web` change, so no redeploy.
+- **R26-40, p52 tested by the run-and-diff rule and correctly kept unattested -- the mechanical-stamping frontier is exhausted.**
+  Ran p52 faithfully (`--hosts 12 --cone-radius-arcsec 21 --list-rows 3000`). It did **not** byte-reproduce: the committed
+  report parsed 9000 GCVS variables / 944 eclipsing binaries, the re-run fetched 0 (the VizieR list path was returning empty),
+  so the intermediate numbers moved even though the final verdict (0 usable negatives, NOT-CONSTRUCTIBLE) matched. p52's
+  `buildStamp` pins only its own source + `src/data/vizierEb.ts` -- a code module, not the live GCVS bytes that determine the
+  result -- so stamping it would be the same false-comfort R26-35 refused for p35. Reverted (`git checkout --`), kept unattested.
+  Conclusion: of the seven R26-31-wired generators, five (p56/p69/p62/p67/p73) reproduce on fixed committed inputs and are
+  attested; two (p35, p52) are network-determined and cannot be honestly stamped by run-and-diff. Raising the verified count
+  further needs a data-provenance design that hashes the *fetched bytes* into the stamp, not more mechanical stamping.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

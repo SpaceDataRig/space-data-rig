@@ -737,6 +737,12 @@ the Actions web page when the anonymous API is rate-limited.
   curl the exact host in the source (`mastS3.ts` uses `stpubdata.s3.amazonaws.com`, HTTP 200) -- not a plausible sibling
   (`aws-oss.mast.stsci.edu`), which is how R26-32 wrongly declared the six generators S3-blocked when they were reachable
   all along. The honest signal is a byte-diff after a real run, never the input list alone.
+- A `buildStamp` over a generator's own source + a code module is not provenance of its *result* (round-26, R26-40). p52
+  stamps `scripts/p52-negative-class.ts` + `src/data/vizierEb.ts`, but its verdict is decided by the live GCVS/ExoFOP lists
+  it fetches; a faithful re-run fetched 0 rows where the committed artifact had 944, so the numbers moved while a stamp on
+  the code would still read `verified`. Same class as the R26-35 own-source trap, one level subtler: the stamp covers code,
+  not the external bytes. Network-determined generators (p35, p52) stay honestly unattested until a design hashes the
+  fetched payload bytes themselves into the stamp -- attesting them with a code-only stamp would manufacture false comfort.
 
 ## 13. Current state (as of 2026-10-27)
 

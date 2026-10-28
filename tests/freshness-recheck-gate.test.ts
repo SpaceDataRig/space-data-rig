@@ -58,8 +58,8 @@ function buildFixture(dir: string, mode: "honest" | "claims-verified-over-missin
   out: string;
   code: number;
 } {
-  const INPUT = "src/data/thing.ts";
-  const inputText = "export const THING = 1;\n";
+  const INPUT = "reports/thing.json";
+  const inputText = '{"value": 1}\n';
   mkdirSync(join(dir, "src", "data"), { recursive: true });
   mkdirSync(join(dir, "reports"), { recursive: true });
   mkdirSync(join(dir, "web", "reports"), { recursive: true });
@@ -136,5 +136,5 @@ test("verified=true over a row whose artifact cannot be opened is a finding, not
 test("a mismatched checksum inside a flat stamp is reported as CHANGED, not as agreement", () => {
   const f = buildFixture(initRoot(), "misses-a-flat-stamp");
   assert.equal(f.code, 1, `the alarm must ring:\n${f.out}`);
-  assert.match(f.out, /CHANGED:src\/data\/thing\.ts/);
+  assert.match(f.out, /CHANGED:reports\/thing\.json/);
 });

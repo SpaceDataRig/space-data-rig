@@ -516,6 +516,20 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   Conclusion: of the seven R26-31-wired generators, five (p56/p69/p62/p67/p73) reproduce on fixed committed inputs and are
   attested; two (p35, p52) are network-determined and cannot be honestly stamped by run-and-diff. Raising the verified count
   further needs a data-provenance design that hashes the *fetched bytes* into the stamp, not more mechanical stamping.
+- **R26-41, the freshness gate itself over-counted `verified`: a code-only stamp is now refused (verified 27 -> 24).**
+  Testing R26-40's conclusion against the *published* index found the same false-comfort already shipped as machine-checked:
+  p41, p88 and p92 were `verified:true` purely because their `buildStamp` re-hashed `.ts` files (the generator's own source +
+  imported detection/data modules). Re-hashing code proves the algorithm is unchanged; it can never reveal a stale DATA input,
+  which is exactly what these network-photometry reports derive their numbers from -- so a stamp over only code was the R26-35
+  own-source trap in its published form. Fix, in the pure decision logic (`report-freshness.ts`): `compareInputs` now counts
+  `reproducibleData` (re-hashed, tracked, matching inputs that are NOT source code) and `verified` requires `reproducibleData > 0`;
+  a fresh-but-code-only row keeps a precise reason ("source code, not a data file the numbers were computed from") and the amber
+  provenance note, never the green check. `p86` publishes the new `reproducibleData` field; the independent `freshness-recheck.mjs`
+  audit tool mirrors the rule WITHOUT importing the gate, so if the gate drifts the two disagree and the alarm rings. Rebuilding
+  the library moved served `verified`/`fullyVerified` 27 -> 24 (the three demoted are the code-only set); `unattested` stays 28
+  (driven by stamped count) and `stale=[]`. This is a *downward* correction of our own published figure -- the honest machine-checked
+  count is 24, not 27. Mutation-checked: reverting the rule fails the new code-only test; the recheck-tool fixture was switched to a
+  data input so it still proves flat-shape handling. Tests touched -> full suite re-run at HEAD before push (R26-13/R26-34).
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

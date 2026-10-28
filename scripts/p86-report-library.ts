@@ -123,8 +123,9 @@ const STALE_BANNER = (reasons: string[]): string =>
  */
 const PROVENANCE_NOTE = (reasons: string[]): string =>
   `<div class="report-provenance-note" style="border:1px solid #8a6d00;background:#fffbe6;color:#5c4a00;padding:8px 12px;margin:0 0 16px;border-radius:6px">` +
-  `PROVENANCE NOT MACHINE-VERIFIABLE: this report records no input checksums the freshness gate can re-hash, ` +
-  `so its numbers have not been checked against the data they were computed from. That is a statement about the ` +
+  `PROVENANCE NOT MACHINE-VERIFIABLE: this report carries no re-hashed tracked DATA input the freshness gate could check ` +
+  `(a stamp over only source code proves the algorithm is unchanged, not the data), so its numbers have not been verified ` +
+  `against the data they were computed from. That is a statement about the ` +
   `audit trail, not a claim that the figures are wrong. ` +
   (reasons.length ? `<ul style="margin:6px 0 0;padding-left:20px">${reasons.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "") +
   `</div>`;
@@ -174,7 +175,7 @@ function main(): void {
   if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean; verified: boolean; rehashed: number; reproducible: number; unverifiableInputs: number; untrackedInputs: number }[] = [];
+  const reports: { id: string; slug: string; title: string; reproduce: string; summary: string; p: number; fresh: boolean; stamped: boolean; verified: boolean; rehashed: number; reproducible: number; reproducibleData: number; unverifiableInputs: number; untrackedInputs: number }[] = [];
   const staleIds: string[] = [];
   let stampedCount = 0;
   let verifiedCount = 0;
@@ -206,7 +207,7 @@ function main(): void {
     reports.push({
       id, slug, title: meta.title, reproduce: meta.reproduce, summary: meta.summary, p: pnum(id),
       fresh: !verdict.stale, stamped: verdict.stamped, verified: verdict.verified,
-      rehashed: verdict.rehashed, reproducible: verdict.reproducible,
+      rehashed: verdict.rehashed, reproducible: verdict.reproducible, reproducibleData: verdict.reproducibleData,
       unverifiableInputs: verdict.unverifiableInputs, untrackedInputs: verdict.untrackedInputs,
     });
   }
@@ -237,9 +238,10 @@ function main(): void {
       "measurements and method checks, not claims of new planets. Each entry carries a freshness flag from " +
       "the report-freshness gate; stale reports are marked red both here and in their fragment. " +
       "Three levels, and they are not interchangeable: `stamped` means only that a report carries a " +
-      "generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum " +
-      "against a file TRACKED IN THIS REPOSITORY and found it unchanged -- so a stranger cloning the repo can " +
-      "re-run the same check; `fullyVerified` means every recorded input was tracked, present and matching. " +
+      "generatedAt timestamp; `verified` means the gate re-hashed at least one recorded input checksum against a " +
+      "TRACKED, NON-SOURCE-CODE DATA file the numbers were computed from and found it unchanged -- a stamp over " +
+      "only the generator's own `.ts` proves the algorithm is unchanged, not the data, so it is not machine-verified " +
+      "(round-26 R26-41); `fullyVerified` means every recorded input was tracked, present and matching. " +
       "Quote `fullyVerified` as the machine-checked count. A report can be re-hashed on the workstation that " +
       "built it and still not be verifiable by anyone else: `untrackedInputs` counts checksums over gitignored " +
       "working files (they matched here, but no clone has those bytes), and `unverifiableInputs` counts paths " +
@@ -257,8 +259,8 @@ function main(): void {
       total: reports.length,
       stale: staleIds,
     },
-    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, unverifiableInputs, untrackedInputs }) => ({
-      id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, unverifiableInputs, untrackedInputs,
+    reports: reports.map(({ id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, reproducibleData, unverifiableInputs, untrackedInputs }) => ({
+      id, slug, title, reproduce, summary, fresh, stamped, verified, rehashed, reproducible, reproducibleData, unverifiableInputs, untrackedInputs,
     })),
   };
   writeFileSync(join(OUT_DIR, "index.json"), JSON.stringify(index, null, 2) + "\n", "utf8");

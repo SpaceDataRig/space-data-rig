@@ -100,6 +100,7 @@ for (const r of rows) {
   if (!r.stamped) findings.push(`${r.id}: index says unstamped but the artifact carries generatedAt (${stamp.shape} shape)`);
 
   let reproducible = 0;
+  let reproducibleData = 0;
   let hardStale = false;
   const notes = [];
   for (const i of stamp.inputs) {
@@ -112,8 +113,12 @@ for (const r of rows) {
     if (cur !== i.sha256) { hardStale = true; notes.push(`CHANGED:${i.path}`); continue; }
     if (!tracked.has(i.path)) { notes.push(`untracked:${i.path}`); continue; }
     reproducible++;
+    // R26-41, mirrored independently of the gate: a code-only stamp re-hashes the algorithm, not the data the
+    // numbers derive from, so it must not count toward `verified`. Recomputing it here (rather than importing the
+    // gate) is the point -- if the gate's own rule drifts, this disagrees and the alarm rings.
+    if (!/\.(?:ts|tsx|js|jsx|mjs|cjs|py)$/i.test(i.path)) reproducibleData++;
   }
-  const myVerified = reproducible > 0 && !hardStale;
+  const myVerified = reproducibleData > 0 && !hardStale;
   if (myVerified) toolVerified++;
   if (myVerified !== Boolean(r.verified) || (hardStale && r.fresh !== false)) {
     findings.push(

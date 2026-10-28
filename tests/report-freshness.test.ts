@@ -47,7 +47,7 @@ test("compareInputs: a recorded input that is simply absent is NOT hard-stale (u
 test("compareInputs: matching hashes stay fresh, and count as actually re-hashed", () => {
   assert.deepEqual(
     compareInputs([{ path: "x", recorded: "aaa", current: "aaa" }]),
-    { hardStale: false, reasons: [], rehashed: 1, missing: 0, reproducible: 1, untracked: 0 },
+    { hardStale: false, reasons: [], rehashed: 1, missing: 0, reproducible: 1, reproducibleData: 1, untracked: 0 },
   );
 });
 
@@ -139,14 +139,14 @@ test("evaluateAgainst: legacy / unstamped reports are NEVER hard-stale -- no wal
 // timestamp but NO inputs at all, because its generator grew the stamp wiring after that artifact was
 // written -- count toward the site's "N stamped" figure as though it had been machine-checked.
 test("verified vs stamped: only a re-hashed matching checksum counts as verified", () => {
-  const intact = evaluateAgainst(stamp([{ path: "a.ts", sha256: "aaa" }]), {
-    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "aaa" }),
+  const intact = evaluateAgainst(stamp([{ path: "a.json", sha256: "aaa" }]), {
+    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.json": "aaa" }),
   });
   assert.equal(intact.stamped, true);
-  assert.equal(intact.verified, true, "a recorded checksum that still matches IS machine-verified");
+  assert.equal(intact.verified, true, "a recorded data-file checksum that still matches IS machine-verified");
 
-  const tampered = evaluateAgainst(stamp([{ path: "a.ts", sha256: "aaa" }]), {
-    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "CHANGED" }),
+  const tampered = evaluateAgainst(stamp([{ path: "a.json", sha256: "aaa" }]), {
+    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.json": "CHANGED" }),
   });
   assert.equal(tampered.stale, true);
   assert.equal(tampered.verified, false, "a mismatching checksum must not read as verified");
@@ -185,10 +185,10 @@ test("a checksum that cannot be compared here does NOT count as verified", () =>
 
 test("partly re-hashed is reported as partly re-hashed, not as verified-wholly", () => {
   const v = evaluateAgainst(stamp([
-    { path: "src/data/toiDispositions.ts", sha256: "aaa" },
+    { path: "reports/p47-completeness-grid.json", sha256: "aaa" },
     { path: "out/scaled/centroid.jsonl", sha256: "bbb" },
-  ]), { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "src/data/toiDispositions.ts": "aaa", "out/scaled/centroid.jsonl": null }) });
-  assert.equal(v.verified, true, "one recorded input really was re-hashed and matched");
+  ]), { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "reports/p47-completeness-grid.json": "aaa", "out/scaled/centroid.jsonl": null }) });
+  assert.equal(v.verified, true, "one recorded DATA input really was re-hashed and matched");
   assert.equal(v.rehashed, 1);
   assert.equal(v.unverifiableInputs, 1, "and the reader must be able to see the one that was not");
   assert.match(v.reasons.join(" "), /out\/scaled\/centroid\.jsonl is not present to re-verify/);
@@ -209,11 +209,11 @@ test("a report whose only matching inputs are gitignored is NOT verified, even t
   assert.equal(here.verified, false, "and yet no stranger can reproduce that check");
   assert.match(here.reasons.join(" "), /only on the workstation that generated it/);
 
-  // Mixed: one tracked input matching plus one gitignored one -- verified, but visibly not wholly.
-  const mixed = evaluateAgainst(stamp([{ path: "src/detect/bls.ts", sha256: "aaa" }, { path: "out/scaled/centroid.jsonl", sha256: "bbb" }]), {
+  // Mixed: one tracked DATA input matching plus one gitignored one -- verified, but visibly not wholly.
+  const mixed = evaluateAgainst(stamp([{ path: "reports/p47-completeness-grid.json", sha256: "aaa" }, { path: "out/scaled/centroid.jsonl", sha256: "bbb" }]), {
     reportMs: T0, inputNewestMs: null,
-    hash: hashFrom({ "src/detect/bls.ts": "aaa", "out/scaled/centroid.jsonl": "bbb" }),
-    tracked: (p) => p.startsWith("src/"),
+    hash: hashFrom({ "reports/p47-completeness-grid.json": "aaa", "out/scaled/centroid.jsonl": "bbb" }),
+    tracked: (p) => p.startsWith("reports/"),
   });
   assert.equal(mixed.verified, true);
   assert.equal(mixed.reproducible, 1);
@@ -225,15 +225,15 @@ test("verified never exceeds stamped, and no report is verified while stale", as
   if (!existsSync("web/reports/index.json")) return;
   const idx = JSON.parse(readFileSync("web/reports/index.json", "utf8")) as {
     freshness?: { stamped?: number; verified?: number; fullyVerified?: number; unattested?: number; total?: number; stale?: string[] };
-    reports?: { id: string; stamped?: boolean; verified?: boolean; fresh?: boolean; rehashed?: number; reproducible?: number; unverifiableInputs?: number; untrackedInputs?: number }[];
+    reports?: { id: string; stamped?: boolean; verified?: boolean; fresh?: boolean; rehashed?: number; reproducible?: number; reproducibleData?: number; unverifiableInputs?: number; untrackedInputs?: number }[];
   };
   const rs = idx.reports ?? [];
   if (!rs.length) return;
   for (const r of rs) {
     if (r.verified) assert.equal(r.stamped, true, `${r.id}: verified without a stamp is impossible`);
     if (r.verified) assert.notEqual(r.fresh, false, `${r.id}: a stale report must never be published as verified`);
-    if (r.verified) assert.ok((r.reproducible ?? 0) > 0, `${r.id}: published as verified although no TRACKED input was re-hashed`);
-    if (!r.verified && r.fresh !== false) assert.equal(r.reproducible ?? 0, 0, `${r.id}: fresh and reproducible, yet published as not verified`);
+    if (r.verified) assert.ok((r.reproducibleData ?? 0) > 0, `${r.id}: published as verified although no tracked DATA input was re-hashed (R26-41)`);
+    if (!r.verified && r.fresh !== false) assert.equal(r.reproducibleData ?? 0, 0, `${r.id}: fresh with a re-hashed DATA input, yet published as not verified`);
     // Every entry must publish its partial-verification counts, or "verified" silently reverts to meaning
     // whatever the reader assumes it means.
     assert.equal(typeof r.rehashed, "number", `${r.id}: no rehashed count published`);
@@ -255,14 +255,47 @@ test("verified never exceeds stamped, and no report is verified while stale", as
 });
 
 test("a verified report whose inputs are all present claims no partial note", () => {
-  const s = stamp([{ path: "a.ts", sha256: "aaa" }]);
-  const full = evaluateAgainst(s, { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "aaa" }) });
+  const s = stamp([{ path: "a.json", sha256: "aaa" }]);
+  const full = evaluateAgainst(s, { reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.json": "aaa" }) });
   assert.equal(full.verified, true);
   assert.equal(full.unverifiableInputs, 0, "nothing missing: the page must not say PARTLY RE-VERIFIED");
-  const partial = evaluateAgainst(stamp([{ path: "a.ts", sha256: "aaa" }, { path: "gone.jsonl", sha256: "bbb" }]), {
-    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.ts": "aaa", "gone.jsonl": null }),
+  const partial = evaluateAgainst(stamp([{ path: "a.json", sha256: "aaa" }, { path: "gone.jsonl", sha256: "bbb" }]), {
+    reportMs: T0, inputNewestMs: null, hash: hashFrom({ "a.json": "aaa", "gone.jsonl": null }),
   });
   assert.equal(partial.unverifiableInputs, 1, "the case the green note exists for");
+});
+
+// R26-41: the false-comfort class this gate existed to catch was still slipping through -- a report that draws its
+// numbers from network data but stamps only its own `.ts` re-hashes clean forever (the code never changes underneath a
+// stale fetch) and was published as `verified`. p41/p92 did exactly that. `verified` now requires a tracked DATA input.
+test("a code-only stamp is NOT verified: re-hashing the algorithm is not provenance of the data (R26-41)", () => {
+  // Every recorded input is tracked + matching, but all are source code.
+  const codeOnly = evaluateAgainst(stamp([
+    { path: "scripts/p99-fake.ts", sha256: "aaa" },
+    { path: "src/detect/bls.ts", sha256: "bbb" },
+  ]), {
+    reportMs: T0, inputNewestMs: null,
+    hash: hashFrom({ "scripts/p99-fake.ts": "aaa", "src/detect/bls.ts": "bbb" }),
+    tracked: () => true,
+  });
+  assert.equal(codeOnly.stamped, true, "it does carry a stamp");
+  assert.equal(codeOnly.stale, false, "and nothing is provably stale");
+  assert.equal(codeOnly.reproducible, 2, "a stranger CAN reproduce the code re-hash");
+  assert.equal(codeOnly.reproducibleData, 0, "but not one input is data the numbers came from");
+  assert.equal(codeOnly.verified, false, "so it must not be published as machine-verified");
+  assert.match(codeOnly.reasons.join(" "), /source code, not a data file/);
+
+  // Add one tracked DATA input and it becomes verified -- the rule is a floor, not a ban on code inputs.
+  const withData = evaluateAgainst(stamp([
+    { path: "scripts/p99-fake.ts", sha256: "aaa" },
+    { path: "reports/p47-completeness-grid.json", sha256: "ccc" },
+  ]), {
+    reportMs: T0, inputNewestMs: null,
+    hash: hashFrom({ "scripts/p99-fake.ts": "aaa", "reports/p47-completeness-grid.json": "ccc" }),
+    tracked: () => true,
+  });
+  assert.equal(withData.reproducibleData, 1);
+  assert.equal(withData.verified, true, "one re-hashed tracked data input is enough to verify");
 });
 
 test("stampFromMeta: reads nested + flat shapes, rejects legacy metas with no generatedAt", () => {

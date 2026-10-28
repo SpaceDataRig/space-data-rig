@@ -743,6 +743,15 @@ the Actions web page when the anonymous API is rate-limited.
   the code would still read `verified`. Same class as the R26-35 own-source trap, one level subtler: the stamp covers code,
   not the external bytes. Network-determined generators (p35, p52) stay honestly unattested until a design hashes the
   fetched payload bytes themselves into the stamp -- attesting them with a code-only stamp would manufacture false comfort.
+- The freshness gate must not let a CODE-ONLY stamp read as `verified` (round-26, R26-41). `verified` originally required only
+  that a re-hashed input be tracked+present+matching -- so a network-photometry report stamping its own `.ts` (p41/p88/p92) passed
+  forever, because re-hashing code cannot reveal a stale DATA input. `compareInputs` now also counts `reproducibleData` (tracked,
+  matching inputs that are NOT source), and `verified` gates on that. Re-hashing your own source is the weakest possible
+  provenance -- if a report has no committed data input it is honestly `unattested`, not `verified`. Keep the independent
+  `scripts/audit/freshness-recheck.mjs` mirroring this rule WITHOUT importing the gate, so a future regression in either is caught
+  by disagreement. NOTE: a Windows checkout materialises some tracked files CRLF; `sha256File` normalises EOL so stamps are
+  platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
+  CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
 ## 13. Current state (as of 2026-10-27)
 

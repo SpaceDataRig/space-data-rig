@@ -150,6 +150,21 @@ function fileMtimeMs(path: string): number | null {
 // ---- PURE decision logic (no I/O; what the offline test drives) ----
 
 /**
+ * Is this recorded input a SOURCE CODE file rather than a DATA file the report's numbers were computed FROM?
+ *
+ * WHY THIS DISTINCTION GATES `verified` (round-26, R26-41). A stamp re-hashes whatever paths it lists. Re-hashing
+ * the generator's own `.ts` (and the detection modules it imports) proves only that the CODE has not changed -- it can
+ * never reveal a stale DATA input, which is the whole thing the gate exists to catch. Two published reports (p41,
+ * p92) drew their numbers from network SPOC photometry but stamped only `.ts` files, so the gate read them `verified`
+ * while pinning nothing that actually determines the figure. `verified` therefore requires at least one re-hashed,
+ * tracked, matching input that is NOT source code -- provenance of the data, not of the algorithm.
+ */
+const SOURCE_CODE_EXT = /\.(?:ts|tsx|js|jsx|mjs|cjs|py)$/i;
+export function isSourceCodePath(path: string): boolean {
+  return SOURCE_CODE_EXT.test(path);
+}
+
+/**
  * Compare each recorded input against its current hash. HARD-STALE iff an input that was present at
  * generation is present now AND its bytes differ -- i.e. the checkpoint the numbers came from has been
  * rewritten since, exactly the "centroid.jsonl re-run but P84 not re-run" case. An input that is simply
@@ -168,12 +183,13 @@ function fileMtimeMs(path: string): number | null {
  * matches, and would match for anyone counts. `tracked === null` (the caller had no git information) is not
  * held against the input, because absence of git data is not evidence of being gitignored.
  */
-export function compareInputs(states: InputState[]): { hardStale: boolean; reasons: string[]; rehashed: number; missing: number; reproducible: number; untracked: number } {
+export function compareInputs(states: InputState[]): { hardStale: boolean; reasons: string[]; rehashed: number; missing: number; reproducible: number; reproducibleData: number; untracked: number } {
   const reasons: string[] = [];
   let hardStale = false;
   let rehashed = 0;
   let missing = 0;
   let reproducible = 0;
+  let reproducibleData = 0;
   let untracked = 0;
   for (const s of states) {
     if (!s.recorded) continue; // nothing was recorded for this input at generation time
@@ -194,9 +210,11 @@ export function compareInputs(states: InputState[]): { hardStale: boolean; reaso
       continue;
     }
     reproducible++;
+    if (!isSourceCodePath(s.path)) reproducibleData++; // a tracked data file, not the algorithm's own source
   }
-  return { hardStale, reasons, rehashed, missing, reproducible, untracked };
+  return { hardStale, reasons, rehashed, missing, reproducible, reproducibleData, untracked };
 }
+
 
 /**
  * Git-provenance rule (used when an input is untracked -- e.g. a gitignored checkpoint -- so its hash is
@@ -240,6 +258,13 @@ export interface FreshnessVerdict {
   rehashed: number;
   /** Of those, the ones a stranger could reproduce: tracked in git, present, and matching. */
   reproducible: number;
+  /**
+   * Of the reproducible inputs, the ones that are DATA (not the generator's own source or imported `.ts` modules).
+   * `verified` is now gated on this, not on `reproducible`: re-hashing only code proves the algorithm is unchanged,
+   * which cannot reveal a stale data input -- the exact false comfort a code-only stamp published for p41/p92 (R26-41).
+   */
+  reproducibleData: number;
+
   /** Recorded inputs that exist on no checkout here, so their checksums could not be compared at all. */
   unverifiableInputs: number;
   /** Recorded inputs that matched here but are gitignored, so only their author's machine can re-hash them. */
@@ -300,6 +325,13 @@ export function evaluateAgainst(
           ? `none of the ${stamp.inputs.filter((i) => i.sha256).length} recorded input checksum(s) could be re-hashed here, so this report is not machine-verified on this checkout`
           : `all ${cmp.rehashed} re-hashed input(s) are untracked working files, so this report is machine-verified only on the workstation that generated it`,
       );
+    } else if (cmp.reproducibleData === 0) {
+      // R26-41: inputs were re-hashed and do match, but every one is source code. That proves the algorithm is
+      // unchanged -- it cannot reveal a stale DATA input, which is what the numbers actually derive from. So this is
+      // not machine-verified, even though a stranger could reproduce the code re-hash.
+      reasons.push(
+        `all ${cmp.reproducible} re-hashed input(s) are source code, not a data file the numbers were computed from, so a stale input could not be detected -- a code-only stamp is not machine-verified`,
+      );
     }
     // Optional soft note: a dependency is newer than the report even though the hashed inputs still match.
     if (!stale && isProvenanceStale(opts.reportMs, opts.inputNewestMs, opts.toleranceMs ?? 0)) {
@@ -307,9 +339,10 @@ export function evaluateAgainst(
     }
     return {
       stamped,
-      verified: cmp.reproducible > 0 && !stale,
+      verified: cmp.reproducibleData > 0 && !stale,
       rehashed: cmp.rehashed,
       reproducible: cmp.reproducible,
+      reproducibleData: cmp.reproducibleData,
       unverifiableInputs: cmp.missing,
       untrackedInputs: cmp.untracked,
       fresh: !stale,
@@ -323,10 +356,11 @@ export function evaluateAgainst(
   if (!stamped) reasons.push("report carries no freshness stamp (generatedAt/gitSha/inputs)");
   else reasons.push("report is stamped but records no input checkpoint to re-verify");
   return {
-    stamped, verified: false, rehashed: 0, reproducible: 0, unverifiableInputs: 0, untrackedInputs: 0,
+    stamped, verified: false, rehashed: 0, reproducible: 0, reproducibleData: 0, unverifiableInputs: 0, untrackedInputs: 0,
     fresh: true, stale: false, reasons,
   };
 }
+
 
 // ---- I/O helpers used by generators and p86 ----
 

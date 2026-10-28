@@ -753,15 +753,26 @@ the Actions web page when the anonymous API is rate-limited.
   platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
   CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
-## 13. Current state (as of 2026-10-27)
+## 13. Current state (as of 2026-10-28)
 
-SNAPSHOT, NOT HISTORY. The five bullets below are a measurement of the rig, taken at the timestamps named in them,
+SNAPSHOT, NOT HISTORY. The leading bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
 CHANGELOG entry, every commit sha named here must be reachable from HEAD, and the production bullet must name the
 revision it was built from -- because the next reader treats this block as live fact, as it should. The research
 bullets that follow are dated observations from earlier passes, quoted as history with `reports/*.md` as their
 authority; they are deliberately not restated here.
 
+- Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
+  As of 2026-10-28 the served report library reads `total 56 / stamped 28 / verified 24 / fullyVerified 24 / unattested 28 /
+  stale []` -- see the Production bullet for the deployed revision. The attestation frontier of the seven R26-31-wired
+  generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
+  two are network-determined and honestly stay unattested because a faithful re-run does not byte-reproduce (`p35`, `p52`,
+  R26-40). R26-41 then hardened the freshness gate itself: a report now reads `verified` only when at least one re-hashed
+  tracked input is a DATA file, not source code, which demoted three code-only rows (`p41`, `p88`, `p92`) and corrected the
+  published machine-checked count DOWN from 27 to 24 -- the honest figure. The independent recheck mirrors the rule without
+  importing the gate. Still open: the ~25 pure-network generators need a provenance design that hashes the *fetched bytes*
+  into the stamp (not more mechanical stamping), and 3 rows still lack a `reproduce` command (p85 over a gitignored
+  checkpoint, plus the two CI-harness crosscheck reports).
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -858,27 +869,25 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 6a9958fa-1620-488c-87ba-8e111bab585e, gitSha c93a43c490b46b07285a55389318c3facbcf1b0a
-  (deployed 2026-10-27 by round-26 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
-  static assets from `web/`; `GET /health` read back at 2026-10-27T03:00:53Z returned `deployVersion
-  6a9958fa-1620-488c-87ba-8e111bab585e` and `gitSha c93a43c`), `codeVersion space-data-rig@0.2.0`. **THE DEPLOY GUARD
-  REFUSED THE FIRST TIME, AND THAT WAS CORRECT:** the initial `cf:deploy:sha` stopped with `REFUSED: the working tree is
-  not what HEAD is (1 uncommitted path(s))` because an untracked scratch file sat in `scripts/`; the guard exists so a
-  named gitSha cannot describe bytes that were never committed, so the scratch file was removed and the tree redeployed
-  clean -- not overridden with `--allow-dirty`. **WHAT THIS SHIPS:** the round-26 increment-3 library, the same `web/`
-  tree as the fleet's `5e4d683` -- this commit edits no `src/` and no `web/` path, and no push since hit a trigger path in
-  `.github/workflows/freshness-regen.yml`, so the served tree equals the named revision by construction. Live read-back of
-  `GET /reports/index.json`: 56 rows, `freshness {stamped 23, verified 22, fullyVerified 22, unattested 33, stale []}`,
-  and `p91-claim-provenance` served `verified=true fresh=true reproducible=3` with `reproduce "npm run
-  p91:claim-provenance"` -- the two figures round-26 set out to make true (p91 live-verified; every `verified` row also
-  reproducible), now true on the endpoint rather than only asserted in a ledger. `GET /research.json` still serves the
-  refreshed `compute {p 2.8730627278616767, r2 0.7880192356593715, sampleN 204}` and `addressable {negatives 0, caught 0,
-  vetoPower null, auc 0}`. No `src/` file changed since the previous version, so the Worker code and every spending var
-  ship byte-identical (`AUTO_ANCHOR=live`, `OBSERVE_ANCHOR=live`, caps unchanged); `discoveryClaim`/`safeToGate` remain
-  false in every report. The `ROUND-26 INCREMENT 3, AWAITING DEPLOY` marker this bullet's predecessor carried is removed
-  here, because `/health` now names a version whose `src/` and `web/` trees equal HEAD's -- exactly the condition
-  `tests/handoff-freshness.test.ts` enforces, and the reason the marker existed at all.
-  Earlier production: version 556fede6-b5ef-495d-82d5-8c5fc10dac77, gitSha e97c4fde57d0d146b16620a484b58a80c44ad1c8
+- Production: wrangler version b1b479a6-551d-4fe7-9c8b-f51d02c88a96, gitSha 20457a3fecd77f29349858b949d6f6d90d4e3ade
+  (deployed 2026-10-28 by round-26 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
+  static assets from `web/`; `GET /health` read back returned `deployVersion b1b479a6-551d-4fe7-9c8b-f51d02c88a96` and
+  `gitSha 20457a3`), `codeVersion space-data-rig@0.2.0`. **WHAT THIS SHIPS:** the R26-41 hardened freshness gate and the
+  rebuilt report library. HEAD (the R26-42 archive commit) differs from this deployed revision only in `devlog/` and
+  `CHANGELOG.md` -- no `src/` and no `web/` path -- so the served `src/` and `web/` trees equal HEAD's by construction, the
+  condition `tests/handoff-freshness.test.ts` enforces. Live read-back of `GET /reports/index.json`: 56 rows, `freshness
+  {stamped 28, verified 24, fullyVerified 24, unattested 28, stale []}`. R26-41 demoted three code-only rows --
+  `p41-longbaseline`, `p88-independent-corroboration`, `p92-scrambled-fa` each now serve `verified=false` with
+  `reproducible>0` but `reproducibleData=0` -- while the fixed-committed-input family (`p56`, `p73` spot-checked live) keeps
+  `verified=true` with `reproducibleData=1`. No `src/` file changed since the previous version, so the Worker code and every
+  spending var ship byte-identical (`AUTO_ANCHOR=live`, `OBSERVE_ANCHOR=live`, caps unchanged); `discoveryClaim`/`safeToGate`
+  remain false in every report. This is a deliberate DOWNWARD correction of a published figure: the honest machine-checked
+  count is 24, not the 27 posted earlier this session.
+  Earlier production: version 6a9958fa-1620-488c-87ba-8e111bab585e, gitSha c93a43c490b46b07285a55389318c3facbcf1b0a
+  (deployed 2026-10-27 by round-26 increment 3; the initial `cf:deploy:sha` correctly REFUSED on an untracked scratch file in
+  `scripts/`, which was removed and the tree redeployed clean rather than overridden with `--allow-dirty`; served library then
+  read `{stamped 23, verified 22, fullyVerified 22, unattested 33, stale []}` and `p91-claim-provenance` `verified=true
+  reproducible=3`); and before that version 556fede6-b5ef-495d-82d5-8c5fc10dac77, gitSha e97c4fde57d0d146b16620a484b58a80c44ad1c8
   (deployed 2026-10-27T01:09:35.384Z by round-26 -- the `web/research.json` refresh that shipped the p34-corrected
   exponent and retired the stale addressable-veto block; its first attempt failed on an expired Cloudflare auth token and
   the retry after two reachability probes succeeded, R26-10); and before that version f1a50e51-104c-4838-86cb-f9827c426cd2,

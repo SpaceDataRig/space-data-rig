@@ -530,6 +530,13 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   (driven by stamped count) and `stale=[]`. This is a *downward* correction of our own published figure -- the honest machine-checked
   count is 24, not 27. Mutation-checked: reverting the rule fails the new code-only test; the recheck-tool fixture was switched to a
   data input so it still proves flat-shape handling. Tests touched -> full suite re-run at HEAD before push (R26-13/R26-34).
+- **R26-42, the R26-41 correction is published and archived verbatim.** Because the previous milestone post (id
+  `2115284343753003238`) reported `verified 27` -- a figure R26-41 proved was inflated -- prose must not lead the served data:
+  a transparency follow-up was dispatched through `x-post.yml` (`workflow_dispatch` run `40632716937`, HTTP `204`, head `20457a3`,
+  CI `40631800220` completed/success), confirmed by the job log `x:post: OK posted (id 2115300234591076859)`, and guarded by a
+  real pre-flight DRY RUN (`length=1472/25000`, nothing sent locally). The post text and evidence are byte-archived to
+  `devlog/2026-10-28-r41-verified-count-correction.md`. The post states the lowered count (24, not 27) and the code-vs-data rule;
+  it claims no discovery. Only `devlog/` + this ledger changed -> no `src`/`web`, no redeploy; full suite re-run at HEAD (R26-34).
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

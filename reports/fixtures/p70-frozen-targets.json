@@ -1,0 +1,340 @@
+{
+  "schema": "drill/p70-frozen-targets/1",
+  "note": "Frozen snapshot of the per-target deterministic light-curve audit outcomes + the advisory model proposals behind reports/p70-llm-ablation.json. Each target's audit{id}.outcome/determined, isBlend, deterministicBlendFlag and the llm[] turns are stored exactly as measured/proposed once; the 2x2 (vetoMetrics over the outcome enums), model-quality counts and verdict are re-DERIVED offline from these stored targets. The model was NEVER a decision input (structural ablation), so replay needs no model re-call and no curve re-fetch. measuredAt is when the committed live run gathered them; --live re-measures and re-calls the models deliberately.",
+  "measuredAt": "2026-10-15T00:32:40Z",
+  "meta": {
+    "providers": [
+      "deepseek-chat",
+      "grok-4.7"
+    ],
+    "useLlm": true,
+    "nPos": 5,
+    "nNeg": 3,
+    "wantPos": 5,
+    "wantNeg": 5,
+    "measuredGitSha": "8493a6f"
+  },
+  "targets": [
+    {
+      "name": "TIC 283722336 / 1469.01",
+      "isBlend": false,
+      "periodDays": 3.0929386,
+      "audit": {
+        "bls-snr": {
+          "outcome": "inconclusive",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "blend",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "inconclusive",
+          "determined": false
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "shape-coherence",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "determined": false,
+          "agreement": false,
+          "underFlagBlend": false
+        }
+      ],
+      "deterministicBlendFlag": true
+    },
+    {
+      "name": "TIC 283722336 / 1469.02",
+      "isBlend": false,
+      "periodDays": 6.7650398,
+      "audit": {
+        "bls-snr": {
+          "outcome": "inconclusive",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "blend",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "inconclusive",
+          "determined": false
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "blend",
+          "determined": true,
+          "agreement": false,
+          "underFlagBlend": false
+        },
+        {
+          "model": "grok-4.7",
+          "test": "shape-coherence",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "determined": false,
+          "agreement": false,
+          "underFlagBlend": false
+        }
+      ],
+      "deterministicBlendFlag": true
+    },
+    {
+      "name": "TIC 136916387 / 2011.01",
+      "isBlend": false,
+      "periodDays": 11.5778362083528,
+      "audit": {
+        "bls-snr": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "inconclusive",
+          "determined": false
+        },
+        "secondary-eclipse": {
+          "outcome": "blend",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "multisector-phase",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "determined": true,
+          "agreement": true,
+          "underFlagBlend": false
+        }
+      ],
+      "deterministicBlendFlag": true
+    },
+    {
+      "name": "TIC 136916387 / 2011.02",
+      "isBlend": false,
+      "periodDays": 27.5920717535465,
+      "audit": {
+        "bls-snr": {
+          "outcome": "inconclusive",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "inconclusive",
+          "determined": false
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "inconclusive",
+          "determined": false,
+          "agreement": false,
+          "underFlagBlend": false
+        }
+      ],
+      "deterministicBlendFlag": false
+    },
+    {
+      "name": "TIC 332064670 / 1773.01",
+      "isBlend": false,
+      "periodDays": 0.736546250262761,
+      "audit": {
+        "bls-snr": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "determined": true,
+          "agreement": true,
+          "underFlagBlend": false
+        }
+      ],
+      "deterministicBlendFlag": false
+    },
+    {
+      "name": "TIC 297967252 / 1025.01",
+      "isBlend": true,
+      "periodDays": 9.683790810595978,
+      "audit": {
+        "bls-snr": {
+          "outcome": "inconclusive",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "inconclusive",
+          "determined": false
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "multisector-phase",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "determined": true,
+          "agreement": true,
+          "underFlagBlend": true
+        }
+      ],
+      "deterministicBlendFlag": false
+    },
+    {
+      "name": "TIC 458856474 / 1978.01",
+      "isBlend": true,
+      "periodDays": 6.081043046196433,
+      "audit": {
+        "bls-snr": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "multisector-phase": {
+          "outcome": "inconclusive",
+          "determined": false
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "odd-even-depth",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "determined": true,
+          "agreement": true,
+          "underFlagBlend": true
+        }
+      ],
+      "deterministicBlendFlag": false
+    },
+    {
+      "name": "TIC 412961700 / 589.01",
+      "isBlend": true,
+      "periodDays": 2.51838455597415,
+      "audit": {
+        "bls-snr": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "odd-even-depth": {
+          "outcome": "blend",
+          "determined": true
+        },
+        "secondary-eclipse": {
+          "outcome": "blend",
+          "determined": true
+        },
+        "shape-coherence": {
+          "outcome": "planet",
+          "determined": true
+        },
+        "multisector-phase": {
+          "outcome": "planet",
+          "determined": true
+        }
+      },
+      "llm": [
+        {
+          "model": "deepseek-chat",
+          "test": "multisector-phase",
+          "prediction": "planet",
+          "dataOutcome": "planet",
+          "determined": true,
+          "agreement": true,
+          "underFlagBlend": true
+        }
+      ],
+      "deterministicBlendFlag": true
+    }
+  ]
+}

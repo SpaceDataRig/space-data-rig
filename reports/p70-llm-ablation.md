@@ -2,6 +2,8 @@
 
 Reproduce: `npm run p70:llm-ablation -- --pos 5 --neg 5`  (models: deepseek-chat, grok-4.7)
 
+OFFLINE REPLAY: the 2x2 / model-quality / verdict are re-DERIVED from `reports/fixtures/p70-frozen-targets.json` (a committed snapshot of the live per-target audit outcomes + model turns, taken 2026-10-15T00:32:40Z); `--live` re-measures and re-calls the models.
+
 **(1) Structural ablation.** The per-test 2x2 and every gate flag come only from `runHypothesisTest` (real
 photometry); a model prediction is never an input. We verify this by recomputing each decision after the
 models run -- identical, `decisionsChangedByLLM = 0`. So the LLM's decision value is zero by construction.

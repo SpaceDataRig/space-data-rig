@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T14:38:19.170Z",
+    "gitSha": "3cfa8a6b467b6654e289722a79cfe572f7bd6f50",
+    "inputs": [
+      {
+        "path": "scripts/p70-llm-ablation.ts",
+        "sha256": "6618c8fcfa0e0179f6cb23b53a387fb29e04ebecae4b59d6d96b39d3c5ecaa09"
+      },
+      {
+        "path": "reports/fixtures/p70-frozen-targets.json",
+        "sha256": "dd04ca9c8dcc4b1e9ba9e03b94930b83d0c5e7334d6d3f49d3d7749b451e8eb5"
+      }
+    ],
     "generatedBy": "scripts/p70-llm-ablation.ts",
     "nPos": 5,
     "nNeg": 3,
@@ -9,6 +21,8 @@
     ],
     "useLlm": true,
     "deep": false,
+    "measuredAt": "2026-10-15T00:32:40Z",
+    "data": "FROZEN snapshot of the per-target deterministic light-curve audit outcomes + the model proposals, replayed offline -- the live run as measured, not re-fetched and no model re-called",
     "positiveSource": "TOI-table KP (confirmed planets)",
     "negativeSource": "TOI-table FP/EB (labelled blends)",
     "note": "two-part ablation: (1) prove removing the LLM changes no deterministic decision (recompute equality), (2) score the model's proposals vs the measurement incl. blend under-flagging. Advisory; discoveryClaim false."

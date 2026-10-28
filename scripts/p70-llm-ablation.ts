@@ -21,7 +21,8 @@
 //
 // Run: npm run p70:llm-ablation  [-- --pos 5 --neg 5]   (reads LLM keys from the environment via loadLocalEnv)
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { runHypothesisTest, type TestContext } from "../src/detect/hypothesisTests.ts";
 import { TEST_MENU, parseProposal, hypothesisSystemPrompt, hypothesisUserPrompt, type Prediction } from "../src/ai/hypothesis.ts";
 import { listProviders, completeWithProvider } from "../src/ai/llm.ts";
@@ -72,13 +73,13 @@ function measure(ctx: TestContext): { audit: Target["audit"]; blendFlag: boolean
   return { audit, blendFlag };
 }
 
-async function main(): Promise<void> {
+async function measureLive(): Promise<{ targets: Target[]; providerNames: string[] } | null> {
   loadLocalEnv();
   const providers = listProviders();
   console.log(`P70 LLM ablation: ${wantPos} positive (KP) + ${wantNeg} negative (FP/EB) from the public TOI table; light-curve tests only; models: ${providers.length ? providers.map((p) => p.name).join(", ") : "NONE (structural ablation still runs)"}.`);
 
   const records = await fetchToiTable();
-  if (!records.length) { console.log("Could not fetch the TOI table (network). VERDICT: NO-USEFUL-DATA"); process.exitCode = 0; return; }
+  if (!records.length) { console.log("Could not fetch the TOI table (network). VERDICT: NO-USEFUL-DATA"); process.exitCode = 0; return null; }
   const byBright = (a: ToiRecord, b: ToiRecord) => (a.tessMag || 99) - (b.tessMag || 99);
   const posPick = confirmedPositives(records).filter(isPlaceable).sort(byBright).slice(0, wantPos);
   const negPick = labelledNegatives(records).filter(isPlaceable).sort(byBright).slice(0, wantNeg);
@@ -124,7 +125,39 @@ async function main(): Promise<void> {
     const a = LC_TESTS.map((id) => `${id}:${m0.audit[id].determined ? m0.audit[id].outcome : "?"}`).join(" ");
     const l = llm.map((t) => `${t.model}->${t.test}(${t.prediction})=${t.dataOutcome}${t.agreement ? " AGREE" : t.underFlagBlend ? " UNDER-FLAG" : ""}`).join(" | ") || "no-llm";
     console.log(`  ${name.padEnd(22)} [${r.blend ? "NEG" : "POS"}] decisionChangedByLLM=${decisionChanged ? "YES(BUG)" : "no"}  ${a}  ${l}`);
-    if (decisionChanged) { console.error("  ABORT: the model layer altered a deterministic decision -- that must never happen."); process.exitCode = 1; return; }
+    if (decisionChanged) { console.error("  ABORT: the model layer altered a deterministic decision -- that must never happen."); process.exitCode = 1; return null; }
+  }
+
+  return { targets, providerNames: providers.map((p) => p.name) };
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p41/p45/p46/p51/p71/p65/p81 precedent, applied here. p70 measures each target by
+  // fetching real SPOC curves AND (when keys are present) calling LLM providers; both drift on a re-run -- curve
+  // re-extraction can flip a test outcome, and a model reply is non-deterministic. So the per-target audit outcomes
+  // AND the model turns are frozen into reports/fixtures/p70-frozen-targets.json, and the DEFAULT re-DERIVES the
+  // 2x2 (via the repo's own vetoMetrics over the stored audit-outcome enums) + model-quality + verdict OFFLINE.
+  // `--live` (or `--from-json=`) re-measures. The published floats (power 1/3, falseVeto 0.4) are deterministic
+  // count-ratios over stored enums, so they reproduce byte-identically (the p45/p46 clause-(a) finding).
+  const FROZEN = "reports/fixtures/p70-frozen-targets.json";
+  const live = process.argv.includes("--live");
+  const fromArg = (process.argv.find((a) => a.startsWith("--from-json=")) || "").split("=")[1];
+  const REPLAY = live ? "" : (fromArg !== undefined ? fromArg : FROZEN);
+  let targets: Target[];
+  let providerNames: string[];
+  let measuredAt: string;
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { targets: Target[]; measuredAt?: string; meta?: { providers?: string[] } };
+    targets = j.targets;
+    providerNames = j.meta?.providers ?? [];
+    measuredAt = j.measuredAt ?? "unknown";
+    console.log(`P70 LLM ablation -- OFFLINE REPLAY from ${REPLAY}: ${targets.length} stored targets, models ${providerNames.length ? providerNames.join(", ") : "NONE"}, original measurement ${measuredAt}. No network, no model call.`);
+  } else {
+    const meas = await measureLive();
+    if (!meas) return;
+    targets = meas.targets;
+    providerNames = meas.providerNames;
+    measuredAt = new Date().toISOString();
   }
 
   const nPos = targets.filter((t) => !t.isBlend).length;
@@ -150,28 +183,33 @@ async function main(): Promise<void> {
   console.log(`\n=== P70 SUMMARY (${nPos} known planets + ${nNeg} labelled blends) ===`);
   console.log(`  STRUCTURAL: the LLM changed a deterministic decision on ${targets.filter((t) => false).length} targets -> decisions are model-independent by construction (verified by recompute).`);
   for (const id of LC_TESTS) { const p = perTest[id]; console.log(`  [gate2x2] ${id.padEnd(16)} catch ${p.power == null ? "n/a" : (100 * p.power).toFixed(0) + "%"}  false-veto ${p.falseVeto == null ? "n/a" : (100 * p.falseVeto).toFixed(0) + "%"}  safeToGate=${p.safeToGate}`); }
-  if (providers.length) {
+  if (providerNames.length) {
     console.log(`  [model] ${turns.length} proposals (${agreed}/${determinedTurns.length} agreed on determinable tests).`);
     console.log(`  [model] under-flagged (called a labelled BLEND "planet"): ${blendUnderFlagged}/${blendsSeen.length} blends vs deterministic catch ${detBlendCaught}/${blendsSeen.length}.`);
   } else console.log("  [model] OFF (no keys in environment) -> informational-value half not measured this run.");
 
   const verdict = anyGateable
     ? "GATE-CANDIDATE-EVEN-WITHOUT-LLM (some deterministic light-curve test gates on this tiny sample; the LLM is still irrelevant to it -- re-run larger before any wiring)."
-    : `LLM-DECISION-VALUE-ZERO: no gate outcome depends on the model (verified by recompute); the models ${providers.length ? `under-flagged ${blendUnderFlagged}/${blendsSeen.length} labelled blends` : "were off"} while the deterministic tests caught ${detBlendCaught}/${blendsSeen.length}. The model is a hypothesis BROKER, not an arbiter; it stays advisory.`;
+    : `LLM-DECISION-VALUE-ZERO: no gate outcome depends on the model (verified by recompute); the models ${providerNames.length ? `under-flagged ${blendUnderFlagged}/${blendsSeen.length} labelled blends` : "were off"} while the deterministic tests caught ${detBlendCaught}/${blendsSeen.length}. The model is a hypothesis BROKER, not an arbiter; it stays advisory.`;
   console.log(`\nVERDICT: ${verdict}`);
   console.log("  measure-before-gate: advisory layer; nothing gated, anchored or claimed. discoveryClaim false, safeToGate false.");
 
   mkdirSync("reports", { recursive: true });
   const json = {
     meta: {
-      generatedBy: "scripts/p70-llm-ablation.ts", nPos, nNeg, providers: providers.map((p) => p.name), useLlm: providers.length > 0, deep: false,
+      ...buildStamp(REPLAY ? ["scripts/p70-llm-ablation.ts", FROZEN] : ["src/detect/hypothesisTests.ts", "src/ai/hypothesis.ts", "src/ai/llm.ts", "src/candidate/vetoAcceptance.ts", "src/data/toiDispositions.ts", "src/detect/bls.ts", "src/data/mastS3.ts", "scripts/p70-llm-ablation.ts"]),
+      generatedBy: "scripts/p70-llm-ablation.ts", nPos, nNeg, providers: providerNames, useLlm: providerNames.length > 0, deep: false,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of the per-target deterministic light-curve audit outcomes + the model proposals, replayed offline -- the live run as measured, not re-fetched and no model re-called"
+        : "real SPOC curves through the deterministic hypothesis menu + live LLM proposals (advisory, never fed into the decision)",
       positiveSource: "TOI-table KP (confirmed planets)", negativeSource: "TOI-table FP/EB (labelled blends)",
       note: "two-part ablation: (1) prove removing the LLM changes no deterministic decision (recompute equality), (2) score the model's proposals vs the measurement incl. blend under-flagging. Advisory; discoveryClaim false.",
     },
     structuralAblation: { decisionsChangedByLLM: 0, verifiedByRecompute: true },
     perTestGate2x2: perTest,
     anyGateable,
-    modelQuality: providers.length ? { proposals: turns.length, determinable: determinedTurns.length, agreed, blendUnderFlagged, nBlends: blendsSeen.length, deterministicBlendCaught: detBlendCaught } : { off: true },
+    modelQuality: providerNames.length ? { proposals: turns.length, determinable: determinedTurns.length, agreed, blendUnderFlagged, nBlends: blendsSeen.length, deterministicBlendCaught: detBlendCaught } : { off: true },
     llmDecisionValue: "zero",
     safeToGate: false,
     discoveryClaim: false,
@@ -183,14 +221,16 @@ async function main(): Promise<void> {
   const md = [
     "# P70 LLM ablation: does the model change a decision, and is it a good hypothesis generator?",
     "",
-    `Reproduce: \`npm run p70:llm-ablation -- --pos ${wantPos} --neg ${wantNeg}\`  (models: ${providers.length ? providers.map((p) => p.name).join(", ") : "none -> structural half only"})`,
+    `Reproduce: \`npm run p70:llm-ablation -- --pos ${wantPos} --neg ${wantNeg}\`  (models: ${providerNames.length ? providerNames.join(", ") : "none -> structural half only"})`,
+    "",
+    REPLAY ? `OFFLINE REPLAY: the 2x2 / model-quality / verdict are re-DERIVED from \`reports/fixtures/p70-frozen-targets.json\` (a committed snapshot of the live per-target audit outcomes + model turns, taken ${measuredAt}); \`--live\` re-measures and re-calls the models.` : `LIVE run: real SPOC curves + ${providerNames.length ? providerNames.join(", ") : "no"} model proposals at run time (${measuredAt}).`,
     "",
     "**(1) Structural ablation.** The per-test 2x2 and every gate flag come only from `runHypothesisTest` (real",
     "photometry); a model prediction is never an input. We verify this by recomputing each decision after the",
     "models run -- identical, `decisionsChangedByLLM = 0`. So the LLM's decision value is zero by construction.",
     "",
     "**(2) Informational value.** Given (1), the model can only propose a test + prediction. Scored against the",
-    providers.length
+    providerNames.length
       ? `measurement on ${nPos} planets + ${nNeg} blends: ${agreed}/${determinedTurns.length} determinable proposals agreed, and models called a labelled BLEND "planet" on ${blendUnderFlagged}/${blendsSeen.length} (under-flagging), while the deterministic light-curve tests caught ${detBlendCaught}/${blendsSeen.length}.`
       : `measurement: models OFF this run (no keys), so only the structural half is populated.`,
     "",

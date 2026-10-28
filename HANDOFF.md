@@ -763,11 +763,11 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 34 / verified 32 / fullyVerified 32 / unattested 22 /
-  stale []` -- see the Production bullet for the deployed revision. R26-55, R26-56, R26-57, R26-58, R26-59 and R26-60 lifted six more rows
+  As of 2026-10-28 the served report library reads `total 56 / stamped 35 / verified 33 / fullyVerified 33 / unattested 21 /
+  stale []` -- see the Production bullet for the deployed revision. R26-55 through R26-61 lifted seven more rows
   (`p71` the audit positive control, its subject `p65` the external-candidate audit, `p45` the false-positive-probability
-  characterisation, `p46` the multi-year coherence study, `p51` the crowding-stratified veto re-validation, and `p81` the TRICERATOPS-grade
-  external-candidate upgrade) the disciplined way:
+  characterisation, `p46` the multi-year coherence study, `p51` the crowding-stratified veto re-validation, `p81` the TRICERATOPS-grade
+  external-candidate upgrade, and `p70` the LLM-ablation study) the disciplined way:
   the two-clause screen (R26-53 exact-persistence + R26-54 not-a-DATA-input-to-verified) flagged each eligible, zero drift was measured
   before editing, and their frozen rows replay the published figures offline. The attestation frontier of the seven R26-31-wired
   generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
@@ -830,7 +830,16 @@ authority; they are deliberately not restated here.
   artifact predated the `buildStamp` wiring (the old p89 shape, served `stamped=false`): its 20 rows store each per-candidate grade and EVERY
   published figure (`totals` + the `verdict` string) is a pure `.filter(...).length` count over stored booleans/enums (validated/disp/tricGrade/
   censusDetermined/inconsistent/aliasLevel), the rounded floats being display-only -- the same shape as p71/p65; its only consumer p38 reads just
-  `totals` (byte-preserved), so no cascade. verified rose 31 -> 32. The six clean lifts (p71/p65/p45/p46/p51/p81) confirm the screen is reliable, not lucky.
+  `totals` (byte-preserved), so no cascade. verified rose 31 -> 32. R26-61 then lifted `p70` (LLM-ablation) -- the first report whose
+  measurement INVOLVED a model: because the model is strictly advisory and never a decision input, freezing each target's stored
+  `audit` outcome enums + the exact `llm[]` proposals reproduces EVERY published figure (perTestGate2x2 via the repo's own vetoMetrics
+  over the enums, modelQuality/verdict/anyGateable as counts over stored enums + turns, the float rates 1/3 / 0.4 / 0.2 being
+  deterministic count-ratios) with NO curve re-fetch and NO model re-call; its committed artifact had never been stamped, so the lift
+  added buildStamp + an offline replay stamping [script, fixture]. verified rose 32 -> 33, zero drift proven (ALL MATCH via a vetoMetrics probe). The
+  seven clean lifts (p71/p65/p45/p46/p51/p81/p70) confirm the screen is reliable, and R26-61 also MAPPED the frontier: the remaining unattested
+  rows are each blocked by a distinct honest reason -- schema drift (p80's committed artifact predates today's two-tier generator), aggregate-only
+  persistence (p40/p49/p92), raw-value rounding behind a toFixed (p42 auc / p74 offsets / p57 / p58 / p89), full-population aggregates over a display
+  sample (p43), or live-network / LLM nondeterminism (p64/p52/p35) -- so the honest count stops at 33 rather than being padded by a drift-inducing re-measure.
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -930,22 +939,24 @@ authority; they are deliberately not restated here.
 - Production: wrangler version 75a43010-459e-4018-893f-cf04f3cf2e44, gitSha bdff1680d64c37295d4dceabffa46e00130ea7ff
   (deployed 2026-10-28 by R26-60 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
   static assets from `web/`; `GET /health` read back returned `deployVersion 75a43010-459e-4018-893f-cf04f3cf2e44` and
-  `gitSha bdff168`), `codeVersion space-data-rig@0.2.0`. HEAD (this section's ledger commit, made after the deploy)
-  differs from the deployed revision bdff168 only in `HANDOFF.md` -- no `src/` and no `web/` path -- so the served
-  `src/` and `web/` trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces.
-  **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  `gitSha bdff168`), `codeVersion space-data-rig@0.2.0`. **R26-61 AWAITING DEPLOY:** the p70 LLM-ablation frozen-fixture lift is
+  committed -- its report, `reports/fixtures/p70-frozen-targets.json`, and the regenerated `web/reports/index.json` +
+  `web/reports/p70-llm-ablation.html` move the library to `stamped 35 / verified 33 / fullyVerified 33 / unattested 21 /
+  stale []` -- but as of this ledger commit the live endpoint still serves the bdff168 build (`verified 32`); a redeploy is
+  pending, so this bullet carries the `awaiting deploy` marker the `tests/handoff-freshness.test.ts` tree-equality check
+  requires (the named production revision bdff168 and HEAD differ in exactly the two served `web/` files). **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51 and p81 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,
   `reports/fixtures/p71-frozen-rows.json`, `reports/fixtures/p65-frozen-outcomes.json`, `reports/fixtures/p45-frozen-rows.json`,
-  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`, `reports/fixtures/p81-frozen-rows.json`), so each stamp carries a real DATA input and all eight are honestly machine-verified again.
-  Live read-back of `GET /reports/index.json`: 56 rows, `freshness {stamped 34, verified 32, fullyVerified 32, unattested 22,
+  `reports/fixtures/p46-frozen-rows.json`, `reports/fixtures/p51-frozen-rows.json`, `reports/fixtures/p81-frozen-rows.json`), so each stamp carries a real DATA input and all eight are honestly machine-verified again (p70 joins them once redeployed).
+  Live read-back of `GET /reports/index.json` (the deployed bdff168 build): 56 rows, `freshness {stamped 34, verified 32, fullyVerified 32, unattested 22,
   stale []}`; `p41-longbaseline`, `p88-independent-corroboration`, `p71-audit-positive-control`, `p65-external-audit`, `p45-fp-probability`, `p46-coherence`, `p51-crowding-stratified` and `p81-triceratops-lite` each serve
   `verified=true / reproducibleData=1` with
   their rendered HTML fragments WITHOUT the amber provenance banner, while the still-code-only row (`p92-scrambled-fa`)
   keeps `verified=false / reproducibleData=0` and still serves the banner (the R26-41 correction intact; p92 stays demoted
   honestly because its report persists only the aggregate, so a zero-drift freeze is not available for it). The independent
-  freshness-recheck reproduces `verified=32/32`. `discoveryClaim`/`safeToGate` remain false in every report. This is the
-  honest count RISING 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32, earned by pinning the measurement behind the numbers (zero drift, no coupling
+  freshness-recheck on the committed tree reproduces `verified=33/33`. `discoveryClaim`/`safeToGate` remain false in every report. Once this
+  tree is redeployed the honest live count rises 24 -> 25 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32 -> 33, earned by pinning the measurement behind the numbers (zero drift, no coupling
   cascade, independently rechecked), not by loosening the gate; the earlier downward correction 27 -> 24 (R26-41) still
   stands for what was genuinely checkable at that point.
   Earlier production: version dbaff271-53ff-45a1-ad5c-a1185162ba9a, gitSha adef4666e82088e95ec2e5f14e20b8ddebd504ac

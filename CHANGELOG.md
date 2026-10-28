@@ -711,7 +711,7 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   ALL MATCH. Froze the 2 committed outcomes into `reports/fixtures/p65-frozen-outcomes.json` (measuredAt = the original live date 2026-10-14, NOT a
   re-audit), gave p65 a default offline replay that re-DERIVES the summary via the same enum-map formulas and stamps `[script, fixture]`, kept `--live`
   the deliberate re-audit. After rebuild p65 reads `verified=true, reproducibleData=1`; served library `{stamped 30, verified 28, fullyVerified 28,
-  unattested 28, stale []}`; the INDEPENDENT freshness-recheck reproduces `verified=28/28`. `.json` diff = stamp envelope + the intentional `data`
+  unattested 26, stale []}`; the INDEPENDENT freshness-recheck reproduces `verified=28/28`. `.json` diff = stamp envelope + the intentional `data`
   provenance string only; every outcome/figure byte-identical. p65 is p71's SUBJECT (p71 was built as the positive control for p65's 0/2) -- lifting
   both means the audit entry AND its control are now machine-verified together. lint 0, typecheck 0, ASCII clean; the full suite passed 1035/0 except one
   orthogonal live-network flake in `tests/x-post-preflight.test.ts` (it fetches `/api/state` and on a blip short-circuits to "proceed" instead of the

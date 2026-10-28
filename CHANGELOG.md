@@ -454,6 +454,23 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   evidence header now uses the canonical citation form (matching `2026-10-18-byte-exact-devlog-archive.md`), re-archived
   through `devlog-archive.ts` so the pushed text stays the same 1341 bytes, and `npm test` re-run at the corrected tree
   gives 1031/0. Recorded plainly because a checker that only the CI catches is a checker I should have run.
+- **R26-35, running a "determinable" generator proved two of my own earlier claims wrong.** (1) R26-32 said the six
+  remaining wired generators were blocked because SPOC S3 was unreachable. That probe hit the WRONG host: `mastS3.ts`
+  actually fetches from `stpubdata.s3.amazonaws.com`, which answers HTTP 200 (the `aws-oss.mast.stsci.edu` I probed is not
+  what the code uses). p35 ran against REAL photometry for 27 host curves right now -- reachability was never the blocker.
+  (2) More importantly, "has a committed input" (the R26-31 stampability criterion) turned out to be *necessary but still
+  not sufficient*. Re-running p35 faithfully (`--stars 33 --maxsectors 2 --seed 7`) did NOT byte-reproduce its published
+  numbers: 27 curves / 6 coverage misses vs the committed 26 / 7, and PDM-vs-BLS agreement and per-depth completeness all
+  moved. The reason is that p35's result is determined by the SPOC bytes it *fetches*, and its `buildStamp` only hashes the
+  committed catalog + its own source -- so the artifact would flip to `verified` while the thing that actually changed (the
+  network light curves) sits outside the stamp. That is false comfort in a subtler costume than the own-source trap: a
+  stamp that passes but does not pin the real inputs. p56 was safe to attest precisely because it *byte-reproduced* -- its
+  committed p47 grid fully determined the output, so the run added provenance without moving a number. Decision: p35 was
+  reverted, not attested; a misleading `verified` row is worse than an honest `unattested` one. Each of the other five
+  wired generators now faces the same test -- attest only the ones that byte-reproduce; the rest need a data-provenance
+  design that records the fetched bytes (the R26-29 "provenance design," now shown to apply to the wired six too, not just
+  the pure-network 25). Lesson for the ledger: a network-data generator is only honestly stampable when its non-committed
+  inputs are themselves reproducible, and the way to find that out is to run it and diff, not to trust the input list.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

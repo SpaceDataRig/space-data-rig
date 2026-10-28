@@ -729,6 +729,14 @@ the Actions web page when the anonymous API is rate-limited.
   been run at the PRIOR tree. The archive then failed `devlog-archive.test.ts`'s citation gate in CI. R26-13 says: if the
   commit touches a path a freshness/window/test check inspects, run `npm test` with THAT commit as HEAD before pushing --
   "it's only a ledger file" is exactly how a red commit reaches main while local looks green.
+- `verified` is not `reproducible` for a network-data generator -- run it and diff before attesting, and probe the host the
+  CODE actually uses (round-26, R26-35). A generator can name a real committed input yet still be undetermined by it: p35
+  hashes the committed p33 catalog + source, but its result is set by the SPOC light curves it FETCHES, so a faithful
+  re-run moved its numbers while the stamp would still read `verified` -- provenance that pins the wrong bytes. Only
+  attest a generator whose output byte-reproduces (p56 did; p35 did not). And when you test "is the data source up,"
+  curl the exact host in the source (`mastS3.ts` uses `stpubdata.s3.amazonaws.com`, HTTP 200) -- not a plausible sibling
+  (`aws-oss.mast.stsci.edu`), which is how R26-32 wrongly declared the six generators S3-blocked when they were reachable
+  all along. The honest signal is a byte-diff after a real run, never the input list alone.
 
 ## 13. Current state (as of 2026-10-27)
 

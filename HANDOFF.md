@@ -763,7 +763,7 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 28 / verified 25 / fullyVerified 25 / unattested 28 /
+  As of 2026-10-28 the served report library reads `total 56 / stamped 28 / verified 26 / fullyVerified 26 / unattested 28 /
   stale []` -- see the Production bullet for the deployed revision. The attestation frontier of the seven R26-31-wired
   generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
   two are network-determined and honestly stay unattested because a faithful re-run does not byte-reproduce (`p35`, `p52`,
@@ -774,10 +774,13 @@ authority; they are deliberately not restated here.
   and byte-reproduces offline; R26-49 APPLIED it to p41 -- froze its 29 per-host measurements into `reports/fixtures/p41-frozen-rows.json`
   (derived from the committed rows, not a re-fetch, so zero numbers moved) and gave it an offline-replay default that re-DERIVES the
   completeness from those frozen measurements -- so p41 is honestly machine-verified again and the count rose 24 -> 25 (independently
-  rechecked, and read back live). The independent recheck mirrors the rule without importing the gate. Still open: two code-only rows
-  remain demoted (`p88`, `p92`) and the other ~25 pure-network generators can now be lifted the same way -- port the frozen-fixture
-  replay, freeze the rows behind the published numbers, prove zero drift -- one careful increment at a time; 3 rows still lack a
-  `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
+  rechecked, and read back live). R26-50 applied the same recipe to p88 (froze its per-candidate 2x2 rows, replay re-DERIVES metrics/verdict
+  via the repo's own vetoMetrics/acceptVetoTool, zero drift proven first), lifting it too -- the count rose 25 -> 26. The independent recheck
+  mirrors the rule without importing the gate and reproduces 26/26. Still open: exactly one code-only row remains demoted (`p92`), and it
+  honestly cannot be lifted by a zero-drift freeze because its report persists only the aggregate (sweep + summary), not the per-TCE
+  measurements a non-circular freeze needs -- lifting it would require a drift-inducing live re-measure (a different, more invasive increment).
+  The other ~24 pure-network generators can be lifted the p41/p88 way where they persist per-target measurements -- one careful increment at a
+  time; 3 rows still lack a `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -874,23 +877,28 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version 21b6f04a-7387-45ce-b194-6bf03f740c63, gitSha bfe38ded2ca1502f1837d92cf36d8ddc6210753a
+- Production: wrangler version 0e7e16ca-a5f7-4a37-9b9a-eaf1d8601f87, gitSha 44a8deb2d95cb4351ae3b472da7bd8207927d960
   (deployed 2026-10-28 by round-26 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
-  static assets from `web/`; `GET /health` read back returned `deployVersion 21b6f04a-7387-45ce-b194-6bf03f740c63` and
-  `gitSha bfe38de`), `codeVersion space-data-rig@0.2.0`. **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
-  R26-49 frozen-fixture lift of p41 -- p41's report now re-DERIVES its completeness from the committed
-  `reports/fixtures/p41-frozen-rows.json`, so its stamp carries a real DATA input and it is honestly machine-verified again.
-  HEAD (this section's ledger commit, made after the deploy) differs from the deployed revision bfe38de only in `HANDOFF.md`
-  -- no `src/` and no `web/` path -- so the served `src/` and `web/` trees equal HEAD's by construction, the condition
-  `tests/handoff-freshness.test.ts` enforces. Live read-back of `GET /reports/index.json`: 56 rows, `freshness {stamped 28,
-  verified 25, fullyVerified 25, unattested 28, stale []}`; `p41-longbaseline` now serves `verified=true` with
-  `reproducibleData=1` and its rendered HTML fragment WITHOUT the amber provenance banner, while the two still-code-only rows
-  (`p88-independent-corroboration`, `p92-scrambled-fa`) keep `verified=false / reproducibleData=0` and still serve the banner
-  (the R26-41 correction intact). The first `cf:deploy:sha` exited 1 on a transient `GIT_SHA` secret hiccup; the immediate
-  re-run deployed cleanly to 21b6f04a. `discoveryClaim`/`safeToGate` remain false in every report. This is the honest count
-  RISING 24 -> 25, earned by pinning the photometry behind the numbers (zero drift, independently rechecked), not by loosening
-  the gate; the earlier downward correction 27 -> 24 (R26-41) still stands for what was genuinely checkable at that point.
-  Earlier production: version b1b479a6-551d-4fe7-9c8b-f51d02c88a96, gitSha 20457a3fecd77f29349858b949d6f6d90d4e3ade
+  static assets from `web/`; `GET /health` read back returned `deployVersion 0e7e16ca-a5f7-4a37-9b9a-eaf1d8601f87` and
+  `gitSha 44a8deb`), `codeVersion space-data-rig@0.2.0`. **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  R26-49/R26-50 frozen-fixture lifts of p41 and p88 -- both reports now re-DERIVE their published figures from committed
+  frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`), so each stamp
+  carries a real DATA input and both are honestly machine-verified again. HEAD (this section's ledger commit, made after the
+  deploy) differs from the deployed revision 44a8deb only in `HANDOFF.md` -- no `src/` and no `web/` path -- so the served
+  `src/` and `web/` trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces. Live
+  read-back of `GET /reports/index.json`: 56 rows, `freshness {stamped 28, verified 26, fullyVerified 26, unattested 28,
+  stale []}`; `p41-longbaseline` and `p88-independent-corroboration` both serve `verified=true / reproducibleData=1` with
+  their rendered HTML fragments WITHOUT the amber provenance banner, while the one still-code-only row (`p92-scrambled-fa`)
+  keeps `verified=false / reproducibleData=0` and still serves the banner (the R26-41 correction intact; p92 stays demoted
+  honestly because its report persists only the aggregate, so a zero-drift freeze is not available for it). The independent
+  freshness-recheck reproduces `verified=26/26`. `discoveryClaim`/`safeToGate` remain false in every report. This is the
+  honest count RISING 24 -> 25 -> 26, earned by pinning the measurement behind the numbers (zero drift, independently
+  rechecked), not by loosening the gate; the earlier downward correction 27 -> 24 (R26-41) still stands for what was
+  genuinely checkable at that point.
+  Earlier production: version 21b6f04a-7387-45ce-b194-6bf03f740c63, gitSha bfe38ded2ca1502f1837d92cf36d8ddc6210753a
+  (deployed 2026-10-28 by R26-49 -- the first frozen-fixture lift, p41, serving `freshness {stamped 28, verified 25,
+  fullyVerified 25, unattested 28, stale []}`); and before that version b1b479a6-551d-4fe7-9c8b-f51d02c88a96, gitSha
+  20457a3fecd77f29349858b949d6f6d90d4e3ade
   (deployed 2026-10-28 by R26-41 -- the hardened freshness gate + rebuilt library that demoted the three code-only rows
   `p41`/`p88`/`p92` and served `freshness {stamped 28, verified 24, fullyVerified 24, unattested 28, stale []}`);
   and before that version 6a9958fa-1620-488c-87ba-8e111bab585e, gitSha c93a43c490b46b07285a55389318c3facbcf1b0a

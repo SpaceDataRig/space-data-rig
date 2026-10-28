@@ -1,5 +1,17 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T02:38:31.365Z",
+    "gitSha": "b29abc1742a8c0557147f1c4120840c22bc20563",
+    "inputs": [
+      {
+        "path": "reports/p60-joint-vs-single.json",
+        "sha256": "04870f1739b8deea607c46b6cb97485a303ab7c18533384d40c13b986d8f115c"
+      },
+      {
+        "path": "scripts/p67-seed-precision.ts",
+        "sha256": "0142ff6b250d00c9d6866ca28753e428a9539e0003de2ae15c1c1dc73d8a0c2d"
+      }
+    ],
     "generatedBy": "scripts/p67-seed-precision.ts",
     "n": 20,
     "k": 3,
@@ -81,23 +93,6 @@
       "oracleSeed": 3.585287
     },
     {
-      "name": "HR 858 d",
-      "catPeriod": 11.230511,
-      "nSectors": 4,
-      "naiveSeed": 7.145134160435382,
-      "naiveSeedHit": false,
-      "naiveSeedSnr": 18.32962450380649,
-      "iterTop1": null,
-      "iterTop1Hit": false,
-      "iterN": 0,
-      "iterTopKHit": false,
-      "iterSeedPeriod": null,
-      "refineNaive": false,
-      "refineIter": false,
-      "refineOracle": true,
-      "oracleSeed": 11.230511
-    },
-    {
       "name": "HR 858 c",
       "catPeriod": 5.973865,
       "nSectors": 4,
@@ -113,6 +108,23 @@
       "refineIter": false,
       "refineOracle": true,
       "oracleSeed": 5.973865
+    },
+    {
+      "name": "HR 858 d",
+      "catPeriod": 11.230511,
+      "nSectors": 4,
+      "naiveSeed": 7.145134160435382,
+      "naiveSeedHit": false,
+      "naiveSeedSnr": 18.32962450380649,
+      "iterTop1": null,
+      "iterTop1Hit": false,
+      "iterN": 0,
+      "iterTopKHit": false,
+      "iterSeedPeriod": null,
+      "refineNaive": false,
+      "refineIter": false,
+      "refineOracle": true,
+      "oracleSeed": 11.230511
     },
     {
       "name": "HD 63433 b",
@@ -166,23 +178,6 @@
       "oracleSeed": 5.969362
     },
     {
-      "name": "HD 25463 c",
-      "catPeriod": 3.04405,
-      "nSectors": 3,
-      "naiveSeed": 3.5319097249316216,
-      "naiveSeedHit": false,
-      "naiveSeedSnr": 17.36229696120507,
-      "iterTop1": 7.048223816310085,
-      "iterTop1Hit": false,
-      "iterN": 1,
-      "iterTopKHit": false,
-      "iterSeedPeriod": 7.048223816310085,
-      "refineNaive": false,
-      "refineIter": false,
-      "refineOracle": false,
-      "oracleSeed": 3.04405
-    },
-    {
       "name": "HD 25463 b",
       "catPeriod": 7.0491423,
       "nSectors": 3,
@@ -198,6 +193,23 @@
       "refineIter": true,
       "refineOracle": true,
       "oracleSeed": 7.0491423
+    },
+    {
+      "name": "HD 25463 c",
+      "catPeriod": 3.04405,
+      "nSectors": 3,
+      "naiveSeed": 3.5319097249316216,
+      "naiveSeedHit": false,
+      "naiveSeedSnr": 17.36229696120507,
+      "iterTop1": 7.048223816310085,
+      "iterTop1Hit": false,
+      "iterN": 1,
+      "iterTopKHit": false,
+      "iterSeedPeriod": 7.048223816310085,
+      "refineNaive": false,
+      "refineIter": false,
+      "refineOracle": false,
+      "oracleSeed": 3.04405
     },
     {
       "name": "TOI-5789 c",
@@ -217,23 +229,6 @@
       "oracleSeed": 12.927748
     },
     {
-      "name": "HD 101581 c",
-      "catPeriod": 6.20401,
-      "nSectors": 2,
-      "naiveSeed": 11.083228014622575,
-      "naiveSeedHit": false,
-      "naiveSeedSnr": -37.940357059374385,
-      "iterTop1": null,
-      "iterTop1Hit": false,
-      "iterN": 0,
-      "iterTopKHit": false,
-      "iterSeedPeriod": null,
-      "refineNaive": false,
-      "refineIter": false,
-      "refineOracle": false,
-      "oracleSeed": 6.20401
-    },
-    {
       "name": "HD 101581 b",
       "catPeriod": 4.46569,
       "nSectors": 2,
@@ -249,6 +244,23 @@
       "refineIter": false,
       "refineOracle": false,
       "oracleSeed": 4.46569
+    },
+    {
+      "name": "HD 101581 c",
+      "catPeriod": 6.20401,
+      "nSectors": 2,
+      "naiveSeed": 11.083228014622575,
+      "naiveSeedHit": false,
+      "naiveSeedSnr": -37.940357059374385,
+      "iterTop1": null,
+      "iterTop1Hit": false,
+      "iterN": 0,
+      "iterTopKHit": false,
+      "iterSeedPeriod": null,
+      "refineNaive": false,
+      "refineIter": false,
+      "refineOracle": false,
+      "oracleSeed": 6.20401
     },
     {
       "name": "AU Mic b",

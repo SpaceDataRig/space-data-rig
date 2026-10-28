@@ -482,6 +482,17 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   `{verified 24, unattested 31}`. This is the R26-35 rule working as intended -- attest on byte-reproduction, not on the
   input list. The remaining p60-based wired generators (p62/p67/p73) share p69's fixed-host pattern and are the next
   run-and-diff candidates; p52 (S3 target pixels + vizier) is its own case. Reverted p35 stays unattested.
+- **R26-37, p62 and p67 both byte-reproduced and were attested -- unattested 31 -> 29.** Following the R26-35/36 rule,
+  ran the two p60-based joint generators faithfully at their committed settings (p62 `--minsnr 7 --tol 5 --win 0.1
+  --oversample 24`; p67 `--minsnr 7 --tol 5 --win 0.1 --k 3`) over the fixed 20-planet P60 sample. Both report `.md` came
+  out **byte-identical** (`git diff --numstat` empty; VERDICTs unchanged -- p62 "NO-LIFT-JOINT-NOT-A-FREE-LUNCH", p67
+  "MODEST-SEED-LIFT"), and each `.json` changed only by the added stamp plus a cosmetic row re-order (the same async
+  fetch-completion ordering seen in p69: same row multiset, different sequence -- which is exactly why the aggregate `.md`
+  is stable). So both reproduce and both were attested via `p86`: `{verified 26, unattested 29}`. A noted wart, honestly
+  recorded: p62/p67/p69 emit their JSON rows in non-deterministic order, so the committed artifact is stable in its
+  published numbers but not byte-identical in row sequence across runs -- the freshness gate is unaffected (it hashes the
+  inputs, not the output order), and the `.md` is the human-facing surface. p73 (masked-recovery, same fixed-host pattern)
+  and p52 (target-pixel based) remain to be run-and-diff tested; p35 stays reverted.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

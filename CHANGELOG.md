@@ -643,6 +643,18 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   would now select a different target set and move the headline figures -- the same drift-inducing class as p92, which the honest count must
   not paper over by freezing a re-measured (different) population and relabeling it verified. No code, artifact or gate change; this is a
   frontier-accuracy correction (the ledger now names BOTH demoted rows and their distinct reasons) plus a documented negative control.
+- **R26-52, pinned the READER-facing honesty of both demoted rows with a hermetic test that runs the real p86.**
+  The R26-51 audit found the disclosure was already correct on the served pages -- `p86-report-library.ts` attaches an amber `PROVENANCE_NOTE`
+  to every `!verified && !stale` fragment (branch at the `else if (!verdict.verified)` line), so both `p89` (no inputs) and `p92` (code-only)
+  honestly tell a reader their numbers are not machine-verified. But nothing in CI proved that: `tests/report-freshness.test.ts` only drives the
+  pure verdict, and `tests/p86-stale-alarm.test.ts` runs the real script only for the STALE branch. The not-verified, not-stale branch -- the one
+  these two live rows sit in -- had never been executed end to end, so a future edit to the branch order could silently drop the note while still
+  writing `verified=false` to index.json. `tests/p86-provenance-note.test.ts` (3 cases) closes that: it builds a throwaway repo in each of the
+  three shapes (a tracked `.ts` input = the p92 code-only shape, a `generatedAt` with no `inputs` = the p89 shape, a tracked `.txt` = the
+  verified control), runs the REAL p86, and asserts the first two render the amber note naming their distinct reason while the control renders
+  clean -- proving the note is CONDITIONAL, not painted on every page. Mutation-checked: neutering the `!verified` branch (an env-guarded edit,
+  reverted byte-for-byte) fails exactly the 2 drill cases and leaves the control green, so the test is not inertial. No code/artifact/gate change
+  to the shipped tree; served `verified` stays 26. lint 0, typecheck 0, suite 1032 -> 1035/0, ASCII clean.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -502,6 +502,11 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   unattested (its p33-catalog grew -> does not reproduce) and p52 remains to test (target-pixel based). The R26-35 rule
   -- attest only on byte-reproduction, never on the input list -- has now gated four attests and one refusal, exactly as
   intended.
+- **R26-39, the session attestation milestone is archived verbatim to `devlog/`.** The milestone post (id
+  `2115284343753003238`, dispatch run `40626792063`, head `43352f5`, CI run `40625542765` completed/success) is
+  byte-copied through `devlog-archive.ts`; the evidence header carries the canonical citations the integrity gate
+  requires (`actions/runs/<id>`, backtick-wrapped `posted id`, HTTP `204`) per R26-34. Because it touches `devlog/`
+  (a test-inspected path) the full suite was re-run at this HEAD: 1031/0. No `src`/`web` change, so no redeploy.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

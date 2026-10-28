@@ -564,6 +564,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   divergence. Run against production it confirms all three demoted pages carry the banner and three verified pages render clean
   (exit 0). Verified live because it is a network tool by design (not part of `npm test`). The tool is the only change; no
   artifact/index touched, so no redeploy. The R26-41 correction is now provably visible to a visitor, not just machine-readable.
+- **R26-46, a tracked live-API coherence probe covers the surface `npm test` cannot reach.**
+  The dashboard- and digest-facing endpoints (`/api/state`, `/api/findings`, `/api/anchor-health`, `/health`, `/research.json`)
+  are hermetically invisible to the test suite: a wrong top-level projection or a secret leaking into a response body would keep
+  `npm test` green. Ad-hoc `out/` probes checked them but are gitignored and easily lost (the R25-5 lesson: measurement scripts the
+  ledgers promise belong on tracked paths). `scripts/audit/api-surface-probe26.mjs` now pins each endpoint's load-bearing projection
+  keys and scans every body against a SECRET pattern (alch_/ghp_/sk-/xai-/private-key/ACCESS_TOKEN_SECRET/SOLANA_KEYPAIR), applying the
+  R26-25 semantics: unreachable -> exit 2 (not a defect), a non-200 / missing key / leak -> exit 1 naming the finding, else exit 0. Run
+  live: all five endpoints 200, shapes ok, no leak. Mutation-verified -- demanding a bogus key made it exit 1 and name it, proving the
+  detector is not a vacuous pass. New tracked tool + ledgers only; no artifact/index/src change, so no redeploy.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

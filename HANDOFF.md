@@ -776,11 +776,17 @@ authority; they are deliberately not restated here.
   completeness from those frozen measurements -- so p41 is honestly machine-verified again and the count rose 24 -> 25 (independently
   rechecked, and read back live). R26-50 applied the same recipe to p88 (froze its per-candidate 2x2 rows, replay re-DERIVES metrics/verdict
   via the repo's own vetoMetrics/acceptVetoTool, zero drift proven first), lifting it too -- the count rose 25 -> 26. The independent recheck
-  mirrors the rule without importing the gate and reproduces 26/26. Still open: exactly one code-only row remains demoted (`p92`), and it
-  honestly cannot be lifted by a zero-drift freeze because its report persists only the aggregate (sweep + summary), not the per-TCE
-  measurements a non-circular freeze needs -- lifting it would require a drift-inducing live re-measure (a different, more invasive increment).
-  The other ~24 pure-network generators can be lifted the p41/p88 way where they persist per-target measurements -- one careful increment at a
-  time; 3 rows still lack a `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
+  mirrors the rule without importing the gate and reproduces 26/26. Still open: TWO rows are served `stamped && !verified`, reached by two
+  distinct mechanisms, and R26-51 measured that NEITHER is liftable by a zero-drift freeze. `p92-scrambled-fa` is code-only
+  (`reproducible=4, reproducibleData=0`) and persists only the aggregate sweep+summary, not the per-TCE measurements a non-circular freeze
+  needs. `p89-multiepoch-di` is the other shape -- a `generatedAt` with NO recorded inputs at all (its generator grew the `buildStamp` wiring
+  after the 2026-10-17 artifact and was never re-run; the gate already documents this case in `report-freshness.ts`), and rebuilding its
+  `VetoCase[]` from the committed per-target rows reproduces every boolean-derived figure and the AUC exactly but DRIFTS the full-precision
+  `population.maxOffsetArcsec` (the artifact keeps only `maxOff.toFixed(2)`: min 3.845e-14 -> 0, p50 46.205418415641816 -> 46.21), so a
+  faithful offline freeze is not available either. Lifting either would require a drift-inducing live re-measure -- a different, more invasive
+  increment, deliberately not forced; the honest count stays 26 rather than being padded by relabeling a re-measured population.
+  The other ~24 pure-network generators can be lifted the p41/p88 way where they persist FULL-PRECISION per-target measurements -- one careful
+  increment at a time; 3 rows still lack a `reproduce` command (p85 over a gitignored checkpoint, plus the two CI-harness crosscheck reports).
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified

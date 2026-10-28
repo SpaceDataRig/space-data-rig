@@ -626,6 +626,23 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   figures byte-identical). Of the three R26-41 demotions, p41 and p88 are now honestly machine-verified again; p92 stays demoted because its
   report persists only the aggregate (not the per-TCE measurements that would make a non-circular freeze), so lifting it needs a drift-
   inducing live re-measure, not a zero-drift freeze -- a different, more invasive increment. lint 0, typecheck 0, suite 1032/0, ASCII clean.
+- **R26-51, audited the SECOND stamped-but-unverified row (p89) and recorded, by measurement, that it is not zero-drift liftable either.**
+  The R26-50 ledger said "exactly one code-only row remains demoted (p92)" -- true of *code-only* stamps, but incomplete: the served index
+  actually carries TWO rows that are `stamped && !verified`, reached by two different mechanisms. `p92-scrambled-fa` is code-only
+  (`reproducible=4, reproducibleData=0`); `p89-multiepoch-di` is the other shape -- it carries a `generatedAt` but its artifact records NO
+  inputs at all (`rehashed=0, reproducible=0, untracked=0`), because its generator grew the `buildStamp` wiring after the 2026-10-17 artifact
+  was written and it has not been re-run since. This is the "stamped but records no input checkpoint" case the gate already documents for p89
+  (report-freshness.ts, its own comment), so it is honest and correctly shown as unverified on the site -- the gap is only in my prose ledger.
+  Can p89 be lifted the frozen-fixture way? MEASURED, not assumed: its committed report persists the per-target `cases` rows, but only the
+  ROUNDED `maxOff` (`toFixed(2)`), while its published `population.maxOffsetArcsec` quantiles are full-precision. A standalone guard script
+  rebuilt the `VetoCase[]` from the committed rows and re-ran the repo's real `vetoMetrics`/`acceptVetoTool`: every boolean-derived figure
+  (n/nBlend/nPlanet, the 2x2 cm, vetoPower + Wilson CI, falseVeto + CI, precision, `safeToGate`, the reason string, and even the AUC)
+  reproduced EXACTLY, but the score-derived population DRIFTED -- committed `min=3.845e-14 / p50=46.205418415641816 / p90=75.74569294685995`
+  vs replay `min=0 / p50=46.21 / p90=75.75`. So a faithful offline freeze from the committed artifact is not available for p89 either. And a
+  live re-measure today could not reproduce it: the ExoFOP TOI table has grown since 2026-10-17, so `confirmedPositives/negatives ... slice(POS_N/NEG_N)`
+  would now select a different target set and move the headline figures -- the same drift-inducing class as p92, which the honest count must
+  not paper over by freezing a re-measured (different) population and relabeling it verified. No code, artifact or gate change; this is a
+  frontier-accuracy correction (the ledger now names BOTH demoted rows and their distinct reasons) plus a documented negative control.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

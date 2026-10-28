@@ -2,6 +2,8 @@
 
 Reproduce: `npm run p65:external-audit` (or `-- --claim-file yourClaim.json` with a CandidateClaim).
 
+OFFLINE REPLAY: figures re-DERIVED from `reports/fixtures/p65-frozen-outcomes.json` (a committed snapshot of the live audit outcomes, taken 2026-10-14T17:25:29Z); `--live` re-audits.
+
 This is the community / external audit ENTRY (research mode, NOT on-chain): it runs the independent audit
 (novelty, Gaia dilution/blend, geometry, our OWN blind re-detection + power rank, a detectability floor) AND
 the deterministic mission-critic with the current gates, fed a continuous soft blend-likelihood + calibrated

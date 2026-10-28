@@ -702,6 +702,20 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   figure byte-identical); the `.json` diff only the stamp envelope + the intentional `inputs` swap. This is the honest count rising 26 -> 27, earned by
   pinning p71's measurement behind its numbers (zero drift, no coupling, independently rechecked) -- exactly the disciplined application of the two
   clauses, not a loosening of the gate. lint 0, typecheck 0, suite 1035/0, ASCII clean.
+- **R26-56, second lift through the same two-clause screen -- p65 external-audit, honest `verified` 27 -> 28.**
+  Reused R26-55's offline pre-filter instead of probing blind. Clause (b): the reverse-dependency scan shows p65 has ZERO consumers, so re-stamping
+  it cannot cascade. Clause (a): p65 stores each third-party claim's critic outcome as an exact enum (`criticVerdict`) + boolean (`passesCurrentGate`),
+  and its ONLY published aggregate -- the `passesCurrentGate` array -- is a pure map over those two fields; the floats (`fap`/`blendScore`) feed no
+  aggregate, they appear only as `toFixed` display in the `.md` table computed from the stored values. Measured zero drift BEFORE editing: a standalone
+  probe recomputed `passesCurrentGate` (byte-for-byte), `anyAccepted` (false), the pass count (0/2) and `nClaims` (2) from the committed outcomes alone ->
+  ALL MATCH. Froze the 2 committed outcomes into `reports/fixtures/p65-frozen-outcomes.json` (measuredAt = the original live date 2026-10-14, NOT a
+  re-audit), gave p65 a default offline replay that re-DERIVES the summary via the same enum-map formulas and stamps `[script, fixture]`, kept `--live`
+  the deliberate re-audit. After rebuild p65 reads `verified=true, reproducibleData=1`; served library `{stamped 30, verified 28, fullyVerified 28,
+  unattested 28, stale []}`; the INDEPENDENT freshness-recheck reproduces `verified=28/28`. `.json` diff = stamp envelope + the intentional `data`
+  provenance string only; every outcome/figure byte-identical. p65 is p71's SUBJECT (p71 was built as the positive control for p65's 0/2) -- lifting
+  both means the audit entry AND its control are now machine-verified together. lint 0, typecheck 0, ASCII clean; the full suite passed 1035/0 except one
+  orthogonal live-network flake in `tests/x-post-preflight.test.ts` (it fetches `/api/state` and on a blip short-circuits to "proceed" instead of the
+  asserted branch -- it passes 19/19 standalone on retry), which is logged as a hermeticity finding for R26-57, not a regression here.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

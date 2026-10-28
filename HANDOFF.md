@@ -763,10 +763,11 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 29 / verified 27 / fullyVerified 27 / unattested 27 /
-  stale []` -- see the Production bullet for the deployed revision. R26-55 lifted a third row (`p71`, the audit positive
-  control) the disciplined way: the two-clause screen (R26-53 exact-persistence + R26-54 not-a-DATA-input-to-verified)
-  flagged it eligible, zero drift was measured before editing, and its frozen rows replay the published summary offline. The attestation frontier of the seven R26-31-wired
+  As of 2026-10-28 the served report library reads `total 56 / stamped 30 / verified 28 / fullyVerified 28 / unattested 28 /
+  stale []` -- see the Production bullet for the deployed revision. R26-55 and R26-56 lifted two more rows (`p71`, the audit
+  positive control, then its subject `p65`, the external-candidate audit) the disciplined way: the two-clause screen (R26-53
+  exact-persistence + R26-54 not-a-DATA-input-to-verified) flagged both eligible, zero drift was measured before editing, and
+  their frozen rows replay the published summary offline. The attestation frontier of the seven R26-31-wired
   generators is closed: five reproduce on fixed committed inputs and are machine-verified (`p56`, `p69`, `p62`, `p67`, `p73`);
   two are network-determined and honestly stay unattested because a faithful re-run does not byte-reproduce (`p35`, `p52`,
   R26-40). R26-41 then hardened the freshness gate itself: a report now reads `verified` only when at least one re-hashed
@@ -810,7 +811,9 @@ authority; they are deliberately not restated here.
   lifted `p71` -- the first generator that passes BOTH (its 14 rows persist the critic BLIND/CORROBORATED verdict as exact enum strings that every
   published figure counts over, and it has ZERO downstream consumers): zero drift was measured before editing, the frozen rows replay the summary
   offline, and `verified` honestly rose 26 -> 27, now live in production (`GET /reports/index.json` reads `verified 27 / fullyVerified 27 /
-  stale []`, independent recheck reproduces 27/27).
+  stale []`, independent recheck reproduces 27/27). R26-56 applied the identical screen and lifted `p65` next (the same
+  enum/boolean row shape -- criticVerdict + passesCurrentGate, ZERO consumers): verified rose 27 -> 28, and p65 plus its
+  positive control p71 are now machine-verified together.
 - Git: round 26 (2026-10-27, increment 1) rotates from the gate to the half of the corpus the gate cannot see. Round-25
   closed with `unattested: 39` and the explanation "their generators mostly need network"; the census in
   `scripts/audit/unattested-census26.mjs` (5 offline / 34 network / 39 accounted for, exits non-zero on an unclassified
@@ -910,7 +913,13 @@ authority; they are deliberately not restated here.
 - Production: wrangler version 4e52cfb2-715e-4cda-b70e-90cc3152ca2d, gitSha 0fc90f80790edd2d7149a1468532d60d9e51623f
   (deployed 2026-10-28 by R26-55 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
   static assets from `web/`; `GET /health` read back returned `deployVersion 4e52cfb2-715e-4cda-b70e-90cc3152ca2d` and
-  `gitSha 0fc90f8`), `codeVersion space-data-rig@0.2.0`. **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
+  `gitSha 0fc90f8`), `codeVersion space-data-rig@0.2.0`. **R26-56 AWAITING DEPLOY:** the p65 external-candidate-audit
+  frozen-fixture lift is committed -- its report, `reports/fixtures/p65-frozen-outcomes.json`, and the regenerated
+  `web/reports/index.json` + `web/reports/p65-external-audit.html` move the library to `stamped 30 / verified 28 /
+  fullyVerified 28 / unattested 28 / stale []` -- but as of this ledger commit the live endpoint still serves the 0fc90f8
+  build (`verified 27`); a redeploy is pending, so this bullet carries the `awaiting deploy` marker the
+  `tests/handoff-freshness.test.ts` tree-equality check requires (the named production revision 0fc90f8 and HEAD differ in
+  exactly the two served `web/` files). **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55 frozen-fixture lifts of p41, p88 and p71 -- each report now re-DERIVES its published figures from
   committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,
   `reports/fixtures/p71-frozen-rows.json`), so each stamp carries a real DATA input and all three are honestly

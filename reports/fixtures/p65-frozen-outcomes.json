@@ -1,0 +1,40 @@
+{
+  "schema": "drill/p65-frozen-outcomes/1",
+  "note": "Frozen snapshot of the per-claim audit outcomes behind reports/p65-external-audit.json: each third-party candidate, run once through the independent audit (novelty, Gaia dilution/blend, geometry, our own blind re-detection) and the deterministic BLIND critic, keeping the critic verdict, the passes-gate boolean, the reason and the diagnostic FAP/blend-score. The published passesCurrentGate array, the accepted / needs-more-data counts and anyAccepted are re-DERIVED offline from these outcomes' enum/boolean fields, so a clean checkout reproduces the report without re-fetching (which would re-measure and could move it -- the p90 drift lesson). The verdicts are exact enum strings, so re-deriving is byte-identical. measuredAt is when the committed live run gathered them; --live re-audits deliberately.",
+  "measuredAt": "2026-10-14T17:25:29Z",
+  "meta": {
+    "nClaims": 2,
+    "mode": "RESEARCH -- reviews third-party candidates; never our discovery; NOT anchored / on-chain / money-path",
+    "measuredGitSha": "73af9c4"
+  },
+  "outcomes": [
+    {
+      "label": "Aakanksha",
+      "tic": 370612437,
+      "corroborated": false,
+      "novel": true,
+      "geometryConsistent": true,
+      "blendTier": "low",
+      "criticVerdict": "rejected",
+      "passesCurrentGate": false,
+      "reason": "False-positive vetting failed: false-alarm probability 1.0 is not significant against the phase-scrambled null.",
+      "fap": 1,
+      "blendScore": 0.017217584641619932,
+      "notes": []
+    },
+    {
+      "label": "Orbit",
+      "tic": 252721481,
+      "corroborated": false,
+      "novel": true,
+      "geometryConsistent": true,
+      "blendTier": "low",
+      "criticVerdict": "rejected",
+      "passesCurrentGate": false,
+      "reason": "False-positive vetting failed: false-alarm probability 0.11 is not significant against the phase-scrambled null.",
+      "fap": 0.11475409836065574,
+      "blendScore": 0.0037473035310090497,
+      "notes": []
+    }
+  ]
+}

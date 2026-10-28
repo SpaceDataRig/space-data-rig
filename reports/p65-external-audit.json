@@ -1,9 +1,22 @@
 {
   "meta": {
+    "generatedAt": "2026-10-28T12:33:13.937Z",
+    "gitSha": "3bc4718ff33b9be6e19c623f804ac4b8ee3210fb",
+    "inputs": [
+      {
+        "path": "scripts/p65-external-candidate-audit.ts",
+        "sha256": "d6fccde6488f24083b3fdf5b352ab4f8bae837dfe517be12f99632e7a25fca05"
+      },
+      {
+        "path": "reports/fixtures/p65-frozen-outcomes.json",
+        "sha256": "ab2d5c9964904d9d58c8f682c61e105ff4fe124292c4380c7ceeae3f63193a69"
+      }
+    ],
     "generatedBy": "scripts/p65-external-candidate-audit.ts",
     "mode": "RESEARCH -- reviews third-party candidates; never our discovery; NOT anchored / on-chain / money-path",
     "nClaims": 2,
-    "data": "real TESS-SPOC + Gaia public channels (token-free)"
+    "measuredAt": "2026-10-14T17:25:29Z",
+    "data": "FROZEN snapshot of the per-claim BLIND-critic audit outcomes, replayed offline -- the live audit as measured, not re-fetched"
   },
   "outcomes": [
     {

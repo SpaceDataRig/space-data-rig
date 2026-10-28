@@ -22,6 +22,7 @@
 // own with --claim-file path.json (a CandidateClaim). Run: npm run p65:external-audit [-- --claim-file path.json]
 
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { buildStamp } from "./report-freshness.ts";
 import { detectTransit } from "../src/detect/pipeline.ts";
 import { calibratedFap } from "../src/detect/significance.ts";
 import { reviewCandidate } from "../src/critic/review.ts";
@@ -106,34 +107,81 @@ async function auditOne(claim: CandidateClaim): Promise<Outcome> {
   };
 }
 
-async function main(): Promise<void> {
-  let claims = DEFAULT_CLAIMS;
-  const cf = (process.argv.find((a) => a.startsWith("--claim-file=")) || "").split("=")[1];
-  if (cf && existsSync(cf)) { try { const parsed = JSON.parse(readFileSync(cf, "utf8")); claims = Array.isArray(parsed) ? parsed : [parsed]; } catch (e) { console.error(`[p65] --claim-file parse failed: ${e instanceof Error ? e.message : e}; using defaults`); } }
+const MODE = "RESEARCH -- reviews third-party candidates; never our discovery; NOT anchored / on-chain / money-path";
 
-  console.log(`P65 EXTERNAL CANDIDATE AUDIT (research mode, NOT on-chain). Reviews ${claims.length} third-party candidate(s) -- NOT our discovery; nothing anchored or gated.`);
-  const outcomes: Outcome[] = [];
-  for (const c of claims) {
-    const o = await auditOne(c);
-    outcomes.push(o);
-    console.log(`\n---- ${o.label} (TIC ${o.tic}) ----`);
-    console.log(`  corroborated by our blind detector: ${o.corroborated ? "YES" : "NO (our sensitivity -- see detectability floor in the report)"}`);
-    console.log(`  novel (not in confirmed/TOI)? ${o.novel} | geometry consistent: ${o.geometryConsistent} | blend/EB tier: ${o.blendTier}${o.blendScore != null ? ` (soft blend-likelihood ${o.blendScore.toFixed(2)})` : ""}`);
-    console.log(`  critic verdict: ${o.criticVerdict}${o.fap != null ? ` (calibrated FAP ${o.fap.toFixed(3)})` : ""}`);
-    console.log(`  PASSES current accepted-only gate? ${o.passesCurrentGate ? "YES" : "NO"} -> ${o.reason}`);
-    if (o.notes.length) console.log(`  notes: ${o.notes.join("; ")}`);
+/** The PURE aggregate: every published figure is a deterministic map over each outcome's enum/boolean critic
+ *  fields. The same code path runs whether the outcomes came from a live audit or the frozen fixture, so the
+ *  report is re-DERIVED, not copied (the p41/p88/p71 discipline). */
+function derive(outcomes: Outcome[]) {
+  const passesCurrentGate = outcomes.map((o) => ({ label: o.label, passes: o.passesCurrentGate, verdict: o.criticVerdict }));
+  const anyAccepted = outcomes.some((o) => o.passesCurrentGate);
+  return { passesCurrentGate, anyAccepted };
+}
+
+async function main(): Promise<void> {
+  // FROZEN DATA SOURCE -- the p41/p75/p88/p71 precedent, applied here. p65 audits third-party claims against LIVE
+  // SPOC photometry + Gaia + the archive; a plain re-run re-fetches and can flip a verdict / move a count (the p90
+  // drift lesson). The per-claim critic outcomes are therefore frozen into reports/fixtures/p65-frozen-outcomes.json
+  // (a committed snapshot, dated at measurement) and the DEFAULT re-DERIVES every figure OFFLINE from those outcomes.
+  // `--live` (or `--from-json=`) is the deliberate re-audit.
+  const FROZEN = "reports/fixtures/p65-frozen-outcomes.json";
+  const live = process.argv.includes("--live");
+  const fromArg = (process.argv.find((a) => a.startsWith("--from-json=")) || "").split("=")[1];
+  const REPLAY = live ? "" : (fromArg !== undefined ? fromArg : FROZEN);
+
+  let outcomes: Outcome[];
+  let measuredAt: string;
+  let nClaims: number;
+
+  if (REPLAY && existsSync(REPLAY)) {
+    const j = JSON.parse(readFileSync(REPLAY, "utf8")) as { outcomes: Outcome[]; measuredAt?: string; meta?: { nClaims?: number } };
+    outcomes = j.outcomes;
+    measuredAt = j.measuredAt ?? "unknown";
+    nClaims = j.meta?.nClaims ?? outcomes.length;
+    console.log(`P65 EXTERNAL CANDIDATE AUDIT -- OFFLINE REPLAY from ${REPLAY}: ${outcomes.length} stored claim outcome(s), original measurement ${measuredAt}. No network, no re-audit. NOT our discovery; nothing anchored.`);
+  } else {
+    let claims = DEFAULT_CLAIMS;
+    const cf = (process.argv.find((a) => a.startsWith("--claim-file=")) || "").split("=")[1];
+    if (cf && existsSync(cf)) { try { const parsed = JSON.parse(readFileSync(cf, "utf8")); claims = Array.isArray(parsed) ? parsed : [parsed]; } catch (e) { console.error(`[p65] --claim-file parse failed: ${e instanceof Error ? e.message : e}; using defaults`); } }
+    console.log(`P65 EXTERNAL CANDIDATE AUDIT (research mode, NOT on-chain). Reviews ${claims.length} third-party candidate(s) -- NOT our discovery; nothing anchored or gated.`);
+    const live0: Outcome[] = [];
+    for (const c of claims) {
+      const o = await auditOne(c);
+      live0.push(o);
+      console.log(`\n---- ${o.label} (TIC ${o.tic}) ----`);
+      console.log(`  corroborated by our blind detector: ${o.corroborated ? "YES" : "NO (our sensitivity -- see detectability floor in the report)"}`);
+      console.log(`  novel (not in confirmed/TOI)? ${o.novel} | geometry consistent: ${o.geometryConsistent} | blend/EB tier: ${o.blendTier}${o.blendScore != null ? ` (soft blend-likelihood ${o.blendScore.toFixed(2)})` : ""}`);
+      console.log(`  critic verdict: ${o.criticVerdict}${o.fap != null ? ` (calibrated FAP ${o.fap.toFixed(3)})` : ""}`);
+      console.log(`  PASSES current accepted-only gate? ${o.passesCurrentGate ? "YES" : "NO"} -> ${o.reason}`);
+      if (o.notes.length) console.log(`  notes: ${o.notes.join("; ")}`);
+    }
+    outcomes = live0;
+    measuredAt = new Date().toISOString();
+    nClaims = claims.length;
   }
 
-  const anyAccepted = outcomes.some((o) => o.passesCurrentGate);
+  const d = derive(outcomes);
   console.log(`\n=== P65 SUMMARY ===`);
   console.log(`  ${outcomes.filter((o) => o.passesCurrentGate).length}/${outcomes.length} external claims pass the accepted-only gate; ${outcomes.filter((o) => o.criticVerdict === "needs-more-data").length} cap at needs-more-data (the honest ceiling for an unconfirmed / external signal).`);
-  console.log(`VERDICT: ${anyAccepted ? "SOME-PASS (a claim met the strict blind acceptance on evidence -- still NOT auto-anchored here; that is a separate money-path decision this research entry never takes)" : "NONE-PASS (no external claim cleared the accepted-only blind gate here; correct and expected -- an outside candidate is flagged for follow-up, never auto-claimed or staked)"}; discoveryClaim false, nothing anchored.`);
+  console.log(`VERDICT: ${d.anyAccepted ? "SOME-PASS (a claim met the strict blind acceptance on evidence -- still NOT auto-anchored here; that is a separate money-path decision this research entry never takes)" : "NONE-PASS (no external claim cleared the accepted-only blind gate here; correct and expected -- an outside candidate is flagged for follow-up, never auto-claimed or staked)"}; discoveryClaim false, nothing anchored.`);
 
   mkdirSync("reports", { recursive: true });
   const json = {
-    meta: { generatedBy: "scripts/p65-external-candidate-audit.ts", mode: "RESEARCH -- reviews third-party candidates; never our discovery; NOT anchored / on-chain / money-path", nClaims: claims.length, data: "real TESS-SPOC + Gaia public channels (token-free)" },
+    meta: {
+      // Replay stamps the SCRIPT + the FROZEN outcomes (both tracked -> a clean checkout re-hashes them -> verified), NOT
+      // the audit/critic/Gaia/SPOC modules, so an upstream data or detector update cannot mark this cited report stale
+      // and force a drift-inducing re-audit; `--live` stamps the modules because there they really produced the outcome.
+      ...buildStamp(REPLAY
+        ? ["scripts/p65-external-candidate-audit.ts", FROZEN]
+        : ["src/review/externalReview.ts", "src/critic/review.ts", "src/candidate/softScore.ts", "src/data/gaiaDilution.ts", "src/data/mastS3.ts", "src/data/exoplanetArchive.ts", "src/data/toiArchive.ts", "src/detect/pipeline.ts", "src/detect/significance.ts", "scripts/p65-external-candidate-audit.ts"]),
+      generatedBy: "scripts/p65-external-candidate-audit.ts", mode: MODE, nClaims,
+      measuredAt,
+      data: REPLAY
+        ? "FROZEN snapshot of the per-claim BLIND-critic audit outcomes, replayed offline -- the live audit as measured, not re-fetched"
+        : "real TESS-SPOC + Gaia public channels (token-free), re-audited live",
+    },
     outcomes,
-    passesCurrentGate: outcomes.map((o) => ({ label: o.label, passes: o.passesCurrentGate, verdict: o.criticVerdict })),
+    passesCurrentGate: d.passesCurrentGate,
     discoveryClaim: false,
     anchored: false,
     safeToGate: false,
@@ -144,6 +192,10 @@ async function main(): Promise<void> {
     "# P65 external-candidate audit: submit a third-party claim, run the full critic + gates, report pass/fail",
     "",
     "Reproduce: `npm run p65:external-audit` (or `-- --claim-file yourClaim.json` with a CandidateClaim).",
+    "",
+    REPLAY
+      ? `OFFLINE REPLAY: figures re-DERIVED from \`reports/fixtures/p65-frozen-outcomes.json\` (a committed snapshot of the live audit outcomes, taken ${measuredAt}); \`--live\` re-audits.`
+      : `LIVE re-audit: third-party claims run through the independent audit + blind critic at run time (${measuredAt}).`,
     "",
     "This is the community / external audit ENTRY (research mode, NOT on-chain): it runs the independent audit",
     "(novelty, Gaia dilution/blend, geometry, our OWN blind re-detection + power rank, a detectability floor) AND",

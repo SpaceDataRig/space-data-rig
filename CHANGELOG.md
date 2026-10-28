@@ -546,6 +546,15 @@ problem. Round-26 starts by measuring the difference instead of repeating the cl
   `verified` past 24 needs the fetched-bytes provenance design, and the network sources are additionally unreachable from this
   environment right now. Recording the boundary so the next reader does not redo the sweep; the gate R26-41 hardened is what keeps
   this honest (no code-only stamp can quietly re-inflate the number). No code/artifact/index changed, so no redeploy.
+- **R26-44, the R26-41 code-vs-data lesson transplanted to `web/research.json`: clean, and pinned a stronger way (negative).**
+  `research.json` is the other asset the feed links as "Numbers + data" (its `compute.exponentP` renders as a dashboard card),
+  and it carries only a `generatedAt` -- no `inputs`/sha256 stamp -- so the natural worry was the same hollow-verified shape.
+  It is not. The `tests/research-bundle-currency.test.ts` gate does not trust a stamp at all: it re-runs `p38` from the
+  committed reports RIGHT NOW and asserts the shipped bundle is byte-equal to the fresh build (ignoring only `generatedAt`),
+  so it pins the DATA (`reports/p33/p34/p35/p39/p50`) by reconstruction -- strictly stronger than a checksum that re-hashes code.
+  Its positive control is content-anchored (locates the pre-refresh exponent `2.936...` in git history, not a log position) and
+  fails the gate on the rendered `compute.exponentP` path specifically. So no gap to fix here; recorded so the next reader does
+  not re-audit it. No code/artifact/index change, no redeploy.
 
 Tests: new `tests/generator-stamped-reports.test.ts` (4 cases) pins the fix from three angles at once -- the generator
 source must call `buildStamp`, the artifact must record a non-null checksum for every input and every input must be

@@ -753,7 +753,7 @@ the Actions web page when the anonymous API is rate-limited.
   platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
   CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
-## 13. Current state (as of 2026-10-28)
+## 13. Current state (as of 2026-10-29)
 
 SNAPSHOT, NOT HISTORY. The leading bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -763,7 +763,13 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-28 the served report library reads `total 56 / stamped 35 / verified 33 / fullyVerified 33 / unattested 21 /
+  As of 2026-10-29 the served report library reads `total 59 / stamped 38 / verified 36 / fullyVerified 36 / unattested 21 /
+  stale []` -- three new operator-directed research axes lifted verified 33 -> 36, each a committed-fixture replay that
+  re-derives its figures offline with zero drift (independently rechecked): `p97` blend-dilution correction (axis 1, the
+  aperture-side depth recovery), `p98` red-noise/window/drift systematics (axis 2, the AR(1)-MODEL null cuts FAR ~30% ->
+  ~0% and lifts precision ~77% -> ~100%), and `p99` prospective held-out blind validation (axis 3, tuned-on-train / zero-
+  re-tune-on-held-out; the DIVERGENT verdict is the honest finding that the retrospectively-tuned operating point is
+  optimistic). The prior state as of 2026-10-28 read `total 56 / stamped 35 / verified 33 / fullyVerified 33 / unattested 21 /
   stale []` -- see the Production bullet for the deployed revision. R26-55 through R26-61 lifted seven more rows
   (`p71` the audit positive control, its subject `p65` the external-candidate audit, `p45` the false-positive-probability
   characterisation, `p46` the multi-year coherence study, `p51` the crowding-stratified veto re-validation, `p81` the TRICERATOPS-grade
@@ -939,9 +945,12 @@ authority; they are deliberately not restated here.
 - Production: wrangler version c2688d07-dfbc-4197-bd24-3705806977d1, gitSha af37bf1d73e1d0fa02b85930d37d512ab3eb1902
   (deployed 2026-10-28 by R26-61 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
   static assets from `web/`; `GET /health` read back returned `deployVersion c2688d07-dfbc-4197-bd24-3705806977d1` and
-  `gitSha af37bf1`), `codeVersion space-data-rig@0.2.0`. HEAD (this section's ledger commit, made after the deploy)
-  differs from the deployed revision af37bf1 only in `HANDOFF.md` -- no `src/` and no `web/` path -- so the served
-  `src/` and `web/` trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces.
+  `gitSha af37bf1`), `codeVersion space-data-rig@0.2.0`. **AWAITING DEPLOY:** HEAD now also carries the three new
+  research-axis reports (p97/p98/p99) and the p86-rebuilt `web/reports/` fragments, so HEAD's `web/` tree DIFFERS from
+  the deployed revision af37bf1 (`git diff af37bf1..HEAD -- web` is non-empty; `src/` is unchanged -- the three axes touch
+  scripts/reports/web-static/docs only, no worker code). The served `web/reports/` therefore does not yet include the
+  three new pages until the next `npm run cf:deploy:sha`; the marker "awaiting deploy" is exactly what
+  `tests/handoff-freshness.test.ts` requires while that gap is open, and it is removed once the redeploy lands.
   **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60/R26-61 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51, p81 and p70 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,

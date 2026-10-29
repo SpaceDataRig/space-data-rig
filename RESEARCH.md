@@ -1226,5 +1226,65 @@ Reproduce: `npm run p96:occurrence-kernel -- --nstars 12 --refEta 1.10 --refSigm
 
 ---
 
+## 36. Modeling blend dilution in the aperture, not just flagging it (P97)
+
+Every earlier blend treatment (P53 difference imaging, P85 the crowded regime) either localized a contaminant or
+reported dilution as a ceiling. P97 goes one step and CORRECTS for it on real TESS-SPOC curves. The method is a
+controlled-dilution recovery sweep: on a real host curve inject a transit of KNOWN depth, dim it by a Gaia
+brightness-weighted dilution factor `D = F_host / (F_host + F_neighbours)` (src/data/gaiaDilution.ts), measure the
+depth with BLS, then divide by D. A synthetic algebraic positive control (host G-mag 10, companions 1-4 mag
+brighter) verifies the correction recovers the input depth to floating-point exactness, and a real Gaia neighbour
+census anchors the sweep to actual photometry. VERDICT CORRECTION-REMOVES-DILUTION-BIAS: across the imposed-D grid
+the corrected depths flatten (spread ~98 ppm) while the uncorrected ones track dilution (spread ~908 ppm) -- about
+305 ppm of systematic depth bias is removed. A suspect guard (D<0.5) honestly quarantines the 45"-aperture regime
+(KELT-20-class ultra-faint-dilution blends) where the correction is not trustworthy. This is a calibration on
+injected planets over real noise, not a re-measurement of published depths; `discoveryClaim`/`safeToGate` false.
+
+Reproduce: `npm run p97:blend-dilution` (REPLAYs the committed frozen fixture reports/fixtures/p97-frozen-rows.json).
+
+---
+
+## 37. Breaking the precision wall by modeling systematics (P98)
+
+The accepted-call precision plateau (~42%, README/P82) is a false-positive problem, and p23/p31 traced the survivors
+to coherent (red) noise. P98 measures how much a proper systematics MODEL -- not a resampling -- can pay back, on one
+deterministic protocol anchored to the committed real SPOC corpus. (1) **Red noise.** Matched AR(1) pools across a
+rho grid spanning the real per-star rho distribution; the model-free moving-block surrogate (src/detect/fap.ts) fires
+a median ~30% false-alarm rate on rho>=0.3 pools while the AR(1)-MODEL null (calibratedFap, src/detect/significance.ts
+-- already the production significance gate) holds ~0% near the nominal 5%, lifting per-candidate precision ~77% ->
+~100% at matched recall. This is the same physics p20 flagged, now quantified as a FAR/precision ROC shift. (2)
+**Controlled-injection reality check.** A known 2000 ppm planet injected into each REAL curve is false-rejected 0/12
+times by the model -- FAR reduction WITHOUT sacrificing recall, the precondition for trusting the model as a gate; the
+block surrogate is the unreliable one (it under-calls the true planet on strongly red AU Mic). (3) **Window and
+drift arms, with honest ceilings.** The daily spectral window is largely closed (echoing P43), so aliasing is not the
+binding wall; O-C coherence times the injected planet well on single-sector curves (0.9-0.97) but not on long stitched
+baselines (~0.02), the P12/P29 finding that a fixed ephemeris drifts out of phase. VERDICT RED-NOISE-MODELING-CUTS-FAR.
+A model calibration, not a new gate. `discoveryClaim`/`safeToGate` false.
+
+Reproduce: `npm run p98:rednoise-window`.
+
+---
+
+## 38. Retrospective calibration -> prospective held-out blind validation (P99)
+
+Until now the operating point (depth floor + multi-sector corroboration bar) was chosen while looking at the whole
+sample, so the published precision is optimistically biased by its own tuning. P99 turns the same committed
+sealed-truth pool (tests/fixtures/scaled/blind.jsonl: real SPOC hosts with hidden injected planets and nulls, the key
+the detector never reads) into a PROSPECTIVE test. A deterministic FNV-1a hash of each TIC splits the 425-curve pool
+into train (~74%) and held-out (26%, meeting the >=20% bar); the operating point is swept and frozen on TRAIN ONLY,
+then applied to the held-out set with ZERO re-tuning. Held-out recall 91.7% (deviation 6.8 pp vs train) and precision
+24.3% (deviation -2.2 pp), but 26 false-accepts blow a 5% safety bar -> VERDICT PROSPECTIVE-HELDOUT-DIVERGENT: the
+retrospectively-tuned point does NOT meet the safety criterion when applied blind, which is exactly the optimism a
+single-sample report cannot see. Survivors (accepted + needs-more-data, 66) are corroborated through two INDEPENDENT
+committed channels -- ExoFOP literature cross-match (external.jsonl) and Gaia-neighbour centroid clearance
+(centroid.jsonl) -- for 11/66 = 17%. This is a validation-METHODOLOGY measurement (the answer key is a sealed-truth
+fixture, not a live unconfirmed candidate list), so it calibrates tuning-vs-generalization bias and corroboration
+yield rather than discovering anything; `discoveryClaim`/`safeToGate` false.
+
+Reproduce: `npm run p99:heldout-blind`.
+
+---
+
+
 *Data: NASA TESS Archive / MAST (public; TESS-SPOC products, CC BY 4.0, Caldwell et al. 2020). Software: MIT.
 This report summarizes measurements, not detections.*

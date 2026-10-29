@@ -5,6 +5,39 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Three research axes: blend dilution, red-noise systematics, prospective held-out blind validation (2026-10-29)
+Three operator-directed research axes, each shipped as a reproducible report (script + reports/*.json +
+reports/*.md) that passes the audit-fix-audit loop (freshness-recheck + report-freshness gate, verified count
+never inflated by drift). All three are MODEL CALIBRATIONS and METHODOLOGY measurements on committed,
+byte-exact, freshness-verified fixtures -- none is a new production gate, and every artifact keeps
+discoveryClaim:false and safeToGate:false. Verified corpus grew 33 -> 36.
+- **Axis 1 / P97 (`scripts/p97-blend-dilution-correction.ts`).** Photometric blend-dilution correction on real
+  TESS-SPOC curves. A controlled-dilution recovery sweep (inject a known transit depth, dilute it by a Gaia
+  brightness-weighted factor D, measure with BLS, divide by D) plus a synthetic algebraic positive control and
+  a real Gaia neighbour census. VERDICT CORRECTION-REMOVES-DILUTION-BIAS: correcting flattens the depth bias
+  across the imposed-D grid (spread ~98 ppm) while leaving it uncorrected tracks dilution (~908 ppm); an
+  exact-algebra control confirms the correction itself is unbiased. A suspect guard (D<0.5) flags the
+  45"-aperture blend regime the earlier named-observation class could not resolve.
+- **Axis 2 / P98 (`scripts/p98-rednoise-window-systematics.ts`).** Breaking the precision wall by modeling
+  systematics rather than resampling them. On matched AR(1) pools across a rho grid spanning the real SPOC rho
+  distribution, the model-free block surrogate fires (rho>=0.3 median) ~30% false alarms while the AR(1)-MODEL
+  null (calibratedFap, the existing production significance gate) holds ~0%, lifting per-candidate precision
+  ~77% -> ~100% at matched recall -- consistent with p20. A controlled-injection arm on the real curves shows
+  the model false-rejects 0/12 unambiguous planets (FAR reduction without sacrificing recall), plus window-alias
+  (daily window largely closed, echoing p43) and O-C-coherence arms reported with their honest ceilings.
+- **Axis 3 / P99 (`scripts/p99-prospective-heldout-blind.ts`).** Upgrades the rig's retrospective operating
+  point to a PROSPECTIVE blind split on the committed sealed-truth pool (tests/fixtures/scaled/blind.jsonl,
+  injected planets hidden from the detector). Deterministic TIC-hash split -> train (~74%) / held-out (26%, >=20%
+  required); the operating point (depth floor + multi-sector corroboration bar) is tuned on TRAIN ONLY, then
+  applied to the held-out set with ZERO re-tuning. Held-out recall 91.7% (dev 6.8pp vs train), precision 24.3%
+  (dev -2.2pp), and 26 false-accepts blow the 5% safety bar -> VERDICT PROSPECTIVE-HELDOUT-DIVERGENT: the
+  retrospectively-tuned point is optimistic, exactly the bias a single-sample report cannot see. Survivors are
+  independently corroborated via two committed channels (ExoFOP literature cross-match + Gaia-neighbour centroid
+  clearance), 11/66 = 17%.
+- Audit loop caught one real provenance bug (P99 emitted Windows-backslash input paths, which `git ls-files`
+  does not match -> false "untracked" -> verified=false); fixed to forward-slash. Post-fix: p86 36 verified / 0
+  stale, independent freshness-recheck 36/36 findings=0, full suite 1035/0.
+
 ### Operator-directed change: X-post cadence halved to cut posting cost (2026-10-27)
 The public digest fired twice an hour (a Cloudflare `*/15` research tick dispatching x-post at `:00`/`:30`, with a
 GitHub `*/30` schedule as backup). On operator request ("cost still too high, halve the frequency") the posting cadence

@@ -1,0 +1,1039 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p99-prospective-heldout-blind.ts (offline deterministic prospective split; sealed truth never read for tuning)",
+    "data": "committed byte-exact sealed-truth blind pool + external literature cross-match + Gaia-centroid neighbour clearance",
+    "module": "src/sim/blindTest.ts scoreBlindTest + src/sim/completenessGrid.ts wilsonInterval",
+    "params": {
+      "holdoutPct": 25,
+      "depthGrid": [
+        0,
+        300,
+        500,
+        800,
+        1200
+      ],
+      "corrGrid": [
+        2,
+        3
+      ],
+      "periodTol": 0.02,
+      "tunedDepth": 1200,
+      "tunedMinCorr": 2
+    },
+    "split": {
+      "pool": 425,
+      "train": 315,
+      "trainInjected": 145,
+      "held": 110,
+      "heldInjected": 36,
+      "heldFracPct": 25.88
+    },
+    "generatedAt": "2026-10-29T04:18:49.270Z",
+    "gitSha": "b1ba9632dbc1f0ebcf80d962c8f1d6cd55903643",
+    "inputs": [
+      {
+        "path": "scripts/p99-prospective-heldout-blind.ts",
+        "sha256": "8d9becfe1528a603bf4aa2c57fffa180973eff6c226890606dc79a67b39b3d1c"
+      },
+      {
+        "path": "tests/fixtures/scaled/blind.jsonl",
+        "sha256": "5b78bce29aa6088e8fb0c230836ab784c3c09d06869c77bee6c3727a6b4f9cd5"
+      },
+      {
+        "path": "tests/fixtures/scaled/external.jsonl",
+        "sha256": "7c0ad817ad9d0efba40d00fc71fc709e802497187cdddb2ba3b4ecb120c7d8be"
+      },
+      {
+        "path": "tests/fixtures/scaled/centroid.jsonl",
+        "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
+      }
+    ]
+  },
+  "tuningGridTrain": [
+    {
+      "depth": 0,
+      "minCorr": 2,
+      "accepted": 246,
+      "acceptedTp": 107,
+      "falseAccepts": 139,
+      "needsMoreData": 551,
+      "acceptedPrecision": 0.4349593495934959,
+      "acceptedRecall": 0.7379310344827587,
+      "f1": 0.5473145780051151,
+      "recall": 0.8482758620689655,
+      "precision": 0.15432873274780426
+    },
+    {
+      "depth": 0,
+      "minCorr": 3,
+      "accepted": 106,
+      "acceptedTp": 65,
+      "falseAccepts": 41,
+      "needsMoreData": 691,
+      "acceptedPrecision": 0.6132075471698113,
+      "acceptedRecall": 0.4482758620689655,
+      "f1": 0.5179282868525897,
+      "recall": 0.8482758620689655,
+      "precision": 0.15432873274780426
+    },
+    {
+      "depth": 300,
+      "minCorr": 2,
+      "accepted": 234,
+      "acceptedTp": 107,
+      "falseAccepts": 127,
+      "needsMoreData": 480,
+      "acceptedPrecision": 0.45726495726495725,
+      "acceptedRecall": 0.7379310344827587,
+      "f1": 0.5646437994722955,
+      "recall": 0.8482758620689655,
+      "precision": 0.1722689075630252
+    },
+    {
+      "depth": 300,
+      "minCorr": 3,
+      "accepted": 104,
+      "acceptedTp": 65,
+      "falseAccepts": 39,
+      "needsMoreData": 610,
+      "acceptedPrecision": 0.625,
+      "acceptedRecall": 0.4482758620689655,
+      "f1": 0.5220883534136546,
+      "recall": 0.8482758620689655,
+      "precision": 0.1722689075630252
+    },
+    {
+      "depth": 500,
+      "minCorr": 2,
+      "accepted": 212,
+      "acceptedTp": 107,
+      "falseAccepts": 105,
+      "needsMoreData": 381,
+      "acceptedPrecision": 0.5047169811320755,
+      "acceptedRecall": 0.7379310344827587,
+      "f1": 0.5994397759103641,
+      "recall": 0.8482758620689655,
+      "precision": 0.20741989881956155
+    },
+    {
+      "depth": 500,
+      "minCorr": 3,
+      "accepted": 97,
+      "acceptedTp": 65,
+      "falseAccepts": 32,
+      "needsMoreData": 496,
+      "acceptedPrecision": 0.6701030927835051,
+      "acceptedRecall": 0.4482758620689655,
+      "f1": 0.5371900826446281,
+      "recall": 0.8482758620689655,
+      "precision": 0.20741989881956155
+    },
+    {
+      "depth": 800,
+      "minCorr": 2,
+      "accepted": 203,
+      "acceptedTp": 107,
+      "falseAccepts": 96,
+      "needsMoreData": 319,
+      "acceptedPrecision": 0.5270935960591133,
+      "acceptedRecall": 0.7379310344827587,
+      "f1": 0.6149425287356323,
+      "recall": 0.8482758620689655,
+      "precision": 0.23563218390804597
+    },
+    {
+      "depth": 800,
+      "minCorr": 3,
+      "accepted": 94,
+      "acceptedTp": 65,
+      "falseAccepts": 29,
+      "needsMoreData": 428,
+      "acceptedPrecision": 0.6914893617021277,
+      "acceptedRecall": 0.4482758620689655,
+      "f1": 0.5439330543933054,
+      "recall": 0.8482758620689655,
+      "precision": 0.23563218390804597
+    },
+    {
+      "depth": 1200,
+      "minCorr": 2,
+      "accepted": 194,
+      "acceptedTp": 107,
+      "falseAccepts": 87,
+      "needsMoreData": 270,
+      "acceptedPrecision": 0.5515463917525774,
+      "acceptedRecall": 0.7379310344827587,
+      "f1": 0.6312684365781711,
+      "recall": 0.8482758620689655,
+      "precision": 0.2650862068965517
+    },
+    {
+      "depth": 1200,
+      "minCorr": 3,
+      "accepted": 92,
+      "acceptedTp": 65,
+      "falseAccepts": 27,
+      "needsMoreData": 372,
+      "acceptedPrecision": 0.7065217391304348,
+      "acceptedRecall": 0.4482758620689655,
+      "f1": 0.5485232067510548,
+      "recall": 0.8482758620689655,
+      "precision": 0.2650862068965517
+    }
+  ],
+  "trainBest": {
+    "depth": 1200,
+    "minCorr": 2,
+    "accepted": 194,
+    "acceptedTp": 107,
+    "falseAccepts": 87,
+    "needsMoreData": 270,
+    "acceptedPrecision": 0.5515463917525774,
+    "acceptedRecall": 0.7379310344827587,
+    "f1": 0.6312684365781711,
+    "recall": 0.8482758620689655,
+    "precision": 0.2650862068965517
+  },
+  "heldOut": {
+    "depth": 1200,
+    "minCorr": 2,
+    "accepted": 58,
+    "acceptedTp": 32,
+    "falseAccepts": 26,
+    "needsMoreData": 78,
+    "acceptedPrecision": 0.5517241379310345,
+    "acceptedRecall": 0.8888888888888888,
+    "f1": 0.6808510638297872,
+    "recall": 0.9166666666666666,
+    "precision": 0.2426470588235294,
+    "verdictDistribution": {
+      "accepted": 47,
+      "needs-more-data": 19,
+      "rejected": 44
+    },
+    "recallCI": [
+      0.7817298972308114,
+      0.9712519107287082
+    ],
+    "precisionCI": [
+      0.17831424909262025,
+      0.32111939583135085
+    ],
+    "survivorCount": 66,
+    "survivorTruePositiveRate": 0.5454545454545454,
+    "corroboration": {
+      "literatureMatch": 10,
+      "literatureValidated": 10,
+      "gaiaClearedPlanet": 8,
+      "anyChannel": 11,
+      "rate": 0.16666666666666666,
+      "survivors": [
+        {
+          "tic": 297967252,
+          "truth": {
+            "id": "297967252",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 141186075,
+          "truth": {
+            "id": "141186075",
+            "injected": true,
+            "periodDays": 2.626007358543575,
+            "depthPpm": 3783.9949503540993
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 162631539,
+          "truth": {
+            "id": "162631539",
+            "injected": true,
+            "periodDays": 7.5600017425604165,
+            "depthPpm": 2419.0342789515853
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 447088034,
+          "truth": {
+            "id": "447088034",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 279741379,
+          "truth": {
+            "id": "279741379",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 91481801,
+          "truth": {
+            "id": "91481801",
+            "injected": true,
+            "periodDays": 4.704850017558783,
+            "depthPpm": 3669.9587255716324
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 436873727,
+          "truth": {
+            "id": "436873727",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 441462736,
+          "truth": {
+            "id": "441462736",
+            "injected": true,
+            "periodDays": 3.647415422834456,
+            "depthPpm": 2436.331668868661
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 130415266,
+          "truth": {
+            "id": "130415266",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 69679391,
+          "truth": {
+            "id": "69679391",
+            "injected": true,
+            "periodDays": 5.79914924222976,
+            "depthPpm": 5124.422073364258
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 96246348,
+          "truth": {
+            "id": "96246348",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 75878355,
+          "truth": {
+            "id": "75878355",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 293617835,
+          "truth": {
+            "id": "293617835",
+            "injected": true,
+            "periodDays": 4.966958379838616,
+            "depthPpm": 5050.6138587370515
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 166053959,
+          "truth": {
+            "id": "166053959",
+            "injected": true,
+            "periodDays": 5.544210121501237,
+            "depthPpm": 2069.0709007903934
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 158241252,
+          "truth": {
+            "id": "158241252",
+            "injected": true,
+            "periodDays": 3.3543537384830415,
+            "depthPpm": 4233.849517069757
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 304142124,
+          "truth": {
+            "id": "304142124",
+            "injected": true,
+            "periodDays": 3.6160349687561393,
+            "depthPpm": 2098.473164252937
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 453211454,
+          "truth": {
+            "id": "453211454",
+            "injected": true,
+            "periodDays": 4.5269616255536675,
+            "depthPpm": 5508.683693595231
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 391949880,
+          "truth": {
+            "id": "391949880",
+            "injected": true,
+            "periodDays": 6.393514161929488,
+            "depthPpm": 4812.264456413686
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 371443216,
+          "truth": {
+            "id": "371443216",
+            "injected": true,
+            "periodDays": 2.416747704613954,
+            "depthPpm": 4780.247733928263
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 367366318,
+          "truth": {
+            "id": "367366318",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 30828562,
+          "truth": {
+            "id": "30828562",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 259701242,
+          "truth": {
+            "id": "259701242",
+            "injected": true,
+            "periodDays": 2.266533857677132,
+            "depthPpm": 5209.398193284869
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 350023518,
+          "truth": {
+            "id": "350023518",
+            "injected": true,
+            "periodDays": 7.959044524934143,
+            "depthPpm": 2749.699524603784
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 219857012,
+          "truth": {
+            "id": "219857012",
+            "injected": true,
+            "periodDays": 3.261604540515691,
+            "depthPpm": 3942.4934992566705
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 39903405,
+          "truth": {
+            "id": "39903405",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 183979262,
+          "truth": {
+            "id": "183979262",
+            "injected": true,
+            "periodDays": 5.479567998554558,
+            "depthPpm": 4968.6316549777985
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 23113034,
+          "truth": {
+            "id": "23113034",
+            "injected": true,
+            "periodDays": 2.629612300544977,
+            "depthPpm": 2765.6405437737703
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 408618999,
+          "truth": {
+            "id": "408618999",
+            "injected": true,
+            "periodDays": 7.57253560051322,
+            "depthPpm": 4801.98884382844
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 307958020,
+          "truth": {
+            "id": "307958020",
+            "injected": true,
+            "periodDays": 6.330965074244887,
+            "depthPpm": 2992.544500157237
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 372913430,
+          "truth": {
+            "id": "372913430",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 219345200,
+          "truth": {
+            "id": "219345200",
+            "injected": true,
+            "periodDays": 2.1577621335163713,
+            "depthPpm": 5291.577505879104
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 288391628,
+          "truth": {
+            "id": "288391628",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 59490344,
+          "truth": {
+            "id": "59490344",
+            "injected": true,
+            "periodDays": 3.694153725169599,
+            "depthPpm": 2474.121426232159
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 138819293,
+          "truth": {
+            "id": "138819293",
+            "injected": true,
+            "periodDays": 5.812502044253051,
+            "depthPpm": 4675.88878236711
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": false,
+          "corroborated": true
+        },
+        {
+          "tic": 232540264,
+          "truth": {
+            "id": "232540264",
+            "injected": true,
+            "periodDays": 6.761323971208185,
+            "depthPpm": 4819.817304611206
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 309402106,
+          "truth": {
+            "id": "309402106",
+            "injected": true,
+            "periodDays": 6.96478964574635,
+            "depthPpm": 5499.62911196053
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 28230919,
+          "truth": {
+            "id": "28230919",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 160077104,
+          "truth": {
+            "id": "160077104",
+            "injected": true,
+            "periodDays": 4.941031724214554,
+            "depthPpm": 2400.8839474990964
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 83092282,
+          "truth": {
+            "id": "83092282",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": false,
+          "corroborated": true
+        },
+        {
+          "tic": 66445643,
+          "truth": {
+            "id": "66445643",
+            "injected": true,
+            "periodDays": 2.6586900795809925,
+            "depthPpm": 2462.61590346694
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 284450803,
+          "truth": {
+            "id": "284450803",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 372264750,
+          "truth": {
+            "id": "372264750",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": false,
+          "corroborated": true
+        },
+        {
+          "tic": 298647682,
+          "truth": {
+            "id": "298647682",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 198356533,
+          "truth": {
+            "id": "198356533",
+            "injected": true,
+            "periodDays": 5.41032007150352,
+            "depthPpm": 4716.03802125901
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 437856897,
+          "truth": {
+            "id": "437856897",
+            "injected": true,
+            "periodDays": 7.673251325264573,
+            "depthPpm": 2739.5065259188414
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 9216075,
+          "truth": {
+            "id": "9216075",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 360630575,
+          "truth": {
+            "id": "360630575",
+            "injected": true,
+            "periodDays": 6.71358898235485,
+            "depthPpm": 5515.827123075724
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 383390264,
+          "truth": {
+            "id": "383390264",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 39858507,
+          "truth": {
+            "id": "39858507",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 32498058,
+          "truth": {
+            "id": "32498058",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 248769312,
+          "truth": {
+            "id": "248769312",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 445805961,
+          "truth": {
+            "id": "445805961",
+            "injected": true,
+            "periodDays": 4.489762567449361,
+            "depthPpm": 2052.4631747975945
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 142276270,
+          "truth": {
+            "id": "142276270",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 117979455,
+          "truth": {
+            "id": "117979455",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 357501308,
+          "truth": {
+            "id": "357501308",
+            "injected": true,
+            "periodDays": 2.0744697325862944,
+            "depthPpm": 5879.468760453165
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 393818343,
+          "truth": {
+            "id": "393818343",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 50120414,
+          "truth": {
+            "id": "50120414",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 417931607,
+          "truth": {
+            "id": "417931607",
+            "injected": true,
+            "periodDays": 3.0064630806446075,
+            "depthPpm": 4473.558935336769
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 29848696,
+          "truth": {
+            "id": "29848696",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 6893917,
+          "truth": {
+            "id": "6893917",
+            "injected": true,
+            "periodDays": 5.033177070319653,
+            "depthPpm": 2339.785613119602
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 252479260,
+          "truth": {
+            "id": "252479260",
+            "injected": false
+          },
+          "literatureMatch": true,
+          "literatureValidated": true,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 292202337,
+          "truth": {
+            "id": "292202337",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": true,
+          "corroborated": true
+        },
+        {
+          "tic": 63898957,
+          "truth": {
+            "id": "63898957",
+            "injected": true,
+            "periodDays": 3.0775139927864075,
+            "depthPpm": 4403.014891780913
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 11521555,
+          "truth": {
+            "id": "11521555",
+            "injected": false
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 116483514,
+          "truth": {
+            "id": "116483514",
+            "injected": true,
+            "periodDays": 3.831241606734693,
+            "depthPpm": 2120.2803207561374
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        },
+        {
+          "tic": 146282666,
+          "truth": {
+            "id": "146282666",
+            "injected": true,
+            "periodDays": 5.418809582944959,
+            "depthPpm": 4156.532905064523
+          },
+          "literatureMatch": false,
+          "literatureValidated": false,
+          "gaiaClearedPlanet": false,
+          "corroborated": false
+        }
+      ]
+    }
+  },
+  "deviation": {
+    "recallPp": 6.84,
+    "precisionPp": -2.24
+  },
+  "verdict": "P99-PROSPECTIVE-HELDOUT-DIVERGENT (tuned on train at 1200ppm/2-sector; applied BLIND to 110 held-out curves: recall 91.7% [dev 6.8pp vs train], precision 24.3% [dev -2.2pp], 26 false-accepts; 66 survivors, 11 independently corroborated (17%) via literature 10 + Gaia-cleared 8; held-out diverges -- the tuned point was optimistic (retrospective bias quantified))",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

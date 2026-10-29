@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "generatedBy": "scripts/p98-rednoise-window-systematics.ts (offline deterministic; synthetic pools anchored to real SPOC sampling)",
+    "data": "committed byte-exact real TESS-SPOC curves (window + coherence + real-rho anchor) + seeded AR(1) model nulls (red-noise FAR/recall)",
+    "module": "src/detect/significance.ts (calibratedFap) vs src/detect/fap.ts (block) vs white; src/detect/windowAlias.ts; src/detect/multiYearCoherence.ts",
+    "params": {
+      "rhos": [
+        0,
+        0.35,
+        0.6,
+        0.85
+      ],
+      "pool": 40,
+      "nulls": 60,
+      "depthPpm": 2000,
+      "period": 3.5,
+      "alpha": 0.05
+    },
+    "realRhoAnchor": {
+      "p50": 0.025445450547746107,
+      "min": -0.06825663954628881,
+      "max": 0.4280010352011237
+    },
+    "generatedAt": "2026-10-29T04:02:25.736Z",
+    "gitSha": "b1ba9632dbc1f0ebcf80d962c8f1d6cd55903643",
+    "inputs": [
+      {
+        "path": "scripts/p98-rednoise-window-systematics.ts",
+        "sha256": "5b8e6e7efe4b10b838bfc75c39805342a96aa0661f901220bc981211f2a732d0"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-39091.csv",
+        "sha256": "cee5be338987105eb398bbe263c1880a3a4f3b1bf9b7fe3feb758c6bde7b4ed2"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hr-858.csv",
+        "sha256": "122432524310699c0d97becd7ba5973aa0a9e2981fac52592e2a788d29c7f353"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-63433.csv",
+        "sha256": "98bb916925bcc7da95c63c9fa44fa4f6ba76fc193f5075562bd8f5267929c377"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-25463.csv",
+        "sha256": "e627a23cc8461324de8e6c9a0deac2c26ba3d043b6ced0593131bb1baac6db6e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/au-mic.csv",
+        "sha256": "4c9f9d623ee42b1b8b484616b2b36a73b357b9c5eea661a7216a6953271563e1"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-480.csv",
+        "sha256": "042828458ac1cd3cd7ad8d41c350cbc4746e243de21383f2e6cff00dae755033"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/gj-143.csv",
+        "sha256": "e692634d4972a62a5f843399061f7706d1ec136a9a2f32dad2f3c9868ae0c0b6"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-1397.csv",
+        "sha256": "ce57f592573e9def68215b6449f61ce37155b5f3ae915665a8ff098bcaaa02a4"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-5739.csv",
+        "sha256": "b9e8fdcd8bdd9e6cf4aaef9187a25f7d540e6f113f7e90a6009e51f2b2635ee8"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/kelt-11.csv",
+        "sha256": "c72fee2b96a56f94af27ea5e1536616a3276b059f562c698dfb22e4b0caae8ee"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-86226.csv",
+        "sha256": "ce248047f9791d6e7fc71f01c2d4308639076e558344c96260e38fa94bd9d91e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-207496.csv",
+        "sha256": "9c4dc4d90a7e40cce32cce0e6a25805ea52123bac63774d19c923fbf296dd45d"
+      }
+    ]
+  },
+  "redNoiseArms": [
+    {
+      "rho": 0,
+      "farBlock": 0,
+      "farAr1": 0,
+      "recallBlock": 1,
+      "recallAr1": 1,
+      "precisionBlock": 1,
+      "precisionAr1": 1,
+      "n": 10
+    },
+    {
+      "rho": 0.35,
+      "farBlock": 0.1,
+      "farAr1": 0,
+      "recallBlock": 1,
+      "recallAr1": 1,
+      "precisionBlock": 0.9090909090909091,
+      "precisionAr1": 1,
+      "n": 10
+    },
+    {
+      "rho": 0.6,
+      "farBlock": 0.3,
+      "farAr1": 0,
+      "recallBlock": 1,
+      "recallAr1": 1,
+      "precisionBlock": 0.7692307692307692,
+      "precisionAr1": 1,
+      "n": 10
+    },
+    {
+      "rho": 0.85,
+      "farBlock": 1,
+      "farAr1": 0.2,
+      "recallBlock": 1,
+      "recallAr1": 1,
+      "precisionBlock": 0.5,
+      "precisionAr1": 0.8333333333333334,
+      "n": 10
+    }
+  ],
+  "realCurves": [
+    {
+      "host": "HD 39091",
+      "rho": -0.06988605807152622,
+      "snr": 260.7697695101924,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.5663093638852164,
+      "dailyWindowPower": 0.004972555959089442,
+      "sidelobePower": 0.0565675055690577,
+      "coherence": 0.9666171872261867,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HR 858",
+      "rho": 0.02988202524537439,
+      "snr": 234.10638502907938,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.3600134740048866,
+      "dailyWindowPower": 0.02218463412312317,
+      "sidelobePower": 0.04751560180600882,
+      "coherence": 0.9647003705768882,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HD 63433",
+      "rho": 0.43468959215405084,
+      "snr": 6652.214215911767,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.4144951533161218,
+      "dailyWindowPower": 0.003896484491263221,
+      "sidelobePower": 0.04768401046223954,
+      "coherence": 0.8120428441295527,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HD 25463",
+      "rho": 0.11180832795402272,
+      "snr": 124.15092269150003,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.3823676190176963,
+      "dailyWindowPower": 0.005658860248771252,
+      "sidelobePower": 0.03734183825295911,
+      "coherence": 0.020285362970978684,
+      "coherentDetermined": true
+    },
+    {
+      "host": "AU Mic",
+      "rho": 0.6512014098326925,
+      "snr": 16954.180024115565,
+      "fapBlock": 0.7317073170731707,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.8052400073451654,
+      "dailyWindowPower": 0.01893354239402154,
+      "sidelobePower": 0.10153199690379751,
+      "coherence": 0.017839653493898724,
+      "coherentDetermined": true
+    },
+    {
+      "host": "TOI-480",
+      "rho": 0.09196508320267817,
+      "snr": 110.54206693643187,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.2709725944078187,
+      "dailyWindowPower": 0.008580101404985132,
+      "sidelobePower": 0.05106831443530247,
+      "coherence": 0.03193358960263165,
+      "coherentDetermined": true
+    },
+    {
+      "host": "GJ 143",
+      "rho": -0.24622346910521697,
+      "snr": 234.53955725949282,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.36014124310185713,
+      "dailyWindowPower": 0.01104605144991652,
+      "sidelobePower": 0.05109353083641924,
+      "coherence": 0.9273093155505668,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HD 1397",
+      "rho": -0.10601216706658113,
+      "snr": 134.26619731528658,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.37710525695374586,
+      "dailyWindowPower": 0.011211930645461833,
+      "sidelobePower": 0.05720433402883414,
+      "coherence": 0.9298026140476704,
+      "coherentDetermined": true
+    },
+    {
+      "host": "TOI-5739",
+      "rho": 0.07642310971996945,
+      "snr": 117.02037250624608,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.5757582884786276,
+      "dailyWindowPower": 0.036231967821027375,
+      "sidelobePower": 0.07435498982617794,
+      "coherence": 0.6367115580551335,
+      "coherentDetermined": true
+    },
+    {
+      "host": "KELT-11",
+      "rho": 0.1408493367499835,
+      "snr": 73.09777674135292,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.7656239300168441,
+      "dailyWindowPower": 0.010819138799410434,
+      "sidelobePower": 0.04838825502135083,
+      "coherence": 0.43934632919981453,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HD 86226",
+      "rho": -0.06592239168846888,
+      "snr": 94.07878423186413,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.4053945661995891,
+      "dailyWindowPower": 0.014051747829531933,
+      "sidelobePower": 0.05108953552419365,
+      "coherence": 0.011899145228672251,
+      "coherentDetermined": true
+    },
+    {
+      "host": "HD 207496",
+      "rho": 0.7008180255291053,
+      "snr": 16393.064128117505,
+      "fapBlock": 0.024390243902439025,
+      "fapAr1": 0.01639344262295082,
+      "flipToNotSignificant": false,
+      "periodRecovered": true,
+      "aliasAmbiguity": 0.3476441762951567,
+      "dailyWindowPower": 0.008147133747922074,
+      "sidelobePower": 0.050178988287201576,
+      "coherence": 0.03863206067251531,
+      "coherentDetermined": true
+    }
+  ],
+  "summary": {
+    "farBlockRed": 0.3,
+    "farAr1Red": 0,
+    "precBlockRed": 0.7692307692307692,
+    "precAr1Red": 1,
+    "flipCount": 0,
+    "falseRejectCount": 0,
+    "coherentTestable": 12,
+    "coherenceMedian": 0.538028943627474,
+    "nReal": 12,
+    "windowDailyPowerMedian": 0.010932595124663477
+  },
+  "verdict": "P98-RED-NOISE-MODELING-CUTS-FAR (on rho>=0.3 pools the model-free block surrogate fires 30.0% false alarms while the AR(1)-MODEL null holds 0.0%, near the nominal 5%; per-candidate precision 77% -> 100% at matched recall; on the 12 real curves the model false-rejects 0 known-planet injections and yields a determinable O-C coherence on 12 (median 0.54)",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

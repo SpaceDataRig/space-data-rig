@@ -942,15 +942,14 @@ authority; they are deliberately not restated here.
   suppression guard and any `scienceHash` re-derivation are calibration-gated research decisions, NOT silent edits -- see the
   sixteenth-round bullet below. This line is about the revision measured below, not a standing claim about the tip --
   `git log` is the authority there.
-- Production: wrangler version c2688d07-dfbc-4197-bd24-3705806977d1, gitSha af37bf1d73e1d0fa02b85930d37d512ab3eb1902
-  (deployed 2026-10-28 by R26-61 through `npm run cf:deploy:sha`, which uploads the Worker bundle from `src/` and the
-  static assets from `web/`; `GET /health` read back returned `deployVersion c2688d07-dfbc-4197-bd24-3705806977d1` and
-  `gitSha af37bf1`), `codeVersion space-data-rig@0.2.0`. **AWAITING DEPLOY:** HEAD now also carries the three new
-  research-axis reports (p97/p98/p99) and the p86-rebuilt `web/reports/` fragments, so HEAD's `web/` tree DIFFERS from
-  the deployed revision af37bf1 (`git diff af37bf1..HEAD -- web` is non-empty; `src/` is unchanged -- the three axes touch
-  scripts/reports/web-static/docs only, no worker code). The served `web/reports/` therefore does not yet include the
-  three new pages until the next `npm run cf:deploy:sha`; the marker "awaiting deploy" is exactly what
-  `tests/handoff-freshness.test.ts` requires while that gap is open, and it is removed once the redeploy lands.
+- Production: wrangler version b53f8d3b-116c-4d3c-99eb-1c8cf84e5a79, gitSha 5ca88a7e0b739de0b98251239ca394feeb189ac6
+  (deployed 2026-10-29 by the three-research-axes ship through `npm run cf:deploy:sha`, which uploads the Worker bundle
+  from `src/` and the static assets from `web/`; `GET /health` read back returned `deployVersion
+  b53f8d3b-116c-4d3c-99eb-1c8cf84e5a79` and `gitSha 5ca88a7e0b739de0b98251239ca394feeb189ac6`), `codeVersion
+  space-data-rig@0.2.0`. HEAD (this section's ledger commit, made after the deploy) differs from the deployed revision
+  5ca88a7 only in `HANDOFF.md` -- no `src/` and no `web/` path (the three axes ship scripts/reports/web-static/docs; the
+  p86-rebuilt `web/reports/` fragments and the p97/p98/p99 pages are IN this deploy) -- so the served `src/` and `web/`
+  trees equal HEAD's by construction, the condition `tests/handoff-freshness.test.ts` enforces.
   **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60/R26-61 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51, p81 and p70 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,

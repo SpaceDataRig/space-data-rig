@@ -5,6 +5,12 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Twenty-eighth round (audit of the auditor, continued): the three research axes were covered by a MANUAL drill, not the suite -- brought them under a named CI gate (2026-10-29)
+R27 re-armed one guard; R28 kept drilling and found a coverage gap of the same class -- a check that is green only because nothing re-runs it in CI.
+- **The gap.** `tests/generator-stamped-reports.test.ts` enforces the per-report provenance triple-fact (generator calls `buildStamp`, the artifact re-hashes every input INCLUDING its own generator source, the built index calls the row verified). Its list was hardcoded to the round-26 "five offline-capable" reports (p34/p54/p63/p68/p79). The three research axes shipped in the round-26 close-out -- p97/p98/p99 -- were verified only by `scripts/audit/freshness-recheck.mjs`, which is a manual drill NOT wired into `npm test`. So a green CI could not see a drifted p97/p98/p99 artifact: editing an axis's model code, or its committed input data changing bytes, would pass the suite and only the (un-run) recheck would catch it.
+- **The fix.** Extended the named guard to cover all eight (added a `THREE_AXES` cohort merged into the loop set). Each axis already stamps its own generator plus a committed non-code DATA input (p97: the frozen-rows fixture; p98: the committed real SPOC curves; p99: the three sealed-truth jsonl), so they satisfy the same triple-fact; the change is purely that CI now enforces it per report, before a reader sees the page.
+- **Proved it has teeth, not just green.** A scoped, self-restoring tamper corrupting one recorded checksum inside `reports/p99-prospective-heldout-blind.json` drove the guard RED naming p99 (`fail 1`), and the artifact restored byte-identical. The suite runs the guard over all eight: 4/4. Typecheck + full suite 1035/0. No redeploy: only `tests/*.ts` + `CHANGELOG.md` change, neither uploaded to production.
+
 ### Twenty-seventh round (audit of the auditor): the "awaiting deploy" guard was silently VACUOUS, and re-armed it (2026-10-29)
 Round-26 shipped three research axes (p97/p98/p99, verified 33 -> 36). R27 turns the same lens on the machinery that
 guards those ships, because a green CI on a check that cannot fail is worse than no check -- it looks authoritative.

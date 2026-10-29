@@ -29,6 +29,20 @@ const FIVE: { id: string; script: string }[] = [
   { id: "p79-benchmark", script: "scripts/p79-benchmark.ts" },
 ];
 
+// ROUND-28 (R27 -> R28, audit of the auditor): the three research axes shipped in the round-26 close-out are covered
+// only by the aggregate freshness recheck (scripts/audit/freshness-recheck.mjs), which is a MANUAL drill -- not in
+// `npm test`. So a green suite could hide a stale p97/p98/p99 artifact. Bring them under the SAME named per-report
+// triple-fact the original five enjoy: generator calls buildStamp, the artifact re-hashes every input INCLUDING its own
+// generator source, and the built index calls it verified -- so editing the model code or drifting the committed data
+// flips the row red in CI, before any reader sees it.
+const THREE_AXES: { id: string; script: string }[] = [
+  { id: "p97-blend-dilution-correction", script: "scripts/p97-blend-dilution-correction.ts" },
+  { id: "p98-rednoise-window-systematics", script: "scripts/p98-rednoise-window-systematics.ts" },
+  { id: "p99-prospective-heldout-blind", script: "scripts/p99-prospective-heldout-blind.ts" },
+];
+
+const ALL = [...FIVE, ...THREE_AXES];
+
 function stampOfArtifact(id: string): FreshnessStamp {
   const doc = JSON.parse(readFileSync(`reports/${id}.json`, "utf8"));
   const stamp = stampFromMeta(doc.meta ?? doc);
@@ -36,21 +50,21 @@ function stampOfArtifact(id: string): FreshnessStamp {
   return stamp!;
 }
 
-test("the five offline-capable generators import buildStamp and call it in their own source", () => {
+test("the offline-capable generators (the original five + the three research axes) import buildStamp and call it", () => {
   // Source-level fact. If someone deletes the wiring, the next re-run silently produces an unstamped artifact
   // again; this fires before that, on the edit itself.
-  for (const { id, script } of FIVE) {
+  for (const { id, script } of ALL) {
     const src = readFileSync(script, "utf8");
     assert.match(src, /from "\.\/report-freshness\.ts"/, `${script} must import the stamp builder`);
     assert.match(src, /buildStamp\(\[/, `${script} must call buildStamp([...]) so reports/${id}.json can be verified`);
   }
 });
 
-test("each of the five artifacts records a sha256 for every input, and every input is carried by the repository", () => {
+test("each artifact records a sha256 for every input, and every input is carried by the repository", () => {
   // p79 used to declare `inputs: ["reports/p47-completeness-grid.json", ...]` as bare strings: a name with
   // nothing to compare, which the gate documents as declared-but-unhashable. A null checksum still fails here.
   const tracked = gitTrackedPaths(); // null on a checkout with no git, which must not read as "nothing is tracked"
-  for (const { id } of FIVE) {
+  for (const { id } of ALL) {
     const stamp = stampOfArtifact(id);
     assert.ok(stamp.inputs.length > 0, `reports/${id}.json stamps no inputs at all`);
     for (const input of stamp.inputs) {
@@ -69,7 +83,7 @@ test("each of the five artifacts records a sha256 for every input, and every inp
 test("the recorded checksums still match the bytes on disk, including the generator's own file", () => {
   // The reproduction half: this is exactly what p86 does, done here independently so a green suite cannot hide
   // a stale artifact that the library build happened to paper over with --allow-stale.
-  for (const { id, script } of FIVE) {
+  for (const { id, script } of ALL) {
     const stamp = stampOfArtifact(id);
     const self = stamp.inputs.find((i) => i.path === script);
     assert.ok(self, `reports/${id}.json does not stamp ${script}; an edit to the model code would be invisible`);
@@ -83,12 +97,12 @@ test("the recorded checksums still match the bytes on disk, including the genera
   }
 });
 
-test("the published index calls all five verified, not merely stamped", () => {
+test("the published index calls every one of them verified, not merely stamped", () => {
   if (!existsSync("web/reports/index.json")) return; // library not built on this checkout
   const idx = JSON.parse(readFileSync("web/reports/index.json", "utf8")) as {
     reports: { id: string; stamped: boolean; verified: boolean; fresh: boolean; reproducible: number }[];
   };
-  for (const { id } of FIVE) {
+  for (const { id } of ALL) {
     const row = idx.reports.find((r) => r.id === id);
     assert.ok(row, `${id} is missing from web/reports/index.json`);
     assert.equal(row!.stamped, true, `${id}: the site would still show it as unstamped`);

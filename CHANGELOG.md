@@ -5,6 +5,33 @@ Keep a Changelog and adheres to Semantic Versioning.
 
 ## Unreleased
 
+### Twenty-seventh round (audit of the auditor): the "awaiting deploy" guard was silently VACUOUS, and re-armed it (2026-10-29)
+Round-26 shipped three research axes (p97/p98/p99, verified 33 -> 36). R27 turns the same lens on the machinery that
+guards those ships, because a green CI on a check that cannot fail is worse than no check -- it looks authoritative.
+- **The recheck first, then the drill.** Independent freshness-recheck reproduced 36/36 with findings=0, and the live
+  edge was read back (`GET /health` and `GET /reports/index.json`) serving 59 rows with `verified:36`, `stale:[]`, all
+  three new pages `verified=true` -- the published state is real, not just local. (A post-reboot IPv4 route on the
+  workstation made the first `live-link-integrity26` pass time out; forcing the working address family confirmed it was
+  a local-egress artifact, not a site defect -- UNKNOWN is never reported as a pass.)
+- **The defect the drill found.** `tests/handoff-freshness.test.ts` rule-4 says: if the deployed revision named in the
+  `- Production:` bullet has `src/`/`web/` trees that differ from HEAD, the bullet must carry the literal marker
+  "awaiting deploy", so an undeployed runtime change cannot be quietly called "published". The bullet's own region spans
+  ~95 lines of indented prose, and a ROUND-25 HISTORICAL SENTENCE inside that region explained the rule using the exact
+  token ("...carry the marker `awaiting deploy`"). The marker search therefore found a live marker in INERT PROSE that
+  has nothing to do with a pending deploy -- so rule-4 could never go red, silently, for any future round that changed
+  `src/`/`web/` and skipped the deploy. This is the same "a checker that silently agrees instead of covering" failure the
+  freshness gate exists to catch, but hiding in the gate's own documentation.
+- **The fix, and proof it has teeth.** Reworded the in-region historical sentence to describe the rule WITHOUT the literal
+  token; scoped the mutation drill (`scripts/audit/mutate26-handoff-marker.mjs`) to the `- Production:` bullet the gate
+  actually reads (a whole-file regex hit the unrelated prose at three other lines, faking a precondition and mutating
+  descriptive text); and made the drill degrade LEGIBLY (verify the live gate green + SKIP, exit 0) when there is no
+  pending marker, instead of the previous uncaught `throw` -- per R26-25, "fails loudly" is not "fails legibly". Proved
+  non-vacuity with a temporary-and-restored experiment: naming a prior sha whose `web/` genuinely differs from HEAD, with
+  no live marker, now drives the gate RED (naming `web/reports/index.json` + the three new pages); byte-identical restore
+  confirmed. Typecheck + full suite 1035/0. No redeploy: this round touches only `HANDOFF.md` and a manual audit script,
+  neither uploaded to production, so `src/`/`web/` still match the deployed 5ca88a7 and the awaiting-deploy marker
+  correctly stays absent. discoveryClaim/safeToGate untouched.
+
 ### Three research axes: blend dilution, red-noise systematics, prospective held-out blind validation (2026-10-29)
 Three operator-directed research axes, each shipped as a reproducible report (script + reports/*.json +
 reports/*.md) that passes the audit-fix-audit loop (freshness-recheck + report-freshness gate, verified count

@@ -1007,9 +1007,11 @@ authority; they are deliberately not restated here.
   round-21 commit, recorded once `GET /health` confirms it". Both named values were the 2026-10-23T09:26 deploy -- two
   deploys behind reality -- and the confirmation never got written back. `tests/handoff-freshness.test.ts` still cannot
   check the live endpoint (CI has no network), but round-25 closed the half of the class that can be checked offline: the
-  named revision's `src/` and `web/` trees must equal HEAD's, or the bullet has to carry the marker `awaiting deploy`
-  (R25-11). Rounds 22/23/24 changed no `src/` file and needed no deploy (a workflow, a script, tests and docs -- all
-  CI-only); round-25 changed served assets and DID deploy, so `8aad1dd` is current at this snapshot; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
+  named revision's `src/` and `web/` trees must equal HEAD's, or the bullet has to carry the pending-deploy disclosure
+  marker (R25-11; the exact token is written only as a live status in the Production bullet, never as inert prose here,
+  so the guard cannot be satisfied by a historical mention). Rounds 22/23/24 changed no `src/` file and needed no deploy
+  (a workflow, a script, tests and docs -- all CI-only); round-25 changed served assets and DID deploy, so `8aad1dd` is
+  current at this snapshot; the per-row figures quoted below are the ROUND-17 DEPLOY-TIME verification (103 rows / 90 hosts /
   kinds `{58,41,none:4}`) and live has since drifted to 104 records / 91 hosts (re-measured 2026-10-24T08:04Z) as the rig
   keeps minting -- a dated proof, not a live promise. Re-verified live at the round-17 snapshot: `deploy:window`
   cleared GO only after the pass `run-20261023-091528` held the run mutex to 09:25:04Z (a ~9.6 min mutex-finish span

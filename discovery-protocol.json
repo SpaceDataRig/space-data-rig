@@ -1,0 +1,42 @@
+{
+  "protocolId": "discovery-claim-v1",
+  "status": "PRE-REGISTERED-FROZEN",
+  "frozenAtUtc": "2026-10-30T00:00:00.000Z",
+  "purpose": "Pre-registered acceptance criteria that turn a surfaced CANDIDATE into an outward DISCOVERY claim. The criteria are frozen HERE, before any prospective dataset is looked at, so the bar cannot be moved after seeing the result -- the exact failure p99 (prospective held-out) punished by returning DIVERGENT. This file is the authority for what 'earned' means; src/discover/discoveryGate.ts evaluates against it and nothing else.",
+  "honesty": {
+    "nominationIsNotAClaim": "A 'nomination' says: on this one candidate every independent bar passed. It does NOT say 'we discovered a planet'. The hard discoveryClaim boolean stays false at nomination tier.",
+    "discoveryClaimNeeds": "discoveryClaim=true is permitted ONLY at the announcement tier, which additionally requires (a) a prospective-validation record whose precision clears the floor below, and (b) an explicit human/peer sign-off. No automated path may set it.",
+    "redLines": "No planet discovery is claimed by this rig until a specific candidate clears every bar below on never-tuned-forward data AND a human signs the announcement."
+  },
+  "tiers": {
+    "none": "One or more prerequisites unmet. Candidate may still be listed for follow-up; nothing claimed.",
+    "nomination": "All per-candidate corroboration + significance bars pass and the protocol is pre-registered. Wording is bounded to 'nominated, pending independent confirmation'. discoveryClaim=false.",
+    "announcement": "Nomination bars pass AND prospective validation clears its floor AND a human sign-off is present. This is the only tier where discoveryClaim may be true, and it is still gated by the human step."
+  },
+  "corroborationBars": {
+    "requireNoveltyEstablished": true,
+    "requireNotAlreadyKnown": true,
+    "minCrossSectorEphemerisCoherentSectors": 2,
+    "requireNoCatalogDuplicate": true,
+    "requireGaiaBlendRuledOut": true,
+    "requirePsfOrDiffImagingClear": true,
+    "maxHarmonicAliasFpp": 0.01,
+    "maxOddEvenAsymmetryFrac": 0.2
+  },
+  "significanceBars": {
+    "minSnr": 7,
+    "maxAr1FalseAlarmProb": 0.001,
+    "note": "FAR uses the AR(1)-model null (src/detect/significance.ts calibratedFap), the model p98 showed cuts FAR ~30% -> ~0% versus the model-free block surrogate at red-noise rho ~0.3."
+  },
+  "prospectiveValidation": {
+    "required": true,
+    "minPrecisionWilsonLowerBound": 0.95,
+    "maxExpectedFalseClaimsPerAnnouncementBatch": 1,
+    "method": "Pre-register the operating point, freeze it, then apply to a forward / never-tuned dataset (new TIC targets fetched after freezing, or time-forward sectors), and report precision (Wilson 95% lower bound) and the expected number of false claims at the announcement threshold.",
+    "currentKnownGap": "p99 measured retrospective-then-held-out precision at only 0.43-0.61 (DIVERGENT). Until a genuine prospective run clears the floor above, no candidate can reach the announcement tier, so discoveryClaim remains false everywhere -- which is the honest state, not a bug to toggle around."
+  },
+  "release": {
+    "announcementRequiresHumanSignoff": true,
+    "automatedMaySetDiscoveryClaim": false
+  }
+}

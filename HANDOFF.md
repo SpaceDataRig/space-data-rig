@@ -111,6 +111,10 @@ docker-compose, CULTURE.md).
                   STRUCTURE (subject/recency/attribution/band/corroboration) against resolved Crossref/arXiv
                   records. Distinct from externalReview: no ephemeris to re-fold, so it checks the claim, not
                   the sky. safeToGate is false by construction; research-only, never gates/anchors/claims.
+- src/discover/   discoveryGate.ts (R31) -- the earned, evidence-gated discovery tier (none/nomination/announcement),
+                  evaluated against the pre-registered discovery-protocol.json (frozen before prospective data). Pure,
+                  dependency-injected, NOT imported by the worker; it only classifies evidence and never itself sets
+                  discoveryClaim (announcement still requires a human sign-off; no automated path may claim).
 - src/ai/         llm.ts, discussion.ts, threads.ts, deliberation.ts (side-channel LLM layer).
 - src/orchestrator/ pipeline.ts, run.ts (CLI), regressionBaseline.ts.
 - src/reporter/   narrate.ts (plain-English sentences, seat roles).

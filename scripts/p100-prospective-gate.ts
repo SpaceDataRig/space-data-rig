@@ -176,7 +176,7 @@ function main() {
 
   const json = {
     meta: {
-      ...buildStamp(["scripts/p100-prospective-gate.ts", FROZEN, PROTOCOL_PATH, join(FIXTURE_DIR, "manifest.json")]),
+      ...buildStamp(["scripts/p100-prospective-gate.ts", FROZEN, PROTOCOL_PATH, "tests/fixtures/spoc-curves/manifest.json"]),
       generatedBy: "scripts/p100-prospective-gate.ts",
       protocol: "frozen operating point from discovery-protocol.json applied to a seeded forward stream (never re-tuned here)",
       data: "SEEDED SYNTHETIC forward stream anchored to committed REAL TESS-SPOC cadence/baseline/noise color; corroboration is a modelled stand-in. Instrument validation, NOT a real prospective survey.",

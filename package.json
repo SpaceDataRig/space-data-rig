@@ -147,6 +147,7 @@
     "p97:blend-dilution": "tsx scripts/p97-blend-dilution-correction.ts",
     "p98:rednoise-window": "tsx scripts/p98-rednoise-window-systematics.ts",
     "p99:heldout-blind": "tsx scripts/p99-prospective-heldout-blind.ts",
+    "p100:prospective-gate": "tsx scripts/p100-prospective-gate.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

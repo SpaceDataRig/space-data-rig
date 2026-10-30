@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-30T14:28:48.364Z",
+    "gitSha": "b032a8e1819480ff04cb18e2fb505c7712932780",
+    "inputs": [
+      {
+        "path": "scripts/p100-prospective-gate.ts",
+        "sha256": "20ac25fb7b629d1eb70fab9b25ae11366342718083543497956ec2e176056212"
+      },
+      {
+        "path": "reports/fixtures/p100-frozen-cases.json",
+        "sha256": "aa9737d85ff2742f55c83ea4afe3ece89cc72ec820bdf434aa9c497d39425d62"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests\\fixtures\\spoc-curves\\manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      }
+    ],
+    "generatedBy": "scripts/p100-prospective-gate.ts",
+    "protocol": "frozen operating point from discovery-protocol.json applied to a seeded forward stream (never re-tuned here)",
+    "data": "SEEDED SYNTHETIC forward stream anchored to committed REAL TESS-SPOC cadence/baseline/noise color; corroboration is a modelled stand-in. Instrument validation, NOT a real prospective survey.",
+    "note": "validates the prospective-measurement -> earned-gate wiring; claims nothing; arms nothing. discoveryClaim false, safeToGate false."
+  },
+  "forward": {
+    "nCases": 48,
+    "rhoLo": -0.0683,
+    "rhoHi": 0.423,
+    "bar1": {
+      "accepted": 24,
+      "acceptedTp": 24,
+      "falseAccepts": 0,
+      "acceptedPrecision": 1
+    },
+    "bar2": {
+      "accepted": 24,
+      "acceptedTp": 24,
+      "falseAccepts": 0,
+      "acceptedPrecision": 1,
+      "precisionWilsonLowerBound": 0.862,
+      "expectedFalseClaims": 0
+    }
+  },
+  "gate": {
+    "tier": "nomination",
+    "discoveryClaimAllowed": false,
+    "unmet": [
+      "prospective precision Wilson LB 0.862 below the floor 0.95",
+      "no human/peer sign-off for the announcement"
+    ],
+    "precisionFloor": 0.95
+  },
+  "rows": [
+    {
+      "id": "fwd-0",
+      "rho": -0.0683,
+      "injected": false,
+      "detected": false,
+      "snr": -3.65,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-1",
+      "rho": 0.1154,
+      "injected": true,
+      "detected": true,
+      "snr": 105.08,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-2",
+      "rho": 0.299,
+      "injected": false,
+      "detected": false,
+      "snr": -4.91,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-3",
+      "rho": -0.0137,
+      "injected": true,
+      "detected": true,
+      "snr": 111.55,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-4",
+      "rho": 0.1699,
+      "injected": false,
+      "detected": false,
+      "snr": -4.15,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-5",
+      "rho": 0.3536,
+      "injected": true,
+      "detected": true,
+      "snr": 106.88,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-6",
+      "rho": 0.0409,
+      "injected": false,
+      "detected": false,
+      "snr": -4.33,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-7",
+      "rho": 0.2245,
+      "injected": true,
+      "detected": true,
+      "snr": 113.49,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-8",
+      "rho": 0.4082,
+      "injected": false,
+      "detected": false,
+      "snr": 5.43,
+      "fapAr1": 0.025,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-9",
+      "rho": 0.0955,
+      "injected": true,
+      "detected": true,
+      "snr": 116.59,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-10",
+      "rho": 0.2791,
+      "injected": false,
+      "detected": false,
+      "snr": -5.01,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-11",
+      "rho": -0.0335,
+      "injected": true,
+      "detected": true,
+      "snr": 100.56,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-12",
+      "rho": 0.1501,
+      "injected": false,
+      "detected": false,
+      "snr": -4.45,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-13",
+      "rho": 0.3337,
+      "injected": true,
+      "detected": true,
+      "snr": 119.98,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-14",
+      "rho": 0.0211,
+      "injected": false,
+      "detected": false,
+      "snr": 3.95,
+      "fapAr1": 0.455,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-15",
+      "rho": 0.2047,
+      "injected": true,
+      "detected": true,
+      "snr": 102.55,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-16",
+      "rho": 0.3883,
+      "injected": false,
+      "detected": false,
+      "snr": 4.66,
+      "fapAr1": 0.165,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-17",
+      "rho": 0.0757,
+      "injected": true,
+      "detected": true,
+      "snr": 111.91,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-18",
+      "rho": 0.2593,
+      "injected": false,
+      "detected": false,
+      "snr": 5.01,
+      "fapAr1": 0.09,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-19",
+      "rho": -0.0534,
+      "injected": true,
+      "detected": true,
+      "snr": 107.91,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-20",
+      "rho": 0.1302,
+      "injected": false,
+      "detected": false,
+      "snr": 4.05,
+      "fapAr1": 0.395,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-21",
+      "rho": 0.3139,
+      "injected": true,
+      "detected": true,
+      "snr": 107.45,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-22",
+      "rho": 0.0012,
+      "injected": false,
+      "detected": false,
+      "snr": -3.79,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-23",
+      "rho": 0.1848,
+      "injected": true,
+      "detected": true,
+      "snr": 109.51,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-24",
+      "rho": 0.3685,
+      "injected": false,
+      "detected": false,
+      "snr": -5.11,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-25",
+      "rho": 0.0558,
+      "injected": true,
+      "detected": true,
+      "snr": 98.2,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-26",
+      "rho": 0.2394,
+      "injected": false,
+      "detected": false,
+      "snr": -4.72,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-27",
+      "rho": 0.423,
+      "injected": true,
+      "detected": true,
+      "snr": 114.9,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-28",
+      "rho": 0.1104,
+      "injected": false,
+      "detected": false,
+      "snr": -4.67,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-29",
+      "rho": 0.294,
+      "injected": true,
+      "detected": true,
+      "snr": 98.05,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-30",
+      "rho": -0.0186,
+      "injected": false,
+      "detected": false,
+      "snr": -3.57,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-31",
+      "rho": 0.165,
+      "injected": true,
+      "detected": true,
+      "snr": 100.52,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-32",
+      "rho": 0.3486,
+      "injected": false,
+      "detected": false,
+      "snr": -4.73,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-33",
+      "rho": 0.036,
+      "injected": true,
+      "detected": true,
+      "snr": 116.62,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-34",
+      "rho": 0.2196,
+      "injected": false,
+      "detected": false,
+      "snr": 3.97,
+      "fapAr1": 0.44,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-35",
+      "rho": 0.4032,
+      "injected": true,
+      "detected": true,
+      "snr": 114.85,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-36",
+      "rho": 0.0905,
+      "injected": false,
+      "detected": false,
+      "snr": -4.53,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-37",
+      "rho": 0.2742,
+      "injected": true,
+      "detected": true,
+      "snr": 118.45,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-38",
+      "rho": -0.0385,
+      "injected": false,
+      "detected": false,
+      "snr": -3.59,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-39",
+      "rho": 0.1451,
+      "injected": true,
+      "detected": true,
+      "snr": 113.57,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-40",
+      "rho": 0.3287,
+      "injected": false,
+      "detected": false,
+      "snr": 5.62,
+      "fapAr1": 0.01,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-41",
+      "rho": 0.0161,
+      "injected": true,
+      "detected": true,
+      "snr": 106.15,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-42",
+      "rho": 0.1997,
+      "injected": false,
+      "detected": false,
+      "snr": 4.02,
+      "fapAr1": 0.425,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-43",
+      "rho": 0.3833,
+      "injected": true,
+      "detected": true,
+      "snr": 109.53,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-44",
+      "rho": 0.0707,
+      "injected": false,
+      "detected": false,
+      "snr": -4.32,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-45",
+      "rho": 0.2543,
+      "injected": true,
+      "detected": true,
+      "snr": 105.88,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-46",
+      "rho": -0.0583,
+      "injected": false,
+      "detected": false,
+      "snr": -3.86,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-47",
+      "rho": 0.1253,
+      "injected": true,
+      "detected": true,
+      "snr": 114.11,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    }
+  ],
+  "verdict": "P100-INSTRUMENT-WIRES-NOMINATION-ONLY: forward precision Wilson-LB 86.2%; the gate reaches tier \"nomination\" and discoveryClaimAllowed=false (announcement still blocked without a real prospective run + human sign-off). Instrument plumbing validated; not a sky result.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

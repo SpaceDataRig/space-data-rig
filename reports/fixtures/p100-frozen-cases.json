@@ -1,0 +1,437 @@
+{
+  "note": "P100 frozen forward-stream cases (seeded synthetic anchored to real SPOC cadence/noise; instrument validation only, not a sky result)",
+  "cases": [
+    {
+      "id": "fwd-0",
+      "rho": -0.0683,
+      "injected": false,
+      "detected": false,
+      "snr": -3.65,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-1",
+      "rho": 0.1154,
+      "injected": true,
+      "detected": true,
+      "snr": 105.08,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-2",
+      "rho": 0.299,
+      "injected": false,
+      "detected": false,
+      "snr": -4.91,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-3",
+      "rho": -0.0137,
+      "injected": true,
+      "detected": true,
+      "snr": 111.55,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-4",
+      "rho": 0.1699,
+      "injected": false,
+      "detected": false,
+      "snr": -4.15,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-5",
+      "rho": 0.3536,
+      "injected": true,
+      "detected": true,
+      "snr": 106.88,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-6",
+      "rho": 0.0409,
+      "injected": false,
+      "detected": false,
+      "snr": -4.33,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-7",
+      "rho": 0.2245,
+      "injected": true,
+      "detected": true,
+      "snr": 113.49,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-8",
+      "rho": 0.4082,
+      "injected": false,
+      "detected": false,
+      "snr": 5.43,
+      "fapAr1": 0.025,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-9",
+      "rho": 0.0955,
+      "injected": true,
+      "detected": true,
+      "snr": 116.59,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-10",
+      "rho": 0.2791,
+      "injected": false,
+      "detected": false,
+      "snr": -5.01,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-11",
+      "rho": -0.0335,
+      "injected": true,
+      "detected": true,
+      "snr": 100.56,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-12",
+      "rho": 0.1501,
+      "injected": false,
+      "detected": false,
+      "snr": -4.45,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-13",
+      "rho": 0.3337,
+      "injected": true,
+      "detected": true,
+      "snr": 119.98,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-14",
+      "rho": 0.0211,
+      "injected": false,
+      "detected": false,
+      "snr": 3.95,
+      "fapAr1": 0.455,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-15",
+      "rho": 0.2047,
+      "injected": true,
+      "detected": true,
+      "snr": 102.55,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-16",
+      "rho": 0.3883,
+      "injected": false,
+      "detected": false,
+      "snr": 4.66,
+      "fapAr1": 0.165,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-17",
+      "rho": 0.0757,
+      "injected": true,
+      "detected": true,
+      "snr": 111.91,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-18",
+      "rho": 0.2593,
+      "injected": false,
+      "detected": false,
+      "snr": 5.01,
+      "fapAr1": 0.09,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-19",
+      "rho": -0.0534,
+      "injected": true,
+      "detected": true,
+      "snr": 107.91,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-20",
+      "rho": 0.1302,
+      "injected": false,
+      "detected": false,
+      "snr": 4.05,
+      "fapAr1": 0.395,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-21",
+      "rho": 0.3139,
+      "injected": true,
+      "detected": true,
+      "snr": 107.45,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-22",
+      "rho": 0.0012,
+      "injected": false,
+      "detected": false,
+      "snr": -3.79,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-23",
+      "rho": 0.1848,
+      "injected": true,
+      "detected": true,
+      "snr": 109.51,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-24",
+      "rho": 0.3685,
+      "injected": false,
+      "detected": false,
+      "snr": -5.11,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-25",
+      "rho": 0.0558,
+      "injected": true,
+      "detected": true,
+      "snr": 98.2,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-26",
+      "rho": 0.2394,
+      "injected": false,
+      "detected": false,
+      "snr": -4.72,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-27",
+      "rho": 0.423,
+      "injected": true,
+      "detected": true,
+      "snr": 114.9,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-28",
+      "rho": 0.1104,
+      "injected": false,
+      "detected": false,
+      "snr": -4.67,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-29",
+      "rho": 0.294,
+      "injected": true,
+      "detected": true,
+      "snr": 98.05,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-30",
+      "rho": -0.0186,
+      "injected": false,
+      "detected": false,
+      "snr": -3.57,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-31",
+      "rho": 0.165,
+      "injected": true,
+      "detected": true,
+      "snr": 100.52,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-32",
+      "rho": 0.3486,
+      "injected": false,
+      "detected": false,
+      "snr": -4.73,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-33",
+      "rho": 0.036,
+      "injected": true,
+      "detected": true,
+      "snr": 116.62,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-34",
+      "rho": 0.2196,
+      "injected": false,
+      "detected": false,
+      "snr": 3.97,
+      "fapAr1": 0.44,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-35",
+      "rho": 0.4032,
+      "injected": true,
+      "detected": true,
+      "snr": 114.85,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-36",
+      "rho": 0.0905,
+      "injected": false,
+      "detected": false,
+      "snr": -4.53,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-37",
+      "rho": 0.2742,
+      "injected": true,
+      "detected": true,
+      "snr": 118.45,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-38",
+      "rho": -0.0385,
+      "injected": false,
+      "detected": false,
+      "snr": -3.59,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-39",
+      "rho": 0.1451,
+      "injected": true,
+      "detected": true,
+      "snr": 113.57,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-40",
+      "rho": 0.3287,
+      "injected": false,
+      "detected": false,
+      "snr": 5.62,
+      "fapAr1": 0.01,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-41",
+      "rho": 0.0161,
+      "injected": true,
+      "detected": true,
+      "snr": 106.15,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-42",
+      "rho": 0.1997,
+      "injected": false,
+      "detected": false,
+      "snr": 4.02,
+      "fapAr1": 0.425,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-43",
+      "rho": 0.3833,
+      "injected": true,
+      "detected": true,
+      "snr": 109.53,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-44",
+      "rho": 0.0707,
+      "injected": false,
+      "detected": false,
+      "snr": -4.32,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-45",
+      "rho": 0.2543,
+      "injected": true,
+      "detected": true,
+      "snr": 105.88,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    },
+    {
+      "id": "fwd-46",
+      "rho": -0.0583,
+      "injected": false,
+      "detected": false,
+      "snr": -3.86,
+      "fapAr1": null,
+      "corroboratedSectors": 0
+    },
+    {
+      "id": "fwd-47",
+      "rho": 0.1253,
+      "injected": true,
+      "detected": true,
+      "snr": 114.11,
+      "fapAr1": 0,
+      "corroboratedSectors": 2
+    }
+  ]
+}

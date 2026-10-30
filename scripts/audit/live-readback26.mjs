@@ -79,8 +79,11 @@ for (const r of demoted) {
 }
 out.frontierFragmentAgreement = fragmentAgreement.length ? fragmentAgreement : ["(no code-only demoted rows in the served index)"];
 
-// And the inverse: a machine-verified frontier row must render clean (no false provenance banner).
-const verified = (idx.body.reports || []).filter((r) => r.verified === true).slice(0, 3);
+// And the inverse: EVERY machine-verified row must render clean (no false provenance banner). R26-45's whole premise is
+// that the index verdict and the served fragment are separate bytes a deploy can make disagree; sampling three verified
+// rows leaves 33 of them unwatched, so a verified page carrying a stale amber banner would pass this check unseen -- the
+// same "checker agrees because it looks at too little" class R27/R28 re-armed. Sweep the full verified population.
+const verified = (idx.body.reports || []).filter((r) => r.verified === true);
 const verifiedClean = [];
 for (const r of verified) {
   const frag = await get(`/reports/${r.id}.html`, "text");

@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-31T03:45:27.697Z",
+    "gitSha": "404b84a7194c3e9f0a3486ff79e751801e6b156b",
+    "inputs": [
+      {
+        "path": "scripts/p101-prospective-real.ts",
+        "sha256": "2ae8fb4082724e85141707f794640739955548d923690ccfa87ecc8427f50bb4"
+      },
+      {
+        "path": "reports/fixtures/p101-frozen-real.json",
+        "sha256": "f0f74770521b7f59135394a86703737b45ba108537ee901d335a1f8f7ac40bd5"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      }
+    ],
+    "generatedBy": "scripts/p101-prospective-real.ts",
+    "module": "src/detect/multiYearCoherence.ts",
+    "measuredAt": "2026-10-31T03:44:53.112Z",
+    "data": "OFFLINE REPLAY of frozen REAL multi-sector TESS-SPOC corroboration measurements (committed hosts re-fetched per sector), re-derived offline -- measured corroboration, not a stand-in",
+    "note": "the gate input (cross-sector corroboration) is MEASURED per sector on real bytes here; every host is a confirmed-planet system so novelty (correctly) fails and the gate refuses a claim. discoveryClaim false, safeToGate false."
+  },
+  "nHosts": 9,
+  "hostsWithCrossSectorDetectionGe2": 4,
+  "hostInCatalogCount": 9,
+  "periodMatchesCatalogCount": 6,
+  "strongestHost": {
+    "host": "AU Mic",
+    "tic": 441420236,
+    "nSectors": 2,
+    "recoveredPeriod": 13.999576,
+    "stitchedSnr": 49.4,
+    "coherenceScore": 0,
+    "coherentSectors": 2,
+    "hostInCatalog": true,
+    "periodMatchesCatalog": false,
+    "nearCatalogErrPct": 65.412
+  },
+  "gateAsIs": {
+    "tier": "none",
+    "discoveryClaimAllowed": false,
+    "unmet": [
+      "not novel: host is already in the confirmed catalog or TOI list",
+      "signal duplicates a catalogued planet",
+      "Gaia blend/dilution census has not ruled out an on-target companion",
+      "PSF / difference-imaging has not cleared an instrumental origin",
+      "harmonic/alias false-positive probability NaN exceeds 0.01",
+      "odd/even transit asymmetry NaN exceeds 0.2",
+      "AR(1) false-alarm probability NaN exceeds 0.001"
+    ]
+  },
+  "gateCounterfactualNovelty": {
+    "tier": "none",
+    "discoveryClaimAllowed": false,
+    "unmet": [
+      "Gaia blend/dilution census has not ruled out an on-target companion",
+      "PSF / difference-imaging has not cleared an instrumental origin",
+      "harmonic/alias false-positive probability NaN exceeds 0.01",
+      "odd/even transit asymmetry NaN exceeds 0.2",
+      "AR(1) false-alarm probability NaN exceeds 0.001"
+    ]
+  },
+  "verdict": "P101-REAL-GATE-REFUSES-AS-EXPECTED: on 9 real multi-sector SPOC hosts, 4 had >=2 sectors INDEPENDENTLY detecting the recovered period above the frozen SNR floor (cross-sector corroboration MEASURED on real photometry, not modelled); but all 9 are confirmed-planet systems, so the protocol's requireNotAlreadyKnown correctly vetoes every one and the gate returns tier none. The stitched-BLS recovered period matched a catalog planet within 2% for only 6/9 -- the p29/p30 period-selection bottleneck (the strongest stitched peak is often a harmonic or a different planet), which is exactly why cross-sector detection and novelty must remain SEPARATE measured axes. No novel, corroborated real candidate was reached; no claim earned. The counterfactual (novelty granted, all else real) still lands at none, proving the gate needs blend/PSF/alias + a prospective precision run + human sign-off, not one flipped axis.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

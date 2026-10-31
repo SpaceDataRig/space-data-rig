@@ -1,0 +1,114 @@
+{
+  "note": "P101 frozen REAL multi-sector corroboration measurements (committed multi-sector SPOC hosts re-fetched per sector from public S3; the gate input is measured, not modelled)",
+  "measuredAt": "2026-10-31T03:44:53.112Z",
+  "rows": [
+    {
+      "host": "HD 39091",
+      "tic": 261136679,
+      "nSectors": 2,
+      "recoveredPeriod": 3.136473,
+      "stitchedSnr": 22.55,
+      "coherenceScore": 0,
+      "coherentSectors": 2,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": false,
+      "nearCatalogErrPct": 49.959
+    },
+    {
+      "host": "HR 858",
+      "tic": 178155732,
+      "nSectors": 2,
+      "recoveredPeriod": 3.575085,
+      "stitchedSnr": 17.82,
+      "coherenceScore": 0,
+      "coherentSectors": 1,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.285
+    },
+    {
+      "host": "HD 25463",
+      "tic": 407966340,
+      "nSectors": 2,
+      "recoveredPeriod": 7.044274,
+      "stitchedSnr": 18.9,
+      "coherenceScore": 0.014,
+      "coherentSectors": 1,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.069
+    },
+    {
+      "host": "AU Mic",
+      "tic": 441420236,
+      "nSectors": 2,
+      "recoveredPeriod": 13.999576,
+      "stitchedSnr": 49.4,
+      "coherenceScore": 0,
+      "coherentSectors": 2,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": false,
+      "nearCatalogErrPct": 65.412
+    },
+    {
+      "host": "TOI-480",
+      "tic": 317548889,
+      "nSectors": 2,
+      "recoveredPeriod": 6.879406,
+      "stitchedSnr": 16.09,
+      "coherenceScore": 0.01,
+      "coherentSectors": 0,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.192
+    },
+    {
+      "host": "GJ 143",
+      "tic": 279741379,
+      "nSectors": 2,
+      "recoveredPeriod": 14.515265,
+      "stitchedSnr": 18.93,
+      "coherenceScore": 0,
+      "coherentSectors": 1,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": false,
+      "nearCatalogErrPct": 86.334
+    },
+    {
+      "host": "HD 1397",
+      "tic": 394137592,
+      "nSectors": 2,
+      "recoveredPeriod": 11.53251,
+      "stitchedSnr": 23.77,
+      "coherenceScore": 0.513,
+      "coherentSectors": 2,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.024
+    },
+    {
+      "host": "HD 86226",
+      "tic": 22221375,
+      "nSectors": 2,
+      "recoveredPeriod": 3.988209,
+      "stitchedSnr": 17.36,
+      "coherenceScore": 0.016,
+      "coherentSectors": 0,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.095
+    },
+    {
+      "host": "HD 207496",
+      "tic": 290348383,
+      "nSectors": 2,
+      "recoveredPeriod": 6.44149,
+      "stitchedSnr": 30.04,
+      "coherenceScore": 0.07,
+      "coherentSectors": 2,
+      "hostInCatalog": true,
+      "periodMatchesCatalog": true,
+      "nearCatalogErrPct": 0.007
+    }
+  ]
+}

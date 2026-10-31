@@ -767,9 +767,11 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-30 the served report library reads `total 60 / stamped 39 / verified 37 / fullyVerified 37 / unattested 21 /
+  As of 2026-10-31 the served report library reads `total 61 / stamped 40 / verified 38 / fullyVerified 37 / unattested 21 /
   stale []` -- the three research axes lifted verified 33 -> 36 and R32's prospective-gate instrument (`p100`, a committed-fixture
-  replay of a seeded forward stream anchored to real SPOC noise) lifted it to 37; each axis a committed-fixture replay that
+  replay of a seeded forward stream anchored to real SPOC noise) lifted it to 37, then R34's `p101` (the earned gate fed with REAL
+  measured cross-sector corroboration, committed-fixture replay of multi-sector SPOC hosts re-fetched per sector from public S3)
+  lifted it to 38; each axis a committed-fixture replay that
   re-derives its figures offline with zero drift (independently rechecked): `p97` blend-dilution correction (axis 1, the
   aperture-side depth recovery), `p98` red-noise/window/drift systematics (axis 2, the AR(1)-MODEL null cuts FAR ~30% ->
   ~0% and lifts precision ~77% -> ~100%), and `p99` prospective held-out blind validation (axis 3, tuned-on-train / zero-
@@ -952,14 +954,16 @@ authority; they are deliberately not restated here.
   from `src/` and the static assets from `web/`; `GET /health` read back returned `deployVersion
   b53f8d3b-116c-4d3c-99eb-1c8cf84e5a79` and `gitSha 5ca88a7e0b739de0b98251239ca394feeb189ac6`), `codeVersion
   space-data-rig@0.2.0`. **AWAITING DEPLOY:** HEAD (this section's ledger commit, made after the deploy) now differs
-  from the deployed revision 5ca88a7 by: one added source file `src/discover/discoveryGate.ts` (the R31 earned discovery
-  gate), the R32 prospective-gate instrument (`scripts/p100-prospective-gate.ts`, `reports/p100-prospective-gate.*`,
-  `reports/fixtures/p100-frozen-cases.json`) and its rebuilt `web/reports/` library (verified 36 -> 37, a new p100 page),
-  plus doc/ledger edits. `src/discover/discoveryGate.ts` is imported by nothing in `src/cf/worker.ts` and the added `web/`
-  content is static report pages, so the served Worker bundle's behavior is unchanged from 5ca88a7; but because both the
-  `src/` and `web/` trees now differ from the deployed revision, this is a genuine deploy-pending gap, and this marker
-  discloses it. `tests/handoff-freshness.test.ts` rule-4 is satisfied by this marker until the next `npm run cf:deploy:sha`,
-  which will publish the p100 page and fold the inert gate module into the bundle, then retire this note.
+  from the deployed revision 5ca88a7 by: the R31 earned discovery gate `src/discover/discoveryGate.ts`, the R33 gate wiring
+  into `src/candidate/candidateRecord.ts` (an additive optional `discovery` field), the R32 prospective-gate instrument
+  (`scripts/p100-prospective-gate.ts`, `reports/p100-prospective-gate.*`, `reports/fixtures/p100-frozen-cases.json`), the R34
+  real-corroboration instrument (`scripts/p101-prospective-real.ts`, `reports/p101-prospective-real.*`,
+  `reports/fixtures/p101-frozen-real.json`), the rebuilt `web/reports/` library (verified 36 -> 37 -> 38, new p100/p101 pages),
+  plus doc/ledger edits. Neither `src/discover/discoveryGate.ts` nor `src/candidate/candidateRecord.ts` is imported by
+  `src/cf/worker.ts`, and the added `web/` content is static report pages, so the served Worker bundle's behavior is unchanged
+  from 5ca88a7; but because both the `src/` and `web/` trees now differ from the deployed revision, this is a genuine
+  deploy-pending gap, and this marker discloses it. `tests/handoff-freshness.test.ts` rule-4 is satisfied by this marker until
+  the next `npm run cf:deploy:sha`, which will publish the p100/p101 pages and fold the inert modules into the bundle, then retire this note.
   **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60/R26-61 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51, p81 and p70 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,

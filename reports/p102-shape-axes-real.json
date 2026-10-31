@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-31T13:14:56.046Z",
+    "gitSha": "2930a0915d94e1db43c11ba87786337f9e42bcf5",
+    "inputs": [
+      {
+        "path": "scripts/p102-shape-axes-real.ts",
+        "sha256": "326e72bb95f8d2da900c6f5fac5dd38b884997a552c31f3300a4e2dddaf6e5e7"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-39091.csv",
+        "sha256": "cee5be338987105eb398bbe263c1880a3a4f3b1bf9b7fe3feb758c6bde7b4ed2"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hr-858.csv",
+        "sha256": "122432524310699c0d97becd7ba5973aa0a9e2981fac52592e2a788d29c7f353"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-63433.csv",
+        "sha256": "98bb916925bcc7da95c63c9fa44fa4f6ba76fc193f5075562bd8f5267929c377"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-25463.csv",
+        "sha256": "e627a23cc8461324de8e6c9a0deac2c26ba3d043b6ced0593131bb1baac6db6e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/au-mic.csv",
+        "sha256": "4c9f9d623ee42b1b8b484616b2b36a73b357b9c5eea661a7216a6953271563e1"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-480.csv",
+        "sha256": "042828458ac1cd3cd7ad8d41c350cbc4746e243de21383f2e6cff00dae755033"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/gj-143.csv",
+        "sha256": "e692634d4972a62a5f843399061f7706d1ec136a9a2f32dad2f3c9868ae0c0b6"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-1397.csv",
+        "sha256": "ce57f592573e9def68215b6449f61ce37155b5f3ae915665a8ff098bcaaa02a4"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-5739.csv",
+        "sha256": "b9e8fdcd8bdd9e6cf4aaef9187a25f7d540e6f113f7e90a6009e51f2b2635ee8"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/kelt-11.csv",
+        "sha256": "c72fee2b96a56f94af27ea5e1536616a3276b059f562c698dfb22e4b0caae8ee"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-86226.csv",
+        "sha256": "ce248047f9791d6e7fc71f01c2d4308639076e558344c96260e38fa94bd9d91e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-207496.csv",
+        "sha256": "9c4dc4d90a7e40cce32cce0e6a25805ea52123bac63774d19c923fbf296dd45d"
+      }
+    ],
+    "generatedBy": "scripts/p102-shape-axes-real.ts",
+    "module": "src/detect/vetting.ts + src/candidate/triceratopsLite.ts",
+    "data": "committed REAL TESS-SPOC multi-sector stitched curves (byte-exact, read offline; no network, deterministic)",
+    "note": "odd/even asymmetry now MEASURED and fed to the gate for real (replacing its NaN); harmonic-sibling count reported as a diagnostic (not a claimed FPP). discoveryClaim false, safeToGate false."
+  },
+  "nHosts": 12,
+  "oddEvenDeterminable": 6,
+  "oddEvenPass": 4,
+  "oddEvenFailShape": 2,
+  "hostsWithHarmonicSiblings": 3,
+  "maxOddEvenAsymmetryFrac": 0.2,
+  "strongestHost": {
+    "host": "HD 207496",
+    "recoveredPeriod": 6.44149,
+    "snr": 23.97,
+    "oddEvenDetermined": true,
+    "oddEvenDiffFrac": 0.1188,
+    "oddEvenPass": true,
+    "aliasSiblings": 0,
+    "catalogKnown": true,
+    "nearCatalogErrPct": 0.007
+  },
+  "gateStrongest": {
+    "tier": "none",
+    "discoveryClaimAllowed": false,
+    "unmet": [
+      "not novel: host is already in the confirmed catalog or TOI list",
+      "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+      "signal duplicates a catalogued planet",
+      "Gaia blend/dilution census has not ruled out an on-target companion",
+      "PSF / difference-imaging has not cleared an instrumental origin",
+      "harmonic/alias false-positive probability NaN exceeds 0.01",
+      "AR(1) false-alarm probability NaN exceeds 0.001"
+    ]
+  },
+  "rows": [
+    {
+      "host": "HD 39091",
+      "recoveredPeriod": 3.136473,
+      "snr": 22.55,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 1.4933,
+      "oddEvenPass": false,
+      "aliasSiblings": 1,
+      "catalogKnown": false,
+      "nearCatalogErrPct": 49.959
+    },
+    {
+      "host": "HR 858",
+      "recoveredPeriod": 3.575085,
+      "snr": 17.82,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 0.1038,
+      "oddEvenPass": true,
+      "aliasSiblings": 1,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.285
+    },
+    {
+      "host": "HD 63433",
+      "recoveredPeriod": 13.984975,
+      "snr": 2985.05,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 1,
+      "catalogKnown": false,
+      "nearCatalogErrPct": 96.751
+    },
+    {
+      "host": "HD 25463",
+      "recoveredPeriod": 7.044239,
+      "snr": 13.82,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 0.0714,
+      "oddEvenPass": true,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.07
+    },
+    {
+      "host": "AU Mic",
+      "recoveredPeriod": 13.999567,
+      "snr": 44.78,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": false,
+      "nearCatalogErrPct": 65.412
+    },
+    {
+      "host": "TOI-480",
+      "recoveredPeriod": 6.879406,
+      "snr": 10.99,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 0.3718,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.192
+    },
+    {
+      "host": "GJ 143",
+      "recoveredPeriod": 14.515265,
+      "snr": 18.93,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": false,
+      "nearCatalogErrPct": 86.334
+    },
+    {
+      "host": "HD 1397",
+      "recoveredPeriod": 11.53251,
+      "snr": 23.77,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.024
+    },
+    {
+      "host": "TOI-5739",
+      "recoveredPeriod": 6.78084,
+      "snr": 7.06,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": false,
+      "nearCatalogErrPct": 19.568
+    },
+    {
+      "host": "KELT-11",
+      "recoveredPeriod": 4.694629,
+      "snr": 28.4,
+      "oddEvenDetermined": false,
+      "oddEvenDiffFrac": null,
+      "oddEvenPass": false,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.878
+    },
+    {
+      "host": "HD 86226",
+      "recoveredPeriod": 3.98281,
+      "snr": 13.05,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 0.0808,
+      "oddEvenPass": true,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.04
+    },
+    {
+      "host": "HD 207496",
+      "recoveredPeriod": 6.44149,
+      "snr": 23.97,
+      "oddEvenDetermined": true,
+      "oddEvenDiffFrac": 0.1188,
+      "oddEvenPass": true,
+      "aliasSiblings": 0,
+      "catalogKnown": true,
+      "nearCatalogErrPct": 0.007
+    }
+  ],
+  "verdict": "P102-SHAPE-AXES-MEASURED-REAL: on 12 committed real TESS-SPOC curves, the odd/even test was determinable on 6, 4 pass the frozen 20% asymmetry bar and 2 FAIL it -- so the shape axis genuinely discriminates on real photometry rather than rubber-stamping; 3 hosts have >=1 harmonic sibling (residual period ambiguity, reported not claimed). The strongest determinable-shape host HD 207496 now feeds the gate a REAL odd/even value (0.1188) yet the gate still returns tier none (unmet: not novel: host is already in the confirmed catalog or TOI list | cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2 | signal duplicates a catalogued planet | Gaia blend/dilution census has not ruled out an on-target companion | PSF / difference-imaging has not cleared an instrumental origin | harmonic/alias false-positive probability NaN exceeds 0.01 | AR(1) false-alarm probability NaN exceeds 0.001): the binding constraint is novelty + cross-sector corroboration + a prospective precision run, never the shape axis alone. Stand-in retired on one axis; no claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

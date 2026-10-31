@@ -767,11 +767,12 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-31 the served report library reads `total 61 / stamped 40 / verified 38 / fullyVerified 37 / unattested 21 /
+  As of 2026-10-31 the served report library reads `total 62 / stamped 41 / verified 39 / fullyVerified 39 / unattested 21 /
   stale []` -- the three research axes lifted verified 33 -> 36 and R32's prospective-gate instrument (`p100`, a committed-fixture
   replay of a seeded forward stream anchored to real SPOC noise) lifted it to 37, then R34's `p101` (the earned gate fed with REAL
   measured cross-sector corroboration, committed-fixture replay of multi-sector SPOC hosts re-fetched per sector from public S3)
-  lifted it to 38; each axis a committed-fixture replay that
+  lifted it to 38, then R36's `p102` (the odd/even + harmonic-sibling SHAPE axes measured for real, offline, on the committed
+  byte-exact curves -- retiring the odd/even NaN stand-in) lifted it to 39; each a committed-fixture replay that
   re-derives its figures offline with zero drift (independently rechecked): `p97` blend-dilution correction (axis 1, the
   aperture-side depth recovery), `p98` red-noise/window/drift systematics (axis 2, the AR(1)-MODEL null cuts FAR ~30% ->
   ~0% and lifts precision ~77% -> ~100%), and `p99` prospective held-out blind validation (axis 3, tuned-on-train / zero-
@@ -958,7 +959,8 @@ authority; they are deliberately not restated here.
   into `src/candidate/candidateRecord.ts` (an additive optional `discovery` field), the R32 prospective-gate instrument
   (`scripts/p100-prospective-gate.ts`, `reports/p100-prospective-gate.*`, `reports/fixtures/p100-frozen-cases.json`), the R34
   real-corroboration instrument (`scripts/p101-prospective-real.ts`, `reports/p101-prospective-real.*`,
-  `reports/fixtures/p101-frozen-real.json`), the rebuilt `web/reports/` library (verified 36 -> 37 -> 38, new p100/p101 pages),
+  `reports/fixtures/p101-frozen-real.json`), the R36 shape-axes instrument (`scripts/p102-shape-axes-real.ts`,
+  `reports/p102-shape-axes-real.*`), the rebuilt `web/reports/` library (verified 36 -> 37 -> 38 -> 39, new p100/p101/p102 pages),
   plus doc/ledger edits. Neither `src/discover/discoveryGate.ts` nor `src/candidate/candidateRecord.ts` is imported by
   `src/cf/worker.ts`, and the added `web/` content is static report pages, so the served Worker bundle's behavior is unchanged
   from 5ca88a7; but because both the `src/` and `web/` trees now differ from the deployed revision, this is a genuine

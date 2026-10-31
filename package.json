@@ -149,6 +149,7 @@
     "p99:heldout-blind": "tsx scripts/p99-prospective-heldout-blind.ts",
     "p100:prospective-gate": "tsx scripts/p100-prospective-gate.ts",
     "p101:prospective-real": "tsx scripts/p101-prospective-real.ts",
+    "p102:shape-axes": "tsx scripts/p102-shape-axes-real.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

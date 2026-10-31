@@ -23,6 +23,7 @@
 
 import type { BlendRisk, GeometryResult, Detectability, NoveltyResult } from "../review/externalReview.ts";
 import type { DepthAssessment } from "./falsePositive.ts";
+import { evaluateDiscoveryGate, type DiscoveryProtocol, type DiscoveryTier, type CandidateEvidence } from "../discover/discoveryGate.ts";
 
 export type ConfidenceTier = "high" | "moderate" | "low" | "sub-floor" | "not-novel" | "not-planetary";
 export type DataTier = "real" | "stand-in";
@@ -206,8 +207,21 @@ export interface CandidateRecord {
   catalogSource: { confirmed: string; toi: string; asOfUtc: string };
   /** Hard honesty flag: this rig surfaces candidates, it does not discover planets. Always false. */
   discoveryClaim: false;
+  /**
+   * R33: the EARNED-discovery gate (R31) evaluated against this record's OWN evidence + a supplied protocol.
+   * Additive + informational only: it NEVER flips discoveryClaim (the gate itself forbids an automated claim),
+   * and an absent protocol yields tier "none". A record can show a non-"none" tier only if every frozen bar is
+   * met AND prospective validation + human sign-off exist -- which no self-emitted record does.
+   */
+  discovery?: DiscoveryAssessment;
   createdAt: string;
   bundleHash?: string;
+}
+
+/** The gate's verdict for a record: its tier plus the specific bars still unmet (auditable). */
+export interface DiscoveryAssessment {
+  tier: DiscoveryTier;
+  unmet: string[];
 }
 
 export interface BuildInput {
@@ -222,6 +236,8 @@ export interface BuildInput {
   thresholds?: Thresholds;
   nowIso?: string;
   bundleHash?: string;
+  /** R33: when supplied, buildCandidateRecord computes the earned-gate `discovery` assessment from the record. */
+  discoveryProtocol?: DiscoveryProtocol;
 }
 
 /** Assemble a record: classify, then freeze the honesty invariants. Deterministic for fixed input. */
@@ -241,11 +257,40 @@ export function buildCandidateRecord(input: BuildInput): CandidateRecord {
     dataTier: input.dataTier,
     catalogSource: input.catalogSource,
     discoveryClaim: false,
+    discovery: input.discoveryProtocol ? assessDiscovery(input, vetting, input.discoveryProtocol) : undefined,
     createdAt: input.nowIso ?? new Date().toISOString(),
     bundleHash: input.bundleHash,
   };
   assertHonest(record);
   return record;
+}
+
+/**
+ * R33: evaluate the EARNED-discovery gate against this record's own measured evidence. Conservative by design:
+ * fields the record does not measure (harmonic-alias FPP, PSF/diff-imaging, prospective precision, human sign-off)
+ * are left UNMET, so a self-emitted record can never reach "nomination"/"announcement". It supplies the auditable
+ * reason trail only -- it does not and cannot set discoveryClaim (which stays structurally false).
+ */
+function assessDiscovery(input: BuildInput, vetting: CandidateVetting, protocol: DiscoveryProtocol): DiscoveryAssessment {
+  const th = input.thresholds ?? DEFAULT_THRESHOLDS;
+  const centroid = vetting.centroidOffsetArcsec;
+  const psfClear = isSet(centroid) && centroid <= th.centroidHighMaxArcsec;
+  const evidence: CandidateEvidence = {
+    novelty: { inConfirmed: input.novelty.inConfirmed, inToi: input.novelty.inToi, confirmedScanned: input.novelty.confirmedScanned, toiScanned: input.novelty.toiScanned },
+    corroboration: {
+      crossSectorEphemerisCoherentSectors: input.detection.nSectors,
+      catalogDuplicate: input.novelty.inConfirmed || input.novelty.inToi,
+      gaiaBlendRuledOut: vetting.blend?.tier === "low",
+      psfOrDiffImagingClear: psfClear,
+      harmonicAliasFpp: Number.NaN, // not measured at record-emit time -> the alias bar stays unmet
+      oddEvenAsymmetryFrac: isSet(vetting.oddEvenAsymmetryFrac) ? vetting.oddEvenAsymmetryFrac : Number.NaN,
+    },
+    significance: { snr: input.detection.snr, ar1FalseAlarmProb: input.significance?.fap ?? Number.NaN },
+    prospective: null, // no prospective-validation record exists at emit time
+    signoff: null, // no human/peer sign-off at emit time
+  };
+  const res = evaluateDiscoveryGate(evidence, protocol);
+  return { tier: res.tier, unmet: res.unmet };
 }
 
 /**
@@ -272,6 +317,8 @@ export function formatFollowupCard(r: CandidateRecord): string {
   lines.push(`Candidate: TIC ${r.host.tic}  RA ${r.host.ra.toFixed(5)}  Dec ${r.host.dec.toFixed(5)}  T=${r.host.tmag.toFixed(2)}`);
   if (r.host.gaiaSourceId) lines.push(`Gaia source_id: ${r.host.gaiaSourceId}`);
   lines.push(`Confidence tier: ${r.tier}   (candidate, not a discovery claim)`);
+  if (r.discovery) lines.push(`Earned-discovery gate: tier=${r.discovery.tier} (claim=${r.discoveryClaim})`);
+  if (r.discovery && r.discovery.unmet.length) for (const u of r.discovery.unmet) lines.push(`  gate-unmet: ${u}`);
   lines.push(`Signal: P=${r.detection.periodDays.toFixed(6)} d  T0=${r.detection.epochBjd.toFixed(4)} BJD  depth=${r.detection.depthPpm.toFixed(0)} ppm  T14=${r.detection.durationHours.toFixed(2)} h  SNR=${r.detection.snr.toFixed(1)}  ${r.detection.nSectors} sector(s)`);
   if (r.significance) lines.push(`Calibrated significance: FAP=${r.significance.fap.toExponential(2)} (noise color rho=${r.significance.rho.toFixed(2)})`);
   if (r.significance && isSet(r.significance.systematicsFap)) lines.push(`Coherent-systematics significance: systematics-aware FAP=${r.significance.systematicsFap!.toExponential(2)} (ensemble null including the instrumental systematic)`);

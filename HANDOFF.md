@@ -757,7 +757,7 @@ the Actions web page when the anonymous API is rate-limited.
   platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
   CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
-## 13. Current state (as of 2026-10-30)
+## 13. Current state (as of 2026-10-31)
 
 SNAPSHOT, NOT HISTORY. The leading bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated

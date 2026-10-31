@@ -4,8 +4,8 @@
 - run id: 41168109281  conclusion: success  url: https://github.com/SpaceDataRig/space-data-rig/actions/runs/41168109281
 - job id: 124439971569
 - dispatch pre-flight: DRY RUN pass (ASCII ok, length 1479/25000, over-claim guard not tripped)
-- dispatch HTTP: 204 accepted
-- posted tweet id: 2116384645399085112
+- dispatch HTTP `204` accepted
+- posted id: `2116384645399085112`
 - job-log send line: posted (id 2116384645399085112).
 - archived text: out/tweet-r34en.txt (same bytes dispatched)
 

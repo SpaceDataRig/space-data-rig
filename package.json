@@ -151,6 +151,7 @@
     "p101:prospective-real": "tsx scripts/p101-prospective-real.ts",
     "p102:shape-axes": "tsx scripts/p102-shape-axes-real.ts",
     "p103:target-gate-table": "tsx scripts/p103-target-gate-table.ts",
+    "p104:corroboration-capability": "tsx scripts/p104-corroboration-capability.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

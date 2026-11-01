@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-01T23:47:39.332Z",
+    "gitSha": "82128a992ef69dfb7c3a895efaf3725000ee91ff",
+    "inputs": [
+      {
+        "path": "scripts/p104-corroboration-capability.ts",
+        "sha256": "3aa23358c28285e0b1249a8aba52946b6a7b00eb98ffe0238e0b244995cfcdc9"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests/fixtures/live-gaia-rv.json",
+        "sha256": "1970377b892afc4380ed307a7279fe7f669ae1e43b0147a4833d6ab7e009da12"
+      },
+      {
+        "path": "tests/fixtures/scaled/centroid.jsonl",
+        "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
+      }
+    ],
+    "generatedBy": "scripts/p104-corroboration-capability.ts",
+    "module": "src/discover/discoveryGate.ts + src/data/gaiaRv.ts + centroidFtest",
+    "data": "committed REAL Gaia DR3 RV/orbit census + REAL pixel-centroid F-test checkpoint (500 labelled sources). Fully offline, deterministic.",
+    "note": "honest capability audit: the two remaining gate corroboration axes cannot be favourably fed from committed data. discoveryClaim false, safeToGate false."
+  },
+  "alpha": 0.001,
+  "gaia": {
+    "considered": 19,
+    "withData": 5,
+    "decisive": 0,
+    "ruledOut": 0,
+    "corroborated": 0,
+    "unknown": 5
+  },
+  "centroid": {
+    "total": 500,
+    "blends": 392,
+    "blendsTestable": 59,
+    "caught": 0,
+    "blendWouldClear": 59,
+    "blendCatchRate": 0,
+    "planets": 108,
+    "planetsTestable": 55,
+    "falseReject": 2,
+    "planetWouldClear": 53
+  },
+  "gateOverlapHosts": 3,
+  "allNone": true,
+  "rows": [
+    {
+      "tic": 389352124,
+      "pl": "2197.01",
+      "gaiaBlendRuledOut": false,
+      "psfClear": false,
+      "centroidTestable": false,
+      "tier": "none",
+      "unmetCount": 9
+    },
+    {
+      "tic": 18310799,
+      "pl": "5087.01",
+      "gaiaBlendRuledOut": false,
+      "psfClear": true,
+      "centroidTestable": true,
+      "tier": "none",
+      "unmetCount": 8
+    },
+    {
+      "tic": 149603524,
+      "pl": "102.01",
+      "gaiaBlendRuledOut": false,
+      "psfClear": true,
+      "centroidTestable": true,
+      "tier": "none",
+      "unmetCount": 8
+    }
+  ],
+  "verdict": "P104-CORROBORATION-CAPABILITY (both remaining gate axes measured on committed real data, offline): Gaia carries a DECISIVE ruling on 0/5 hosts with data (0 blend-ruled-out, 0 blend-corroborated, 5 unknown) -> it can feed NO favourable blend evidence here. The pixel-centroid F-test at alpha=0.001 catches 0/59 real blends (catch rate 0.0%) while wrongly rejecting 2/55 real planets; run as psfOrDiffImagingClear it would declare 59/59 genuine blends \"clear\" -- a rubber stamp, so it must NOT be promoted. Feeding both axes their honest measured values to the gate, every one of the 3 hosts covered by BOTH sources still lands tier none (verified). The two bars stay conservative on committed data; the real unlock is external (Gaia orbits AT the candidate period; centroid precision/WCS), not a code change. No claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

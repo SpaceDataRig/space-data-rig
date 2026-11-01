@@ -757,7 +757,7 @@ the Actions web page when the anonymous API is rate-limited.
   platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
   CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
-## 13. Current state (as of 2026-10-31)
+## 13. Current state (as of 2026-11-01)
 
 SNAPSHOT, NOT HISTORY. The leading bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -767,12 +767,12 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-10-31 the served report library reads `total 62 / stamped 41 / verified 39 / fullyVerified 39 / unattested 21 /
+  As of 2026-11-01 the served report library reads `total 63 / stamped 42 / verified 40 / fullyVerified 40 / unattested 21 /
   stale []` -- the three research axes lifted verified 33 -> 36 and R32's prospective-gate instrument (`p100`, a committed-fixture
   replay of a seeded forward stream anchored to real SPOC noise) lifted it to 37, then R34's `p101` (the earned gate fed with REAL
   measured cross-sector corroboration, committed-fixture replay of multi-sector SPOC hosts re-fetched per sector from public S3)
   lifted it to 38, then R36's `p102` (the odd/even + harmonic-sibling SHAPE axes measured for real, offline, on the committed
-  byte-exact curves -- retiring the odd/even NaN stand-in) lifted it to 39; each a committed-fixture replay that
+  byte-exact curves -- retiring the odd/even NaN stand-in) lifted it to 39, then R37's `p103` (the per-target earned-gate DECISION TABLE that joins the real cross-sector (p101) and shape (p102) axes and MEASURES the last placeholder -- a per-target AR(1) significance FAR from a null ensemble matched to each committed curve's own noise, retiring the significance-FAP NaN stand-in -- fully offline) lifted it to 40; each a committed-fixture replay that
   re-derives its figures offline with zero drift (independently rechecked): `p97` blend-dilution correction (axis 1, the
   aperture-side depth recovery), `p98` red-noise/window/drift systematics (axis 2, the AR(1)-MODEL null cuts FAR ~30% ->
   ~0% and lifts precision ~77% -> ~100%), and `p99` prospective held-out blind validation (axis 3, tuned-on-train / zero-
@@ -960,12 +960,13 @@ authority; they are deliberately not restated here.
   (`scripts/p100-prospective-gate.ts`, `reports/p100-prospective-gate.*`, `reports/fixtures/p100-frozen-cases.json`), the R34
   real-corroboration instrument (`scripts/p101-prospective-real.ts`, `reports/p101-prospective-real.*`,
   `reports/fixtures/p101-frozen-real.json`), the R36 shape-axes instrument (`scripts/p102-shape-axes-real.ts`,
-  `reports/p102-shape-axes-real.*`), the rebuilt `web/reports/` library (verified 36 -> 37 -> 38 -> 39, new p100/p101/p102 pages),
+  `reports/p102-shape-axes-real.*`), the R37 per-target gate-table instrument (`scripts/p103-target-gate-table.ts`,
+  `reports/p103-target-gate-table.*`), the rebuilt `web/reports/` library (verified 36 -> 37 -> 38 -> 39 -> 40, new p100/p101/p102/p103 pages),
   plus doc/ledger edits. Neither `src/discover/discoveryGate.ts` nor `src/candidate/candidateRecord.ts` is imported by
   `src/cf/worker.ts`, and the added `web/` content is static report pages, so the served Worker bundle's behavior is unchanged
   from 5ca88a7; but because both the `src/` and `web/` trees now differ from the deployed revision, this is a genuine
   deploy-pending gap, and this marker discloses it. `tests/handoff-freshness.test.ts` rule-4 is satisfied by this marker until
-  the next `npm run cf:deploy:sha`, which will publish the p100/p101 pages and fold the inert modules into the bundle, then retire this note.
+  the next `npm run cf:deploy:sha`, which will publish the p100-p103 pages and fold the inert modules into the bundle, then retire this note.
   **WHAT THIS SHIPS:** the R26-41 hardened freshness gate PLUS the
   R26-49/R26-50/R26-55/R26-56/R26-57/R26-58/R26-59/R26-60/R26-61 frozen-fixture lifts of p41, p88, p71, p65, p45, p46, p51, p81 and p70 -- each report now re-DERIVES
   its published figures from committed frozen measurement rows (`reports/fixtures/p41-frozen-rows.json`, `reports/fixtures/p88-frozen-cases.json`,

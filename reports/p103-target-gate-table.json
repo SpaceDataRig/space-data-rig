@@ -1,0 +1,261 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-01T02:06:50.517Z",
+    "gitSha": "96a78c506a98e675d25a385fb3f222f6ef032c1a",
+    "inputs": [
+      {
+        "path": "scripts/p103-target-gate-table.ts",
+        "sha256": "6940ae1967258acbc9387eaffab7eaa79d70cf2c72367a6f0c1a3050f7fd7bbe"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "reports/fixtures/p101-frozen-real.json",
+        "sha256": "f0f74770521b7f59135394a86703737b45ba108537ee901d335a1f8f7ac40bd5"
+      },
+      {
+        "path": "reports/p102-shape-axes-real.json",
+        "sha256": "823904508b702f1b321f0e78771f02d7337e25f4b0c23611c50e5e5d839883a9"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-39091.csv",
+        "sha256": "cee5be338987105eb398bbe263c1880a3a4f3b1bf9b7fe3feb758c6bde7b4ed2"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hr-858.csv",
+        "sha256": "122432524310699c0d97becd7ba5973aa0a9e2981fac52592e2a788d29c7f353"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-25463.csv",
+        "sha256": "e627a23cc8461324de8e6c9a0deac2c26ba3d043b6ced0593131bb1baac6db6e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/au-mic.csv",
+        "sha256": "4c9f9d623ee42b1b8b484616b2b36a73b357b9c5eea661a7216a6953271563e1"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-480.csv",
+        "sha256": "042828458ac1cd3cd7ad8d41c350cbc4746e243de21383f2e6cff00dae755033"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/gj-143.csv",
+        "sha256": "e692634d4972a62a5f843399061f7706d1ec136a9a2f32dad2f3c9868ae0c0b6"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-1397.csv",
+        "sha256": "ce57f592573e9def68215b6449f61ce37155b5f3ae915665a8ff098bcaaa02a4"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-86226.csv",
+        "sha256": "ce248047f9791d6e7fc71f01c2d4308639076e558344c96260e38fa94bd9d91e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-207496.csv",
+        "sha256": "9c4dc4d90a7e40cce32cce0e6a25805ea52123bac63774d19c923fbf296dd45d"
+      }
+    ],
+    "generatedBy": "scripts/p103-target-gate-table.ts",
+    "module": "src/discover/discoveryGate.ts",
+    "data": "committed REAL TESS-SPOC curves + p101 real cross-sector frozen rows + p102 real shape rows; AR(1) FAR measured from a null ensemble matched to each curve's own noise (surrogate, not an empirical sky null). Fully offline, deterministic.",
+    "note": "per-target end-to-end earned-gate decision table; significance-FAP stand-in retired. discoveryClaim false, safeToGate false."
+  },
+  "nTargets": 9,
+  "significanceClears": 9,
+  "crossSectorClears": 4,
+  "oddEvenClears": 4,
+  "tierNoneCount": 9,
+  "notNovelCount": 9,
+  "blendUnmeasuredCount": 9,
+  "rows": [
+    {
+      "host": "HD 39091",
+      "coherentSectors": 2,
+      "stitchedSnr": 22.55,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 1.4933,
+      "significanceClears": true,
+      "crossSectorClears": true,
+      "oddEvenClears": false,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 1.4933 exceeds 0.2"
+      ]
+    },
+    {
+      "host": "HR 858",
+      "coherentSectors": 1,
+      "stitchedSnr": 17.82,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 0.1038,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "oddEvenClears": true,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "host": "HD 25463",
+      "coherentSectors": 1,
+      "stitchedSnr": 18.9,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 0.0714,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "oddEvenClears": true,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "host": "AU Mic",
+      "coherentSectors": 2,
+      "stitchedSnr": 49.4,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": null,
+      "significanceClears": true,
+      "crossSectorClears": true,
+      "oddEvenClears": false,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "host": "TOI-480",
+      "coherentSectors": 0,
+      "stitchedSnr": 16.09,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 0.3718,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "oddEvenClears": false,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 0.3718 exceeds 0.2"
+      ]
+    },
+    {
+      "host": "GJ 143",
+      "coherentSectors": 1,
+      "stitchedSnr": 18.93,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": null,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "oddEvenClears": false,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "host": "HD 1397",
+      "coherentSectors": 2,
+      "stitchedSnr": 23.77,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": null,
+      "significanceClears": true,
+      "crossSectorClears": true,
+      "oddEvenClears": false,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "host": "HD 86226",
+      "coherentSectors": 0,
+      "stitchedSnr": 17.36,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 0.0808,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "oddEvenClears": true,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "host": "HD 207496",
+      "coherentSectors": 2,
+      "stitchedSnr": 30.04,
+      "ar1Far": 0,
+      "oddEvenDiffFrac": 0.1188,
+      "significanceClears": true,
+      "crossSectorClears": true,
+      "oddEvenClears": true,
+      "catalogKnown": true,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    }
+  ],
+  "verdict": "P103-PER-TARGET-GATE-TABLE (all axes offline, significance FAR now measured): on 9 committed real targets, the now-measured axes clear for significance SNR+FAR 9/9, cross-sector corroboration 4/9, odd/even shape 4/9; yet ALL 9/9 land at tier none. The binding constraints are novelty (already-known: 9/9) and unmeasured follow-up imaging (blend/PSF: 9/9) plus an absent prospective precision run -- NOT significance/shape/cross-sector for the hosts that clear those. The significance-FAP stand-in is retired (now a matched-surrogate FAR per target); a claim would need a genuinely new target plus real blend/PSF ruling plus a prospective precision run, none of which is fabricated. No claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

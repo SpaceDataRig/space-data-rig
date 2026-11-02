@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-02T05:51:18.599Z",
+    "gitSha": "76a0991f6a96e5b20d81380eea05e9e4e45a9fbf",
+    "inputs": [
+      {
+        "path": "scripts/p106-centroid-roc.ts",
+        "sha256": "33d896db568bdeaf0b7bbce3250b915302f4fcf1069f784d20c7d9a40a462664"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests/fixtures/scaled/centroid.jsonl",
+        "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
+      }
+    ],
+    "generatedBy": "scripts/p106-centroid-roc.ts",
+    "module": "centroid F-test (src/detect centroidFtest via scripts/p82-scaled-validation.ts)",
+    "data": "committed REAL pixel-centroid F-test checkpoint (tests/fixtures/scaled/centroid.jsonl), labelled planet/blend on real TESS+Gaia data. AUC over 2-sig-fig stored p-values. Fully offline, deterministic.",
+    "note": "ROC/separability audit of the centroid axis: does it discriminate at ANY threshold. discoveryClaim false, safeToGate false."
+  },
+  "nTestableBlends": 59,
+  "nTestablePlanets": 55,
+  "aucTarget": 0.4795,
+  "aucNeighbour": 0.6693,
+  "power": "none",
+  "usable": false,
+  "defaultAlpha": 0.001,
+  "caughtAtDefault": 0,
+  "falseRejectAtDefault": 2,
+  "youden": {
+    "alpha": 0.649,
+    "sensitivity": 0.6271,
+    "specificity": 0.4909,
+    "j": 0.118
+  },
+  "verdict": "P106-CENTROID-ROC (does the pixel-centroid F-test discriminate blends from planets at ANY threshold, over 114 labelled testable real sources): target-p-value AUC = 0.479 (none separation); neighbour-consistency AUC = 0.669. At the operating point p104 used (alpha=0.001) it caught 0/59 blends while wrongly rejecting 2/55 planets. The Youden-optimal cut (alpha=6.49e-1) reaches sensitivity 0.63 / specificity 0.49 (J=0.12). Conclusion: the centroid target test carries NO usable blend/planet separation on this real data at any threshold -> it cannot be promoted into the gate, confirming p104 with a full ROC rather than one operating point. discoveryClaim false, safeToGate false.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

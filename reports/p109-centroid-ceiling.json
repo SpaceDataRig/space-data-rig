@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-02T09:50:09.137Z",
+    "gitSha": "4448b2429726165d37348c6fc25656b34ec38e7c",
+    "inputs": [
+      {
+        "path": "scripts/p109-centroid-ceiling.ts",
+        "sha256": "abdd1d13ac94bb36f36396c936599190b3f9bd3385ba5c2d4b05fd57ea5c89e6"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests/fixtures/scaled/centroid.jsonl",
+        "sha256": "54ff1be1bad4c8adc1aa2bda2e4f3cf105c10c411573019d0ec6fbdba2adbd2c"
+      }
+    ],
+    "generatedBy": "scripts/p109-centroid-ceiling.ts",
+    "module": "centroid F-test features via scripts/p82-scaled-validation.ts",
+    "data": "committed REAL pixel-centroid checkpoint (tests/fixtures/scaled/centroid.jsonl), planet/blend labels from the p82 injection/validation harness. AUC over 2-sig-fig stored p-values. Fully offline, deterministic.",
+    "note": "ceiling audit of the centroid feature set: best achievable separation by any rule + the label-provenance caveat. discoveryClaim false, safeToGate false."
+  },
+  "nTestableBlends": 59,
+  "nTestablePlanets": 55,
+  "aucTarget": 0.4795,
+  "aucNeighbour": 0.6693,
+  "aucComposite": 0.5704,
+  "bestStratumAuc": 0.6815,
+  "ceiling": 0.6815,
+  "power": "weak",
+  "usable": false,
+  "youdenNeighbour": {
+    "j": 0.3627,
+    "sensitivity": 0.7627,
+    "specificity": 0.6
+  },
+  "youdenConjunction": {
+    "j": 0.3664,
+    "pTargetCut": 0.957,
+    "neighbourCut": 0.00749,
+    "sensitivity": 0.7119,
+    "specificity": 0.6545
+  },
+  "strata": [
+    {
+      "band": "0-0",
+      "nBlend": 7,
+      "nPlanet": 12,
+      "auc": 0.5
+    },
+    {
+      "band": "1-4",
+      "nBlend": 17,
+      "nPlanet": 21,
+      "auc": 0.6331
+    },
+    {
+      "band": "5-19",
+      "nBlend": 6,
+      "nPlanet": 5,
+      "auc": 0.6
+    },
+    {
+      "band": ">=20",
+      "nBlend": 29,
+      "nPlanet": 17,
+      "auc": 0.6815
+    }
+  ],
+  "catchAt5pctFalseReject": {
+    "sensitivity": 0.1695,
+    "falseReject": 0.0364
+  },
+  "labelsFromHarnessNotExternalImaging": true,
+  "verdict": "P109-CENTROID-CEILING (the best blend/planet separation the whole pixel-centroid feature set can reach on 59 testable blends / 55 testable planets, offline): target-p AUC 0.479 (none), neighbour-p AUC 0.669 (weak), 2-feature composite AUC 0.570, best viable-neighbour stratum AUC 0.681 -> CEILING = 0.681 (weak); best achievable Youden J = 0.37 (neighbour 0.36, conjunction 0.37); at a <=5% planet-false-reject budget the neighbour axis flags only 0.17 of blends. Two things close the centroid line: (1) no rule -- single axis, the p82 conjunction, a composite, or a stratified sub-population -- clears the 0.7 usable bar, confirming p104/p106 now with an explicit ceiling; (2) decisively, these planet/blend LABELS come from the p82 injection/validation harness, NOT external confirmed difference-imaging, so even a ceiling above 0.7 would not be independent validation of a real candidate -- the axis stays diagnostic-only and cannot be fed favourably to the gate. usable=false. discoveryClaim false, safeToGate false.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

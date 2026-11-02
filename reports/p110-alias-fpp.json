@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-02T15:30:26.589Z",
+    "gitSha": "20ef8ccdc47792bf6131dd1fab6547104bc0d057",
+    "inputs": [
+      {
+        "path": "scripts/p110-alias-fpp.ts",
+        "sha256": "adb2dfbd640729efab237cab365336dca974fb428268a2fb189363e7c2b18506"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "reports/p102-shape-axes-real.json",
+        "sha256": "823904508b702f1b321f0e78771f02d7337e25f4b0c23611c50e5e5d839883a9"
+      },
+      {
+        "path": "reports/p103-target-gate-table.json",
+        "sha256": "6a7434fd72b6bf8df4583db78bbb6b0797b763c471ddf8b19e9b2217c9713aaa"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-39091.csv",
+        "sha256": "cee5be338987105eb398bbe263c1880a3a4f3b1bf9b7fe3feb758c6bde7b4ed2"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hr-858.csv",
+        "sha256": "122432524310699c0d97becd7ba5973aa0a9e2981fac52592e2a788d29c7f353"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-25463.csv",
+        "sha256": "e627a23cc8461324de8e6c9a0deac2c26ba3d043b6ced0593131bb1baac6db6e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/au-mic.csv",
+        "sha256": "4c9f9d623ee42b1b8b484616b2b36a73b357b9c5eea661a7216a6953271563e1"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-480.csv",
+        "sha256": "042828458ac1cd3cd7ad8d41c350cbc4746e243de21383f2e6cff00dae755033"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/gj-143.csv",
+        "sha256": "e692634d4972a62a5f843399061f7706d1ec136a9a2f32dad2f3c9868ae0c0b6"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-1397.csv",
+        "sha256": "ce57f592573e9def68215b6449f61ce37155b5f3ae915665a8ff098bcaaa02a4"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-86226.csv",
+        "sha256": "ce248047f9791d6e7fc71f01c2d4308639076e558344c96260e38fa94bd9d91e"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-207496.csv",
+        "sha256": "9c4dc4d90a7e40cce32cce0e6a25805ea52123bac63774d19c923fbf296dd45d"
+      }
+    ],
+    "generatedBy": "scripts/p110-alias-fpp.ts",
+    "module": "src/discover/discoveryGate.ts + src/detect/bls.ts",
+    "data": "committed REAL TESS-SPOC curves; alias-decoy density measured by re-running BLS on the same real curve at the recovered peak's harmonic/window alias family, fed to the gate in place of the NaN harmonicAliasFpp. Fully offline, deterministic.",
+    "note": "retires the last NaN gate stand-in (harmonic/alias FPP) with a measured real-curve ambiguity estimate. discoveryClaim false, safeToGate false."
+  },
+  "minSnr": 7,
+  "aliasBar": 0.01,
+  "nHosts": 9,
+  "meanAliasFpp": 0.8902,
+  "aliasBarBinding": 9,
+  "aliasBarMet": 0,
+  "nanAliasReasonsRemaining": 0,
+  "allTierNone": true,
+  "rows": [
+    {
+      "host": "HD 39091",
+      "recoveredPeriod": 3.136473,
+      "peakSnr": 22.55,
+      "nAliases": 8,
+      "aliasesClearing": 8,
+      "aliasFpp": 1,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 1 exceeds 0.01"
+    },
+    {
+      "host": "HR 858",
+      "recoveredPeriod": 3.575085,
+      "peakSnr": 17.82,
+      "nAliases": 8,
+      "aliasesClearing": 7,
+      "aliasFpp": 0.875,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 0.875 exceeds 0.01"
+    },
+    {
+      "host": "HD 25463",
+      "recoveredPeriod": 7.044239,
+      "peakSnr": 18.9,
+      "nAliases": 7,
+      "aliasesClearing": 5,
+      "aliasFpp": 0.7143,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 0.7143 exceeds 0.01"
+    },
+    {
+      "host": "AU Mic",
+      "recoveredPeriod": 13.999567,
+      "peakSnr": 49.4,
+      "nAliases": 5,
+      "aliasesClearing": 5,
+      "aliasFpp": 1,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 1 exceeds 0.01"
+    },
+    {
+      "host": "TOI-480",
+      "recoveredPeriod": 6.879406,
+      "peakSnr": 16.09,
+      "nAliases": 7,
+      "aliasesClearing": 5,
+      "aliasFpp": 0.7143,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 0.7143 exceeds 0.01"
+    },
+    {
+      "host": "GJ 143",
+      "recoveredPeriod": 14.515265,
+      "peakSnr": 18.93,
+      "nAliases": 5,
+      "aliasesClearing": 5,
+      "aliasFpp": 1,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 1 exceeds 0.01"
+    },
+    {
+      "host": "HD 1397",
+      "recoveredPeriod": 11.53251,
+      "peakSnr": 23.77,
+      "nAliases": 6,
+      "aliasesClearing": 5,
+      "aliasFpp": 0.8333,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 0.8333 exceeds 0.01"
+    },
+    {
+      "host": "HD 86226",
+      "recoveredPeriod": 3.98281,
+      "peakSnr": 17.36,
+      "nAliases": 8,
+      "aliasesClearing": 7,
+      "aliasFpp": 0.875,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 0.875 exceeds 0.01"
+    },
+    {
+      "host": "HD 207496",
+      "recoveredPeriod": 6.44149,
+      "peakSnr": 30.04,
+      "nAliases": 8,
+      "aliasesClearing": 8,
+      "aliasFpp": 1,
+      "meetsAliasBar": false,
+      "gateTier": "none",
+      "aliasUnmet": "harmonic/alias false-positive probability 1 exceeds 0.01"
+    }
+  ],
+  "verdict": "P110-ALIAS-FPP (retire the last NaN gate stand-in: the harmonic/alias false-positive probability, measured per committed real curve, offline): for 9 multi-sector real hosts we computed an alias-decoy density -- the fraction of the recovered peak's harmonic/window alias family that independently clears SNR>=7 on the SAME real curve -- and fed it to the gate in place of NaN. Mean alias-FPP = 0.890; the 0.01 alias bar BINDS (measured above it) for 9/9 hosts and is met for 0/9. Crucially the gate no longer sees a NaN alias placeholder -- no host's alias unmet-reason is NaN anymore (it is a measured number or the bar clears). All 9 hosts remain tier none (novelty / cross-sector / blend / prospective still bind). Reading: the significance side of the gate is now fully measured -- AR(1) FAR from p103 + alias FPP from p110 carry no stand-in -- so p107's 'diagnostic-only alias' bar becomes 'fed-real (measured, and it binds)'. This is a calibrated ambiguity estimate on real curves, NOT a Bayesian posterior that a signal is an alias, and is stated as such. No claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

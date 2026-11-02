@@ -157,6 +157,7 @@
     "p107:gate-state": "tsx scripts/p107-gate-state.ts",
     "p108:negatives-expansion": "tsx scripts/p108-negatives-expansion.ts",
     "p109:centroid-ceiling": "tsx scripts/p109-centroid-ceiling.ts",
+    "p110:alias-fpp": "tsx scripts/p110-alias-fpp.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

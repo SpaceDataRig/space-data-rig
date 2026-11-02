@@ -155,6 +155,7 @@
     "p105:gate-calibration": "tsx scripts/p105-gate-calibration.ts",
     "p106:centroid-roc": "tsx scripts/p106-centroid-roc.ts",
     "p107:gate-state": "tsx scripts/p107-gate-state.ts",
+    "p108:negatives-expansion": "tsx scripts/p108-negatives-expansion.ts",
     "science:digest": "tsx scripts/science-digest.ts",
     "p24:named-observation": "tsx scripts/p24-named-observation.ts",
     "p25:observe-evidence": "tsx scripts/p25-observe-evidence.ts",

@@ -1,0 +1,305 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-02T09:19:00.753Z",
+    "gitSha": "b037bb9abcbdb1282e1f95f4f8638316ca937c6a",
+    "inputs": [
+      {
+        "path": "scripts/p108-negatives-expansion.ts",
+        "sha256": "8188423f176783be4a7817dd9f9eb68ede5f9ddd9f8ddcf25f36aa743f729829"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/manifest.json",
+        "sha256": "eca117e8e5333d21306c56619d779d4692636c8359f99daaeaaa914341b6c289"
+      },
+      {
+        "path": "reports/p102-shape-axes-real.json",
+        "sha256": "823904508b702f1b321f0e78771f02d7337e25f4b0c23611c50e5e5d839883a9"
+      },
+      {
+        "path": "reports/p103-target-gate-table.json",
+        "sha256": "6a7434fd72b6bf8df4583db78bbb6b0797b763c471ddf8b19e9b2217c9713aaa"
+      },
+      {
+        "path": "reports/p104-corroboration-capability.json",
+        "sha256": "79e7b96defa0c6103c4a463d2fde62176061ee360ffb38e2c6b810a7f02e30f7"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/hd-63433.csv",
+        "sha256": "98bb916925bcc7da95c63c9fa44fa4f6ba76fc193f5075562bd8f5267929c377"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/toi-5739.csv",
+        "sha256": "b9e8fdcd8bdd9e6cf4aaef9187a25f7d540e6f113f7e90a6009e51f2b2635ee8"
+      },
+      {
+        "path": "tests/fixtures/spoc-curves/kelt-11.csv",
+        "sha256": "c72fee2b96a56f94af27ea5e1536616a3276b059f562c698dfb22e4b0caae8ee"
+      }
+    ],
+    "generatedBy": "scripts/p108-negatives-expansion.ts",
+    "module": "src/discover/discoveryGate.ts (evaluateDiscoveryGate, wilsonLowerBound)",
+    "data": "newly measured single-sector committed SPOC hosts (period+SNR from p102's real BLS detection, AR(1) FAR from a matched surrogate null) pooled with the committed p103/p104 labelled hosts. Fully offline, deterministic.",
+    "note": "expands the gate specificity census on real labelled negatives and states the sample-size ceiling. discoveryClaim false, safeToGate false."
+  },
+  "newHosts": 3,
+  "nLabeledPrior": 12,
+  "nLabeled": 15,
+  "trueNegatives": 15,
+  "falsePromotions": 0,
+  "specificity": 1,
+  "specificityWilsonLB": 0.7961,
+  "priorWilsonLB": 0.7575,
+  "targetPrecisionLB": 0.95,
+  "nRequiredForTarget": 73,
+  "idCollisions": [],
+  "singleSectorPeakMismatch": 2,
+  "rows": [
+    {
+      "host": "HD 63433",
+      "nSectors": 1,
+      "recoveredPeriod": 13.984975,
+      "snr": 2985.05,
+      "ar1Far": 0,
+      "periodMatchesCatalog": false,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "host": "TOI-5739",
+      "nSectors": 1,
+      "recoveredPeriod": 6.78084,
+      "snr": 7.06,
+      "ar1Far": 0,
+      "periodMatchesCatalog": false,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "host": "KELT-11",
+      "nSectors": 1,
+      "recoveredPeriod": 4.694629,
+      "snr": 28.4,
+      "ar1Far": 0,
+      "periodMatchesCatalog": true,
+      "significanceClears": true,
+      "crossSectorClears": false,
+      "gateTier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    }
+  ],
+  "labeled": [
+    {
+      "id": "HD 39091",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 1.4933 exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HR 858",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "HD 25463",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "AU Mic",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "TOI-480",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 0.3718 exceeds 0.2"
+      ]
+    },
+    {
+      "id": "GJ 143",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HD 1397",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HD 86226",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "HD 207496",
+      "source": "p103/spoc-multi",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "389352124",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "unmet": []
+    },
+    {
+      "id": "18310799",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "unmet": []
+    },
+    {
+      "id": "149603524",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "unmet": []
+    },
+    {
+      "id": "HD 63433",
+      "source": "p108/spoc-single",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "TOI-5739",
+      "source": "p108/spoc-single",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "KELT-11",
+      "source": "p108/spoc-single",
+      "tier": "none",
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    }
+  ],
+  "verdict": "P108-NEGATIVES-EXPANSION (grow the gate specificity bound using every committed real known-planet host, offline): p103 skipped 3 single-sector hosts; their curves are committed and their systems are catalogued, so they are legitimate labelled negatives. Measured the same way as p103 and fed to the frozen gate, all 3 land tier none -> the labelled-negative union grows 12 -> 15 (15/15 refused, 0 false promotion(s), specificity 1.000), tightening the Wilson 95% lower bound on the true-negative rate 0.757 -> 0.796. Honest ceiling: reaching the protocol's 0.95 precision bar on a zero-false-claim bound needs >= 73 clean real negatives -- we have 15; the gap is sample size of real labelled planets, not method. On 2/3 single-sector hosts the strongest BLS peak did NOT match the catalogued planet -- a lone sector mis-detects even a known signal, the direct case for requiring cross-sector corroboration. Sensitivity arm (promoting a clean novelty) remains synthetic-only (p100). No claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

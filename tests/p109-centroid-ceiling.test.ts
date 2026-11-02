@@ -44,7 +44,7 @@ test("continuity with p106 -- same fixture, same single-axis AUCs", () => {
 });
 
 test("the ceiling is the max over all rules and stays below the usable bar", () => {
-  const strataAucs = R.strata.filter((s: any) => s.auc !== null && s.nBlend >= 5 && s.nPlanet >= 5).map((s: any) => s.auc);
+  const strataAucs = R.strata.filter((s) => s.auc !== null && s.nBlend >= 5 && s.nPlanet >= 5).map((s) => s.auc);
   const recomputedCeiling = Math.max(R.aucNeighbour, R.aucComposite, ...(strataAucs.length ? strataAucs : [0]));
   assert.ok(Math.abs(R.ceiling - recomputedCeiling) < 1e-3, "ceiling equals the max achievable AUC across rules");
   assert.equal(R.power, "weak");

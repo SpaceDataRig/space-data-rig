@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-02T02:23:09.645Z",
+    "gitSha": "ab7a31a5cd6cb61f5579a5c5c5eefd3c594ed1bd",
+    "inputs": [
+      {
+        "path": "scripts/p105-gate-calibration.ts",
+        "sha256": "2c001590adde2845febfc3ecbc55b56038a98a95e38b8405b88dd137399ece26"
+      },
+      {
+        "path": "discovery-protocol.json",
+        "sha256": "f483f81510739b27171ee9508c0bd86abcc59ea0d76211d099d0b0d5c439a17f"
+      },
+      {
+        "path": "reports/p103-target-gate-table.json",
+        "sha256": "6a7434fd72b6bf8df4583db78bbb6b0797b763c471ddf8b19e9b2217c9713aaa"
+      },
+      {
+        "path": "reports/p104-corroboration-capability.json",
+        "sha256": "79e7b96defa0c6103c4a463d2fde62176061ee360ffb38e2c6b810a7f02e30f7"
+      }
+    ],
+    "generatedBy": "scripts/p105-gate-calibration.ts",
+    "module": "src/discover/discoveryGate.ts (wilsonLowerBound)",
+    "data": "union of committed labelled REAL candidates from p103 (9 SPOC known-planet hosts) + p104 (3 Gaia/centroid known-planet hosts); disjoint id sets. Fully offline, deterministic.",
+    "note": "gate specificity / zero-false-claim calibration on labelled negatives; the sensitivity arm is synthetic-only (p100). discoveryClaim false, safeToGate false."
+  },
+  "nLabeled": 12,
+  "trueNegatives": 12,
+  "falsePromotions": 0,
+  "specificity": 1,
+  "specificityWilsonLB": 0.7575,
+  "withUnmetCount": 9,
+  "bindingCensus": {
+    "novelty": 9,
+    "prospective": 0,
+    "blend": 9,
+    "psf": 9
+  },
+  "rows": [
+    {
+      "id": "HD 39091",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 1.4933 exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HR 858",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "HD 25463",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "AU Mic",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "TOI-480",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry 0.3718 exceeds 0.2"
+      ]
+    },
+    {
+      "id": "GJ 143",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 1 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HD 1397",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01",
+        "odd/even transit asymmetry NaN exceeds 0.2"
+      ]
+    },
+    {
+      "id": "HD 86226",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "cross-sector phase-coherent ephemeris on 0 sector(s), below the required 2",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "HD 207496",
+      "source": "p103/spoc",
+      "tier": "none",
+      "known": true,
+      "unmet": [
+        "not novel: host is already in the confirmed catalog or TOI list",
+        "signal duplicates a catalogued planet",
+        "Gaia blend/dilution census has not ruled out an on-target companion",
+        "PSF / difference-imaging has not cleared an instrumental origin",
+        "harmonic/alias false-positive probability NaN exceeds 0.01"
+      ]
+    },
+    {
+      "id": "389352124",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "known": true,
+      "unmet": []
+    },
+    {
+      "id": "18310799",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "known": true,
+      "unmet": []
+    },
+    {
+      "id": "149603524",
+      "source": "p104/gaia+centroid",
+      "tier": "none",
+      "known": true,
+      "unmet": []
+    }
+  ],
+  "verdict": "P105-GATE-CALIBRATION (specificity of the earned gate on labelled REAL candidates, offline): on the union of 12 distinct committed hosts whose ground truth is \"catalogued planet\" (a discovery-tier output would be a false claim), the gate returned tier none for 12/12 -> 0 false promotion(s), specificity 1.000, Wilson 95% lower bound on the true-negative rate 0.757. Binding refusals (over the 9 hosts carrying unmet lists): novelty 9/9, prospective precision 0/9, blend 9/9, PSF 9/9. This validates the REFUSALS: the gate does not over-claim on any real labelled planet we hold. The SENSITIVITY arm (promoting a clean NOVEL signal) is only established synthetically (p100) because committed data has no labelled novel candidate to test it on -- an asymmetry stated, not hidden. No claim, no gate.",
+  "discoveryClaim": false,
+  "safeToGate": false
+}

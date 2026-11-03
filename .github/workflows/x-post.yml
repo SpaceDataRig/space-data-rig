@@ -73,8 +73,12 @@ name: x-post (two-hourly English science digest)
 #    no key ever enters the repo.
 
 on:
-  schedule:
-    - cron: "0 */2 * * *" # every two hours (at :00 of even UTC hours) -- halved from hourly on operator request to cut posting cost
+  # NOTE (2026-11): the `on.schedule` cron was REMOVED to stop duplicate/late-triggered posts. GitHub throttles
+  # its own scheduled workflows and starts them late (a 20:00 "0 */2" slot was observed firing ~20:59), so it
+  # interleaved with the Cloudflare worker's on-time even-hour dispatch and posted ~hourly again. The worker's
+  # scheduled() (woken by the reliable */15 wrangler cron, gated to `wakeMinute===0 && wakeHour%2===0`) is now the
+  # SINGLE clock: one run every two hours, exactly on the even :00, with no GitHub-schedule duplicate. This
+  # workflow still accepts workflow_dispatch (the worker's dispatch path + manual milestone overrides).
   workflow_dispatch:
     inputs:
       text:

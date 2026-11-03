@@ -757,7 +757,7 @@ the Actions web page when the anonymous API is rate-limited.
   platform-stable, and `.gitattributes eol=lf` normalises on commit -- but a `Set-Content` rewrite of a source file can reintroduce
   CRLF into the working tree, so byte-check (`buf.includes(13)`) before assuming a file is clean.
 
-## 13. Current state (as of 2026-11-02)
+## 13. Current state (as of 2026-11-03)
 
 SNAPSHOT, NOT HISTORY. The leading bullets below are a measurement of the rig, taken at the timestamps named in them,
 and `tests/handoff-freshness.test.ts` holds this section to its date: the as-of date may not trail the newest dated
@@ -767,8 +767,9 @@ bullets that follow are dated observations from earlier passes, quoted as histor
 authority; they are deliberately not restated here.
 
 - Git: round 26 has progressed well past increment 1 (the bullet below is a dated 2026-10-27 snapshot, kept as history).
-  As of 2026-11-02 the served report library reads `total 70 / stamped 49 / verified 47 / fullyVerified 47 / unattested 21 /
-  stale []` -- the three research axes lifted verified 33 -> 36 and R32's prospective-gate instrument (`p100`, a committed-fixture
+  As of 2026-11-03 the served report library reads `total 70 / stamped 49 / verified 47 / fullyVerified 47 / unattested 21 /
+  stale []` (the R44 and R46 rounds were ops-only posting-cadence changes on `x-post.yml` / `worker.scheduled()` with no library
+count delta) -- the three research axes lifted verified 33 -> 36 and R32's prospective-gate instrument (`p100`, a committed-fixture
   replay of a seeded forward stream anchored to real SPOC noise) lifted it to 37, then R34's `p101` (the earned gate fed with REAL
   measured cross-sector corroboration, committed-fixture replay of multi-sector SPOC hosts re-fetched per sector from public S3)
   lifted it to 38, then R36's `p102` (the odd/even + harmonic-sibling SHAPE axes measured for real, offline, on the committed

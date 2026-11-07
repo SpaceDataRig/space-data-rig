@@ -20,6 +20,7 @@ import { verifyBurnTx, verifyBurnBySignature, type RpcTransactionLike } from "..
 import { validateObservation, observeEnvelopeHash, OBSERVATION_SCHEMA, type ObservationRecord } from "../src/observe/observation.ts";
 import { computeObservation, commissionObservation } from "../src/observe/observeApi.ts";
 import { handleBrowserRpcProxy, RPC_READ_ALLOWLIST, type RpcFetch } from "../src/observe/rpcProxy.ts";
+import { txGetterFor } from "../src/observe/connection.ts";
 
 // ---- dedication -----------------------------------------------------------
 
@@ -358,4 +359,60 @@ test("resolveAnchorDailyCap: explicit unlimited vs numeric budget vs safe-zero s
   // and the caller guard is count(0) >= cap(0) === true => nothing anchored when cap is 0.
   assert.ok(0 >= resolveAnchorDailyCap("0"));
   assert.ok(!(0 >= resolveAnchorDailyCap("unlimited")));
+});
+
+
+// ---- connection.ts: fill confirmationStatus from getSignatureStatuses (RPC shape quirk) ----
+
+type FetchInit = { body?: BodyInit | null };
+function installFetch(handler: (method: string) => { ok: boolean; result?: unknown }): () => void {
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (_url: string | URL | Request, init?: FetchInit) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { method?: string };
+    const r = handler(body.method ?? "");
+    return { ok: r.ok, json: async () => ({ result: r.result }) } as Response;
+  }) as typeof fetch;
+  return () => { globalThis.fetch = orig; };
+}
+
+test("txGetterFor: getTransaction omitting confirmationStatus is filled from getSignatureStatuses", async () => {
+  const restore = installFetch((method) => {
+    if (method === "getTransaction") return { ok: true, result: { meta: { err: null }, transaction: { message: { instructions: [] } } } };
+    if (method === "getSignatureStatuses") return { ok: true, result: { value: [{ confirmationStatus: "finalized", err: null }] } };
+    return { ok: false };
+  });
+  try {
+    const tx = await txGetterFor("https://rpc.example").getTransaction("SIG");
+    assert.equal(tx?.confirmationStatus, "finalized");
+  } finally {
+    restore();
+  }
+});
+
+test("txGetterFor: getSignatureStatuses 'confirmed' is copied through so policy can still reject", async () => {
+  const restore = installFetch((method) => {
+    if (method === "getTransaction") return { ok: true, result: { meta: { err: null }, transaction: { message: { instructions: [] } } } };
+    if (method === "getSignatureStatuses") return { ok: true, result: { value: [{ confirmationStatus: "confirmed", err: null }] } };
+    return { ok: false };
+  });
+  try {
+    const tx = await txGetterFor("https://rpc.example").getTransaction("SIG");
+    assert.equal(tx?.confirmationStatus, "confirmed");
+  } finally {
+    restore();
+  }
+});
+
+test("txGetterFor: silent status endpoint + omitted field still marks finalized (commitment contract)", async () => {
+  const restore = installFetch((method) => {
+    if (method === "getTransaction") return { ok: true, result: { meta: { err: null }, transaction: { message: { instructions: [] } } } };
+    if (method === "getSignatureStatuses") return { ok: true, result: { value: [null] } };
+    return { ok: false };
+  });
+  try {
+    const tx = await txGetterFor("https://rpc.example").getTransaction("SIG");
+    assert.equal(tx?.confirmationStatus, "finalized");
+  } finally {
+    restore();
+  }
 });
